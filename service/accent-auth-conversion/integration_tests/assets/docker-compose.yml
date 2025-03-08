@@ -1,0 +1,55 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  auth:
+    image: accentcommunications/accent-auth-tests
+    ports:
+      - "9497"
+    environment:
+      TZ: UTC+1
+      ACCENT_UUID: the-predefined-accent-uuid
+      OAUTHLIB_INSECURE_TRANSPORT: 1
+    volumes:
+      - "../..:/usr/src/accent-auth"
+      - "./etc/accent-auth/conf.d/50-default.yml:/etc/accent-auth/conf.d/50-default.yml"
+      - "./var/lib/accent-auth/saml:/var/lib/accent-auth/saml:ro"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+      # - "${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus"
+
+  oauth2sync:
+    image: oauth2-synchronization-service
+    ports:
+      - "80"
+
+  postgres:
+    image: accentcommunications/accent-auth-db:local
+    ports:
+      - "5432"
+    command: "-c 'log_min_duration_statement=0' -c 'fsync=off'"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+
+  slapd:
+    image: bitnami/openldap
+    environment:
+      BITNAMI_DEBUG: "true"
+      LDAP_PORT_NUMBER: 1389
+      LDAP_ROOT: dc=accent-auth,dc=accent,dc=community
+      LDAP_ADMIN_USERNAME: admin
+      LDAP_ADMIN_PASSWORD: accentpassword
+      LDAP_CONFIG_ADMIN_ENABLED: "yes"
+      LDAP_CONFIG_ADMIN_USERNAME: admin
+      LDAP_CONFIG_ADMIN_PASSWORD: configpassword
+    ports:
+      - "1389"
+
+  smtp:
+    image: munkyboy/fakesmtp
+    ports:
+      - "25"

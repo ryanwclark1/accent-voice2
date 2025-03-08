@@ -1,0 +1,30 @@
+debug: true
+
+rest_api:
+  listen: 0.0.0.0
+
+db_uri: postgresql://asterisk:password123@postgres:5432
+
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+
+smtp:
+  hostname: smtp
+
+enabled_http_plugins:
+  user_registration: true
+
+default_policies:
+  accent_default_user_policy:
+    acl:
+      - "default.user.policy"
+      - "auth.users.me.external.#"
+      - "auth.users.me.tokens.#"
+      - "auth.users.me.password.#"
+  accent_default_admin_policy:
+    acl:
+      - "default.admin.policy"
+
+default_user_policy: accent_default_user_policy
+
+max_user_concurrent_sessions: 10

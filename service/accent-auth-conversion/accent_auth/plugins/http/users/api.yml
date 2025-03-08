@@ -1,0 +1,337 @@
+paths:
+  /users:
+    get:
+      tags:
+        - users
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.users.read`"
+      summary: "Retrieves the list of users"
+      parameters:
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search"
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/recurse"
+        - $ref: "#/parameters/has_policy_slug"
+        - $ref: "#/parameters/has_policy_uuid"
+        - $ref: "#/parameters/search_policy_slug"
+        - $ref: "#/parameters/search_policy_uuid"
+      responses:
+        "200":
+          description: "The list of user"
+          schema:
+            $ref: "#/definitions/UserList"
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a user
+      description: |
+        **Required ACL**: `auth.users.create`
+
+        Creates a new user that can be used to retrieve a token. The UUID can be used to link this user the a
+        accent-confd user by using the same UUID
+      operationId: createUser
+      tags:
+        - users
+      parameters:
+        - name: body
+          in: body
+          description: The user creation parameters
+          schema:
+            $ref: "#/definitions/UserCreate"
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "200":
+          description: The new user data without the password
+          schema:
+            $ref: "#/definitions/UserPostResponse"
+        "400":
+          description: Invalid body
+          schema:
+            $ref: "#/definitions/APIError"
+  /users/{user_uuid}:
+    get:
+      tags:
+        - users
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.users.{user_uuid}.read`"
+      parameters:
+        - $ref: "#/parameters/user_uuid"
+      summary: Retrieves the details of a user
+      responses:
+        "200":
+          description: "The user's data"
+          schema:
+            $ref: "#/definitions/UserResult"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: User not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      operationId: delete_user
+      tags:
+        - users
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.users.{user_uuid}.delete`"
+      parameters:
+        - $ref: "#/parameters/user_uuid"
+      summary: Delete a user
+      responses:
+        "204":
+          description: The user has been removed
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Update an existing user
+      description: "**Required ACL**: `auth.users.{user_uuid}.edit`"
+      operationId: updateUser
+      tags:
+        - users
+      parameters:
+        - $ref: "#/parameters/user_uuid"
+        - name: body
+          in: body
+          description: The user parameters
+          required: true
+          schema:
+            $ref: "#/definitions/UserEdit"
+      responses:
+        "200":
+          description: The new user data without the password
+          schema:
+            $ref: "#/definitions/UserPostResponse"
+        "400":
+          description: Invalid body
+          schema:
+            $ref: "#/definitions/APIError"
+        "404":
+          description: not found
+          schema:
+            $ref: "#/definitions/Error"
+  /users/{user_uuid}/password:
+    put:
+      consumes:
+        - application/json
+      tags:
+        - users
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.users.{user_uuid}.password.edit`"
+      summary: "Change the user's password"
+      parameters:
+        - $ref: "#/parameters/user_uuid"
+        - name: body
+          in: body
+          description: The user creation parameters
+          required: true
+          schema:
+            $ref: "#/definitions/PasswordChange"
+      responses:
+        "204":
+          description: "Password changed"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: User not found
+          schema:
+            $ref: "#/definitions/Error"
+        "405":
+          description: Not allowed, for example unable to update password for user with SAML authentication.
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+parameters:
+  user_uuid:
+    name: user_uuid
+    in: path
+    type: string
+    description: The UUID of the user
+    required: true
+  has_policy_uuid:
+    name: has_policy_uuid
+    in: query
+    type: string
+    description: The UUID of the policy that the user must have. This includes indirect associations (user in group has policy).
+  has_policy_slug:
+    name: has_policy_slug
+    in: query
+    type: string
+    description: The slug of the policy that the user must have. This includes indirect associations (user in group has policy).
+  search_policy_uuid:
+    name: policy_uuid
+    in: query
+    type: string
+    description: The UUID of the policy that the user must have. This does not include indirect associations (user in group has policy).
+  search_policy_slug:
+    name: policy_slug
+    in: query
+    type: string
+    description: The slug of the policy that the user must have. This does not include indirect associations (user in group has policy).
+definitions:
+  PasswordChange:
+    type: object
+    properties:
+      old_password:
+        type: string
+        description: The old password
+      new_password:
+        type: string
+        description: The desired password
+    required:
+      - old_password
+      - new_password
+  UserBase:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      firstname:
+        type: string
+        description: "The user's firstname"
+      lastname:
+        type: string
+        description: "The user's lastname"
+      enabled:
+        type: boolean
+      purpose:
+        type: string
+        default: user
+        enum:
+          - user
+          - internal
+          - external_api
+      authentication_method:
+        type: string
+        default: default
+        description: The authentication method allowed for this user. Using "default" will use the tenant's default_authentication_method value for this user.
+        enum:
+          - default
+          - native
+          - ldap
+          - saml
+  UserCreate:
+    allOf:
+      - $ref: "#/definitions/UserBase"
+      - type: object
+        properties:
+          uuid:
+            type: string
+            description: "The user's UUID"
+          password:
+            type: string
+            description: The password of the newly created username
+          email_address:
+            type: string
+            description: The main email address of the new username
+  UserEdit:
+    allOf:
+      - $ref: "#/definitions/UserBase"
+  UserEmail:
+    type: object
+    properties:
+      address:
+        type: string
+      main:
+        type: boolean
+      confirmed:
+        type: boolean
+  UserList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of users
+      filtered:
+        type: integer
+        description: The number of users matching the searched term
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/UserResult"
+        description: A paginated list of users
+  UserPostResponse:
+    type: object
+    properties:
+      username:
+        type: string
+      emails:
+        type: array
+        items:
+          $ref: "#/definitions/UserEmail"
+      uuid:
+        type: string
+      purpose:
+        type: string
+        enum:
+          - user
+          - internal
+          - external_api
+      authentication_method:
+        type: string
+        default: default
+        description: The authentication method allowed for this user. Using "default" will use the tenant's default_authentication_method value for this user.
+        enum:
+          - default
+          - native
+          - ldap
+          - saml
+  UserResult:
+    type: object
+    properties:
+      uuid:
+        type: string
+      username:
+        type: string
+      firstname:
+        type: string
+      lastname:
+        type: string
+      purpose:
+        type: string
+        enum:
+          - user
+          - internal
+          - external_api
+      tenant_uuid:
+        type: string
+      emails:
+        type: array
+        items:
+          $ref: "#/definitions/UserEmail"
+      enabled:
+        type: boolean

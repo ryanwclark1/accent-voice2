@@ -1,0 +1,13 @@
+# Bandit Configuration
+
+exclude_dirs:
+  - venv
+  - alembic
+  - migrations
+  - tests
+
+tests:
+  B101: false  # Ignore assert statement warnings in tests
+
+skips:
+  - B311  # Ignore random module security warnings

@@ -1,0 +1,20 @@
+enabled_metadata_plugins:
+  user_admin_status: True
+  internal_token: True
+
+purpose_metadata_mapping:
+  user: [user_admin_status]
+  internal: [internal_token]
+
+default_policies:
+  accent_default_admin_policy:
+    description: "Default Accent policy for administrators"
+
+tenant_default_groups:
+  accent_default_admin_group:
+    policies:
+      accent_default_admin_policy: True
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7

@@ -1,0 +1,145 @@
+paths:
+  /backends/ldap:
+    get:
+      security:
+        - accent_auth_token: []
+      produces:
+        - application/json
+      summary: |
+        Get current tenant's LDAP backend configuration. If there is no configuration,
+        all the fields will be `null`.
+      description: "**Required ACL:** `auth.backends.ldap.read`"
+      operationId: getLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "200":
+          description: The LDAP backend configuration
+          schema:
+            $ref: "#/definitions/LDAPBackendConfig"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      security:
+        - accent_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Update current tenant's LDAP backend configuration
+      description: "**Required ACL:** `auth.backends.ldap.update"
+      operationId: updateLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - name: body
+          in: body
+          description: The LDAP backend configuration
+          required: true
+          schema:
+            $ref: "#/definitions/LDAPBackendConfigEdit"
+      responses:
+        "200":
+          description: The LDAP backend configuration has been updated
+          schema:
+            $ref: "#/definitions/LDAPBackendConfig"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      security:
+        - accent_auth_token: []
+      summary: Delete current tenant's LDAP backend configuration
+      description: "**Required ACL:** `auth.backends.ldap.delete`"
+      operationId: deleteLDAPBackendConfig
+      tags:
+        - backends
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "204":
+          description: The LDAP backend configuration has been deleted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+definitions:
+  LDAPBackendConfig:
+    type: object
+    required:
+      - host
+      - port
+      - user_base_dn
+      - user_login_attribute
+      - user_email_attribute
+    properties:
+      tenant_uuid:
+        type: string
+        readOnly: true
+      host:
+        type: string
+        description: |
+          The host or IP address of the LDAP server.
+      port:
+        type: integer
+        description: The port on which to connect to the LDAP server.
+        example: 389
+      protocol_version:
+        type: integer
+        minimum: 2
+        maximum: 3
+        description: LDAP protocol version to use
+        default: 3
+      protocol_security:
+        type: string
+        description: The layer of security to use for the connection.
+        enum:
+          - ""
+          - "tls"
+          - "ldaps"
+        default: ""
+      bind_dn:
+        type: string
+        description: |
+          The DN to use to bind the `accent-auth` service to the LDAP server. If
+          unspecified, `accent-auth` will not bind with a service user but only with the
+          final user account. For this to work though, your users will need to have the
+          right to read their own information, particularly their email address.
+        example: CN=accent-auth,DC=accentvoice,DC=org
+      user_base_dn:
+        type: string
+        description: The base DN in which users are located
+        example: OU=people,DC=accentvoice,DC=org
+      user_login_attribute:
+        type: string
+        description: |
+          The attribute that identifies users. It will be prepended to the
+          `user_base_dn`.
+        example: uid
+      user_email_attribute:
+        type: string
+        description: The attribute of the email address in the LDAP schema.
+        example: mail
+      search_filters:
+        type: string
+        description: |
+          Filters for finding a user DN given a service bind is used.
+          Available variables are `username`, `user_login_attribute` and
+          `user_email_attribute`. These variables come from the fields of the
+          same name from the API.
+        example: "{user_login_attribute}={username}"
+  LDAPBackendConfigEdit:
+    allOf:
+      - $ref: "#/definitions/LDAPBackendConfig"
+      - type: object
+        properties:
+          bind_password:
+            type: string
+            description: |
+              The password to use to bind the `accent-auth` service to the LDAP server.

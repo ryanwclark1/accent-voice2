@@ -1,0 +1,257 @@
+paths:
+  /policies:
+    get:
+      security:
+        - accent_auth_token: []
+      produces:
+        - application/json
+      summary: List ACL policies
+      description: "**Required ACL:** `auth.policies.read`"
+      operationId: listPolicies
+      tags:
+        - policies
+      parameters:
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search"
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/recurse"
+      responses:
+        "200":
+          description: A list of policies
+          schema:
+            $ref: "#/definitions/GetPoliciesResult"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      security:
+        - accent_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a new ACL policy
+      description: |
+        **Required ACL:** `auth.policies.create`
+
+        Create a new ACL policy set that can be associated to a user, an administrator, a service or a backend.
+        An ACL policy is a list of ACL or ACL templates that is used to create a token
+      operationId: createPolicies
+      tags:
+        - policies
+      parameters:
+        - name: body
+          in: body
+          description: The policy creation parameters
+          required: true
+          schema:
+            $ref: "#/definitions/Policy"
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "200":
+          description: The created policy's data
+          schema:
+            $ref: "#/definitions/PolicyResult"
+        "401":
+          description: Invalid data has been supplied'
+          schema:
+            $ref: "#/definitions/Error"
+        "409":
+          description: Duplicate Policy
+          schema:
+            $ref: "#/definitions/Error"
+  /policies/{policy_uuid}:
+    get:
+      tags:
+        - policies
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.policies.{policy_uuid}.read"
+      parameters:
+        - $ref: "#/parameters/policy_uuid"
+        - $ref: "#/parameters/tenantuuid"
+      summary: Retrieves the details of a policy
+      responses:
+        "200":
+          description: "The policy's data"
+          schema:
+            $ref: "#/definitions/PolicyResult"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Policy not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      operationId: delete_policy
+      tags:
+        - policies
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.policies.{policy_uuid}.delete`"
+      parameters:
+        - $ref: "#/parameters/policy_uuid"
+        - $ref: "#/parameters/tenantuuid"
+      summary: Delete a policy
+      responses:
+        "204":
+          description: The policy has been removed
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Policy not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      security:
+        - accent_auth_token: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Modify an ACL policy
+      description: "**Required ACL:** `auth.policies.{policy_uuid}.edit`"
+      operationId: editPolicies
+      tags:
+        - policies
+      parameters:
+        - $ref: "#/parameters/policy_uuid"
+        - $ref: "#/parameters/tenantuuid"
+        - name: body
+          in: body
+          description: The policy edition parameters
+          required: true
+          schema:
+            $ref: "#/definitions/Policy"
+      responses:
+        "200":
+          description: The modified policy's data
+          schema:
+            $ref: "#/definitions/PolicyResult"
+        "401":
+          description: Invalid data has been supplied'
+          schema:
+            $ref: "#/definitions/Error"
+        "409":
+          description: Duplicate Policy
+          schema:
+            $ref: "#/definitions/Error"
+  /policies/{policy_uuid}/acl/{access}:
+    delete:
+      security:
+        - accent_auth_token: []
+      operationId: deletePolicyAccess
+      tags:
+        - policies
+      description: "**Required ACL:** `auth.policies.{policy_uuid}.edit`"
+      summary: Dissociate an access from a policy
+      parameters:
+        - $ref: "#/parameters/policy_uuid"
+        - $ref: "#/parameters/access"
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "204":
+          description: The policy has been modified
+        "404":
+          description: Policy or access not found
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      security:
+        - accent_auth_token: []
+      operationId: addPolicyAccess
+      tags:
+        - policies
+      description: "**Required ACL:** `auth.policies.{policy_uuid}.edit`"
+      summary: Associate an access to a policy
+      parameters:
+        - $ref: "#/parameters/policy_uuid"
+        - $ref: "#/parameters/access"
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "204":
+          description: The policy has been modified
+        "404":
+          description: Policy not found
+          schema:
+            $ref: "#/definitions/Error"
+parameters:
+  policy_uuid:
+    name: policy_uuid
+    in: path
+    type: string
+    description: The UUID or slug of the policy. The slug is unique within a tenant, hence the tenant must be specified.
+    required: true
+  access:
+    name: access
+    in: path
+    type: string
+    description: The access to add
+    required: true
+definitions:
+  Policy:
+    type: object
+    properties:
+      name:
+        type: string
+      slug:
+        type: string
+        description: "A unique, human readable identifier for this policy"
+      description:
+        type: string
+      acl:
+        type: array
+        items:
+          type: string
+      shared:
+        type: boolean
+        description: |
+          Should be shared to sub-tenants or not. Cannot be changed after creation
+
+          When shared is `true`, then all tenants below this policy's tenant
+          will see it as their own policy with the attribute `read_only: true`.
+
+          Using `shared` attribute will add uniqueness constraints for the slug
+          among all policies' sub-tenants.
+
+    required:
+      - name
+  PolicyResult:
+    type: object
+    allOf:
+      - $ref: "#/definitions/Policy"
+      - properties:
+          uuid:
+            type: string
+          read_only:
+            type: boolean
+  GetPoliciesResult:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of policies matching the searched term
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/PolicyResult"
+        description: A paginated list of policies
+    required:
+      - total
+      - items

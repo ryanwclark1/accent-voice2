@@ -1,0 +1,51 @@
+paths:
+  /users/register:
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a user
+      description: "Creates a new user that can be used to retrieve a token."
+      operationId: registerUser
+      tags:
+        - users
+      parameters:
+        - name: body
+          in: body
+          description: The user creation parameters
+          required: true
+          schema:
+            $ref: '#/definitions/UserRegister'
+      responses:
+        '200':
+          description: The new user data without the password
+          schema:
+            $ref: '#/definitions/UserPostResponse'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+definitions:
+  UserRegister:
+    type: object
+    properties:
+      username:
+        type: string
+        description: The username that will identify that new username
+      password:
+        type: string
+        description: The password of the newly created username
+      firstname:
+        type: string
+        description: "The user's firstname"
+      lastname:
+        type: string
+        description: "The user's lastname"
+      email_address:
+        type: string
+        description: The main email address of the new username
+    required:
+      - username
+      - password
+      - email_address

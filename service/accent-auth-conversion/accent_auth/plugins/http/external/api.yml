@@ -1,0 +1,254 @@
+paths:
+  /external/{auth_type}/config:
+    get:
+      description: "**Required ACL**: `auth.{auth_type}.external.config.read`"
+      summary: Retrieve the client id and client secret
+      tags:
+        - external
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/auth_type"
+      responses:
+        "200":
+          description: The requested config
+          schema:
+            $ref: "#/definitions/ExternalConfig"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      description: "**Required ACL**: `auth.{auth_type}.external.config.delete`"
+      summary: Delete the client id and client secret
+      tags:
+        - external
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/auth_type"
+      responses:
+        "204":
+          description: Deletion confirmed
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      description: "**Required ACL**: `auth.{auth_type}.external.config.create`"
+      summary: Add configuration for the given auth_type
+      tags:
+        - external
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/auth_type"
+        - in: body
+          description: JSON object holding configuration for the given authentication type
+          name: config
+          required: true
+          schema:
+            $ref: "#/definitions/ExternalConfig"
+      responses:
+        "201":
+          description: Config created
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/Error"
+        "409":
+          description: Duplicate config
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      description: "**Required ACL**: `auth.{auth_type}.external.config.edit`"
+      summary: Update configuration for the given auth_type
+      tags:
+        - external
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/auth_type"
+        - in: body
+          description: JSON object holding configuration for the given authentication type
+          name: config
+          required: true
+          schema:
+            $ref: "#/definitions/ExternalConfig"
+      responses:
+        "201":
+          description: Config created
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/Error"
+
+  /external/{auth_type}/users:
+    get:
+      description: "**Required ACL**: `auth.{auth_type}.external.users`"
+      summary: "Retrieves the list of connected users to this external source"
+      tags:
+        - external
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/auth_type"
+        - $ref: "#/parameters/recurse"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+      responses:
+        "200":
+          description: "The list of external auth connected users"
+          schema:
+            $ref: "#/definitions/ExternalAuthUserList"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/Error"
+
+  /users/{user_uuid}/external:
+    get:
+      tags:
+        - users
+        - external
+      security:
+        - accent_auth_token: []
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.external.read`
+
+        This list should not contain any sensible information
+      summary: "Retrieves the list of the users external auth data"
+      parameters:
+        - $ref: "#/parameters/user_uuid"
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search"
+      responses:
+        "200":
+          description: "The list of external auth data"
+          schema:
+            $ref: "#/definitions/ExternalAuthList"
+
+definitions:
+  ExternalAuthList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of external auth.
+      filtered:
+        type: integer
+        description: The number of external auth matching the searched term.
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ExternalAuth"
+        description: A paginated list of external auth
+    required:
+      - filtered
+      - total
+      - items
+  ExternalAuth:
+    type: object
+    properties:
+      type:
+        type: string
+        description: The external auth type name
+      enabled:
+        type: boolean
+      data:
+        type: object
+      plugin_info:
+        type: object
+  ExternalAuthUser:
+    type: object
+    properties:
+      uuid:
+        type: string
+        format: uuid
+  ExternalAuthUserList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of connected external auth users.
+        example: 3
+      filtered:
+        type: integer
+        description: The number of external auth matching the searched term.
+        example: 3
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ExternalAuthUser"
+        description: A paginated list of connected external auth users
+        example:
+          [
+            user_uuid: 210ef281-4201-4f95-952f-5f8d5211e085,
+            user_uuid: 28e6f253-a19d-458d-8b52-2ba6feb788bc,
+            user_uuid: e72fe53d-3981-4c51-a488-e06ca94fcbb1,
+          ]
+    required:
+      - filtered
+      - total
+      - items
+  ExternalConfig:
+    type: object
+    properties:
+      client_id:
+        description: |
+          Client ID for the given authentication type.
+          Required only for `google` and `microsoft` authentication types.
+        type: string
+        example: a-client-id
+      client_secret:
+        description: |
+          Client secret for the given authentication type.
+          Required only for `google` and `microsoft` authentication types.
+        type: string
+        example: a-client-secret
+      ios_apn_certificate:
+        description: Public certificate to use for Apple Push Notification Service
+        type: string
+      ios_apn_private:
+        description: Private key to use for Apple Push Notification Service
+        type: boolean
+      use_sandbox:
+        description: Whether to use sandbox for Apple Push Notification Service
+        type: boolean
+      fcm_sender_id:
+        description: The sender ID to use for Firebase Cloud Messaging
+        type: string
+      fcm_api_key:
+        description: (deprecated) The API key to use for Firebase Cloud Messaging (legacy)
+        type: string
+      fcm_service_account_info:
+        description: |
+          The service account info file to use for Firebase Cloud Messaging (v1). The
+          content must be a JSON-encoded string.
+        type: string
+
+parameters:
+  auth_type:
+    name: auth_type
+    in: path
+    type: string
+    description: External auth type name
+    required: true

@@ -1,0 +1,65 @@
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+  "alembic/",  # Exclude Alembic migrations
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+# Target Python 3.12
+target-version = "py312"
+
+[lint]
+# Enable all linting rules, then selectively disable unwanted ones.
+select = ["ALL"]
+ignore = [
+  "D211",  # No blank line before class docstring (Conflicts with D203)
+  "D213",  # Multi-line docstring summary should be on the first line (Conflicts with D212)
+]
+docstring-convention = "google"
+
+# Allow auto-fixing for all enabled rules.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow underscore-prefixed variables (e.g., `_temp`).
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[format]
+# Follow Black-style formatting.
+docstring-code-line-length = 88
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[lint.per-file-ignores]
+# Ignore import sorting and Bandit security rules for test files.
+"tests/**" = ["INP001", "S101"]

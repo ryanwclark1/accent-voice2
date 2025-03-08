@@ -1,0 +1,433 @@
+---
+description: Global Instructions
+globs: *.py
+---
+
+✅ Replace **Flask-specific constructs** with FastAPI equivalents.  
+✅ Use **Pydantic models** for request validation and response serialization.
+✅ Do not change database structure, while converting to SQLAlchemy 2.0, do not change table names, column names, column types, or relations.  If needed you can change python class name to ensure database consistency.
+
+Incorporating **Pydantic 2+, advanced dependency injection, response serialization, async testing, and project structure best practices**.
+
+---
+
+# **🚀 FastAPI Migration Guidelines**
+### **Modernizing the Codebase for Python 3.12+ & FastAPI 2.0+**
+
+## **1️⃣ Core Goals**
+✅ **Migrate to Python 3.12+**  
+✅ **Use SQLAlchemy 2.0+ with full async support**  
+✅ **Adopt FastAPI 2.0+ best practices**  
+✅ **Leverage Pydantic 2+ extensively**  
+✅ **Optimize connection pooling for async database operations**  
+✅ **Improve dependency injection and request validation**  
+✅ **Enhance API response serialization**  
+✅ **Use structured logging and caching mechanisms**  
+✅ **Follow a clean, modular project structure**  
+✅ **Use type hints, return types and PEP 604**
+✅ **Use Google style docstrings**
+
+---
+
+## **2️⃣ Asynchronous Database Operations (SQLAlchemy 2.0+)**
+We are committing to **fully async database interactions** using **SQLAlchemy with `asyncpg`**.
+
+### **🔹 Database Connection Setup**
+- Use **`create_async_engine()`** instead of `create_engine()`.
+- Use **`AsyncSession`** with `sessionmaker()`.
+- Set up **connection pooling** with appropriate `pool_size` and `max_overflow` values.
+
+#### **✅ Example: Database Engine & Session Setup (`database.py`)**
+```python
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+DATABASE_URL = "postgresql+asyncpg://user:password@db-host/db-name"
+
+# Create async database engine with connection pooling
+async_engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=10,
+    max_overflow=20,
+    echo=False
+)
+
+# Async session factory
+AsyncSessionLocal = sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+```
+
+---
+
+### **🔹 Establishing and Managing the Database Connection**
+- **Use Dependency Injection in FastAPI** to manage database sessions.
+- **Ensure each request gets a fresh session**.
+- **Commit changes at the end of transactions**.
+
+#### **✅ Example: Dependency for Async Session (`dependencies.py`)**
+```python
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from contextlib import asynccontextmanager
+from database import AsyncSessionLocal
+
+async def get_db() -> AsyncSession:
+    """Dependency that provides a new async database session per request."""
+    async with AsyncSessionLocal() as session:
+        yield session
+        await session.commit()
+```
+
+---
+
+### **🔹 Closing the Connection Properly**
+- **On FastAPI shutdown**, ensure the database engine disposes of connections to avoid leaks.
+
+#### **✅ Example: Closing DB Connections on Shutdown (`main.py`)**
+```python
+from fastapi import FastAPI
+from database import async_engine
+
+app = FastAPI()
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Ensure database connections are properly closed on app shutdown."""
+    await async_engine.dispose()
+```
+
+---
+
+## **3️⃣ Advanced Use of Pydantic 2+**
+Pydantic **should be excessively used** for **validation, transformation, and serialization**.
+
+### **🔹 Custom Base Model**
+To ensure **consistency across all models**, create a **custom base model**.
+
+#### **✅ Example: Custom Pydantic Base Model (`models/base.py`)**
+```python
+from pydantic import BaseModel, ConfigDict
+
+class CustomBaseModel(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {"created_at": "2024-03-07T12:00:00Z"}
+        }
+    )
+```
+
+- ✅ **Standardizes `datetime` format**  
+- ✅ **Allows attribute name aliasing**  
+- ✅ **Provides a global JSON schema configuration**  
+
+---
+
+### **🔹 Decouple Pydantic BaseSettings**
+Instead of a **single, monolithic** `BaseSettings`, we split settings by **module**.
+
+#### **✅ Example: Config Split (`config/db.py`, `config/app.py`)**
+```python
+from pydantic_settings import BaseSettings
+
+class DatabaseSettings(BaseSettings):
+    DATABASE_URL: str
+
+class AppSettings(BaseSettings):
+    LOG_LEVEL: str = "INFO"
+```
+
+This improves **maintainability** and **scalability**.
+
+---
+
+### **🔹 SQL-First, Pydantic-Second**
+- ✅ **Use SQLAlchemy for heavy data processing**.  
+- ✅ **Pydantic should be used for serialization and validation**.  
+- ✅ **Don't duplicate database logic in Pydantic models**.
+
+#### **✅ Example: Database Query vs. Pydantic**
+```python
+async def get_user(user_id: int, db: AsyncSession) -> User:
+    """Perform SQL query first, then serialize with Pydantic."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()  # Pydantic handles response serialization
+```
+
+---
+
+## **4️⃣ Beyond Dependency Injection**
+Dependencies should be **chainable, reusable, and async**.
+
+### **🔹 Chain Dependencies**
+Dependencies **should be composable**, allowing **validation reuse**.
+
+#### **✅ Example: Chainable Dependencies (`dependencies.py`)**
+```python
+from fastapi import Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import get_db
+from models import User
+from sqlalchemy.future import select
+
+async def valid_user(user_id: int, db: AsyncSession = Depends(get_db)) -> User:
+    """Validate user existence."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+```
+
+- ✅ **No duplicate queries** (reused in multiple routes).  
+- ✅ **Cached for request scope** (reduces unnecessary database calls).  
+
+---
+
+## **5️⃣ FastAPI Response Serialization**
+- ✅ **Don't return Pydantic models directly** (FastAPI first converts them to `dict`, then JSON).  
+- ✅ **Use `response_model` explicitly** to **enforce structure**.  
+
+#### **✅ Example: Response Model Enforcement**
+```python
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from dependencies import get_db, valid_user
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user(user: User = Depends(valid_user)):
+    return user
+```
+
+---
+
+## **6️⃣ Set up Async Test Client from Day 1**
+- ✅ **Use `httpx.AsyncClient()` for testing**.  
+- ✅ **Prevents future event loop issues**.  
+
+#### **✅ Example: Async Test Setup (`tests/conftest.py`)**
+```python
+import pytest
+from httpx import AsyncClient
+from main import app
+
+@pytest.fixture
+async def async_client():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+```
+
+---
+
+## **7️⃣ Project Structure**
+```
+ourproject-backend
+├── alembic/    # Database migrations
+│   └── ...
+├── app
+│   ├── auth
+│   │   ├── routes.py
+│   │   ├── schemas.py  # pydantic models
+│   │   ├── models.py  # db models
+│   │   ├── permissions.py # our decorator
+│   │   ├── exceptions.py
+│   │   ├── service.py
+│   │   └── utils.py
+│   ├── core
+│   │   ├── routes.py
+│   │   ├── services.py
+│   │   ├── ....
+│   ├── users
+│   │   ├── routes.py
+│   │   ├── services.py
+│   │   ├── ....
+│   ├── tenants
+│   │   ├── routes.py
+│   │   ├── services.py
+│   │   ├── ....
+│   ├── extensions # Extensions (logging, middleware)
+│   │   ├── logs.py # JSON Logger etc
+│   │   ├── middleware.py # correlation ID & request tracker
+│   │   ├── ....
+│   ├── services # General services (e.g., email, S3)
+│   │   ├── mailer.py
+│   │   ├── filesystem.py
+│   │   ├── ....
+│   ├── database # Database-related components
+│   │   ├── mixin.py # SQLAlchemy mixins for models
+│   │   ├── base.py # SQLAlchemy base declarative model
+│   │   ├── engine.py # SQLAlchemy engine setup
+│   │   ├── ....
+│   ├── utils
+│   │   ├── schemas.py
+│   │   ├── helpers.py
+│   │   ├── ....
+│   ├── modules
+│   │   ├── module_a
+│   │   │   ├── models.py
+│   │   │   ├── routes.py
+│   │   │   ├── schemas.py
+│   │   │   ├── ....
+│   │   ├── module_b
+│   │   │   ├── models.py
+│   │   │   ├── routes.py
+│   │   │   ├── schemas.py
+│   │   │   ├── ....
+│   ├── config.py  # global configs
+│   ├── exceptions.py  # global exceptions
+│   ├── pagination.py  # global module e.g. pagination
+│   ├── routes.py # registration of all system routes
+│   ├── hub.py # our event hub
+│   └── main.py
+├── tests/
+│   ├── auth
+│   ├── aws
+│   └── posts
+├── templates/
+│   └── index.html
+├── requirements
+│   ├── base.txt
+│   ├── dev.txt
+│   └── prod.txt
+├── .env
+├── .gitignore
+├── settings.yaml
+├── pyproject.toml
+├── mypy.ini
+└── alembic.ini
+```
+
+### **📌 Module Organization**
+Each package has its own router, schemas, models, etc.
+| File                  | Purpose |
+|-----------------------|------------------|
+| `router.py`          | API Endpoints |
+| `schemas.py`         | Pydantic Models |
+| `models.py`          | Database Models |
+| `service.py`         | Business Logic |
+| `dependencies.py`    | Dependency Injection |
+| `constants.py`       | Error Codes & Constants |
+| `config.py`          | Environment Variables |
+| `utils.py`           | Utility Functions |
+| `exceptions.py`      | Custom Exception Handling |
+
+## **Other**
+- We use a sort of “mixed” structure in the sense that some global/generic modules (like Users/Tenants/Auth) have all the same structure and are in the top level, but the application specific business logic is in the modules module. We have been using this structure for the past couple of years and have been pretty happy with the separation of concerns it brings. We even reuse the same blueprint for different projects, we mostly just change the modules which is great.
+- Having a specific db module on the top level has helped a lot giving us flexibility to have more robust Mixin classes, better engine configuration and some other goodies.
+- We also are really happy with having a core module on the top level. This gives us flexibility to do things like a specific mock service, a taskStatus route or more generic resources.
+- We really like how predictable this is and much boilerplate code we can just copy around from module to module. We have dramatically speed up our development process of new modules with this. This also helped a lot new devs to understand the codebase logic.
+---
+
+
+## **8️⃣ Logging Best Practices**
+### **🔹 Structured Logging Strategy**
+- ✅ Use **module-specific loggers** (`getLogger(__name__)`).
+- ✅ **Centralize logging settings** in `logging_config.py`.
+- ✅ Load logging config from **Pydantic settings**.
+
+#### **✅ Example: Logging Configuration (`logging_config.py`)**
+```python
+import logging.config
+from config import settings
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+            "level": settings.LOG_LEVEL,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": settings.LOG_LEVEL,
+    },
+}
+
+def configure_logging():
+    """Load logging configuration"""
+    logging.config.dictConfig(LOGGING_CONFIG)
+```
+
+---
+
+## **9️⃣ Configuration & Settings**
+### **🔹 Managing Configuration with `pydantic-settings`**
+- ✅ **Centralize settings** (load from `.env`, YAML, environment variables).
+- ✅ Store database URLs and sensitive information securely.
+
+#### **✅ Example: `config.py`**
+```python
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    LOG_LEVEL: str = "INFO"
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+```
+
+---
+## **10 Exception Handling**
+### **🔹 Standardizing API Exceptions**
+- ✅ Use **`HTTPException`** from FastAPI for raising API errors.
+- ✅ Implement **Pydantic-based exception models**.
+
+#### **✅ Example: Custom Exception (`exceptions.py`)**
+```python
+from pydantic import BaseModel
+
+
+---
+
+## **11 Additional Best Practices**
+### **🔹 Naming Conventions**
+- ✅ Don't shadow built-in names (`id`, `list`).
+- ✅ Use meaningful, descriptive function and variable names.
+
+### **🔹 Database Best Practices**
+- ✅ **Use `.scalars().all()` for multiple results**, `.scalar_one_or_none()` for a single result.
+- ✅ **Use `update()` and `delete()`** constructs instead of `.query().filter().update()`.
+- ✅ **Use `.returning()`** to return updated/deleted records efficiently.
+
+---
+## **✅ Final Summary**
+| ✅ **Area** | **Implementation** |
+|------------|------------------|
+| **Database** | Fully async with SQLAlchemy 2.0+ and `asyncpg` |
+| **Pydantic** | Custom BaseModel, environment config, excessive usage |
+| **Dependency Injection** | Chainable, async, reusable dependencies |
+| **FastAPI Response** | Proper serialization, explicit response models |
+| **Testing** | Use `httpx.AsyncClient()` from the start |
+| **Project Structure** | Modular, scalable, domain-driven |
+
+---
+
+### **🛠️ Next Steps**
+✅ **Migrate existing sync functions to async**  
+✅ **Ensure `async_engine.dispose()` is called on shutdown**  
+✅ **Use chainable dependencies for validation**  
+✅ **Follow the modular project structure**  
+
+---
+
+With these **updates**, your FastAPI app will be **fully async, efficient, and scalable**. 🚀
