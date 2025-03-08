@@ -23,4 +23,39 @@ docs = [
 ]
 
 [tool.uv.workspace]
-members = ["library/accent-agentd-client", "library/accent-bus", "library/accent-lib-rest-client"]
+members = [
+    "library/accent-agentd-client",
+    "library/accent-amid-client",
+    "library/accent-applicationd-client",
+    "library/accent-asterisk-doc-extractor",
+    "library/accent-asyncio-ari-client",
+    "library/accent-auth-client",
+    "library/accent-auth-keys",
+    "library/accent-bus",
+    "library/accent-call-logd-client",
+    "library/accent-calld-client",
+    "library/accent-chatd-client",
+    "library/accent-confd-client",
+    "library/accent-confgend-client",
+    "library/accent-config",
+    "library/accent-dao",
+    "library/accent-deployd-client",
+    "library/accent-dird-client",
+    "library/accent-fetchfw",
+    "library/accent-lib-python",
+    "library/accent-lib-rest-client",
+    "library/accent-market-client",
+    "library/accent-plugind-client",
+    "library/accent-provd-client",
+    "library/accent-setupd-client",
+    "library/accent-test-helpers",
+    "library/accent-uuid",
+    "library/accent-webhookd-client",
+    "library/accent-websocketd-client",
+    "library/ari-py",
+    "library/swagger-py"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
