@@ -9,11 +9,11 @@ from typing import NoReturn
 
 from accent import accent_logging
 
-accent_logging.setup_logging('/dev/null')
+accent_logging.setup_logging("/dev/null")
 
 
 def failure() -> NoReturn:
-    raise RuntimeError('If you see this, then the exception is logged!')
+    raise RuntimeError("If you see this, then the exception is logged!")
 
 
 threading.Thread(target=failure).start()

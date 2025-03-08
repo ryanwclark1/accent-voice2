@@ -3,7 +3,7 @@ name = "accent-asterisk-doc-extractor"
 version = "0.1.0"
 description = "Documentation extraction tool for Asterisk"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 
 [project.scripts]
 accent-asterisk-doc-extractor = "accent_asterisk_doc_extractor.main:main"
@@ -11,14 +11,7 @@ accent-asterisk-doc-extractor = "accent_asterisk_doc_extractor.main:main"
 [project.entry-points]
 
 [dependency-groups]
-dev = [
-  "commitizen>=3.10.0,<4",
-  "dunamai>=1.18.1,<2",
-  "pytest>=7.2.0,<8",
-  "pytest-cov>=4.0.0,<5",
-  "deptry>=0.6.4,<0.7",
-  "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_asterisk_doc_extractor"]

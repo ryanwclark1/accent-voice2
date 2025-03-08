@@ -1,8 +1,8 @@
 [project]
-name = "accent-auth"
+name = "accent-auth2"
 version = "0.1.0"
 description = ""
-authors = [{name = "Ryan Clark", email = "ryanc@accentservices.com"}]
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.11"
 
 dependencies = [
@@ -18,15 +18,15 @@ dependencies = [
     "kombu>=5.0.2",
     "markupsafe>=1.1.1",
     "marshmallow>=3.10.0",
-    "netifaces>=0.10.9",
-    "psycopg2>=2.8.6",
+    "netifaces2",
+    "psycopg",
     "pysaml2>=7.5.0",
     "python-consul>=1.1.0",
     "python-ldap>=3.4.0",
-    "PyYAML>=5.3.1",
+    "pyyaml>=6.0",
     "requests>=2.25.1",
     "requests-oauthlib>=1.3.1",
-    "SQLAlchemy>=1.3.0,<1.4.0",
+    "sqlalchemy[asyncio]>=1.3.0",
     "stevedore>=4.0.2",
     "tenacity>=8.0.1",
     "Unidecode>=1.2.0",
@@ -52,7 +52,7 @@ dev = [
 include = [
     "accent_auth",
     "accent_auth/plugins/http/*/api.yml",
-    "accent_auth/plugins/external_auth/*/api.yml"
+    "accent_auth/plugins/external_auth/*/api.yml",
 ]
 
 [build-system]
@@ -61,4 +61,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
-

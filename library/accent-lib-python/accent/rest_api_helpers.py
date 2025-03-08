@@ -13,7 +13,7 @@ from pkg_resources import iter_entry_points, resource_string
 
 logger = logging.getLogger(__name__)
 
-R = TypeVar('R')
+R = TypeVar("R")
 
 
 class APIException(Exception):
@@ -33,7 +33,7 @@ class APIException(Exception):
 
 
 def handle_api_exception(
-    func: Callable[..., R]
+    func: Callable[..., R],
 ) -> Callable[..., R | tuple[dict[str, Any], int]]:
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> R | tuple[dict[str, Any], int]:
@@ -41,14 +41,14 @@ def handle_api_exception(
             return func(*args, **kwargs)
         except APIException as error:
             response = {
-                'message': error.message,
-                'error_id': error.id_,
-                'details': error.details,
-                'timestamp': time.time(),
+                "message": error.message,
+                "error_id": error.id_,
+                "details": error.details,
+                "timestamp": time.time(),
             }
             if error.resource:
-                response['resource'] = error.resource
-            logger.error('%s: %s', error.message, error.details)
+                response["resource"] = error.resource
+            logger.error("%s: %s", error.message, error.details)
             return response, error.status_code
 
     return wrapper
@@ -64,4 +64,4 @@ def load_all_api_specs(
         except OSError:
             logger.debug('API spec for module "%s" does not exist', module.module_name)
         except ImportError as e:
-            logger.warning('Could not load module %s: %s', module.module_name, e)
+            logger.warning("Could not load module %s: %s", module.module_name, e)

@@ -1,546 +1,362 @@
-# Copyright 2023 Accent Communications
+# accent_auth/exceptions.py
 
-from urllib.parse import urlencode
-
-from accent.rest_api_helpers import APIException
-from unidecode import unidecode
+from fastapi import HTTPException, status  # Import from FastAPI
+from typing import Any
 
 
-class NoSuchBackendException(Exception):
-    def __init__(self, backend_name):
-        super().__init__(f'no such backend {backend_name}')
+class BaseAPIException(HTTPException):  # Inherit from HTTPException
+    """Base class for API exceptions."""
 
-
-class InvalidUsernamePassword(Exception):
-    def __init__(self, login):
-        super().__init__(f'unknown username or password for login {login}')
-
-
-class NoMatchingSAMLSession(Exception):
-    def __init__(self, saml_session_id):
-        super().__init__(f'unknown saml_session_id {saml_session_id}')
-
-
-class UnauthorizedAuthenticationMethod(Exception):
-    def __init__(self, authorized_authentication_method):
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        error_id: str,  # Add an error_id for machine-readable errors
+        details: dict[str, Any] | None = None,
+        resource: str | None = None,  # The resource type (e.g., "users", "tokens")
+        headers: dict[str, Any] | None = None,  # For headers
+    ) -> None:
         super().__init__(
-            f'unauthorized authentication method should use {authorized_authentication_method}'
+            status_code=status_code,
+            detail={
+                "message": message,
+                "error_id": error_id,
+                "resource": resource,
+                "details": details or {},
+            },
+            headers=headers,
         )
 
 
-class UnknownRefreshToken(APIException):
-    def __init__(self, client_id):
-        details = {'client_id': client_id}
-        msg = f'unknown refresh_token for client_id "{client_id}"'
-        error_id = 'cannot-find-refresh-token-matching-client-id'
-        super().__init__(404, msg, error_id, details, resource='tokens')
+class ConflictException(BaseAPIException):
+    """Exception raised for conflicts (HTTP 409)."""
+
+    def __init__(self, resource: str, column: str, value: Any):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            message=f"Conflict detected on {resource}",
+            error_id="conflict",
+            details={
+                column: {
+                    "constraint_id": "unique",
+                    "message": f"{value} already present",
+                }
+            },
+            resource=resource,
+        )
 
 
-class UnknownRefreshTokenUUID(APIException):
-    def __init__(self, uuid):
-        details = {'uuid': uuid}
-        msg = f'unknown refresh_token uuid "{uuid}"'
-        error_id = 'cannot-find-refresh-token-matching-uuid'
-        super().__init__(404, msg, error_id, details, resource='tokens')
+class InvalidLimitException(BaseAPIException):
+    def __init__(self, limit):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Invalid limit.",
+            error_id="invalid-limit",
+            details={"limit": str(limit)},
+        )
+
+
+class InvalidOffsetException(BaseAPIException):
+    def __init__(self, offset):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Invalid offset.",
+            error_id="invalid-offset",
+            details={"offset": str(offset)},
+        )
+
+
+class InvalidSortColumnException(BaseAPIException):
+    def __init__(self, column):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Invalid sort column.",
+            error_id="invalid-sort-column",
+            details={"column": column},
+        )
+
+
+class InvalidSortDirectionException(BaseAPIException):
+    def __init__(self, direction):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Invalid sort direction.",
+            error_id="invalid-sort-direction",
+            details={"direction": direction},
+        )
+
+
+class TopTenantNotInitialized(BaseAPIException):
+    def __init__(self):
+        msg = "accent-auth top tenant is not initialized"
+        super().__init__(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message=msg,
+            error_id="top-tenant-not-initialized",
+        )
 
 
 class TokenServiceException(Exception):
     pass
 
 
-class AuthenticationFailedException(TokenServiceException):
-    code = 401
-    _msg = 'Authentication Failed'
+class InvalidTokenException(TokenServiceException):
+    """Exception raised for invalid tokens."""
 
-    def __str__(self):
-        return self._msg
+    pass
 
 
-class ExternalAuthAlreadyExists(APIException):
-    def __init__(self, auth_type):
-        msg = f'This external authentication method has already been set: "{auth_type}"'
-        details = {'type': auth_type}
-        super().__init__(409, msg, 'conflict', details, auth_type)
+class MissingPermissionsTokenException(TokenServiceException):
+    """Exception raised for missing permissions."""
+
+    pass
 
 
-class ExternalAuthConfigAlreadyExists(APIException):
-    def __init__(self, auth_type):
-        msg = f'This external authentication config has already been set: "{auth_type}"'
-        details = {'type': auth_type}
-        super().__init__(409, msg, 'conflict', details, auth_type)
+class MaxConcurrentSessionsReached(TokenServiceException):
+    """Exception raised when the maximum number of concurrent sessions is reached."""
+
+    def __init__(self, user_uuid: str):
+        super().__init__(
+            f"User {user_uuid} has exceeded the maximum number of active sessions"
+        )
 
 
-class ExternalAuthConfigNotFound(APIException):
-    def __init__(self, auth_type):
-        msg = f'Configuration for this external auth type "{auth_type}" is not defined.'
-        details = {'type': auth_type}
-        super().__init__(404, msg, 'unknown-config', details, auth_type)
+class UnknownTokenException(TokenServiceException):
+    """Exception raised for unknown tokens."""
+
+    def __init__(self):
+        super().__init__("No such token")
 
 
-class InvalidListParamException(APIException):
-    def __init__(self, message, details=None):
-        super().__init__(400, message, 'invalid-list-param', details, 'users')
-
-    @classmethod
-    def from_errors(cls, errors):
-        for field, infos in errors.items():
-            if not isinstance(infos, list):
-                infos = [infos]
-            for info in infos:
-                return cls(info['message'], {field: info})
-
-
-class UnknownAddressException(APIException):
-    def __init__(self, address_id):
-        msg = f'No such address: "{address_id}"'
-        details = {'id': address_id}
-        super().__init__(404, msg, 'unknown-address', details, 'addresses')
-
-
-class UnknownExternalAuthException(APIException):
-    def __init__(self, auth_type):
-        msg = f'No such external auth: "{auth_type}"'
-        details = {'type': str(auth_type)}
-        super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
-
-
-class UnknownExternalAuthConfigException(APIException):
-    def __init__(self, auth_type):
-        msg = f'No config found for this external auth type: "{auth_type}"'
-        details = {'type': str(auth_type)}
-        super().__init__(404, msg, 'unknown-external-auth', details, auth_type)
-
-
-class UnknownIDPType(APIException):
-    def __init__(self, idp_type):
-        msg = f'No such IDP type: "{idp_type}"'
-        details = {'idp_type': idp_type}
-        super().__init__(404, msg, 'unknown-idp-type', details, 'idp')
-
-
-class DuplicatedLDAPConfigException(Exception):
+class DuplicatedSAMLConfigException(Exception):
     def __init__(self, tenant_uuid):
         self.tenant_uuid = tenant_uuid
         super().__init__(
-            f'Duplicated LDAP config for tenant_uuid {tenant_uuid}',
+            f"Duplicated SAML config for tenant_uuid {tenant_uuid}",
         )
 
 
-class UnknownLDAPConfigException(APIException):
-    def __init__(self, tenant_uuid):
-        msg = f'No LDAP config found for this tenant: "{tenant_uuid}"'
-        details = {'uuid': str(tenant_uuid)}
-        super().__init__(404, msg, 'unknown-ldap-config', details, 'ldap_config')
-
-
-class UnknownExternalAuthTypeException(APIException):
-    def __init__(self, auth_type):
-        msg = f'No such auth type: "{auth_type}"'
-        details = {'type': str(auth_type)}
-        super().__init__(404, msg, 'unknown-external-auth-type', details, 'external')
-
-
-class UnknownGroupException(APIException):
-    def __init__(self, group_uuid):
-        msg = f'No such group: "{group_uuid}"'
-        details = {'uuid': str(group_uuid)}
-        super().__init__(404, msg, 'unknown-group', details, 'groups')
-
-
-class SystemGroupForbidden(APIException):
-    def __init__(self, group_uuid):
-        msg = f'Forbidden group modification: "{group_uuid}"'
-        details = {'uuid': str(group_uuid)}
-        super().__init__(403, msg, 'forbidden-group', details, 'groups')
-
-
-class UnknownTenantException(APIException):
-    def __init__(self, tenant_uuid):
-        msg = f'No such tenant: "{tenant_uuid}"'
-        details = {'uuid': str(tenant_uuid)}
-        super().__init__(404, msg, 'unknown-tenant', details, 'tenants')
-
-
-class UnauthorizedTenantwithChildrenDelete(APIException):
-    def __init__(self, tenant_uuid):
-        msg = (
-            f'Unauthorized delete of tenant : "{tenant_uuid}" ; '  # noqa: E702
-            'since it has at least one child'
+class SAMLConfigParameterException(Exception):
+    def __init__(self, tenant_uuid, msg, code):
+        super().__init__(
+            f"SAML configuration error for tenant {tenant_uuid}: {msg} ({code})"
         )
-        details = {'uuid': str(tenant_uuid)}
-        super().__init__(400, msg, details, 'tenants')
+        self.tenant_uuid = tenant_uuid
+        self.msg = msg
+        self.code = code
 
 
-class UnknownEmailException(APIException):
-    def __init__(self, email_uuid):
-        msg = f'No such email: "{email_uuid}"'
-        details = {'uuid': str(email_uuid)}
-        super().__init__(404, msg, 'unknown-email', details, 'emails')
+class UnknownSAMLConfigException(Exception):
+    def __init__(self, tenant_uuid):
+        super().__init__(f"Unknown SAML config for tenant {tenant_uuid}")
+        self.tenant_uuid = tenant_uuid
 
 
-class UnknownUserException(APIException):
-    def __init__(self, identifier, details=None):
-        msg = f'No such user: "{identifier}"'
-        details = details or {'uuid': str(identifier)}
-        super().__init__(404, msg, 'unknown-user', details, 'users')
+class NoSuchBackendException(Exception):
+    def __init__(self, backend_name):
+        super().__init__(f"no such backend {backend_name}")
 
 
-class UsernameLoginAlreadyExists(APIException):
-    def __init__(self, username):
-        msg = f'The login "{username}" is already used'
-        details = {'username': {'constraint_id': 'unique', 'message': msg}}
-        super().__init__(409, 'Conflict detected', 'conflict', details, 'users')
-
-
-class EmailLoginAlreadyExists(APIException):
-    def __init__(self, email):
-        msg = f'The login "{email}" is already used'
-        details = {'email_address': {'constraint_id': 'unique', 'message': msg}}
-        super().__init__(409, 'Conflict detected', 'conflict', details, 'users')
-
-
-class UnknownUserUUIDException(Exception):
-    def __init__(self, user_uuid):
-        msg = f'No such user: "{user_uuid}"'
-        super().__init__(msg)
-
-
-class UnknownLoginException(Exception):
+class InvalidUsernamePassword(Exception):
     def __init__(self, login):
-        msg = f'No such user: "{login}"'
-        super().__init__(msg)
+        super().__init__(f"unknown username or password for login {login}")
 
 
-class PasswordIsManagedExternallyException(APIException):
-    def __init__(self, user_uuid, details=None):
-        msg = f'Unable to update externally managed password for user : "{user_uuid}"'
-        details = details or {'uuid': str(user_uuid)}
-        super().__init__(405, msg, 'password-managed-externally', details, 'users')
+class NoMatchingSAMLSession(Exception):
+    def __init__(self, saml_session_id):
+        super().__init__(f"unknown saml_session_id {saml_session_id}")
 
 
-class _BaseParamException(APIException):
-    def __init__(self, message, details=None):
-        super().__init__(400, message, 'invalid-data', details, self.resource)
-
-    @classmethod
-    def from_errors(cls, errors):
-        for field, infos in errors.items():
-            if not isinstance(infos, list):
-                infos = [infos]
-            for info in infos:
-                if isinstance(info, (str, bytes)):
-                    info = {'message': info}
-
-                if 'message' in info:
-                    return cls(info['message'], {field: info})
-
-                for sub_field, sub_infos in info.items():
-                    if not isinstance(sub_infos, list):
-                        sub_infos = [sub_infos]
-                    for sub_info in sub_infos:
-                        info = {sub_field: sub_info}
-                        return cls(sub_info['message'], {field: info})
-
-
-class GroupParamException(_BaseParamException):
-    resource = 'groups'
-
-
-class InitParamException(_BaseParamException):
-    resource = 'init'
-
-
-class TenantParamException(_BaseParamException):
-    resource = 'tenants'
-
-
-class PasswordChangeException(_BaseParamException):
-    resource = 'users'
-
-
-class UserParamException(_BaseParamException):
-    resource = 'users'
-
-
-class EmailUpdateException(_BaseParamException):
-    resource = 'emails'
-
-
-class SAMLParamException(_BaseParamException):
-    resource = 'saml'
-
-
-class InvalidInputException(TokenServiceException):
-    code = 400
-
-    def __init__(self, field):
-        super().__init__()
-        self._field = field
-
-    def __str__(self):
-        return f'Invalid value supplied for field: {self._field}'
-
-
-class InvalidLimitException(TokenServiceException):
-    code = 400
-
-    def __init__(self, limit):
-        super().__init__()
-        self._limit = limit
-
-    def __str__(self):
-        return f'Invalid limit: {self._limit}'
-
-
-class InvalidOffsetException(TokenServiceException):
-    code = 400
-
-    def __init__(self, offset):
-        super().__init__()
-        self._offset = offset
-
-    def __str__(self):
-        return f'Invalid offset: {self._offset}'
-
-
-class InvalidSortColumnException(TokenServiceException):
-    code = 400
-
-    def __init__(self, field):
-        super().__init__()
-        self._field = field
-
-    def __str__(self):
-        return f'Invalid sort column: {self._field}'
-
-
-class InvalidSortDirectionException(TokenServiceException):
-    code = 400
-
-    def __init__(self, direction):
-        super().__init__()
-        self._direction = direction
-
-    def __str__(self):
-        return f'Invalid sort direction: {self._direction}'
-
-
-class ConflictException(APIException):
-    def __init__(self, resource, column, username):
-        msg = f'The {column} "{username}" is already used'
-        details = {column: {'constraint_id': 'unique', 'message': msg}}
-        super().__init__(409, 'Conflict detected', 'conflict', details, resource)
-
-
-class MasterTenantConflictException(APIException):
-    def __init__(self):
-        msg = 'A master tenant already exist'
-        details = {'parent_uuid': {'constraint_id': 'unique', 'msg': msg}}
-        super().__init__(403, 'Conflict detected', 'conflict', details, 'tenants')
-
-
-class DuplicatePolicyException(TokenServiceException):
-    code = 409
-
-    def __init__(self, name):
-        super().__init__()
-        self._name = name
-
-    def __str__(self):
-        return f'Policy "{self._name}" already exists'
+class UnauthorizedAuthenticationMethod(Exception):
+    def __init__(self, authorized_authentication_method):
+        super().__init__(
+            f"unauthorized authentication method should use {authorized_authentication_method}"
+        )
 
 
 class DuplicatedRefreshTokenException(Exception):
     def __init__(self, user_uuid, client_id):
         self.client_id = client_id
         self.user_uuid = user_uuid
-        msg = f'Duplicated Refresh Token for user_uuid {user_uuid} and client_id {client_id}'
-        super().__init__(msg)
-
-
-class DuplicateAccessException(TokenServiceException):
-    code = 409
-
-    def __init__(self, access):
-        super().__init__()
-        self._access = access
-
-    def __str__(self):
-        return f'Policy already associated to {self._access}'
-
-
-class MaxConcurrentSessionsReached(TokenServiceException):
-    code = 429
-
-    def __init__(self, user_uuid):
-        super().__init__()
-        self._user_uuid = user_uuid
-
-    def __str__(self):
-        return (
-            f'User {self._user_uuid} has exceeded the maximum number of active sessions'
+        super().__init__(
+            f"Duplicated Refresh Token for user_uuid {user_uuid} and client_id {client_id}",
         )
 
 
-class UnknownPolicyException(TokenServiceException):
-    code = 404
-
-    def __init__(self, policy_uuid):
-        self._policy_uuid = policy_uuid
-
-    def __str__(self):
-        return f'No such policy {self._policy_uuid}'
+class UnknownRefreshToken(Exception):
+    def __init__(self, client_id):
+        super().__init__(f'unknown refresh_token for client_id "{client_id}"')
 
 
-class ReadOnlyPolicyException(TokenServiceException):
-    code = 403
-
-    def __init__(self, policy_uuid):
-        self._policy_uuid = policy_uuid
-
-    def __str__(self):
-        return f'Forbidden policy deletion: "{self._policy_uuid}"'
+class UnknownRefreshTokenUUID(Exception):
+    def __init__(self, uuid):
+        super().__init__(f'unknown refresh_token uuid "{uuid}"')
 
 
-class UnknownTokenException(TokenServiceException):
-    code = 404
-
-    def __str__(self):
-        return 'No such token'
-
-
-class MissingAccessTokenException(TokenServiceException):
-    code = 403
-
-    def __init__(self, required_access):
-        super().__init__()
-        self._required_access = required_access
-
-    def __str__(self):
-        access = unidecode(self._required_access)
-        return f'Unauthorized for {access}'
-
-
-class MissingTenantTokenException(TokenServiceException):
-    code = 403
-
-    def __init__(self, tenant_uuid):
-        super().__init__()
-        self._tenant_uuid = tenant_uuid
-
-    def __str__(self):
-        return f'Unauthorized for tenant {self._tenant_uuid}'
-
-
-class TopTenantNotInitialized(APIException):
-    def __init__(self):
-        msg = 'accent-auth top tenant is not initialized'
-        super().__init__(503, msg, 'top-tenant-not-initialized')
-
-
-class DomainAlreadyExistException(APIException):
-    def __init__(self, domain_name):
-        msg = f'Domain name : "{domain_name}" is already in use, no duplicates allowed'
-        details = {'domain_names': {'constraint-id': 'unique', 'message': msg}}
-        error_id = 'conflict'
-        resource = 'tenants'
-        super().__init__(409, 'Conflict detected', error_id, details, resource)
-
-
-class DuplicateGroupException(TokenServiceException):
-    code = 409
-
-    def __init__(self, name):
-        super().__init__()
-        self._name = name
-
-    def __str__(self):
-        return f'Group "{self._name}" already exists'
-
-
-class UnauthorizedResourcesMutualAccessAttemptException(APIException):
-    def __init__(self, user_tenant_uuid, group_tenant_uuid):
-        error_code = 400
-        error_id = 'missmatching-tenant'
-        error_msg = 'Ressources are not in the same tenant'
-        error_details = {
-            'user_tenant_uuid': user_tenant_uuid,
-            'group_tenant_uuid': group_tenant_uuid,
-        }
-        resource = 'groups'
-        super().__init__(error_code, error_msg, error_id, error_details, resource)
-
-
-class SAMLException(APIException):
-    resource = 'saml'
+class SAMLException(Exception):
+    pass
 
 
 class SAMLConfigurationError(SAMLException):
     def __init__(self, domain, message=None):
-        error_code = 500
-        error_id = 'configuration-error'
-        error_msg = message or 'SAML client for domain not found or failed'
-        error_details = {
-            'domain': domain,
-        }
-        super().__init__(error_code, error_msg, error_id, error_details, self.resource)
+        super().__init__(message or "SAML client for domain not found or failed")
+        self.domain = domain
 
 
 class SAMLProcessingError(SAMLException):
-    def __init__(self, error, code=500):
-        error_code = code
-        error_id = 'processing-error'
-        error_msg = 'SAML processing failed'
-        error_details = {
-            'error': error,
-        }
-        super().__init__(error_code, error_msg, error_id, error_details, self.resource)
+    pass
 
 
 class SAMLProcessingErrorWithReturnURL(SAMLException):
     def __init__(self, error: str, return_url: str, code: int = 500):
-        error_code = code
-        error_id = 'processing-error'
-        error_msg = 'SAML processing failed'
-        error_details = {
-            'error': error,
-        }
-        self.redirect_url: str = (
-            return_url + '?' + urlencode({'login_failure_code': error_code})
+        super().__init__(f"SAML processing failed: {error}")
+        self.redirect_url = f"{return_url}?login_failure_code={code}"
+
+
+class UnknownEmailException(Exception):
+    def __init__(self, email_uuid):
+        super().__init__(f'No such email: "{email_uuid}"')
+
+
+class UnknownGroupException(Exception):
+    def __init__(self, group_uuid):
+        super().__init__(f'No such group: "{group_uuid}"')
+
+
+class UnknownPolicyException(Exception):
+    def __init__(self, policy_uuid):
+        super().__init__(f'No such policy: "{policy_uuid}"')
+
+
+class SystemGroupForbidden(Exception):
+    def __init__(self, group_uuid):
+        super().__init__(f'Forbidden group modification: "{group_uuid}"')
+
+
+class DuplicateGroupException(Exception):
+    def __init__(self, name):
+        super().__init__(f'Group "{name}" already exists')
+
+
+class DuplicatePolicyException(Exception):
+    def __init__(self, name):
+        super().__init__(f'Policy "{name}" already exists')
+
+
+class TenantParamException(Exception):
+    @classmethod
+    def from_errors(cls, errors):
+        for field, infos in errors.items():
+            if not isinstance(infos, list):
+                infos = [infos]
+            for info in infos:
+                return cls(info["message"], {field: info})
+
+
+class UnknownTenantException(Exception):
+    def __init__(self, tenant_uuid):
+        super().__init__(f'No such tenant: "{tenant_uuid}"')
+
+
+class UnauthorizedTenantwithChildrenDelete(Exception):
+    def __init__(self, tenant_uuid):
+        super().__init__(
+            f'Unauthorized delete of tenant : "{tenant_uuid}" ; '  # noqa: E702
+            "since it has at least one child"
         )
-        super().__init__(error_code, error_msg, error_id, error_details, self.resource)
 
 
-class SAMLConfigParameterException(APIException):
-    def __init__(self, tenant_uuid, msg, code):
-        details = {'uuid': str(tenant_uuid)}
-        super().__init__(code, msg, 'unknown-saml-config', details, 'saml_config')
+class MasterTenantConflictException(Exception):
+    pass
 
 
-class UnknownSAMLConfigException(APIException):
-    def __init__(self, tenant_uuid):
-        msg = f'No SAML IDP config found for this tenant: "{tenant_uuid}"'
-        details = {'uuid': str(tenant_uuid)}
-        super().__init__(404, msg, 'unknown-saml-config', details, 'saml_config')
+class UnauthorizedResourcesMutualAccessAttemptException(Exception):
+    pass
 
 
-class DuplicatedSAMLConfigException(APIException):
-    def __init__(self, tenant_uuid):
-        msg = 'Duplicated SAML config exists'
-        details = {'tenant_uuid': {'constraint_id': 'unique', 'message': msg}}
-        super().__init__(409, 'Conflict detected', 'conflict', details, 'saml_config')
+class DomainAlreadyExistException(Exception):
+    pass
 
 
-class UnknownSAMLSessionException(Exception):
-    def __init__(self, request_id):
-        super().__init__(f'no such session {request_id}')
+class UserParamException(Exception):
+    pass
 
 
-class DuplicatedSAMLSessionException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+class UnknownUserException(Exception):
+    def __init__(self, identifier, details=None):
+        super().__init__(f'No such user: "{identifier}"')
 
 
-class SAMLSessionSQLException(Exception):
-    def __init__(self, request_id):
-        super().__init__(f'e {request_id}')
+class UnknownUserUUIDException(Exception):  # Keep for consistency with other DAOs
+    def __init__(self, user_uuid: str):
+        super().__init__(f"No such user: {user_uuid}")
+
+
+class UnknownLoginException(Exception):
+    def __init__(self, login):
+        super().__init__(f'No such user: "{login}"')
+
+
+class PasswordIsManagedExternallyException(Exception):
+    def __init__(self, user_uuid, details=None):
+        super().__init__(
+            f'Unable to update externally managed password for user : "{user_uuid}"'
+        )
+
+
+class ExternalAuthAlreadyExists(Exception):
+    def __init__(self, auth_type):
+        super().__init__(
+            f'This external authentication method has already been set: "{auth_type}"'
+        )
+
+
+class ExternalAuthConfigAlreadyExists(Exception):
+    def __init__(self, auth_type):
+        super().__init__(
+            f'This external authentication config has already been set: "{auth_type}"'
+        )
+
+
+class ExternalAuthConfigNotFound(Exception):
+    def __init__(self, auth_type):
+        super().__init__(
+            f'Configuration for this external auth type "{auth_type}" is not defined.'
+        )
+
+
+class UnknownExternalAuthException(Exception):
+    def __init__(self, auth_type):
+        super().__init__(f'No such external auth: "{auth_type}"')
+
+
+class UnknownExternalAuthConfigException(Exception):
+    def __init__(self, auth_type):
+        super().__init__(f'No config found for this external auth type: "{auth_type}"')
+
+
+class UnknownExternalAuthTypeException(Exception):
+    def __init__(self, auth_type):
+        super().__init__(f'No such auth type: "{auth_type}"')
+
+
+class UsernameLoginAlreadyExists(ConflictException):
+    def __init__(self, username):
+        super().__init__("users", "username", username)
+
+
+class EmailLoginAlreadyExists(ConflictException):
+    def __init__(self, email):
+        super().__init__("users", "email_address", email)
+
+
+class AuthenticationFailedException(Exception):
+    code = 401
+    _msg = "Authentication Failed"
+
+    def __str__(self):
+        return self._msg
+
+
+class InvalidListParamException(Exception):
+    pass

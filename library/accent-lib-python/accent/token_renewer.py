@@ -25,7 +25,7 @@ class CallbackDict(TypedDict):
     details: bool
 
 
-Self = TypeVar('Self', bound='TokenRenewer')
+Self = TypeVar("Self", bound="TokenRenewer")
 
 
 class TokenRenewer:
@@ -49,29 +49,29 @@ class TokenRenewer:
 
     def subscribe_to_token_change(self, callback: Callback) -> None:
         with self._callback_lock:
-            self._callbacks.append({'method': callback, 'details': False})
+            self._callbacks.append({"method": callback, "details": False})
 
     def subscribe_to_next_token_change(self, callback: Callback) -> None:
         with self._callback_lock:
-            self._callbacks_tmp.append({'method': callback, 'details': False})
+            self._callbacks_tmp.append({"method": callback, "details": False})
 
     def subscribe_to_next_token_details_change(self, callback: Callback) -> None:
         with self._callback_lock:
-            self._callbacks_tmp.append({'method': callback, 'details': True})
+            self._callbacks_tmp.append({"method": callback, "details": True})
 
     def start(self) -> None:
         if self._started:
-            raise Exception('token renewer already started')
+            raise Exception("token renewer already started")
 
         self._renew_token()
 
         self._started = True
-        self._thread = threading.Thread(target=self._run, name='token-renewer')
+        self._thread = threading.Thread(target=self._run, name="token-renewer")
         self._thread.start()
 
     def stop(self) -> None:
         self._stopped.set()
-        logger.debug('joining token renewer thread...')
+        logger.debug("joining token renewer thread...")
         self._thread.join()
 
     def emit_stop(self) -> None:
@@ -94,21 +94,21 @@ class TokenRenewer:
         try:
             token = self._auth_client.token.new(expiration=self._expiration)
         except requests.exceptions.ConnectionError as error:
-            logger.debug('Creating token with accent-auth failed: %s', error)
+            logger.debug("Creating token with accent-auth failed: %s", error)
             self._handle_renewal_error(error)
         except Exception as error:
-            logger.debug('Creating token with accent-auth failed', exc_info=True)
+            logger.debug("Creating token with accent-auth failed", exc_info=True)
             self._handle_renewal_error(error)
         else:
             self._renew_time = self._RENEW_TIME_COEFFICIENT * self._expiration
             self._notify_all(token)
 
     def _handle_renewal_error(self, error: Exception) -> None:
-        response = getattr(error, 'response', None)
-        status_code = getattr(response, 'status_code', '')
+        response = getattr(error, "response", None)
+        status_code = getattr(response, "status_code", "")
         self._renew_time = next(self._renew_time_failed)
         logger.warning(
-            'Creating token with accent-auth failed (%s). Retrying in %s seconds...',
+            "Creating token with accent-auth failed (%s). Retrying in %s seconds...",
             status_code,
             self._renew_time,
         )
@@ -119,12 +119,12 @@ class TokenRenewer:
             self._callbacks_tmp = []
 
         for callback in callbacks:
-            payload = token if callback['details'] else token['token']
+            payload = token if callback["details"] else token["token"]
             try:
-                callback['method'](payload)
+                callback["method"](payload)
             except Exception:
                 logger.warning(
-                    'unexpected exception from token change callback', exc_info=True
+                    "unexpected exception from token change callback", exc_info=True
                 )
 
     def __enter__(self: Self) -> Self:

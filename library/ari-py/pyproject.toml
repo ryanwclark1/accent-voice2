@@ -3,21 +3,14 @@ name = "ari"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservice.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 dependencies = ["swaggerpy"]
 
 [dependency-groups]
-dev = [
-  "commitizen>=3.10.0,<4",
-  "dunamai>=1.18.1,<2",
-  "pytest>=7.2.0,<8",
-  "pytest-cov>=4.0.0,<5",
-  "deptry>=0.6.4,<0.7",
-  "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.uv.sources]
-swaggerpy = { path = "../../library/swagger-py" }
+swaggerpy = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = ["ari"]

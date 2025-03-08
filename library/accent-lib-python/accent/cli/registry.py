@@ -45,7 +45,7 @@ class CommandRegistry:
         return list(self._commands)
 
     def register_command(self, name: str, command: BaseCommand) -> None:
-        command_words = tuple(name.split(' '))
+        command_words = tuple(name.split(" "))
         if self._get_command(command_words) is not None:
             raise CommandAlreadyRegisteredError(name)
         self._commands.append(_NamedCommandDecorator(command, name, command_words))
@@ -69,8 +69,8 @@ class _NamedCommandDecorator:
     def format_usage(self) -> str:
         usage = self._command.usage
         if usage:
-            return f'usage: {self.name} {usage}'
-        return f'usage: {self.name}'
+            return f"usage: {self.name} {usage}"
+        return f"usage: {self.name}"
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._command, name)

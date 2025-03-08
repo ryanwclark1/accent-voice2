@@ -3,17 +3,17 @@ name = "accent-debug"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 dependencies = [
-    "cliff>=3.10.1,<4",
-    "requests>=2.25.1,<3",
-    "accent-amid-client",
-    "accent-auth-client",
-    "accent-call-logd-client",
-    "accent-calld-client",
-    "accent-chatd-client",
-    "accent-dird-client",
-    "accent-webhookd-client",
+  "cliff>=3.10.1",
+  "requests>=2.25.1",
+  "accent-amid-client",
+  "accent-auth-client",
+  "accent-call-logd-client",
+  "accent-calld-client",
+  "accent-chatd-client",
+  "accent-dird-client",
+  "accent-webhookd-client",
 ]
 
 [project.scripts]
@@ -27,23 +27,16 @@ public-ip = "accent_debug.public_ip:PublicIPCommand"
 http-request-duration = "accent_debug.http_request_duration:HTTPRequestDurationCommand"
 
 [dependency-groups]
-dev = [
-    "commitizen>=3.10.0,<4",
-    "dunamai>=1.18.1,<2",
-    "pytest>=7.2.0,<8",
-    "pytest-cov>=4.0.0,<5",
-    "deptry>=0.6.4,<0.7",
-    "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.uv.sources]
-accent-amid-client = { path = "../../library/accent-amid-client" }
-accent-auth-client = { path = "../../library/accent-auth-client" }
-accent-call-logd-client = { path = "../../library/accent-call-logd-client" }
-accent-calld-client = { path = "../../library/accent-calld-client" }
-accent-chatd-client = { path = "../../library/accent-chatd-client" }
-accent-dird-client = { path = "../../library/accent-dird-client" }
-accent-webhookd-client = { path = "../../library/accent-webhookd-client" }
+accent-amid-client = { workspace = true }
+accent-auth-client = { workspace = true }
+accent-call-logd-client = { workspace = true }
+accent-calld-client = { workspace = true }
+accent-chatd-client = { workspace = true }
+accent-dird-client = { workspace = true }
+accent-webhookd-client = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_debug"]
@@ -54,45 +47,3 @@ include = ["accent_debug"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.ruff]
-target-version = "py311"
-line-length = 99
-fix = true
-
-[tool.ruff.lint]
-select = [
-  "YTT",  # flake8-2020
-  "S",  # flake8-bandit
-  "B",  # flake8-bugbear
-  "A",  # flake8-builtins
-  "C4",  # flake8-comprehensions
-  "T10",  # flake8-debugger
-  "SIM",  # flake8-simplify
-  "I",  # isort
-  "C90",  # mccabe
-  "E",  # pycodestyle
-  "W",  # pycodestyle
-  "F", # pyflakes
-  "PGH",  # pygrep-hooks
-  "UP",  # pyupgrade
-  "RUF",  # ruff
-  "TRY",  # tryceratops
-]
-
-ignore = [
-  "E501",  # LineTooLong
-  "E731",  # DoNotAssignLambda
-  "E203",  # Whitespace before ':'
-  "W503",  # Line break before binary operator
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
-
-[tool.coverage.report]
-skip_empty = true
-
-[tool.coverage.run]
-branch = true
-source = ["UPDATE"]

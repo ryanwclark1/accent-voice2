@@ -20,7 +20,7 @@ class _YAMLExecLoader(yaml.SafeLoader):
 
 
 class _YAMLExecTag(yaml.YAMLObject):
-    yaml_tag = '!exec'
+    yaml_tag = "!exec"
     yaml_loader = _YAMLExecLoader
 
     @classmethod
@@ -29,9 +29,9 @@ class _YAMLExecTag(yaml.YAMLObject):
     ) -> dict[str, Any] | None:
         with open(os.devnull) as devnull:
             for key, value in node.value:
-                if key.value == 'command':
+                if key.value == "command":
                     return yaml.safe_load(
-                        subprocess.check_output(value.value.split(' '), stderr=devnull)
+                        subprocess.check_output(value.value.split(" "), stderr=devnull)
                     )
 
 
@@ -53,18 +53,18 @@ class PrintErrorHandler(ErrorHandler):
         self, config_file_name: str, e: Exception
     ) -> None:
         print(
-            f'Could not read config file {config_file_name}: {e}',
+            f"Could not read config file {config_file_name}: {e}",
             file=sys.stderr,
         )
 
     def on_parse_config_dir_env_error(self, directory_name: str, e: Exception) -> None:
         print(
-            f'Could not read config dir {directory_name}: {e}',
+            f"Could not read config dir {directory_name}: {e}",
             file=sys.stderr,
         )
 
     def on_parse_config_dir_parse_exception(self, filename: str, e: Exception) -> None:
-        print(f'Could not read config file {filename}: {e}', file=sys.stderr)
+        print(f"Could not read config file {filename}: {e}", file=sys.stderr)
 
 
 class ConfigParser:
@@ -96,9 +96,9 @@ class ConfigParser:
 
         def _config_generator() -> Generator[dict[str, Any], None, None]:
             for filename in sorted(extra_config_filenames):
-                if filename.startswith('.'):
+                if filename.startswith("."):
                     continue
-                if not filename.endswith('.yml'):
+                if not filename.endswith(".yml"):
                     continue
 
                 try:
@@ -111,8 +111,8 @@ class ConfigParser:
     def read_config_file_hierarchy(
         self,
         original_config: dict[str, Any],
-        config_file_key: str = 'config_file',
-        extra_config_dir_key: str = 'extra_config_files',
+        config_file_key: str = "config_file",
+        extra_config_dir_key: str = "extra_config_files",
     ) -> ChainMap:
         """
         Read a config file and an extra config directory, then return a dictionary
@@ -139,11 +139,11 @@ class ConfigParser:
     def read_config_file_hierarchy_accumulating_list(
         self, original_config: dict[str, Any]
     ) -> AccumulatingListChainMap:
-        main_config_filename = original_config['config_file']
+        main_config_filename = original_config["config_file"]
         main_config = self.parse_config_file(main_config_filename)
         extra_config_file_directory = AccumulatingListChainMap(
             main_config, original_config
-        )['extra_config_files']
+        )["extra_config_files"]
         configs = self.parse_config_dir(extra_config_file_directory)
         configs.append(main_config)
 
@@ -152,19 +152,19 @@ class ConfigParser:
 
 class UUIDNotFound(RuntimeError):
     def __init__(self) -> None:
-        super().__init__('ACCENT_UUID environment variable is not set')
+        super().__init__("ACCENT_UUID environment variable is not set")
 
 
 def get_accent_uuid(logger: Logger) -> str:
-    accent_uuid = os.getenv('ACCENT_UUID')
+    accent_uuid = os.getenv("ACCENT_UUID")
     if not accent_uuid:
-        logger.error('undefined environment variable ACCENT_UUID')
+        logger.error("undefined environment variable ACCENT_UUID")
         raise UUIDNotFound()
     return accent_uuid
 
 
 def set_accent_uuid(config: dict[str, Any], logger: Logger) -> None:
-    config['uuid'] = get_accent_uuid(logger)
+    config["uuid"] = get_accent_uuid(logger)
 
 
 _config_parser = ConfigParser()

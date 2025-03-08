@@ -10,10 +10,10 @@ from ..token_renewer import TokenRenewer
 
 class TestTokenRenewer(unittest.TestCase):
     def setUp(self):
-        self.token_id = 'some-token-id'
+        self.token_id = "some-token-id"
         self.token = {
-            'token': self.token_id,
-            'metadata': {'uuid': 'some-user', 'tenant_uuid': 'some-tenant'},
+            "token": self.token_id,
+            "metadata": {"uuid": "some-user", "tenant_uuid": "some-tenant"},
         }
         self.auth_client = Mock()
         self.expiration = 30

@@ -32,9 +32,10 @@ This script was adapted from Ka-Ping Yee's cgitb.
 Modification by Proformatique:
         PyDoc of enable() corrected. (it was the same as in cgitb)
 """
+
 from __future__ import annotations
 
-__author__ = 'Matthew Nicholson'
+__author__ = "Matthew Nicholson"
 # original __version__ = '0.1.0'
 __version__ = "$Revision$ $Date$"
 
@@ -55,7 +56,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, NewType, TextIO
 if TYPE_CHECKING:
     from accent.agi import AGI
 
-Undefined = NewType('Undefined', list[str])
+Undefined = NewType("Undefined", list[str])
 
 __UNDEF__ = Undefined([])  # a special sentinel object
 
@@ -71,17 +72,17 @@ def lookup(
 ) -> tuple[str | None, list[str] | Undefined]:
     """Find the value for a given name in the given environment."""
     if name in lcals:
-        return 'local', lcals[name]
+        return "local", lcals[name]
     if name in frame.f_globals:
-        return 'global', frame.f_globals[name]
-    if '__builtins__' in frame.f_globals:
-        builtins = frame.f_globals['__builtins__']
+        return "global", frame.f_globals[name]
+    if "__builtins__" in frame.f_globals:
+        builtins = frame.f_globals["__builtins__"]
         if isinstance(builtins, dict):
             if name in builtins:
-                return 'builtin', builtins[name]
+                return "builtin", builtins[name]
         else:
             if hasattr(builtins, name):
-                return 'builtin', getattr(builtins, name)
+                return "builtin", getattr(builtins, name)
     return None, __UNDEF__
 
 
@@ -93,25 +94,25 @@ def scanvars(
     xvars: list[tuple[str, str | None, list[str] | Undefined]] = []
     lasttoken: str | None = None
     parent: list[str] | Undefined | None = None
-    prefix = ''
+    prefix = ""
     value: list[str] | Undefined = __UNDEF__
 
     for ttype, token, start, end, line in tokenize.generate_tokens(reader):
         if ttype == tokenize.NEWLINE:
             break
         if ttype == tokenize.NAME and token not in keyword.kwlist:
-            if lasttoken == '.':
+            if lasttoken == ".":
                 if parent is not __UNDEF__:
                     value = getattr(parent, token, __UNDEF__)
                     xvars.append((prefix + token, prefix, value))
             else:
                 where, value = lookup(token, frame, lcals)
                 xvars.append((token, where, value))
-        elif token == '.':
-            prefix += (lasttoken or '') + '.'
+        elif token == ".":
+            prefix += (lasttoken or "") + "."
             parent = value
         else:
-            parent, prefix = None, ''
+            parent, prefix = None, ""
         lasttoken = token
     return xvars
 
@@ -125,19 +126,19 @@ def get_frames_from_traceback(
     frames = []
     records = inspect.getinnerframes(tb, context)
     for frame, filen, lnum, func, lines, index in records:
-        filen = filen and os.path.abspath(filen) or '?'
+        filen = filen and os.path.abspath(filen) or "?"
         args, varargs, varkw, lcals = inspect.getargvalues(frame)
-        call = ''
-        if func != '?':
+        call = ""
+        if func != "?":
             call = (
-                'in '
+                "in "
                 + func
                 + inspect.formatargvalues(
                     args,
                     varargs,
                     varkw,
                     lcals,
-                    formatvalue=lambda v: '=' + pydoc.text.repr(v),  # type: ignore[call-arg]
+                    formatvalue=lambda v: "=" + pydoc.text.repr(v),  # type: ignore[call-arg]
                 )
             )
 
@@ -152,11 +153,11 @@ def get_frames_from_traceback(
 
         xvars = scanvars(reader, frame, lcals)
 
-        rows = [f' {filen} {call}']
+        rows = [f" {filen} {call}"]
         if index is not None:
             i = lnum - index
             for line in lines or []:
-                rows.append(f'{i:5d} {line.rstrip()}')
+                rows.append(f"{i:5d} {line.rstrip()}")
                 i += 1
 
         done, dump = {}, []
@@ -165,18 +166,18 @@ def get_frames_from_traceback(
                 continue
             done[name] = 1
             if value is not __UNDEF__:
-                if where == 'global':
-                    name = 'global ' + name
-                elif where == 'local':
+                if where == "global":
+                    name = "global " + name
+                elif where == "local":
                     name = name
                 else:
-                    name = (where or '') + name.split('.')[-1]
-                dump.append(f'{name} = {pydoc.text.repr(value)}')  # type: ignore[call-arg]
+                    name = (where or "") + name.split(".")[-1]
+                dump.append(f"{name} = {pydoc.text.repr(value)}")  # type: ignore[call-arg]
             else:
-                dump.append(name + ' undefined')
+                dump.append(name + " undefined")
 
-        rows.append('\n'.join(dump))
-        frames.append('\n{}\n'.format('\n'.join(rows)))
+        rows.append("\n".join(dump))
+        frames.append("\n{}\n".format("\n".join(rows)))
     return frames
 
 
@@ -186,35 +187,35 @@ def text(value: ExceptionInfo, context: int = 5) -> str:
     evalue, etb = value[1:]
     if isinstance(etype, type):
         etype = etype.__name__
-    pyver = f'Python {sys.version.split()[0]}: {sys.executable}'
+    pyver = f"Python {sys.version.split()[0]}: {sys.executable}"
     date = time.ctime(time.time())
     head = (
         f"{str(etype)}\n{pyver}\n{date}\n"
-        + '''
+        + """
 A problem occurred in a Python script.  Here is the sequence of
 function calls leading up to the error, in the order they occurred.
-'''
+"""
     )
 
     frames = get_frames_from_traceback(etb, context)
 
-    exception = [f'{str(etype)}: {str(evalue)}']
+    exception = [f"{str(etype)}: {str(evalue)}"]
     if isinstance(evalue, type):
         for name in dir(evalue):
             value_repr = pydoc.text.repr(getattr(evalue, name))  # type: ignore[call-arg]
-            exception.append(f'\n{" " * 4}{name} = {value_repr}')
+            exception.append(f"\n{' ' * 4}{name} = {value_repr}")
 
     return (
         head
-        + ''.join(frames)
-        + ''.join(exception)
-        + f'''
+        + "".join(frames)
+        + "".join(exception)
+        + f"""
 
 The above is a description of an error in a Python program.  Here is
 the original traceback:
 
-{''.join(traceback.format_exception(*value))}
-'''
+{"".join(traceback.format_exception(*value))}
+"""
     )
 
 
@@ -251,34 +252,34 @@ class Hook:
         try:
             doc = text(info, self.context)
         except Exception:  # just in case something goes wrong
-            doc = ''.join(traceback.format_exception(*info))
+            doc = "".join(traceback.format_exception(*info))
 
         if self.display:
             if self.agi:  # print to agi
-                for line in doc.split('\n'):
+                for line in doc.split("\n"):
                     self.agi.verbose(line, 4)
             else:
-                self.file.write(doc + '\n')
+                self.file.write(doc + "\n")
 
         if self.agi:
-            self.agi.verbose('A problem occurred in a python script', 4)
+            self.agi.verbose("A problem occurred in a python script", 4)
         else:
-            self.file.write('A problem occurred in a python script\n')
+            self.file.write("A problem occurred in a python script\n")
 
         if self.logdir is not None:
-            (fd, path) = tempfile.mkstemp(suffix='.txt', dir=self.logdir)
+            (fd, path) = tempfile.mkstemp(suffix=".txt", dir=self.logdir)
             try:
-                filen = os.fdopen(fd, 'w')
+                filen = os.fdopen(fd, "w")
                 filen.write(doc)
                 filen.close()
-                msg = f'{path} contains the description of this error.'
+                msg = f"{path} contains the description of this error."
             except Exception:
-                msg = f'Tried to save traceback to {path}, but failed.'
+                msg = f"Tried to save traceback to {path}, but failed."
 
             if self.agi:
                 self.agi.verbose(msg, 4)
             else:
-                self.file.write(msg + '\n')
+                self.file.write(msg + "\n")
 
         try:
             self.file.flush()

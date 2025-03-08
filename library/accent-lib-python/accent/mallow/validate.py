@@ -31,158 +31,158 @@ def validate_string_dict(
         if not (isinstance(key, str) and isinstance(value, str)):
             raise ValidationError(
                 {
-                    'message': 'Not a mapping with string keys and string values',
-                    'constraint_id': 'key-value-type',
-                    'constraint': 'string',
+                    "message": "Not a mapping with string keys and string values",
+                    "constraint_id": "key-value-type",
+                    "constraint": "string",
                 }
             )
         if len(key) > max_key_length or len(value) > max_value_length:
             raise ValidationError(
                 {
-                    'message': 'Key or value too long',
-                    'constraint_id': 'key-value-length',
-                    'constraint': {
-                        'key-max': max_key_length,
-                        'value-max': max_value_length,
+                    "message": "Key or value too long",
+                    "constraint_id": "key-value-length",
+                    "constraint": {
+                        "key-max": max_key_length,
+                        "value-max": max_value_length,
                     },
                 }
             )
 
 
 class ContainsOnly(_ContainsOnly):
-    constraint_id = 'enum'
+    constraint_id = "enum"
 
     def _format_error(self, value: Sequence[Any]) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': {'choices': list(self.choices)},
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": {"choices": list(self.choices)},
+            "message": msg,
         }
 
 
 class Email(_Email):
-    constraint_id = 'email'
+    constraint_id = "email"
 
     def _format_error(self, value: str | None) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': 'must be a valid email address',
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": "must be a valid email address",
+            "message": msg,
         }
 
 
 class Equal(_Equal):
-    constraint_id = 'equal'
+    constraint_id = "equal"
 
     def _format_error(self, value: Any) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': {'must_be': self.comparable},
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": {"must_be": self.comparable},
+            "message": msg,
         }
 
 
 class Length(_Length):
-    constraint_id = 'length'
+    constraint_id = "length"
 
     def _format_error(self, value: str | None, message: str) -> ErrorDict:
         msg = super()._format_error(value, message)
         if self.equal:
-            constraint = {'equal': self.equal}
+            constraint = {"equal": self.equal}
         else:
-            constraint = {'min': self.min, 'max': self.max}
+            constraint = {"min": self.min, "max": self.max}
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': constraint,
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": constraint,
+            "message": msg,
         }
 
 
 class OneOf(_OneOf):
-    constraint_id = 'enum'
+    constraint_id = "enum"
 
     def _format_error(self, value: str | None) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': {'choices': list(self.choices)},
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": {"choices": list(self.choices)},
+            "message": msg,
         }
 
 
 class NoneOf(_NoneOf):
-    constraint_id = 'ban'
+    constraint_id = "ban"
 
     def _format_error(self, value: str | None) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': {'bans': self.iterable},
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": {"bans": self.iterable},
+            "message": msg,
         }
 
 
 class Predicate(_Predicate):
-    constraint_id = 'predicate'
+    constraint_id = "predicate"
 
     def _format_error(self, value: str | None) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': {'method': self.method},
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": {"method": self.method},
+            "message": msg,
         }
 
 
 class Range(_Range):
-    constraint_id = 'range'
+    constraint_id = "range"
 
     def _format_error(self, value: str | None, *args: str | None) -> ErrorDict:
         msg = super()._format_error(value, *args)
         constraint = {}
         if self.min is not None:
-            constraint['min'] = self.min
+            constraint["min"] = self.min
         if self.max is not None:
-            constraint['max'] = self.max
+            constraint["max"] = self.max
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': constraint,
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": constraint,
+            "message": msg,
         }
 
 
 class Regexp(_Regexp):
-    constraint_id = 'regex'
+    constraint_id = "regex"
 
     def _format_error(self, value: str | None) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': self.regex.pattern,
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": self.regex.pattern,
+            "message": msg,
         }
 
 
 class URL(_URL):
-    constraint_id = 'url'
+    constraint_id = "url"
 
     def _format_error(self, value: str | None) -> ErrorDict:
         msg = super()._format_error(value)
 
         return {
-            'constraint_id': self.constraint_id,
-            'constraint': {'schemes': list(self.schemes)},
-            'message': msg,
+            "constraint_id": self.constraint_id,
+            "constraint": {"schemes": list(self.schemes)},
+            "message": msg,
         }

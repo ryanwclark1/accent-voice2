@@ -15,7 +15,7 @@ from cheroot.ssl.builtin import BuiltinSSLAdapter
 from flask import Flask, Response, current_app, g, request
 
 PRINTABLE_CONTENT_TYPES = [
-    'application/json',
+    "application/json",
 ]
 
 if TYPE_CHECKING:
@@ -34,28 +34,28 @@ class ReverseProxied:
     def __call__(
         self, environ: WSGIEnvironment, start_response: StartResponse
     ) -> Iterable[bytes]:
-        script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
+        script_name = environ.get("HTTP_X_SCRIPT_NAME", "")
         if script_name:
-            environ['SCRIPT_NAME'] = script_name
+            environ["SCRIPT_NAME"] = script_name
 
         return self.app(environ, start_response)
 
 
 def reverse_proxy_fix_api_spec(api_spec: dict[str, Any]) -> None:
-    prefix = request.headers.get('X-Script-Name')
+    prefix = request.headers.get("X-Script-Name")
     if prefix:
-        api_spec['schemes'] = ['https']
-        base_path = api_spec.get('basePath', '')
-        api_spec['basePath'] = f'{prefix}{base_path}'
+        api_spec["schemes"] = ["https"]
+        base_path = api_spec.get("basePath", "")
+        api_spec["basePath"] = f"{prefix}{base_path}"
 
 
 def add_logger(app: Flask, logger: Logger) -> None:
-    app.config['LOGGER_HANDLER_POLICY'] = 'never'
+    app.config["LOGGER_HANDLER_POLICY"] = "never"
     app.logger.propagate = True
 
 
 class BodyFormatter:
-    _HIDDEN_VALUE = '<hidden>'
+    _HIDDEN_VALUE = "<hidden>"
 
     def __init__(self, raw_body: bytes, hidden_fields: list[str] | None) -> None:
         self._hidden_fields = hidden_fields
@@ -63,7 +63,7 @@ class BodyFormatter:
 
     def __str__(self) -> str:
         try:
-            printable_body = self._raw_body.decode('utf-8')
+            printable_body = self._raw_body.decode("utf-8")
         except UnicodeDecodeError:
             printable_body = repr(self._raw_body)
 
@@ -94,26 +94,26 @@ class LazyHeaderFormatter:
     def __str__(self) -> str:
         headers_dict = self._to_dict(self._raw_headers)
         filtered_headers = self._filter_sensible_fields(headers_dict)
-        return f'{filtered_headers}'
+        return f"{filtered_headers}"
 
     def _filter_sensible_fields(self, headers: dict[str, str]) -> dict[str, str]:
         # should be "sensitive"
-        if 'Authorization' in headers:
-            if headers['Authorization'].startswith('Basic '):
-                new_header = 'Basic <hidden>'
+        if "Authorization" in headers:
+            if headers["Authorization"].startswith("Basic "):
+                new_header = "Basic <hidden>"
             else:
-                new_header = '<hidden>'
+                new_header = "<hidden>"
 
-            headers['Authorization'] = new_header
+            headers["Authorization"] = new_header
 
-        if 'X-Auth-Token' in headers:
-            value = headers['X-Auth-Token']
+        if "X-Auth-Token" in headers:
+            value = headers["X-Auth-Token"]
             visible_position = len(value) - self.VISIBLE_TOKEN_SIZE
             new_value = [
-                character if i >= visible_position or character == '-' else 'X'
+                character if i >= visible_position or character == "-" else "X"
                 for i, character in enumerate(value)
             ]
-            headers['X-Auth-Token'] = ''.join(new_value)
+            headers["X-Auth-Token"] = "".join(new_value)
 
         return headers
 
@@ -125,19 +125,19 @@ def _log_request(
     url: str, response: Response, hidden_fields: list[str] | None = None
 ) -> None:
     current_app.logger.info(
-        'response to %s%s: %s %s %s',
+        "response to %s%s: %s %s %s",
         request.remote_addr,
         (
-            f' in {time.time() - g.request_time:.2f}s'
-            if hasattr(g, 'request_time')
-            else ''
+            f" in {time.time() - g.request_time:.2f}s"
+            if hasattr(g, "request_time")
+            else ""
         ),
         request.method,
         url,
         response.status_code,
     )
-    if response.headers.get('Content-Type') not in PRINTABLE_CONTENT_TYPES:
-        content_type = response.headers.get('Content-Type')
+    if response.headers.get("Content-Type") not in PRINTABLE_CONTENT_TYPES:
+        content_type = response.headers.get("Content-Type")
         current_app.logger.debug(
             """response body: not printable: "%s" """, content_type
         )
@@ -150,13 +150,13 @@ def _log_request(
 
 def log_before_request(hidden_fields: list[str] | None = None) -> None:
     params = {
-        'method': request.method,
-        'url': unquote(request.url),
-        'headers': LazyHeaderFormatter(request.headers),
+        "method": request.method,
+        "url": unquote(request.url),
+        "headers": LazyHeaderFormatter(request.headers),
     }
 
-    if request.data and request.headers.get('Content-Type') in PRINTABLE_CONTENT_TYPES:
-        params['data'] = BodyFormatter(request.data, hidden_fields)
+    if request.data and request.headers.get("Content-Type") in PRINTABLE_CONTENT_TYPES:
+        params["data"] = BodyFormatter(request.data, hidden_fields)
         fmt = "request: %(method)s %(url)s %(headers)s with data %(data)s"
     else:
         fmt = "request: %(method)s %(url)s %(headers)s"
@@ -171,12 +171,12 @@ def log_request(response: Response) -> Response:
     return response
 
 
-_REPLACE_TOKEN_REGEX = re.compile(r'\btoken=[-0-9a-zA-Z]+')
+_REPLACE_TOKEN_REGEX = re.compile(r"\btoken=[-0-9a-zA-Z]+")
 
 
 def log_request_hide_token(response: Response) -> Response:
     url = unquote(request.url)
-    url = _REPLACE_TOKEN_REGEX.sub('token=<hidden>', url)
+    url = _REPLACE_TOKEN_REGEX.sub("token=<hidden>", url)
     _log_request(url, response)
     return response
 
@@ -196,7 +196,7 @@ def _check_file_readable(file_path: str) -> None:
 def list_routes(app: Flask) -> list[str]:
     output: list[str] = []
     for rule in app.url_map.iter_rules():
-        methods = ','.join(rule.methods)
+        methods = ",".join(rule.methods)
         line = f"{rule.endpoint:50s} {methods:20s} {rule}"
         output.append(line)
     return output

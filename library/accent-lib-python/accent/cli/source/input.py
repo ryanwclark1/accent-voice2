@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TypeVar
 
-Self = TypeVar('Self', bound='InputRawCommandLineSource')
+Self = TypeVar("Self", bound="InputRawCommandLineSource")
 
 
 class InputRawCommandLineSource:
@@ -23,6 +23,6 @@ class InputRawCommandLineSource:
                 print()
                 raise StopIteration()
             except KeyboardInterrupt:
-                print('^C')
+                print("^C")
 
     next = __next__

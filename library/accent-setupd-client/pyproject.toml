@@ -3,10 +3,10 @@ name = "accent-setupd-client"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 dependencies = [
-  "requests>=2.25.1,<3",
-  "stevedore>=4.0.2,<5",
+  "requests>=2.25.1",
+  "stevedore>=5.4.1",
   "accent-lib-rest-client",
 ]
 
@@ -16,14 +16,7 @@ setup = "accent_setupd_client.commands.setup:SetupCommand"
 status = "accent_setupd_client.commands.status:StatusCommand"
 
 [dependency-groups]
-dev = [
-  "commitizen>=3.10.0,<4",
-  "dunamai>=1.18.1,<2",
-  "pytest>=7.2.0,<8",
-  "pytest-cov>=4.0.0,<5",
-  "deptry>=0.6.4,<0.7",
-  "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.uv.sources]
 accent-lib-rest-client = { workspace = true }

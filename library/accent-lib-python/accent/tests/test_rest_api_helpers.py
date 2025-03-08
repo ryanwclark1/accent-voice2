@@ -27,16 +27,16 @@ class TestRestApiHelpers(TestCase):
     def test_given_no_exception_when_handle_api_exception_then_return_result(self):
         @handle_api_exception
         def decorated():
-            return 'my', 'result'
+            return "my", "result"
 
         result = decorated()
 
-        assert_that(result, equal_to(('my', 'result')))
+        assert_that(result, equal_to(("my", "result")))
 
     def test_given_unknown_exception_when_handle_api_exception_then_raise(self):
         @handle_api_exception
         def decorated():
-            raise TypeError('test')
+            raise TypeError("test")
 
         assert_that(decorated, raises(TypeError))
 
@@ -54,10 +54,10 @@ class TestRestApiHelpers(TestCase):
             contains_exactly(
                 has_entries(
                     {
-                        'message': s.message,
-                        'error_id': s.error_id,
-                        'details': s.details,
-                        'timestamp': instance_of(float),
+                        "message": s.message,
+                        "error_id": s.error_id,
+                        "details": s.details,
+                        "timestamp": instance_of(float),
                     }
                 ),
                 s.status_code,
@@ -78,18 +78,18 @@ class TestRestApiHelpers(TestCase):
             contains_exactly(
                 has_entries(
                     {
-                        'resource': s.resource,
-                        'message': s.message,
-                        'error_id': s.error_id,
-                        'details': s.details,
-                        'timestamp': instance_of(float),
+                        "resource": s.resource,
+                        "message": s.message,
+                        "error_id": s.error_id,
+                        "details": s.details,
+                        "timestamp": instance_of(float),
                     }
                 ),
                 s.status_code,
             ),
         )
 
-    @patch('accent.rest_api_helpers.logger')
+    @patch("accent.rest_api_helpers.logger")
     def test_given_api_exception_when_handle_api_exception_then_logs_error(
         self, logger
     ):

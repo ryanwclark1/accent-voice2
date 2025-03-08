@@ -11,15 +11,15 @@ import marshmallow  # noqa: E402
 from .mallow import fields, validate  # noqa: E402
 from .rest_api_helpers import APIException  # noqa: E402
 
-R = TypeVar('R')
+R = TypeVar("R")
 
 
 class ValidationError(APIException):
     def __init__(self, errors: dict[str, Any]) -> None:
         super().__init__(
             status_code=400,
-            message='Sent data is invalid',
-            error_id='invalid-data',
+            message="Sent data is invalid",
+            error_id="invalid-data",
             details=errors,
         )
 
@@ -39,9 +39,9 @@ class ListSchema(marshmallow.Schema):
     default_sort_column: str | None = None
     sort_columns: list[str] = []
     searchable_columns: list[str] = []
-    default_direction: Literal['asc', 'desc'] = 'asc'
+    default_direction: Literal["asc", "desc"] = "asc"
 
-    direction = fields.String(validate=validate.OneOf(['asc', 'desc']))
+    direction = fields.String(validate=validate.OneOf(["asc", "desc"]))
     order = fields.String()
     limit = fields.Integer(validate=validate.Range(min=0), missing=None)
     offset = fields.Integer(validate=validate.Range(min=0), missing=0)
@@ -51,9 +51,9 @@ class ListSchema(marshmallow.Schema):
         unknown = marshmallow.EXCLUDE
 
     def on_bind_field(self, field_name: str, field_obj: fields.Field) -> None:
-        if field_name == 'order':
+        if field_name == "order":
             self._set_order_parameters(field_obj)
-        elif field_name == 'direction':
+        elif field_name == "direction":
             self._set_direction_parameters(field_obj)
 
     def _set_direction_parameters(self, field_obj: fields.Field) -> None:

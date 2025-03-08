@@ -11,7 +11,7 @@ from typing import NoReturn
 log = logging.getLogger("accent.accent_helpers")
 
 
-find_asterisk_pattern_char = re.compile(r'[\[NXZ!.]').search
+find_asterisk_pattern_char = re.compile(r"[\[NXZ!.]").search
 
 
 def position_of_asterisk_pattern_char(ast_pattern: str) -> int | None:
@@ -29,7 +29,7 @@ def clean_extension(exten: str | None) -> str:
 
     exten = str(exten)
 
-    if exten.startswith('_'):
+    if exten.startswith("_"):
         exten = exten[1:]
         e = position_of_asterisk_pattern_char(exten)
         if e is not None:
@@ -60,16 +60,16 @@ def split_extension(exten: str) -> tuple[str, ...]:
                 x_int = int(x)
                 if x_int == i:
                     flag = 0
-                    cur += '*'
+                    cur += "*"
                 else:
                     raise ValueError(f"Wrong digit: {x_int:d}, excepted: {i:d}")
-            elif x == '*':
+            elif x == "*":
                 ret.append(cur)
                 cur = ""
                 i += 1
             else:
                 raise ValueError(f"Wrong value: {x!r}, excepted digit or asterisk!")
-        elif x == '*':
+        elif x == "*":
             flag += 1
         elif flag == 1:
             flag = 0
@@ -100,7 +100,7 @@ def unsplit_extension(xlist: list[str] | tuple[str, ...]) -> str:
     for i, x in enumerate(xlist):
         i += 1
         for c in x:
-            if c == '*':
+            if c == "*":
                 cur += f"**{i}"
             else:
                 cur += c
@@ -108,7 +108,7 @@ def unsplit_extension(xlist: list[str] | tuple[str, ...]) -> str:
             ret.append(cur)
             cur = ""
 
-    return '*'.join(ret)
+    return "*".join(ret)
 
 
 def fkey_extension(funckey_prefix: str, funckey_args: Sequence[str]) -> str:

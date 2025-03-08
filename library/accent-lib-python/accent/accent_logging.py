@@ -7,7 +7,7 @@ import sys
 import types
 from collections.abc import Callable, Sequence
 
-DEFAULT_LOG_FORMAT = '%(asctime)s [%(process)d] (%(levelname)s) (%(name)s): %(message)s'
+DEFAULT_LOG_FORMAT = "%(asctime)s [%(process)d] (%(levelname)s) (%(name)s): %(message)s"
 DEFAULT_LOG_LEVEL = logging.INFO
 
 
@@ -23,7 +23,7 @@ class _StreamToLogger:
     def __init__(self, logger: logging.Logger, log_level: int = logging.INFO) -> None:
         self.logger = logger
         self.log_level = log_level
-        self.linebuf = ''
+        self.linebuf = ""
 
     def write(self, buf: str) -> None:
         for line in buf.rstrip().splitlines():
@@ -81,10 +81,10 @@ def setup_logging(
     root_logger.setLevel(log_level)
 
     sys.stdout = _StreamToLogger(  # type: ignore[assignment]
-        logging.getLogger('STDOUT'), logging.INFO
+        logging.getLogger("STDOUT"), logging.INFO
     )
     sys.stderr = _StreamToLogger(  # type: ignore[assignment]
-        logging.getLogger('STDERR'), logging.ERROR
+        logging.getLogger("STDERR"), logging.ERROR
     )
 
     sys.excepthook = excepthook
@@ -108,15 +108,15 @@ def excepthook(
 
 def get_log_level_by_name(log_level_name: str) -> int:
     levels = {
-        'CRITICAL': logging.CRITICAL,
-        'ERROR': logging.ERROR,
-        'WARNING': logging.WARNING,
-        'INFO': logging.INFO,
-        'DEBUG': logging.DEBUG,
+        "CRITICAL": logging.CRITICAL,
+        "ERROR": logging.ERROR,
+        "WARNING": logging.WARNING,
+        "INFO": logging.INFO,
+        "DEBUG": logging.DEBUG,
     }
     log_level_name = log_level_name.upper()
 
     if log_level_name not in levels:
-        raise ValueError(f'Unknown log level {log_level_name}')
+        raise ValueError(f"Unknown log level {log_level_name}")
 
     return levels[log_level_name]

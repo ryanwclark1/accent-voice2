@@ -37,8 +37,8 @@ class ConsulService(TypedDict):
     Tags: list[str]
 
 
-logger = logging.getLogger('service_discovery')
-VALID_SERVICE_DISCO_IFACE_PREFIX = ['eth', 'en']
+logger = logging.getLogger("service_discovery")
+VALID_SERVICE_DISCO_IFACE_PREFIX = ["eth", "en"]
 
 
 class RegistererError(Exception):
@@ -53,7 +53,7 @@ class MissingConfigurationError(RegistererError):
     pass
 
 
-Self = TypeVar('Self', bound='ServiceCatalogRegistration')
+Self = TypeVar("Self", bound="ServiceCatalogRegistration")
 
 
 class ServiceCatalogRegistration:
@@ -66,9 +66,9 @@ class ServiceCatalogRegistration:
         bus_config: dict[str, Any],
         check: Callable[[], bool] | None = None,
     ) -> None:
-        self._enabled = service_discovery_config.get('enabled', True)
+        self._enabled = service_discovery_config.get("enabled", True)
         if not self._enabled:
-            logger.debug('service discovery has been disabled')
+            logger.debug("service discovery has been disabled")
             return
 
         self._check = check or self._default_check
@@ -76,13 +76,13 @@ class ServiceCatalogRegistration:
             service_name, uuid, consul_config, service_discovery_config, bus_config
         )
 
-        self._retry_interval: int = service_discovery_config['retry_interval']
-        self._refresh_interval: int = service_discovery_config['refresh_interval']
+        self._retry_interval: int = service_discovery_config["retry_interval"]
+        self._refresh_interval: int = service_discovery_config["refresh_interval"]
 
         self._thread = threading.Thread(target=self._loop)
         self._sleep_event = threading.Event()
         self._thread.daemon = True
-        self._thread.name = 'ServiceDiscoveryThread'
+        self._thread.name = "ServiceDiscoveryThread"
 
         self._done = False
         self._registered = False
@@ -99,13 +99,13 @@ class ServiceCatalogRegistration:
         traceback: TracebackType | None,
     ) -> None:
         if type:
-            logger.debug('An error occurred: %s %s %s', type, value, traceback)
+            logger.debug("An error occurred: %s %s %s", type, value, traceback)
 
         if not self._enabled:
             return
 
         if self._thread.is_alive():
-            logger.debug('waiting for the service discovery thread to complete')
+            logger.debug("waiting for the service discovery thread to complete")
             self._done = True
             self._wake()
             self._thread.join()
@@ -113,9 +113,9 @@ class ServiceCatalogRegistration:
         try:
             self._registerer.deregister()
         except RegistererError as e:
-            logger.info('failed to deregister %s', e)
+            logger.info("failed to deregister %s", e)
         except Exception:
-            logger.exception('failed to deregister')
+            logger.exception("failed to deregister")
 
     def _loop(self) -> None:
         while not self._done:
@@ -141,7 +141,7 @@ class ServiceCatalogRegistration:
             self._registered = True
         except RegistererError as e:
             logger.info(
-                'registration failed, retrying in %s seconds %s',
+                "registration failed, retrying in %s seconds %s",
                 self._retry_interval,
                 e,
             )
@@ -162,14 +162,14 @@ class Registerer:
         self._service_name = name
         try:
             self._advertise_address = self._find_address(service_discovery_config)
-            self._advertise_port = service_discovery_config['advertise_port']
-            self._tags = [uuid, name] + service_discovery_config.get('extra_tags', [])
+            self._advertise_port = service_discovery_config["advertise_port"]
+            self._tags = [uuid, name] + service_discovery_config.get("extra_tags", [])
 
-            self._ttl_interval = f'{service_discovery_config["ttl_interval"]}s'
+            self._ttl_interval = f"{service_discovery_config['ttl_interval']}s"
         except KeyError as e:
             raise MissingConfigurationError(str(e))
         self._consul_config = consul_config
-        self._check_id = f'service:{self._service_id}'
+        self._check_id = f"service:{self._service_id}"
 
     @property
     def _client(self) -> Consul:
@@ -177,7 +177,7 @@ class Registerer:
 
     def register(self) -> None:
         logger.info(
-            'Registering %s on Consul as %s with %s:%s',
+            "Registering %s on Consul as %s with %s:%s",
             self._service_name,
             self._service_id,
             self._advertise_address,
@@ -196,7 +196,7 @@ class Registerer:
             )
             if not registered:
                 raise RegistererError(
-                    f'{self._service_name} registration on Consul failed'
+                    f"{self._service_name} registration on Consul failed"
                 )
 
         except (ConnectionError, ConsulException) as e:
@@ -208,16 +208,16 @@ class Registerer:
         try:
             result = self._client.agent.check.ttl_pass(self._check_id)
         except (ConnectionError, ConsulException) as e:
-            logger.info('%s', e)
+            logger.info("%s", e)
 
         if not result:
-            logger.info('ttl pass failed')
+            logger.info("ttl pass failed")
 
         return result
 
     def deregister(self) -> bool | None:
         logger.info(
-            'Deregistering %s from Consul services: %s',
+            "Deregistering %s from Consul services: %s",
             self._service_name,
             self._service_id,
         )
@@ -234,10 +234,10 @@ class Registerer:
 
 
 def address_from_config(service_discovery_config: dict[str, Any]) -> str:
-    advertise_address = service_discovery_config['advertise_address']
-    if advertise_address != 'auto':
+    advertise_address = service_discovery_config["advertise_address"]
+    if advertise_address != "auto":
         return advertise_address
-    return _find_address(service_discovery_config['advertise_address_interface'])
+    return _find_address(service_discovery_config["advertise_address_interface"])
 
 
 def _find_address(main_iface: str) -> str:
@@ -250,17 +250,17 @@ def _find_address(main_iface: str) -> str:
     ifaces = (
         [main_iface]
         + [iface for iface in netifaces.interfaces() if _is_valid_iface_name(iface)]
-        + ['lo']
+        + ["lo"]
     )
     for iface in ifaces:
         try:
             for config in netifaces.ifaddresses(iface).get(netifaces.AF_INET, []):
-                if address := config.get('addr'):
+                if address := config.get("addr"):
                     return address
         except ValueError:
-            logger.info('The configured interface does not exists: %s', iface)
+            logger.info("The configured interface does not exists: %s", iface)
 
-    return '127.0.0.1'
+    return "127.0.0.1"
 
 
 class NotifyingRegisterer(Registerer):
@@ -274,7 +274,7 @@ class NotifyingRegisterer(Registerer):
     ) -> None:
         super().__init__(name, uuid, consul_config, service_discovery_config)
         self._publisher = BusPublisher(
-            name='consul-helper', service_uuid=uuid, **bus_config
+            name="consul-helper", service_uuid=uuid, **bus_config
         )
 
     def register(self) -> None:
@@ -313,24 +313,26 @@ class NotifyingRegisterer(Registerer):
 
 class ServiceFinder:
     def __init__(self, consul_config: dict[str, Any]) -> None:
-        self._dc_url = '{scheme}://{host}:{port}/v1/catalog/datacenters'.format(
+        self._dc_url = "{scheme}://{host}:{port}/v1/catalog/datacenters".format(
             **consul_config
         )
-        self._health_url = '{scheme}://{host}:{port}/v1/health/service'.format(
+        self._health_url = "{scheme}://{host}:{port}/v1/health/service".format(
             **consul_config
         )
-        self._service_url = '{scheme}://{host}:{port}/v1/catalog/service'.format(
+        self._service_url = "{scheme}://{host}:{port}/v1/catalog/service".format(
             **consul_config
         )
-        self._verify = consul_config.get('verify', True)
-        self._token = consul_config.get('token')
+        self._verify = consul_config.get("verify", True)
+        self._token = consul_config.get("token")
 
     def list_healthy_services(
         self, service_name: str, accent_uuid: str | None = None
     ) -> list[ConsulService]:
         services = []
         for dc in self._get_datacenters():
-            for service in self._list_running_services(service_name, dc, tag=accent_uuid):
+            for service in self._list_running_services(
+                service_name, dc, tag=accent_uuid
+            ):
                 services.append(service)
         return services
 
@@ -342,15 +344,15 @@ class ServiceFinder:
     def _list_running_services(
         self, service_name: str, datacenter: str, tag: str | None
     ) -> list[ConsulService]:
-        url = f'{self._health_url}/{service_name}'
-        params: dict[str, str | bool] = {'dc': datacenter, 'passing': True}
+        url = f"{self._health_url}/{service_name}"
+        params: dict[str, str | bool] = {"dc": datacenter, "passing": True}
         if tag:
-            params['tag'] = tag
+            params["tag"] = tag
         response = requests.get(url, verify=self._verify, params=params)
         self._assert_ok(response)
         services = []
         for node in response.json():
-            service: ConsulService | None = node.get('Service')
+            service: ConsulService | None = node.get("Service")
             if service:
                 services.append(service)
         return services
@@ -358,5 +360,5 @@ class ServiceFinder:
     @staticmethod
     def _assert_ok(response: requests.Response, code: int = 200) -> None:
         if response.status_code != code:
-            msg = getattr(response, 'text', 'unknown error')
+            msg = getattr(response, "text", "unknown error")
             raise ServiceDiscoveryError(msg)

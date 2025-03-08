@@ -4,6 +4,7 @@
 
 WARNING: Linux specific module, needs /proc/
 """
+
 from __future__ import annotations
 
 import errno
@@ -14,16 +15,16 @@ import sys
 from collections.abc import Generator
 from contextlib import contextmanager
 
-SLASH_PROC = os.sep + 'proc'
-PROG_SLINK = 'exe'
-PROG_CMDLN = 'cmdline'
+SLASH_PROC = os.sep + "proc"
+PROG_SLINK = "exe"
+PROG_CMDLN = "cmdline"
 
 
 log = logging.getLogger("accent.daemonize")
 
 
 def c14n_prog_name(arg: str) -> str:
-    return os.path.basename(re.sub(r'\.py$', '', arg))
+    return os.path.basename(re.sub(r"\.py$", "", arg))
 
 
 def remove_if_stale_pidfile(pidfile: str) -> None:
@@ -45,7 +46,7 @@ def remove_if_stale_pidfile(pidfile: str) -> None:
             other_cmdline = (
                 open(os.path.join(SLASH_PROC, str(pid_maydaemon), PROG_CMDLN))
                 .read()
-                .split('\0')
+                .split("\0")
             )
             if len(other_cmdline) and other_cmdline[-1] == "":
                 other_cmdline.pop()
@@ -166,8 +167,8 @@ def lock_pidfile_or_die(pidfile: str) -> int:
     pid = os.getpid()
     try:
         remove_if_stale_pidfile(pidfile)
-        pid_write_file = f'{pidfile}.{pid}'
-        fpid = open(pid_write_file, 'w')
+        pid_write_file = f"{pidfile}.{pid}"
+        fpid = open(pid_write_file, "w")
         try:
             fpid.write(f"{pid}\n")
         finally:

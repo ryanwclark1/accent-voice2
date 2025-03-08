@@ -6,6 +6,7 @@ Copyright (C) 2008-2010  Avencall
 
 WARNING: Linux specific module - and maybe even Debian specific module
 """
+
 from __future__ import annotations
 
 __version__ = "$Revision$ $Date$"

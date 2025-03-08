@@ -3,11 +3,11 @@ name = "accent-webhookd-client"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 dependencies = [
-    "requests>=2.25.1,<3",
-    "stevedore>=4.0.2,<5",
-    "accent-lib-rest-client",
+  "requests>=2.25.1",
+  "stevedore>=5.4.1",
+  "accent-lib-rest-client",
 ]
 
 [project.entry-points."accent_webhookd_client.commands"]
@@ -17,16 +17,10 @@ subscriptions = "accent_webhookd_client.commands.subscriptions:SubscriptionsComm
 mobile_notifications = "accent_webhookd_client.commands.mobile_notifications:MobileNotificationCommand"
 
 [dependency-groups]
-dev = [
-    "pytest>=7.2.0,<8",
-    "pytest-cov>=4.0.0,<5",
-    "deptry>=0.6.4,<0.7",
-    "pre-commit>=2.20.0,<3",
-    "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.uv.sources]
-accent-lib-rest-client = { path = "../accent-lib-rest-client" }
+accent-lib-rest-client = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_webhookd_client"]
@@ -42,40 +36,3 @@ build-backend = "hatchling.build"
 target-version = "py311"
 line-length = 99
 fix = true
-
-[tool.ruff.lint]
-select = [
-  "YTT",  # flake8-2020
-  "S",  # flake8-bandit
-  "B",  # flake8-bugbear
-  "A",  # flake8-builtins
-  "C4",  # flake8-comprehensions
-  "T10",  # flake8-debugger
-  "SIM",  # flake8-simplify
-  "I",  # isort
-  "C90",  # mccabe
-  "E",  # pycodestyle
-  "W",  # pycodestyle
-  "F", # pyflakes
-  "PGH",  # pygrep-hooks
-  "UP",  # pyupgrade
-  "RUF",  # ruff
-  "TRY",  # tryceratops
-]
-
-ignore = [
-  "E501",  # LineTooLong
-  "E731",  # DoNotAssignLambda
-  "E203",  # Whitespace before ':'
-  "W503",  # Line break before binary operator
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
-
-[tool.coverage.report]
-skip_empty = true
-
-[tool.coverage.run]
-branch = true
-source = ["accent_webhookd_client"]

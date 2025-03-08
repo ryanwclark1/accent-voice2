@@ -33,156 +33,156 @@ DefaultErrorMessages = dict[str, Union[ErrorMessages, "_StringifiedDict"]]
 
 class _StringifiedDict(dict):
     def format(self, *args: Any, **kwargs: Any) -> _StringifiedDict:
-        self['message'] = self.get('message', '').format(*args, **kwargs)
+        self["message"] = self.get("message", "").format(*args, **kwargs)
         return self
 
 
 class Field(_Field):
     default_error_messages: DefaultErrorMessages = {
-        'null': _StringifiedDict(
-            message=_Field.default_error_messages['null'],
-            constraint_id='not_null',
-            constraint='not_null',
+        "null": _StringifiedDict(
+            message=_Field.default_error_messages["null"],
+            constraint_id="not_null",
+            constraint="not_null",
         ),
-        'required': _StringifiedDict(
-            message=_Field.default_error_messages['required'],
-            constraint_id='required',
-            constraint='required',
+        "required": _StringifiedDict(
+            message=_Field.default_error_messages["required"],
+            constraint_id="required",
+            constraint="required",
         ),
     }
 
 
 class Boolean(_Boolean):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_Boolean.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='boolean',
+        "invalid": _StringifiedDict(
+            message=_Boolean.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="boolean",
         )
     }
 
 
 class Date(_Date):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_Date.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='date',
+        "invalid": _StringifiedDict(
+            message=_Date.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="date",
         )
     }
 
 
 class DateTime(_DateTime):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message='Not a valid datetime',
-            constraint_id='type',
-            constraint='datetime',
+        "invalid": _StringifiedDict(
+            message="Not a valid datetime",
+            constraint_id="type",
+            constraint="datetime",
         )
     }
 
 
 class Dict(_Dict):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_Dict.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='dict',
+        "invalid": _StringifiedDict(
+            message=_Dict.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="dict",
         )
     }
 
 
 class Email(_Email):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_Email.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='email',
+        "invalid": _StringifiedDict(
+            message=_Email.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="email",
         )
     }
 
 
 class Integer(_Integer):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_Integer.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='integer',
+        "invalid": _StringifiedDict(
+            message=_Integer.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="integer",
         )
     }
 
 
 class Float(_Float):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'special': _StringifiedDict(
-            message=_Float.default_error_messages['special'],
-            constraint_id='type',
-            constraint='float',
+        "special": _StringifiedDict(
+            message=_Float.default_error_messages["special"],
+            constraint_id="type",
+            constraint="float",
         )
     }
 
 
 class List(_List):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_List.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='list',
+        "invalid": _StringifiedDict(
+            message=_List.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="list",
         )
     }
 
 
 class Nested(_Nested):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'type': _StringifiedDict(
-            message=_Nested.default_error_messages['type'],
-            constraint_id='type',
-            constraint='dict',
+        "type": _StringifiedDict(
+            message=_Nested.default_error_messages["type"],
+            constraint_id="type",
+            constraint="dict",
         )
     }
 
 
 class String(_String):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_String.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='string',
+        "invalid": _StringifiedDict(
+            message=_String.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="string",
         )
     }
 
 
 class TimeDelta(_TimeDelta):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': _StringifiedDict(
-            message=_TimeDelta.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='timedelta',
+        "invalid": _StringifiedDict(
+            message=_TimeDelta.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="timedelta",
         ),
-        'format': _StringifiedDict(
-            message='Cannot be formatted as a timedelta',
-            constraint_id='type',
-            constraint='format',
+        "format": _StringifiedDict(
+            message="Cannot be formatted as a timedelta",
+            constraint_id="type",
+            constraint="format",
         ),
     }
 
 
 class URL(_URL):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid_url': _StringifiedDict(
-            message=_URL.default_error_messages['invalid'],
-            constraint_id='type',
-            constraint='url',
+        "invalid_url": _StringifiedDict(
+            message=_URL.default_error_messages["invalid"],
+            constraint_id="type",
+            constraint="url",
         )
     }
 
 
 class UUID(_UUID):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid_uuid': _StringifiedDict(
-            message=_UUID.default_error_messages['invalid_uuid'],
-            constraint_id='type',
-            constraint='uuid',
+        "invalid_uuid": _StringifiedDict(
+            message=_UUID.default_error_messages["invalid_uuid"],
+            constraint_id="type",
+            constraint="uuid",
         )
     }
 
@@ -193,10 +193,10 @@ class Constant(_Constant):
 
 class IP(_String):
     default_error_messages: DefaultErrorMessages = Field.default_error_messages | {
-        'invalid': {
-            'message': 'Not a valid IP address.',
-            'constraint_id': 'type',
-            'constraint': 'ip_address',
+        "invalid": {
+            "message": "Not a valid IP address.",
+            "constraint_id": "type",
+            "constraint": "ip_address",
         }
     }
 
@@ -220,6 +220,6 @@ class MultiDictAwareList(List):
     def _deserialize(
         self, value: Any, attr: str | None, data: dict[str, Any], **kwargs: Any
     ) -> dict[str, list]:
-        if isinstance(data, dict) and hasattr(data, 'getlist'):
+        if isinstance(data, dict) and hasattr(data, "getlist"):
             value = data.getlist(attr)
         return super()._deserialize(value, attr, data, **kwargs)

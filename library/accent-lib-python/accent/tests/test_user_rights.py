@@ -6,15 +6,15 @@ from unittest.mock import Mock, patch
 
 from .. import user_rights
 
-USER_NAME = 'a_user'
+USER_NAME = "a_user"
 USER_ID = 12
 GROUP_ID = 42
 
 
-@patch('accent.user_rights.getpwnam')
-@patch('os.setuid')
-@patch('os.setgid')
-@patch('os.initgroups')
+@patch("accent.user_rights.getpwnam")
+@patch("os.setuid")
+@patch("os.setgid")
+@patch("os.initgroups")
 class TestChangeUser(TestCase):
     def test_when_user_does_not_exist(self, initgroups, setgid, setuid, pwnam):
         pwnam.side_effect = KeyError

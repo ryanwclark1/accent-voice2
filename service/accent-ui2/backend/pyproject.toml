@@ -1,107 +1,42 @@
-[tool.poetry]
-name = "accent-ui"
+[project]
+name = "accent-ui2"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryanc@accentservices.com>"]
-packages = [{ include = "accent_ui" }]
-include = [
-  "accent_ui/static/*",
-  "accent_ui/templates/*",
-  "accent_ui/translations/*",
-  "accent_ui/plugins/*/static/*",
-  "accent_ui/plugins/*/templates/*",
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9"
+dependencies = [
+  "fastapi[standard]<1.0.0,>=0.114.2",
+  "python-multipart<1.0.0,>=0.0.7",
+  "email-validator<3.0.0.0,>=2.1.0.post1",
+  "passlib[bcrypt]<2.0.0,>=1.7.4",
+  "tenacity<9.0.0,>=8.2.3",
+  "pydantic>2.0",
+  "emails<1.0,>=0.6",
+  "jinja2<4.0.0,>=3.1.4",
+  "httpx<1.0.0,>=0.25.1",
+  "bcrypt>=4.0.1",
+  "pydantic-settings<3.0.0,>=2.2.1",
+  "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
+  "pyjwt<3.0.0,>=2.8.0",
+  "accent-lib-rest-client",
+  "accent-amid-client",
+  "accent-auth-client",
+  "accent-call-logd-client",
+  "accent-confd-client",
+  "accent-dird-client",
+  "accent-plugind-client",
+  "accent-provd-client",
+  "accent-webhookd-client",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "itsdangerous>=2.2.0",
+  "aiosqlite>=0.20.0",
+  "greenlet>=3.1.1",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-# fastapi = {version = "<1.0.0,>=0.114.2", extras = ["standard"]}
-fastapi = { extras = ["standard"], version = "<1.0.0,>=0.114.2" }
-python-multipart = "<1.0.0,>=0.0.7"
-email-validator = "<3.0.0.0,>=2.1.0.post1"
-passlib = { extras = ["bcrypt"], version = "<2.0.0,>=1.7.4" }
-tenacity = "<9.0.0,>=8.2.3"
-pydantic = ">2.0"
-emails = "<1.0,>=0.6"
-jinja2 = "<4.0.0,>=3.1.4"
-httpx = "<1.0.0,>=0.25.1"
-bcrypt = "^4.0.1"
-pydantic-settings = "<3.0.0,>=2.2.1"
-sentry-sdk = { extras = ["fastapi"], version = "<2.0.0,>=1.40.6" }
-pyjwt = "<3.0.0,>=2.8.0"
-accent-lib-rest-client = { path = "../../../library/accent-lib-rest-client" }
-accent-amid-client = { path = "../../../library/accent-amid-client" }
-accent-auth-client = { path = "../../../library/accent-auth-client" }
-accent-call-logd-client = { path = "../../../library/accent-call-logd-client" }
-accent-confd-client = { path = "../../../library/accent-confd-client" }
-accent-dird-client = { path = "../../../library/accent-dird-client" }
-accent-plugind-client = { path = "../../../library/accent-plugind-client" }
-accent-provd-client = { path = "../../../library/accent-provd-client" }
-accent-webhookd-client = { path = "../../../library/accent-webhookd-client" }
-# accent = {path = "../../../library/accent-lib-python"}
-sqlalchemy = "^2.0.36"
-itsdangerous = "^2.2.0"
-aiosqlite = "^0.20.0"
-greenlet = "^3.1.1"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.6.4"
-pre-commit = "^2.20.0"
-tox = "^3.25.1"
-gunicorn = "^21.2.0"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.ruff]
-target-version = "py311"
-line-length = 99
-fix = true
-
-[tool.ruff.lint]
-select = [
-  "YTT", # flake8-2020
-  "S",   # flake8-bandit
-  "B",   # flake8-bugbear
-  "A",   # flake8-builtins
-  "C4",  # flake8-comprehensions
-  "T10", # flake8-debugger
-  "SIM", # flake8-simplify
-  "I",   # isort
-  "C90", # mccabe
-  "E",   # pycodestyle
-  "W",   # pycodestyle
-  "F",   # pyflakes
-  "PGH", # pygrep-hooks
-  "UP",  # pyupgrade
-  "RUF", # ruff
-  "TRY", # tryceratops
-]
-
-ignore = [
-  "E501", # LineTooLong
-  "E731", # DoNotAssignLambda
-  "E203", # Whitespace before ':'
-  "W503", # Line break before binary operator
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
-
-[tool.coverage.report]
-skip_empty = true
-
-[tool.coverage.run]
-branch = true
-source = ["accent_ui"]
-
-[tool.poetry.plugins."console_scripts"]
+[project.scripts]
 accent-ui = "accent_ui.bin.daemon:main"
 
-[tool.poetry.plugins."accent_ui.plugins"]
+[project.entry-points."accent_ui.plugins"]
 access_feature = "accent_ui.plugins.access_feature.plugin:Plugin"
 agent = "accent_ui.plugins.agent.plugin:Plugin"
 application = "accent_ui.plugins.application.plugin:Plugin"
@@ -150,3 +85,44 @@ trunk = "accent_ui.plugins.trunk.plugin:Plugin"
 user = "accent_ui.plugins.user.plugin:Plugin"
 voicemail = "accent_ui.plugins.voicemail.plugin:Plugin"
 webhook = "accent_ui.plugins.webhook.plugin:Plugin"
+
+[dependency-groups]
+dev = ["pytest>=8.3.5", "gunicorn>=21.2.0"]
+
+[tool.uv]
+
+[tool.uv.sources]
+accent-lib-rest-client = { path = "../../../library/accent-lib-rest-client" }
+accent-amid-client = { path = "../../../library/accent-amid-client" }
+accent-auth-client = { path = "../../../library/accent-auth-client" }
+accent-call-logd-client = { path = "../../../library/accent-call-logd-client" }
+accent-confd-client = { path = "../../../library/accent-confd-client" }
+accent-dird-client = { path = "../../../library/accent-dird-client" }
+accent-plugind-client = { path = "../../../library/accent-plugind-client" }
+accent-provd-client = { path = "../../../library/accent-provd-client" }
+accent-webhookd-client = { path = "../../../library/accent-webhookd-client" }
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "accent_ui",
+  "accent_ui/static/*",
+  "accent_ui/templates/*",
+  "accent_ui/translations/*",
+  "accent_ui/plugins/*/static/*",
+  "accent_ui/plugins/*/templates/*",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "accent_ui",
+  "accent_ui/static/*",
+  "accent_ui/templates/*",
+  "accent_ui/translations/*",
+  "accent_ui/plugins/*/static/*",
+  "accent_ui/plugins/*/templates/*",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

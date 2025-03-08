@@ -13,7 +13,7 @@ from ..http_exceptions import InvalidTokenAPIException, Unauthorized
 from ..tenant_flask_helpers import auth_client, token
 from .headers import extract_tenant_id_from_header, extract_token_id_from_header
 
-R = TypeVar('R')
+R = TypeVar("R")
 
 
 class AuthVerifierFlask:

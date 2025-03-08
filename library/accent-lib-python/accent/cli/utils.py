@@ -8,13 +8,13 @@ from typing import Any, TypeVar
 
 from accent.cli.exception import UsageError
 
-R = TypeVar('R')
+R = TypeVar("R")
 
 
 def compute_ids(command_arg: str) -> list[int]:
     ids = []
-    for id_item in command_arg.split(','):
-        start, sep, end = id_item.partition('-')
+    for id_item in command_arg.split(","):
+        start, sep, end = id_item.partition("-")
         if not sep:
             ids.append(int(id_item))
         else:

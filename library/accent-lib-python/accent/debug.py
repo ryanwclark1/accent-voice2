@@ -11,11 +11,11 @@ from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
-DEBUG_MODE = os.environ.get('ACCENT_DEBUG')
+DEBUG_MODE = os.environ.get("ACCENT_DEBUG")
 
 
-F = TypeVar('F', bound=Callable[..., Any])
-R = TypeVar('R')
+F = TypeVar("F", bound=Callable[..., Any])
+R = TypeVar("R")
 
 
 def _debug(decorator: Callable[[F], F]) -> F | Callable[[F], F]:
@@ -37,7 +37,7 @@ def trace_duration(fun: Callable[..., R]) -> Callable[..., R]:
         start_time = time.time()
         result = fun(*args, **kwargs)
         duration = time.time() - start_time
-        logger.info('Execution of %r took %.3fs', fun_name, duration)
+        logger.info("Execution of %r took %.3fs", fun_name, duration)
         return result
 
     return aux
@@ -49,7 +49,7 @@ def trace_call(fun: Callable[..., R]) -> Callable[..., R]:
 
     @functools.wraps(fun)
     def aux(*args: Any, **kwargs: Any) -> R:
-        logger.info('Executing %r', fun_name)
+        logger.info("Executing %r", fun_name)
         result = fun(*args, **kwargs)
         return result
 

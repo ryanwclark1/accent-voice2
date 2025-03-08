@@ -10,8 +10,8 @@ StatusProvider = Callable[[StatusDict], None]
 
 
 class Status:
-    fail = 'fail'
-    ok = 'ok'
+    fail = "fail"
+    ok = "ok"
 
 
 class StatusAggregator:
@@ -40,4 +40,4 @@ class TokenStatus:
         self.has_token = True
 
     def provide_status(self, status: StatusDict) -> None:
-        status['service_token']['status'] = Status.ok if self.has_token else Status.fail
+        status["service_token"]["status"] = Status.ok if self.has_token else Status.fail

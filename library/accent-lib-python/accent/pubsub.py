@@ -62,7 +62,7 @@ class Pubsub:
 
 
 class CallbackCollector:
-    _TOPIC = 'callback-collector'
+    _TOPIC = "callback-collector"
 
     def __init__(self) -> None:
         self._pubsub = Pubsub()
@@ -72,13 +72,13 @@ class CallbackCollector:
     def _collect(self, source_id: uuid.UUID, *args: Any, **kwargs: Any) -> None:
         logger.debug('Collecting callback source "%s"', source_id)
         if not self._sources:
-            logger.debug('Aborting collect')
+            logger.debug("Aborting collect")
             return
 
         with self._lock:
             self._sources.discard(source_id)
             if not self._sources:
-                logger.debug('Collecting callbacks finished, publishing')
+                logger.debug("Collecting callbacks finished, publishing")
                 self._publish()
 
     def _publish(self) -> None:

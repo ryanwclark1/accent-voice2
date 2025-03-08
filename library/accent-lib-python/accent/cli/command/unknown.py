@@ -8,12 +8,12 @@ from accent.cli.command.base import BaseCommand
 
 
 class _BaseUnknownCommand(BaseCommand):
-    help = 'Handler for unknown commands'
+    help = "Handler for unknown commands"
     usage = None
     _error_msg = None
 
     def __init__(self, words: list[str]) -> None:
-        self._error_msg = f'no such command: {words[0]}'
+        self._error_msg = f"no such command: {words[0]}"
 
 
 class PrintingUnknownCommand(_BaseUnknownCommand):

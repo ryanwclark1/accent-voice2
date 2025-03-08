@@ -27,7 +27,7 @@ class PatchedWSGIServer(Server):  # noqa
                 self._connections.run(self.expiration_interval)
             except OSError:
                 self.error_log(
-                    'OS Error while serving an HTTP request',
+                    "OS Error while serving an HTTP request",
                     level=logging.ERROR,
                     traceback=True,
                 )
@@ -36,7 +36,7 @@ class PatchedWSGIServer(Server):  # noqa
                 raise
             except Exception:
                 self.error_log(
-                    'Error in HTTPServer.serve',
+                    "Error in HTTPServer.serve",
                     level=logging.ERROR,
                     traceback=True,
                 )

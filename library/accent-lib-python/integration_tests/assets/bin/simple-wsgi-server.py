@@ -10,7 +10,7 @@ from flask_restful import Api, Resource
 
 from accent import wsgi
 
-app = Flask('simple-wsgi-server')
+app = Flask("simple-wsgi-server")
 api = Api(app)
 
 
@@ -21,17 +21,17 @@ class BasicResource(Resource):
 
 
 def main() -> None:
-    api.add_resource(BasicResource, '/resource')
-    bind_addr = ('0.0.0.0', 8080)
-    wsgi_app = wsgi.WSGIPathInfoDispatcher({'/': app})
+    api.add_resource(BasicResource, "/resource")
+    bind_addr = ("0.0.0.0", 8080)
+    wsgi_app = wsgi.WSGIPathInfoDispatcher({"/": app})
     server = wsgi.WSGIServer(
         bind_addr,
         wsgi_app,
-        server_name='simple-wsgi-server',
+        server_name="simple-wsgi-server",
         numthreads=1,
     )
     server.start()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

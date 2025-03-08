@@ -3,8 +3,8 @@ name = "accent-fetchfw"
 version = "0.1.0"
 description = "Fetch"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
-dependencies = ["progressbar2>=4.0.0,<5"]
+requires-python = ">=3.9"
+dependencies = ["progressbar2>=4.0.0"]
 
 [project.scripts]
 accent-fetchfw = "accent_fetchfw.main:main"
@@ -12,14 +12,7 @@ accent-fetchfw = "accent_fetchfw.main:main"
 [project.entry-points]
 
 [dependency-groups]
-dev = [
-  "commitizen>=3.10.0,<4",
-  "dunamai>=1.18.1,<2",
-  "pytest>=7.2.0,<8",
-  "pytest-cov>=4.0.0,<5",
-  "deptry>=0.6.4,<0.7",
-  "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_fetchfw"]

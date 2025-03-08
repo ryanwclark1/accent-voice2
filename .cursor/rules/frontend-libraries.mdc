@@ -1,0 +1,20 @@
+---
+description: Frontend Rules
+globs: *.tsx, *.ts, *.css, frontend/*.json frontend/*.html frontend/*.yaml
+---
+
+# Your rule content
+
+- React 19
+- hey-api/client-fetch is an OpenAPI to TypeScript codegen, it creates the following: 
+  - TypeScript interfaces are located in the [types.gen.ts](mdc:frontend/src/client/types.gen.ts)
+  - SDKs are located in the [sdk.gen.ts](mdc:frontend/src/client/sdk.gen.ts) file. SDKs are abstractions on top of clients and serve the same purpose.
+  - Schemas are located in the [schemas.gen.ts](mdc:frontend/src/client/schemas.gen.ts) file. This file contains runtime schemas generated from your OpenAPI specification definitions located in #/components/schemas
+  - Zod validations are in [zod.gen.ts](mdc:frontend/src/client/zod.gen.ts)
+  - In the @tanstack folder, the file [react-query.gen.ts](mdc:frontend/src/client/@tanstack/react-query.gen.ts) which contains:
+    - Queries are generated from GET and POST endpoints. The generated functions follow the naming convention of SDK functions and append Options
+    - Infinite queries are generated from GET and POST endpoints if we detect a pagination parameter. The generated functions follow the naming convention of SDK functions and append InfiniteOptions
+    - Mutations are generated from DELETE, PATCH, POST, and PUT endpoints. The generated functions follow the naming convention of SDK functions and append Mutation
+    - Query keys are generated for both queries and infinite queries. If you have access to the result of query or infinite query options function, you can get the query key from the queryKey field.
+- Tailwind v4
+ 

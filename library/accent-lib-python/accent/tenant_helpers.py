@@ -41,13 +41,13 @@ class UnauthorizedTenant(rest_api_helpers.APIException):
     def __init__(self, tenant_uuid: str) -> None:
         super().__init__(
             status_code=401,
-            message='Unauthorized tenant',
-            error_id='unauthorized-tenant',
-            details={'tenant_uuid': str(tenant_uuid)},
+            message="Unauthorized tenant",
+            error_id="unauthorized-tenant",
+            details={"tenant_uuid": str(tenant_uuid)},
         )
 
 
-Self = TypeVar('Self', bound='Tenant')
+Self = TypeVar("Self", bound="Tenant")
 
 
 class Tenant:
@@ -67,7 +67,7 @@ class Tenant:
     @classmethod
     def from_query(cls: type[Self]) -> Self:
         try:
-            tenant_uuid = request.args['tenant']
+            tenant_uuid = request.args["tenant"]
         except KeyError:
             raise InvalidTenant()
         return cls(uuid=tenant_uuid)
@@ -95,13 +95,13 @@ class Tenant:
         return self
 
     def __repr__(self) -> str:
-        result = f'<Tenant: {self.uuid}>'
+        result = f"<Tenant: {self.uuid}>"
         if self.name:
             result = f'<Tenant: {self.uuid} "{self.name}">'
         return result
 
 
-SelfToken = TypeVar('SelfToken', bound='Token')
+SelfToken = TypeVar("SelfToken", bound="Token")
 
 
 class Token:
@@ -109,7 +109,7 @@ class Token:
     def from_headers(cls: type[SelfToken], auth: AuthClient) -> SelfToken:
         token_id = extract_token_id_from_header()
         if not token_id:
-            raise InvalidTokenAPIException('')
+            raise InvalidTokenAPIException("")
         return cls(token_id, auth)
 
     def __init__(self, uuid: str, auth: AuthClient) -> None:
@@ -124,11 +124,11 @@ class Token:
 
     @property
     def tenant_uuid(self) -> str | None:
-        return self._token_dict['metadata'].get('tenant_uuid')
+        return self._token_dict["metadata"].get("tenant_uuid")
 
     @property
     def user_uuid(self) -> str | None:
-        return self._token_dict['metadata'].get('uuid')
+        return self._token_dict["metadata"].get("uuid")
 
     @property
     def _token_dict(self) -> dict[str, Any]:
@@ -166,7 +166,7 @@ class Token:
             return cached_tenant
 
         try:
-            tenants_list = self._auth.tenants.list(tenant_uuid)['items']
+            tenants_list = self._auth.tenants.list(tenant_uuid)["items"]
         except requests.HTTPError as e:
             if e.response is not None and e.response.status_code == 401:
                 if self.tenant_uuid == tenant_uuid:
@@ -177,7 +177,7 @@ class Token:
         except requests.RequestException as e:
             raise AuthServerUnreachable(self._auth.host, self._auth.port, e)
 
-        tenants = [Tenant(t['uuid'], t['name']) for t in tenants_list]
+        tenants = [Tenant(t["uuid"], t["name"]) for t in tenants_list]
         self._cache_tenants = {tenant_uuid: tenants}
         return tenants
 

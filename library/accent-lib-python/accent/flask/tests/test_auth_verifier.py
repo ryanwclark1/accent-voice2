@@ -19,24 +19,24 @@ class TestAuthVerifierFlask(unittest.TestCase):
         mock_token = Mock()
         mock_g = Mock()
         g_data = {
-            'auth_client': mock_client,
-            'token': mock_token,
-            'token_extractor': None,
+            "auth_client": mock_client,
+            "token": mock_token,
+            "token_extractor": None,
         }
         mock_g.get.side_effect = lambda x: g_data[x]
         tenant_extractor = Mock(return_value=s.tenant)
 
         @auth_verifier.verify_token
-        @required_acl('foo')
+        @required_acl("foo")
         def decorated():
             return s.result
 
         with patch(
-            'accent.flask.auth_verifier.extract_tenant_id_from_header',
+            "accent.flask.auth_verifier.extract_tenant_id_from_header",
             tenant_extractor,
         ):
-            with patch('accent.flask.auth_verifier.g', mock_g):
-                with patch('accent.tenant_flask_helpers.g', mock_g):
+            with patch("accent.flask.auth_verifier.g", mock_g):
+                with patch("accent.tenant_flask_helpers.g", mock_g):
                     result = decorated()
 
         assert result == s.result
@@ -59,9 +59,9 @@ class TestAuthVerifierFlask(unittest.TestCase):
         mock_token = Mock(uuid=s.token, tenant_uuid=s.tenant)
         mock_g = Mock()
         g_data = {
-            'auth_client': mock_client,
-            'token': mock_token,
-            'token_extractor': None,
+            "auth_client": mock_client,
+            "token": mock_token,
+            "token_extractor": None,
         }
         mock_g.get.side_effect = lambda x: g_data[x]
 
@@ -70,8 +70,8 @@ class TestAuthVerifierFlask(unittest.TestCase):
         def decorated():
             return s.result
 
-        with patch('accent.flask.auth_verifier.g', mock_g):
-            with patch('accent.tenant_flask_helpers.g', mock_g):
+        with patch("accent.flask.auth_verifier.g", mock_g):
+            with patch("accent.tenant_flask_helpers.g", mock_g):
                 result = decorated()
 
         assert result == s.result
@@ -96,9 +96,9 @@ class TestAuthVerifierFlask(unittest.TestCase):
         )
         mock_g = Mock()
         g_data = {
-            'auth_client': mock_client,
-            'token': mock_token,
-            'token_extractor': None,
+            "auth_client": mock_client,
+            "token": mock_token,
+            "token_extractor": None,
         }
         mock_g.get.side_effect = lambda x: g_data[x]
 
@@ -107,9 +107,9 @@ class TestAuthVerifierFlask(unittest.TestCase):
         def decorated():
             return s.result
 
-        with patch('accent.flask.auth_verifier.g', mock_g):
-            with patch('accent.tenant_flask_helpers.g', mock_g):
+        with patch("accent.flask.auth_verifier.g", mock_g):
+            with patch("accent.tenant_flask_helpers.g", mock_g):
                 with pytest.raises(Unauthorized) as exc_info:
                     decorated()
 
-        assert exc_info.value.details['invalid_token'] == s.token
+        assert exc_info.value.details["invalid_token"] == s.token

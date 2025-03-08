@@ -3,20 +3,20 @@ name = "accent"
 version = "1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 dependencies = [
-  "cheroot>=8.5.2,<9",
-  "flask>=1.1.2,<2",
-  "itsdangerous>=1.1.0,<2",
-  "jinja2>=2.11.3,<3",
-  "markupsafe>=1.1.1,<2",
-  "marshmallow>=3.10.0,<4",
-  "netifaces>=0.10.9,<0.11",
-  "python-consul>=1.1.0,<2",
-  "pyyaml==5.3.1",
-  "stevedore>=4.0.2,<5",
-  "setuptools>=75.6.0,<76",
-  "werkzeug>=1.0.1,<2",
+  "cheroot>=8.5.2",
+  "flask>=1.1.2",
+  "itsdangerous>=1.1.0",
+  "jinja2>=2.11.3",
+  "markupsafe>=1.1.1",
+  "marshmallow>=3.10.0",
+  "netifaces2",
+  "python-consul>=1.1.0",
+  "pyyaml>=6.0",
+  "stevedore>=5.4.1",
+  "setuptools>=75.6.0",
+  "werkzeug>=1.0.1",
   "accent-lib-rest-client",
   "accent-bus",
   "accent-auth-client",
@@ -24,14 +24,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "commitizen>=3.10.0,<4",
-  "dunamai>=1.18.1,<2",
-  "pytest>=7.2.0,<8",
-  "pytest-cov>=4.0.0,<5",
-  "deptry>=0.6.4,<0.7",
-  "tox>=3.25.1,<4",
-  "pyhamcrest>=2.0.4,<3",
-  "kombu>=5.0.2,<6",
+    "ruff>=0.9.10",
 ]
 
 [tool.uv.sources]

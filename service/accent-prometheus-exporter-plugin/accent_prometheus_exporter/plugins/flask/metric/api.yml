@@ -1,7 +1,0 @@
-paths:
-  /metrics:
-    get:
-      summary: Get Prometheus metrics
-      operationId: get_metrics
-      tags:
-        - metrics

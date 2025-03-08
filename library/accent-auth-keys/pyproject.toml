@@ -3,10 +3,10 @@ name = "accent-auth-keys"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9"
 dependencies = [
-  "cliff>=3.10.1,<4",
-  "PyYAML>=5.3.1,<6",
+  "cliff>=3.10.1",
+  "pyyaml>=6.0",
   "accent-lib-rest-client",
   "accent",
   "accent-auth-client",
@@ -21,20 +21,13 @@ service_update = "accent_auth_keys.commands.service:ServiceUpdate"
 service_clean = "accent_auth_keys.commands.service:ServiceClean"
 
 [dependency-groups]
-dev = [
-  "commitizen>=3.10.0,<4",
-  "dunamai>=1.18.1,<2",
-  "pytest>=7.2.0,<8",
-  "pytest-cov>=4.0.0,<5",
-  "deptry>=0.6.4,<0.7",
-  "tox>=3.25.1,<4",
-]
+dev = ["pytest>=8.3.5"]
 
 [tool.uv.sources]
 accent-lib-rest-client = { workspace = true }
-accent = { path = "../../library/accent-lib-python" }
-accent-auth-client = { path = "../../library/accent-auth-client" }
-accent-auth-cli = { path = "../../service/accent-auth-cli" }
+accent = { workspace = true }
+accent-auth-client = { workspace = true }
+accent-auth-cli = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_auth_keys"]

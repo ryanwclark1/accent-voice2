@@ -28,5 +28,5 @@ def save(history_file: str) -> None:
 
 
 def _create_file(filename: str) -> None:
-    with open(filename, 'w'):
+    with open(filename, "w"):
         pass

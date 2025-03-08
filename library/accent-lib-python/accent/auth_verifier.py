@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-F = TypeVar('F', bound=Callable[..., Any])
-R = TypeVar('R')
+F = TypeVar("F", bound=Callable[..., Any])
+R = TypeVar("R")
 
 
 class _ACLCheck(NamedTuple):
@@ -59,10 +59,10 @@ class AuthVerifierHelpers:
     def extract_acl_check(self, func: Callable[..., R]) -> _ACLCheck:
         # backward compatibility: when func.acl is not defined, it should
         # probably just raise an AttributeError
-        return getattr(func, 'acl', _ACLCheck('', None))
+        return getattr(func, "acl", _ACLCheck("", None))
 
     def extract_no_auth(self, func: Callable[..., R]) -> bool:
-        return getattr(func, 'no_auth', False)
+        return getattr(func, "no_auth", False)
 
     def extract_required_acl(self, func: Callable[..., R], func_kwargs: Any) -> str:
         acl_check = self.extract_acl_check(func)
@@ -93,12 +93,12 @@ class AuthVerifierHelpers:
             raise AuthServerUnreachable(auth_client.host, auth_client.port, error)
 
         if not token_is_valid:
-            raise NotImplementedError('Invalid token without exception')
+            raise NotImplementedError("Invalid token without exception")
 
         return None
 
     def extract_required_tenant(self, func: Callable[..., R]) -> str | None:
-        return getattr(func, 'tenant_uuid', None)
+        return getattr(func, "tenant_uuid", None)
 
     def validate_tenant(
         self,
@@ -112,7 +112,7 @@ class AuthVerifierHelpers:
         raise Unauthorized(token_uuid)
 
     def _required_acl(self, acl_check: _ACLCheck, kwargs: dict[str, str]) -> str:
-        escaped_kwargs = {k: str(v).replace('.', '_') for k, v in kwargs.items()}
+        escaped_kwargs = {k: str(v).replace(".", "_") for k, v in kwargs.items()}
         return str(acl_check.pattern).format(**escaped_kwargs)
 
 
@@ -122,12 +122,12 @@ class AccessCheck:
         self._positive_access_regexes = [
             self._transform_access_to_regex(auth_id, session_id, access)
             for access in acl
-            if not access.startswith('!')
+            if not access.startswith("!")
         ]
         self._negative_access_regexes = [
             self._transform_access_to_regex(auth_id, session_id, access[1:])
             for access in acl
-            if access.startswith('!')
+            if access.startswith("!")
         ]
 
     def matches_required_access(self, required_access: str | None) -> bool:
@@ -144,12 +144,12 @@ class AccessCheck:
         return False
 
     def may_add_access(self, new_access: str) -> bool:
-        return new_access.startswith('!') or self.matches_required_access(new_access)
+        return new_access.startswith("!") or self.matches_required_access(new_access)
 
     def may_remove_access(self, access_to_remove: str) -> bool:
         return self.matches_required_access(
             access_to_remove
-            if not access_to_remove.startswith('!')
+            if not access_to_remove.startswith("!")
             else access_to_remove[1:]
         )
 
@@ -157,28 +157,28 @@ class AccessCheck:
     def _transform_access_to_regex(
         auth_id: str, session_id: str, access: str
     ) -> re.Pattern:
-        access_regex = re.escape(access).replace('\\*', '[^.#]*?').replace('\\#', '.*?')
+        access_regex = re.escape(access).replace("\\*", "[^.#]*?").replace("\\#", ".*?")
         access_regex = AccessCheck._replace_reserved_words(
             access_regex,
-            ReservedWord('me', auth_id),
-            ReservedWord('my_session', session_id),
+            ReservedWord("me", auth_id),
+            ReservedWord("my_session", session_id),
         )
-        return re.compile(f'^{access_regex}$')
+        return re.compile(f"^{access_regex}$")
 
     @staticmethod
     def _replace_reserved_words(
         access_regex: str, *reserved_words: ReservedWord
     ) -> str:
-        words = access_regex.split('\\.')
+        words = access_regex.split("\\.")
         for reserved_word in reserved_words:
             words = [reserved_word.replace(word) for word in words]
-        return '\\.'.join(words)
+        return "\\.".join(words)
 
 
 class ReservedWord:
     def __init__(self, word: str, value: str) -> None:
         self._reserved_word = word
-        self._replacement = f'({word}|{value})'
+        self._replacement = f"({word}|{value})"
 
     def replace(self, word: str) -> str:
         return self._replacement if word == self._reserved_word else word

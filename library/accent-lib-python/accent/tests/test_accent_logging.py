@@ -27,10 +27,10 @@ from accent.accent_logging import (
 )
 
 
-@patch('accent.accent_logging.logging')
+@patch("accent.accent_logging.logging")
 class TestLogging(TestCase):
     def test_setup_logging_with_log_file_then_setup_logging_in_log_file(self, logging):
-        log_file = 'my_log_file.log'
+        log_file = "my_log_file.log"
         root_logger = logging.getLogger.return_value
         file_handler = logging.FileHandler.return_value
         formatter = logging.Formatter.return_value
@@ -104,15 +104,15 @@ class TestLogging(TestCase):
     def test_that_setup_logging_adds_excepthook(self, logging):
         log_file = Mock()
 
-        with patch('sys.excepthook') as new_hook:
+        with patch("sys.excepthook") as new_hook:
             setup_logging(log_file)
 
             assert_that(sys.excepthook, is_not(new_hook))
             assert_that(sys.excepthook, is_(excepthook))
 
 
-@patch('sys.stderr', new_callable=StringIO)
-@patch('sys.stdout', new_callable=StringIO)
+@patch("sys.stderr", new_callable=StringIO)
+@patch("sys.stdout", new_callable=StringIO)
 class TestLoggingOutput(TestCase):
     def setUp(self):
         _, self.file_name = tempfile.mkstemp()
@@ -120,10 +120,10 @@ class TestLoggingOutput(TestCase):
     def test_setup_logging_when_log_in_info_level_then_log_in_stdout(
         self, stdout, stderr
     ):
-        message = 'test info'
+        message = "test info"
 
         setup_logging(self.file_name)
-        logging.getLogger('test').info(message)
+        logging.getLogger("test").info(message)
 
         assert_that(stdout.getvalue(), contains_string(message))
         assert_that(stderr.getvalue(), has_length(0))
@@ -131,22 +131,22 @@ class TestLoggingOutput(TestCase):
     def test_setup_logging_when_log_in_warning_level_then_log_in_stdout(
         self, stdout, stderr
     ):
-        message = ''
+        message = ""
 
         setup_logging(self.file_name)
-        logging.getLogger('test').warning(message)
+        logging.getLogger("test").warning(message)
 
         assert_that(stdout.getvalue(), contains_string(message))
-        assert_that(stderr.getvalue(), equal_to(''))
+        assert_that(stderr.getvalue(), equal_to(""))
 
     def test_setup_logging_when_log_in_error_level_then_log_in_stderr(
         self, stdout, stderr
     ):
-        message = 'test error'
+        message = "test error"
         _, file_name = tempfile.mkstemp()
 
         setup_logging(file_name)
-        logging.getLogger('test').error(message)
+        logging.getLogger("test").error(message)
 
         assert_that(stderr.getvalue(), contains_string(message))
         assert_that(stdout.getvalue(), has_length(0))
@@ -154,28 +154,28 @@ class TestLoggingOutput(TestCase):
 
 class TestLogLevelByName(TestCase):
     def test_get_log_level_by_name_when_unknown_then_raise_valueerror(self):
-        self.assertRaises(ValueError, get_log_level_by_name, 'not a log level name')
+        self.assertRaises(ValueError, get_log_level_by_name, "not a log level name")
 
     def test_get_log_level_by_name_when_valid_name_then_return_log_level(self):
-        assert_that(get_log_level_by_name('DEBUG'), equal_to(logging.DEBUG))
-        assert_that(get_log_level_by_name('INFO'), equal_to(logging.INFO))
-        assert_that(get_log_level_by_name('WARNING'), equal_to(logging.WARNING))
-        assert_that(get_log_level_by_name('ERROR'), equal_to(logging.ERROR))
-        assert_that(get_log_level_by_name('CRITICAL'), equal_to(logging.CRITICAL))
+        assert_that(get_log_level_by_name("DEBUG"), equal_to(logging.DEBUG))
+        assert_that(get_log_level_by_name("INFO"), equal_to(logging.INFO))
+        assert_that(get_log_level_by_name("WARNING"), equal_to(logging.WARNING))
+        assert_that(get_log_level_by_name("ERROR"), equal_to(logging.ERROR))
+        assert_that(get_log_level_by_name("CRITICAL"), equal_to(logging.CRITICAL))
 
     def test_get_log_level_by_name_when_valid_lower_name_then_return_log_level(self):
-        assert_that(get_log_level_by_name('debug'), equal_to(logging.DEBUG))
-        assert_that(get_log_level_by_name('info'), equal_to(logging.INFO))
-        assert_that(get_log_level_by_name('warning'), equal_to(logging.WARNING))
-        assert_that(get_log_level_by_name('error'), equal_to(logging.ERROR))
-        assert_that(get_log_level_by_name('critical'), equal_to(logging.CRITICAL))
+        assert_that(get_log_level_by_name("debug"), equal_to(logging.DEBUG))
+        assert_that(get_log_level_by_name("info"), equal_to(logging.INFO))
+        assert_that(get_log_level_by_name("warning"), equal_to(logging.WARNING))
+        assert_that(get_log_level_by_name("error"), equal_to(logging.ERROR))
+        assert_that(get_log_level_by_name("critical"), equal_to(logging.CRITICAL))
 
 
 class TestSilenceLoggers(TestCase):
-    @patch('accent.accent_logging.logging')
+    @patch("accent.accent_logging.logging")
     def test_that_loggers_are_leveled_down(self, mocked_logging):
         loggers = {}
-        to_silence = ['one', 'two', 'three']
+        to_silence = ["one", "two", "three"]
 
         def get_loggers(logger_name):
             loggers[logger_name] = logger = Mock()

@@ -30,7 +30,7 @@ class FacadeInterpreter:
         error_handler: PrintTracebackErrorHandler | ReRaiseErrorHandler | None = None,
     ) -> None:
         if prompt is None:
-            prompt = f'{os.path.basename(sys.argv[0])}> '
+            prompt = f"{os.path.basename(sys.argv[0])}> "
         if history_file:
             history_file = os.path.expanduser(history_file)
         self._prompt = prompt
@@ -45,9 +45,9 @@ class FacadeInterpreter:
         self._setup_completion()
 
     def _add_std_commands(self) -> None:
-        self._command_registry.register_command('exit', ExitCommand())
+        self._command_registry.register_command("exit", ExitCommand())
         self._command_registry.register_command(
-            'help', HelpCommand(self._command_registry)
+            "help", HelpCommand(self._command_registry)
         )
 
     def _setup_completion(self) -> None:

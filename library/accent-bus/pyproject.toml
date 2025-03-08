@@ -2,10 +2,24 @@
 name = "accent-bus"
 version = "0.1.0"
 description = "Library for internal communication"
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
-requires-python = ">=3.12.8"
-
 dependencies = [
     "amqp>=5.3.1",
     "kombu>=5.4.2",
 ]
+
+[dependency-groups]
+dev = [
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["accent_bus"]
+
+[tool.hatch.build.targets.wheel]
+include = ["accent_bus"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -21,7 +21,7 @@ class ReadlineCompletionHelper:
         self._candidates: list[str] = []
 
     def setup(self) -> None:
-        readline.parse_and_bind('tab: complete')
+        readline.parse_and_bind("tab: complete")
         readline.set_completer_delims(self._raw_command_line_parser.word_delimiter)
         readline.set_completer(self.on_readline_complete)
 

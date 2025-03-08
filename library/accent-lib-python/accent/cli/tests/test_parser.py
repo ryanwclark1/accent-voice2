@@ -18,7 +18,7 @@ class TestRawCommandLineParser(unittest.TestCase):
         self.parser = RawCommandLineParser(self.command_registry)
 
     def test_parse_empty_line(self):
-        raw_command_line = ''
+        raw_command_line = ""
         self.command_registry.get_command_and_args.side_effect = (
             NoMatchingCommandError()
         )
@@ -31,65 +31,65 @@ class TestRawCommandLineParser(unittest.TestCase):
         assert_that(command_line.command_args, none())
 
     def test_parse_one_letter_line(self):
-        raw_command_line = 'h'
+        raw_command_line = "h"
         self.command_registry.get_command_and_args.side_effect = (
             NoMatchingCommandError()
         )
 
         command_line = self.parser.parse(raw_command_line)
 
-        self.command_registry.get_command_and_args.assert_called_once_with(['h'])
-        assert_that(command_line.words, equal_to(['h']))
+        self.command_registry.get_command_and_args.assert_called_once_with(["h"])
+        assert_that(command_line.words, equal_to(["h"]))
         assert_that(command_line.command, none())
         assert_that(command_line.command_args, none())
 
     def test_parse_one_letter_line_with_whitespaces(self):
-        raw_command_line = ' h  \n'
+        raw_command_line = " h  \n"
         self.command_registry.get_command_and_args.side_effect = (
             NoMatchingCommandError()
         )
 
         command_line = self.parser.parse(raw_command_line)
 
-        self.command_registry.get_command_and_args.assert_called_once_with(['h'])
-        assert_that(command_line.words, equal_to(['h']))
+        self.command_registry.get_command_and_args.assert_called_once_with(["h"])
+        assert_that(command_line.words, equal_to(["h"]))
         assert_that(command_line.command, none())
         assert_that(command_line.command_args, none())
 
     def test_parse_one_word_valid_line(self):
-        raw_command_line = 'help'
+        raw_command_line = "help"
         self.command_registry.get_command_and_args.return_value = (self.command, [])
 
         command_line = self.parser.parse(raw_command_line)
 
-        self.command_registry.get_command_and_args.assert_called_once_with(['help'])
-        assert_that(command_line.words, equal_to(['help']))
+        self.command_registry.get_command_and_args.assert_called_once_with(["help"])
+        assert_that(command_line.words, equal_to(["help"]))
         assert_that(command_line.command, equal_to(self.command))
         assert_that(command_line.command_args, equal_to([]))
 
     def test_parse_one_word_valid_line_with_whitespaces(self):
-        raw_command_line = ' help \n'
+        raw_command_line = " help \n"
         self.command_registry.get_command_and_args.return_value = (self.command, [])
 
         command_line = self.parser.parse(raw_command_line)
 
-        self.command_registry.get_command_and_args.assert_called_once_with(['help'])
-        assert_that(command_line.words, equal_to(['help']))
+        self.command_registry.get_command_and_args.assert_called_once_with(["help"])
+        assert_that(command_line.words, equal_to(["help"]))
         assert_that(command_line.command, equal_to(self.command))
         assert_that(command_line.command_args, equal_to([]))
 
     def test_parse_two_word_valid_line(self):
-        raw_command_line = 'help foobar'
+        raw_command_line = "help foobar"
         self.command_registry.get_command_and_args.return_value = (
             self.command,
-            ['foobar'],
+            ["foobar"],
         )
 
         command_line = self.parser.parse(raw_command_line)
 
         self.command_registry.get_command_and_args.assert_called_once_with(
-            ['help', 'foobar']
+            ["help", "foobar"]
         )
-        assert_that(command_line.words, equal_to(['help', 'foobar']))
+        assert_that(command_line.words, equal_to(["help", "foobar"]))
         assert_that(command_line.command, equal_to(self.command))
-        assert_that(command_line.command_args, equal_to(['foobar']))
+        assert_that(command_line.command_args, equal_to(["foobar"]))

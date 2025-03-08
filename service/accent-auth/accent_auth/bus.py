@@ -1,18 +1,30 @@
-# Copyright 2023 Accent Communications
+# accent_auth/dependencies.py
+from typing import AsyncGenerator
 
-from accent_bus.publisher import BusPublisher as Publisher
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_auth.db.engine import AsyncSessionLocal
 
 
-class BusPublisher(Publisher):
-    def __init__(self, service_uuid=None, **kwargs):
-        name = 'accent-auth'
-        self._url = kwargs.pop('uri', None)
-        super().__init__(name, service_uuid, **kwargs)
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Dependency that provides a new async database session per request.
 
-    @classmethod
-    def from_config(cls, service_uuid, bus_config):
-        return cls(service_uuid=service_uuid, **bus_config)
+    Yields:
+        AsyncSession: An asynchronous database session.
 
-    @property
-    def url(self):
-        return self._url
+    Raises:
+        Exception: If any error occurs during commit or rollback.
+
+    Closes the session after yielding it.
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
