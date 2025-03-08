@@ -21,3 +21,6 @@ docs = [
     "mkdocs-material>=9.6.7",
     "mkdocstrings[python]>=0.28.2",
 ]
+
+[tool.uv.workspace]
+members = ["library/accent-agentd-client", "library/accent-bus", "library/accent-lib-rest-client"]
