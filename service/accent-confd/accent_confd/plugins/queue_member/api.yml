@@ -1,0 +1,110 @@
+paths:
+  /queues/{queue_id}/members/agents/{agent_id}:
+    put:
+      operationId: update_agent_queue_association
+      summary: Update Agent-Queue association
+      description: '**Required ACL:** `confd.queues.{queue_id}.members.agents.{agent_id}.update`'
+      tags:
+      - agents
+      - queues
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/queueid'
+      - $ref: '#/parameters/agentid'
+      - name: body
+        in: body
+        schema:
+          $ref: '#/definitions/QueueMemberAgent'
+      responses:
+        '204':
+          description: Association updated
+        '400':
+          $ref: '#/responses/UpdateError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: dissociate_agent_queue
+      summary: Dissociate agent and queue
+      description: '**Required ACL:** `confd.queues.{queue_id}.members.agents.{agent_id}.delete`'
+      tags:
+      - agents
+      - queues
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/queueid'
+      - $ref: '#/parameters/agentid'
+      responses:
+        '204':
+          description: Agent and Queue dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+  /queues/{queue_id}/members/users/{user_id}:
+    put:
+      operationId: update_user_queue_association
+      summary: Update User-Queue association
+      description: '**Required ACL:** `confd.queues.{queue_id}.members.users.{user_id}.update`'
+      tags:
+      - queues
+      - users
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/queueid'
+      - $ref: '#/parameters/useriduuid'
+      - name: body
+        in: body
+        schema:
+          $ref: '#/definitions/QueueMemberUser'
+      responses:
+        '204':
+          description: Association updated
+        '400':
+          $ref: '#/responses/UpdateError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: dissociate_user_queue
+      summary: Dissociate user and queue
+      description: '**Required ACL:** `confd.queues.{queue_id}.members.users.{user_id}.delete`'
+      tags:
+      - queues
+      - users
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/queueid'
+      - $ref: '#/parameters/useriduuid'
+      responses:
+        '204':
+          description: User and Queue dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+
+definitions:
+  QueueMemberAgent:
+    title: QueueMemberAgent
+    description: An association between an agent and a queue. Agents associated to
+      a Queue will receive calls when they are logged in.
+    allOf:
+    - $ref: '#/definitions/QueueMemberAgentRelationBase'
+  QueueMemberUser:
+    title: QueueMemberUser
+    description: An association between a user and a queue.
+    allOf:
+    - $ref: '#/definitions/QueueMemberUserRelationBase'
+  QueueMemberAgentRelationBase:
+    properties:
+      penalty:
+        type: integer
+        description: Agent's penalty. A priority used for distributing calls.
+      priority:
+        type: integer
+        description: Priority of agent in the queue. Only used for linear ring strategy
+  QueueMemberUserRelationBase:
+    properties:
+      priority:
+        type: integer
+        minimum: 0
+        description: Priority of user in the queue. Only used for linear ring strategy

@@ -1,0 +1,123 @@
+# Copyright 2023 Accent Communications
+
+from accent.mallow import fields
+from accent.mallow.validate import Length, OneOf, Range, Regexp
+from accent.mallow_helpers import Schema
+from marshmallow import pre_load
+
+from .config import _MAX_PLUGIN_FORMAT_VERSION
+
+_DEFAULT_PLUGIN_FORMAT_VERSION = 0
+_PLUGIN_NAME_REGEXP = r'^[a-z0-9-]+$'
+_PLUGIN_NAMESPACE_REGEXP = r'^[a-z0-9]+$'
+
+
+class DependencyMetadataSchema(Schema):
+    namespace = fields.String(validate=Length(min=1), required=True)
+    name = fields.String(validate=Length(min=1), required=True)
+
+
+class GitInstallOptionsSchema(Schema):
+    ref = fields.String(missing='master', validate=Length(min=1))
+    url = fields.String(validate=Length(min=1), required=True)
+
+
+class MarketInstallOptionsSchema(Schema):
+    namespace = fields.String(validate=Length(min=1), required=True)
+    name = fields.String(validate=Length(min=1), required=True)
+    version = fields.String()
+
+
+class MarketListRequestSchema(Schema):
+    direction = fields.String(validate=OneOf(['asc', 'desc']), missing='asc')
+    order = fields.String(validate=Length(min=1), missing='name')
+    limit = fields.Integer(validate=Range(min=0), missing=None)
+    offset = fields.Integer(validate=Range(min=0), missing=0)
+    search = fields.String(missing=None)
+    installed = fields.Boolean()
+
+
+class MarketVersionResultSchema(Schema):
+    upgradable = fields.Boolean(required=True)
+    version = fields.String(required=True)
+    min_accent_version = fields.String()
+    max_accent_version = fields.String()
+
+
+class PluginMetadataSchema(Schema):
+    version_fields = ['version', 'max_accent_version', 'min_accent_version']
+    current_version = None
+
+    name = fields.String(validate=Regexp(_PLUGIN_NAME_REGEXP), required=True)
+    namespace = fields.String(validate=Regexp(_PLUGIN_NAMESPACE_REGEXP), required=True)
+    version = fields.String(required=True)
+    plugin_format_version = fields.Integer(
+        validate=Range(min=0, max=_MAX_PLUGIN_FORMAT_VERSION),
+        missing=_DEFAULT_PLUGIN_FORMAT_VERSION,
+    )
+    max_accent_version = fields.String()
+    min_accent_version = fields.String()
+    depends = fields.Nested(MarketInstallOptionsSchema, many=True)
+
+    @pre_load
+    def ensure_string_versions(self, data, **kwargs):
+        for field in self.version_fields:
+            if field not in data:
+                continue
+            value = data[field]
+            if not isinstance(value, float | int):
+                continue
+            data[field] = str(value)
+        return data
+
+    def on_bind_field(self, field_name, field_obj):
+        if field_name == 'max_accent_version':
+            self._set_max_accent_version_parameters(field_obj)
+        elif field_name == 'min_accent_version':
+            self._set_min_accent_version_parameters(field_obj)
+
+    def _set_max_accent_version_parameters(self, field_obj):
+        field_obj.validators = [Range(min=self.current_version)]
+
+    def _set_min_accent_version_parameters(self, field_obj):
+        field_obj.validators = [Range(max=self.current_version)]
+
+
+class MarketListResultSchema(Schema):
+    homepage = fields.String()
+    color = fields.String()
+    display_name = fields.String()
+    name = fields.String(validate=Regexp(_PLUGIN_NAME_REGEXP), required=True)
+    namespace = fields.String(validate=Regexp(_PLUGIN_NAMESPACE_REGEXP), required=True)
+    tags = fields.List(fields.String)
+    author = fields.String()
+    versions = fields.Nested(MarketVersionResultSchema, many=True, required=True)
+    screenshots = fields.List(fields.String)
+    icon = fields.String()
+    description = fields.String()
+    short_description = fields.String()
+    license = fields.String()
+    installed_version = fields.String(missing=None)
+
+
+class OptionField(fields.Field):
+    _options = {
+        'git': fields.Nested(GitInstallOptionsSchema),
+        'market': fields.Nested(MarketInstallOptionsSchema),
+    }
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        method = data.get('method')
+        concrete_options = self._options.get(method)
+        if not concrete_options:
+            return {}
+        return concrete_options._deserialize(value, attr, data)
+
+
+class PluginInstallSchema(Schema):
+    method = fields.String(validate=OneOf(['git', 'market']), required=True)
+    options = OptionField(required=True)
+
+
+class PluginInstallQueryStringSchema(Schema):
+    reinstall = fields.Boolean(default=False, missing=False)

@@ -1,0 +1,76 @@
+paths:
+  /lines/{line_id}/extensions/{extension_id}:
+    delete:
+      operationId: dissociate_line_extension
+      summary: Dissociate line and extension
+      description: '**Required ACL:** `confd.lines.{line_id}.extensions.{extension_id}.delete`
+
+
+        Any devices that are attached to a line must be removed before dissociating
+        an extension from its line. A device can be dissociated by resetting it to
+        autoprov mode.'
+      tags:
+      - lines
+      - extensions
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/extensionid'
+      responses:
+        '204':
+          description: Line and Extension dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    put:
+      operationId: associate_line_extension
+      summary: Associate line and extension
+      description: '**Required ACL:** `confd.lines.{line_id}.extensions.{extension_id}.update`
+
+
+        Because of technical limitations, a line can only have a single ‘internal’
+        extension associated (i.e. an extension with a context of type ‘internal’)'
+      tags:
+      - lines
+      - extensions
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/extensionid'
+      responses:
+        '204':
+          description: Line and Extension associated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+  /lines/{line_id}/extensions:
+    post:
+      operationId: create_line_extension
+      summary: Create extension
+      description: '**Required ACL:** `confd.lines.{line_id}.extensions.create`
+
+        The extension number must be included in one of the extension ranges for the
+        given context.'
+      tags:
+      - extensions
+      - lines
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/lineid'
+      - name: body
+        in: body
+        description: Extension to create
+        required: true
+        schema:
+          $ref: '#/definitions/Extension'
+      responses:
+        '201':
+          description: Extension created
+          schema:
+            $ref: '#/definitions/Extension'
+        '400':
+          $ref: '#/responses/CreateError'
+        '404':
+          description: Line not found
+          schema:
+            $ref: '#/responses/NotFoundError'

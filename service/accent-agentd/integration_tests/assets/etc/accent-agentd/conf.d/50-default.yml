@@ -1,0 +1,12 @@
+debug: true
+rest_api:
+  listen: 0.0.0.0
+db_uri: postgresql://asterisk:password123@postgres/asterisk
+amid:
+  host: amid
+auth:
+  host: auth
+  username: agentd-service
+  password: agentd-password
+bus:
+  host: rabbitmq

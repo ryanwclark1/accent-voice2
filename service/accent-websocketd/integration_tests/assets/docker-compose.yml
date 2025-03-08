@@ -1,0 +1,27 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - "9497"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+
+  websocketd:
+    image: accent-websocketd-test
+    volumes:
+      - "../..:/usr/src/accent-websocketd"
+      - "./etc/accent-websocketd/conf.d/50-base.yml:/etc/accent-websocketd/conf.d/50-base.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+    ports:
+      - "9502"
+    environment:
+      HOME: "/usr/src/accent-websocketd"
+      ACCENT_UUID: "the-predefined-accent-uuid"

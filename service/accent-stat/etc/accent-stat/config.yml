@@ -1,0 +1,29 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: /etc/accent-stat/conf.d/
+
+# Change the log level to debug level.
+debug: false
+
+# Log file.
+log_filename: /var/log/accent-stat.log
+
+# Database connection settings.
+db_uri: postgresql://asterisk:password123@localhost/asterisk?application_name=accent-stat
+
+# accent-auth connection settings.
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false
+
+# accent-confd connection settings
+confd:
+  host: localhost
+  port: 9486
+  prefix: null
+  https: false

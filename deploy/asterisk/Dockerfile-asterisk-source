@@ -1,0 +1,192 @@
+FROM debian:bullseye-slim AS compile-image
+LABEL maintainer="Ryan Clark <ryanc@accentservices.com>"
+ENV ASTERISK_VERSION=20.5.0
+ENV DEBIAN_FRONTEND=noninteractive
+# echo 'libvpb1 libvpb1/countrycode string 55' | sudo debconf-set-selections -v
+
+RUN true \
+    echo $ASTERISK_VERSION \
+    # && echo 'libvpb1 libvpb1/countrycode string 1' | debconf-set-selections -v \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        git \
+        ca-certificates \
+        build-essential \
+        pkg-config \
+        libedit-dev \
+        libjansson-dev \
+        libsqlite3-dev \
+        uuid-dev \
+        libxml2-dev \
+        libspeex-dev \
+        libspeexdsp-dev \
+        libogg-dev \
+        libvorbis-dev \
+        libasound2-dev \
+        portaudio19-dev \
+        libcurl4-openssl-dev \
+        xmlstarlet \
+        bison \
+        flex \
+        libpq-dev \
+        unixodbc-dev \
+        libneon27-dev \
+        libgmime-3.0-dev \
+        liblua5.2-dev \
+        liburiparser-dev \
+        libxslt1-dev \
+        libssl-dev \
+        # libvpb-dev \
+        default-libmysqlclient-dev \
+        libbluetooth-dev \
+        libradcli-dev \
+        freetds-dev \
+        libosptk-dev \
+        libjack-jackd2-dev \
+        bash \
+        libcap-dev\
+        libsnmp-dev \
+        libiksemel-dev \
+        libcorosync-common-dev \
+        libcpg-dev \
+        libcfg-dev \
+        libnewt-dev \
+        libpopt-dev \
+        libical-dev \
+        libspandsp-dev \
+        libcodec2-dev \
+        libfftw3-dev \
+        libsndfile1-dev \
+        libunbound-dev \
+        wget \
+        subversion \
+        bzip2 \
+        patch \
+        libsrtp2-dev \
+        # curl \
+        # libldap-dev \
+        # libncurses5-dev \
+        # libsrtp2-dev \
+        # libuuid1 \
+        # odbc-postgresql \
+        # openssl \
+        # postgresql-client \
+        # supervisor \
+        # unixodbc \
+        # python3-dev \
+        # python3-pip \
+    && apt-get purge -y --auto-remove \ 
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone -b ${ASTERISK_VERSION} --single-branch https://github.com/asterisk/asterisk.git /usr/src/asterisk \
+    # && git clone --tag ${ASTERISK_VERSION} https://github.com/asterisk/asterisk.git /usr/src/asterisk \
+    && cd /usr/src/asterisk \
+    # This technically downloads all prereqs for asterisk, but may not grab git or other dependencies
+    # && ./contrib/scripts/install_prereq install \
+    && ./configure \
+            --with-pjproject-bundled \
+            --with-jansson-bundled \
+            --with-bluetooth \
+            --with-codec2 \
+            --with-crypto \
+            --with-gmime \
+            --with-iconv \
+            --with-iksemel \
+            --with-inotify \
+            --with-libxml2 \
+            --with-libxslt \
+            --with-lua \
+            --with-ogg \
+            --with-opus \
+            --with-spandsp \
+            --with-speex \
+            --with-sqlite3 \
+            --with-unixodbc \
+            --with-uriparser \
+            --with-vorbis \
+            --without-srtp \
+            --without-resample \
+            --without-ldap \
+            --without-vpb \
+    # Is Better Backtraces enabled? Use libbfd (GPL) to generate better inline backtraces.
+    && CFLAGS="-g -O0" make -j 2 \
+    && make menuselect.makeopts \
+    && menuselect/menuselect \
+        --enable-category MENUSELECT_ADDONS \
+        --enable-category MENUSELECT_APPS \
+        --enable-category MENUSELECT_BRIDGES \
+        --enable-category MENUSELECT_CEL \
+        --enable-category MENUSELECT_CDR \
+        --enable-category MENUSELECT_CHANNELS \
+        --enable-category MENUSELECT_CODECS \
+        --enable-category MENUSELECT_FORMATS \
+        --enable-category MENUSELECT_FUNCS \
+        --enable-category MENUSELECT_PBX \
+        --enable-category MENUSELECT_RES \
+        --enable-category MENUSELECT_UTILS \
+        --enable-category MENUSELECT_AGIS \
+        --disable-category MENUSELECT_TESTS \
+        --disable-category MENUSELECT_CORE_SOUNDS \
+        --disable-category MENUSELECT_MOH \
+        --disable-category MENUSELECT_EXTRA_SOUNDS \
+        # --enable BETTER_BACKTRACES \
+        --disable app_voicemail_imap \
+        --disable res_digium_phone \
+        --disable res_remb_modifier \
+        --disable res_pktccops \
+        --disable codec_g729a \
+        --disable BUILD_NATIVE \
+        # --enable chan_ooh323 \
+        # --enable res_mwi_external \
+        # --enable app_voicemail_odbc \
+        # --enable app_statsd \
+        menuselect.makeopts \
+    && make install \
+    && make config \
+    && make samples \
+    # && make install-headers \
+    && cd /tmp \
+    && wget https://downloads.digium.com/pub/telephony/codec_opus/asterisk-18.0/x86-64/codec_opus-18.0_current-x86_64.tar.gz \
+    && tar xvzf codec_opus-18.0_current-x86_64.tar.gz \
+    && cp codec_opus-18.0_1.3.0-x86_64/*.so /usr/lib/asterisk/modules/ \
+    && cp codec_opus-18.0_1.3.0-x86_64/codec_opus_config-en_US.xml /var/lib/asterisk/documentation/thirdparty
+    # && cd /lib/x86_64-linux-gnu/
+
+FROM debian:bullseye-slim AS build-image
+# Is there a better docker way to add user?
+RUN useradd asterisk
+    # && apt-get update -qq \
+    # && apt-get install -y --no-install-recommends \
+    #     libxml2-dev
+
+COPY --from=compile-image --chown=asterisk:asterisk /usr/lib/libasterisk* /usr/lib/
+COPY --from=compile-image --chown=asterisk:asterisk /usr/lib/asterisk/ /usr/lib/asterisk/
+COPY --from=compile-image --chown=asterisk:asterisk /var/spool/asterisk/ /var/spool/asterisk/
+COPY --from=compile-image --chown=asterisk:asterisk /var/log/asterisk/ /var/log/asterisk/
+COPY --from=compile-image --chown=asterisk:asterisk /usr/sbin/asterisk /usr/sbin/asterisk
+COPY --from=compile-image --chown=asterisk:asterisk /etc/asterisk/ /etc/asterisk/
+# etc/init.d missing when compiling direct, perhaps make configs is will fix - make config
+# COPY --from=compile-image --chown=asterisk:asterisk /etc/init.d/asterisk /etc/init.d/
+COPY --from=compile-image --chown=asterisk:asterisk /var/lib/asterisk/ /var/lib/asterisk/
+# The build stage wasn't working because it was missing the C files ie libcap.so.2 
+# COPY --from=compile-image --chown=root:root /usr/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/
+# COPY --from=compile-image --chown=root:root /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu/
+
+
+# COPY ${PWD}/asterisk.conf /etc/supervisor/conf.d/asterisk.conf
+
+# Confirm ports
+EXPOSE 5060/udp \
+    5060/tcp \
+    8088/tcp \
+    5038/tcp
+    # 10000-11000/udp
+
+VOLUME /var/lib/asterisk/sounds /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk /etc/asterisk
+
+
+# CMD ["asterisk" "-dvf"]
+# COPY ./config/docker-entrypoint.sh /
+# ENTRYPOINT ["/docker-entrypoint.sh"]
+# ENTRYPOINT /usr/sbin/asterisk -f
+# CMD ["/usr/sbin/asterisk", "-vvvdddf", "-T", "-W", "-U", "asterisk", "-p"]
+# ENTRYPOINT [ "/entrypoint.sh" ]

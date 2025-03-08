@@ -1,0 +1,232 @@
+{% extends "layout.html" %}
+{% set name = resource.firstname ~ (' ' ~ resource.lastname if resource.lastname else '') %}
+
+{% block content_header %}
+<nav class="breadcrumbs">
+  {{ build_breadcrumbs(current_breadcrumbs + [
+  { 'name': name, 'link': url_for('.UserView:get', id=resource.uuid), 'icon': 'user' }
+  ]) }}
+</nav>
+{% endblock %}
+
+{% block content %}
+<section class="section-row">
+  <div class="tabs-box">
+    <nav class="tabs-navigation">
+      {{ add_tab_navigation_header(_('User'), name, 'user') }}
+      {{ add_tab_navigation_item('user', _('User'), active=True) }}
+      {{ add_tab_navigation_item('general', _('General')) }}
+      {{ add_tab_navigation_item('fallbacks', _('Fallbacks')) }}
+      {{ add_tab_navigation_item('services', _('Services')) }}
+      {{ add_tab_navigation_item('lines', _('Lines')) }}
+      {{ add_tab_navigation_item('groups', _('Groups')) }}
+      {{ add_tab_navigation_item('funckeys', _('FuncKeys')) }}
+      {{ add_tab_navigation_item('schedule', _('Schedule')) }}
+      {{ add_tab_navigation_item('voicemail', _('Voicemail')) }}
+      {{ add_tab_navigation_item('callpermissions', _('Call Permissions')) }}
+    </nav>
+    <form action="{{ url_for('.UserView:put', id=resource.uuid) }}" method="POST">
+      <div class="tabs-content">
+
+        {% call build_tab_content_item('user', active=True) %}
+        <div class="form-section">
+          <h3>{{ _('User Details') }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ render_field(form.firstname) }}
+            {{ render_field(form.lastname) }}
+            {{ render_field(form.caller_id) }}
+            {{ render_field(form.outgoing_caller_id, data_allow_custom_values=True) }}
+            {{ render_field(form.email) }}
+          </div>
+          <fieldset class="border rounded p-4">
+            <legend>{{ _('Authentication') }}</legend>
+            {{ render_field(form.auth_enabled) }}
+            {{ render_field(form.username) }}
+            {{ render_field(form.password, type='password', data_toggle='password') }}
+          </fieldset>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('general') %}
+        <div class="form-section">
+          <h3>{{ _('General Information') }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ render_field(form.mobile_phone_number) }}
+            {{ render_field(form.ring_seconds) }}
+            {{ render_field(form.music_on_hold, data_listing_href=url_for(listing_urls['moh']), data_allow_clear='true',
+            data_placeholder='Choose Music on Hold') }}
+            {{ render_field(form.preprocess_subroutine) }}
+            {{ render_field(form.simultaneous_calls) }}
+            {{ render_field(form.timezone) }}
+            {{ render_field(form.userfield) }}
+            {{ render_field(form.description) }}
+          </div>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('fallbacks') %}
+        <div class="form-section">
+          <h3>{{ _('Fallback Destinations') }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ render_field(form.fallbacks.busy_destination) }}
+            {{ render_field(form.fallbacks.congestion_destination) }}
+            {{ render_field(form.fallbacks.fail_destination) }}
+            {{ render_field(form.fallbacks.noanswer_destination) }}
+          </div>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('services') %}
+        <div class="form-section">
+          <h3>{{ _('Services') }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ render_field(form.services.dnd.enabled) }}
+            {{ render_field(form.services.incallfilter.enabled) }}
+            {{ render_field(form.call_record_outgoing_external_enabled) }}
+            {{ render_field(form.call_record_outgoing_internal_enabled) }}
+            {{ render_field(form.call_record_incoming_external_enabled) }}
+            {{ render_field(form.call_record_incoming_internal_enabled) }}
+            {{ render_field(form.call_permission_password) }}
+          </div>
+
+          <fieldset class="border rounded p-4">
+            <legend>{{ _('Call Forwards') }}</legend>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {{ render_field(form.forwards.busy.enabled) }}
+              {{ render_field(form.forwards.busy.destination) }}
+              {{ render_field(form.forwards.unconditional.enabled) }}
+              {{ render_field(form.forwards.unconditional.destination) }}
+              {{ render_field(form.forwards.noanswer.enabled) }}
+              {{ render_field(form.forwards.noanswer.destination) }}
+            </div>
+          </fieldset>
+
+          <fieldset class="border rounded p-4">
+            <legend>{{ _('DTMF Services') }}</legend>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {{ render_field(form.call_transfer_enabled) }}
+              {{ render_field(form.dtmf_hangup_enabled) }}
+              {{ render_field(form.online_call_record_enabled) }}
+            </div>
+          </fieldset>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('lines') %}
+        <div class="form-section">
+          <h3>{{ _('Lines') }}</h3>
+          <div class="table-container">
+            <table class="table-auto w-full border-collapse border border-gray-300">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Protocol') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Templates') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Name') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Context') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Extension') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Device') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Line (N°)') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Registrar') }}</th>
+                  <th class="border border-gray-300 px-4 py-2">{{ _('Application') }}</th>
+                  <th class="border border-gray-300 px-4 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for line in form.lines %}
+                <tr>
+                  <td>{{ render_field(line.protocol) }}</td>
+                  <td>{{ render_field(line.template_uuids) }}</td>
+                  <td>{{ render_field(line['name']) }}</td>
+                  <td>{{ render_field(line.context) }}</td>
+                  <td>{{ render_field(line.extensions[0].exten) }}</td>
+                  <td>{{ render_field(line.device) }}</td>
+                  <td>{{ render_field(line.position) }}</td>
+                  <td>{{ render_field(line.registrar) }}</td>
+                  <td>{{ render_field(line.application.uuid) }}</td>
+                  <td><button class="text-red-500 hover:text-red-700">Delete</button></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('groups') %}
+        <div class="form-section">
+          <h3>{{ _('Groups') }}</h3>
+          {{ render_field(form.group_ids, data_listing_href=url_for(listing_urls['group'])) }}
+          {{ render_field(form.groups, with_label=False) }}
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('funckeys') %}
+        <div class="form-section">
+          <h3>{{ _('FuncKeys') }}</h3>
+          <table class="table-auto w-full border-collapse border border-gray-300">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border border-gray-300 px-4 py-2">{{ _('Position') }}</th>
+                <th class="border border-gray-300 px-4 py-2">{{ _('Label') }}</th>
+                <th class="border border-gray-300 px-4 py-2">{{ _('Destination') }}</th>
+                <th class="border border-gray-300 px-4 py-2">{{ _('BLF') }}</th>
+                <th class="border border-gray-300 px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for funckey in form.funckeys %}
+              <tr>
+                <td>{{ render_field(funckey.digit) }}</td>
+                <td>{{ render_field(funckey['label']) }}</td>
+                <td>{{ render_field(funckey.destination) }}</td>
+                <td>{{ render_field(funckey.blf) }}</td>
+                <td><button class="text-red-500 hover:text-red-700">Delete</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('schedule') %}
+        <div class="form-section">
+          <h3>{{ _('Schedule') }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{ render_field(form.schedules[0]['name']) }}
+            {{ render_field(form.schedules[0]['id'], data_listing_href=url_for(listing_urls['schedule']),
+            data_allow_clear='true', data_placeholder=_('Choose Schedules')) }}
+          </div>
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('voicemail') %}
+        <div class="form-section">
+          <h3>{{ _('Voicemail') }}</h3>
+          {{ render_field(form.voicemail['id'], data_listing_href=url_for(listing_urls['voicemail']),
+          data_allow_clear='true', data_placeholder=_('Choose Voicemail')) }}
+        </div>
+        {% endcall %}
+
+        {% call build_tab_content_item('callpermissions') %}
+        <div class="form-section">
+          <h3>{{ _('Call Permissions') }}</h3>
+          {{ render_field(form.call_permission_ids, data_listing_href=url_for(listing_urls['callpermission']),
+          data_allow_clear='true', data_placeholder=_('Choose Call Permissions')) }}
+          {{ render_field(form.call_permissions, with_label=False) }}
+        </div>
+        {% endcall %}
+
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block additional_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('User Edit Template Loaded');
+  });
+</script>
+<script src="{{ url_for('.static', filename='js/user.js') }}"></script>
+{% endblock %}

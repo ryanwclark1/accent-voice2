@@ -1,0 +1,5 @@
+ari:
+  connection:
+    username: accent
+    password: accent
+max_meeting_participants: 4

@@ -1,0 +1,1127 @@
+File: accent_dird_client/__init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.client import DirdClient as Client
+
+__all__ = ['Client']
+
+----------------------------------------
+
+File: accent_dird_client/client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+import accent_dird_client.commands
+
+
+class DirdClient(BaseClient):
+    namespace = 'accent_dird_client.commands'
+
+    backends: accent_dird_client.commands.backends.BackendsCommand
+    conference_source: accent_dird_client.commands.conference_source.Command
+    config: accent_dird_client.commands.config.ConfigCommand
+    csv_source: accent_dird_client.commands.csv_source.Command
+    csv_ws_source: accent_dird_client.commands.csv_ws_source.Command
+    directories: accent_dird_client.commands.directories.DirectoriesCommand
+    displays: accent_dird_client.commands.displays.DisplaysCommand
+    graphql: accent_dird_client.commands.graphql.GraphQLCommand
+    ldap_source: accent_dird_client.commands.ldap_source.Command
+    personal: accent_dird_client.commands.personal.PersonalCommand
+    phonebook: accent_dird_client.commands.phonebook.PhonebookCommand
+    phonebook_deprecated: accent_dird_client.commands.phonebook_deprecated.DeprecatedPhonebookCommand
+    accent_source: accent_dird_client.commands.accent_source.Command
+    personal_source: accent_dird_client.commands.personal_source.Command
+    phonebook_source: accent_dird_client.commands.phonebook_source.Command
+    profiles: accent_dird_client.commands.profiles.ProfilesCommand
+    sources: accent_dird_client.commands.sources.SourcesCommand
+    status: accent_dird_client.commands.status.StatusCommand
+
+    def __init__(self, host, port=443, prefix='/api/dird', version='0.1', **kwargs):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: accent_dird_client/command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import DirdError, DirdServiceUnavailable, InvalidDirdError
+
+
+class DirdCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response):
+        if response.status_code == 503:
+            raise DirdServiceUnavailable(response)
+
+        try:
+            raise DirdError(response)
+        except InvalidDirdError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: accent_dird_client/commands/accent_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/accent/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/conference_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/conference/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.command import DirdCommand
+
+from ..types import JSON
+
+
+class ConfigCommand(DirdCommand):
+    resource = 'config'
+
+    def get(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def patch(self, config_patch: dict[str, JSON]) -> JSON:
+        headers = self._get_headers()
+        r = self.session.patch(self.base_url, headers=headers, json=config_patch)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/csv_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/csv/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/csv_ws_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/csv_ws/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/directories.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import logging
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+logger = logging.getLogger(__name__)
+
+
+class DirectoriesCommand(DirdRESTCommand):
+    resource = 'directories'
+
+    def lookup(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/lookup/{profile}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def lookup_user(self, profile, user_uuid, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/lookup/{profile}/{user_uuid}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def reverse(self, profile, user_uuid=None, token=None, tenant_uuid=None, **kwargs):
+        if not user_uuid and 'accent_user_uuid' in kwargs:
+            logger.warning(
+                'The "accent_user_uuid" argument has been renamed to "user_uuid"'
+            )
+            user_uuid = kwargs.pop('accent_user_uuid')
+
+        url = f'{self.base_url}/reverse/{profile}/{user_uuid}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def headers(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/lookup/{profile}/headers'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def favorites(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/favorites/{profile}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def new_favorite(self, directory, contact, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/favorites/{directory}/{contact}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def remove_favorite(
+        self, directory, contact, token=None, tenant_uuid=None, **kwargs
+    ):
+        url = f'{self.base_url}/favorites/{directory}/{contact}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def personal(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/personal/{profile}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_sources(self, profile, token=None, tenant_uuid=None, **list_params):
+        url = f'{self.base_url}/{profile}/sources'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=list_params, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/displays.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class DisplaysCommand(DirdRESTCommand):
+    resource = 'displays'
+
+    def create(self, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=body, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, display_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, display_uuid])
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def edit(self, display_uuid, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, display_uuid])
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def get(self, display_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, display_uuid])
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/graphql.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base_command import DirdRESTCommand
+
+
+class GraphQLCommand(DirdRESTCommand):
+    resource = 'graphql'
+
+    def query(self, query, token=None, tenant_uuid=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=query, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/helpers/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: accent_dird_client/commands/helpers/base_command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client import RESTCommand
+
+
+class DirdRESTCommand(RESTCommand):
+    def build_headers(self, tenant_uuid=None, token=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        return self._build_headers(headers, token)
+
+    # Keep only for compatibility with external plugins
+    build_rw_headers = build_headers
+    build_ro_headers = build_headers
+
+    def _build_headers(self, headers, token):
+        if token:
+            headers['X-Auth-Token'] = token
+        return headers
+
+----------------------------------------
+
+File: accent_dird_client/commands/helpers/base_source_command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class SourceCommand(DirdRESTCommand):
+    def create(self, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=body, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, source_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, source_uuid])
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def get(self, source_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, source_uuid])
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def edit(self, source_uuid, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, source_uuid])
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/ldap_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/ldap/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/personal_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/personal/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/phonebook.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base_command import DirdRESTCommand
+
+
+class PhonebookCommand(DirdRESTCommand):
+    resource = 'phonebooks'
+
+    def create(self, token=None, phonebook_body=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_all_url()
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_all_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, token=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_all_url()
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_contacts(
+        self, token=None, phonebook_uuid=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._contact_all_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(self, token=None, phonebook_uuid=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_one_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        phonebook_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._phonebook_one_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get(self, token=None, phonebook_uuid=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_one_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(phonebook_uuid, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def edit_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_uuid=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(phonebook_uuid, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(phonebook_uuid, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def import_csv(
+        self,
+        phonebook_uuid=None,
+        csv_text=None,
+        encoding=None,
+        token=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_import_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
+        headers['Content-Type'] = content_type
+        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def _contact_all_url(self, phonebook_uuid):
+        return f'{self._phonebook_one_url(phonebook_uuid)}/contacts'
+
+    def _contact_one_url(self, phonebook_uuid, contact_uuid):
+        return f'{self._contact_all_url(phonebook_uuid)}/{contact_uuid}'
+
+    def _contact_import_url(self, phonebook_uuid):
+        return f'{self._contact_all_url(phonebook_uuid)}/import'
+
+    def _phonebook_all_url(self):
+        return f'{self.base_url}'
+
+    def _phonebook_one_url(self, phonebook_uuid):
+        return f'{self._phonebook_all_url()}/{phonebook_uuid}'
+
+----------------------------------------
+
+File: accent_dird_client/commands/phonebook_deprecated.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class DeprecatedPhonebookCommand(DirdRESTCommand):
+    resource = 'tenants'
+
+    def create(
+        self, token=None, tenant=None, phonebook_body=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._phonebook_all_url(tenant)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_all_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, token=None, tenant=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_all_url(tenant)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_contacts(
+        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._contact_all_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(
+        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        phonebook_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get(
+        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def edit_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_uuid=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def import_csv(
+        self,
+        tenant=None,
+        phonebook_id=None,
+        csv_text=None,
+        encoding=None,
+        token=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_import_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
+        headers['Content-Type'] = content_type
+        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def _contact_all_url(self, tenant, phonebook_id):
+        return f'{self._phonebook_one_url(tenant, phonebook_id)}/{"contacts"}'
+
+    def _contact_one_url(self, tenant, phonebook_id, contact_uuid):
+        return f'{self._contact_all_url(tenant, phonebook_id)}/{contact_uuid}'
+
+    def _contact_import_url(self, tenant, phonebook_id):
+        return f'{self._contact_all_url(tenant, phonebook_id)}/import'
+
+    def _phonebook_all_url(self, tenant):
+        return f'{self.base_url}/{tenant}/phonebooks'
+
+    def _phonebook_one_url(self, tenant, phonebook_id):
+        return f'{self._phonebook_all_url(tenant)}/{phonebook_id}'
+
+----------------------------------------
+
+File: accent_dird_client/commands/phonebook_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/phonebook/sources'
+
+----------------------------------------
+
+File: accent_dird_client/commands/profiles.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class ProfilesCommand(DirdRESTCommand):
+    resource = 'profiles'
+
+    def create(self, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=body, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, profile_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, profile_uuid])
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def edit(self, profile_uuid, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, profile_uuid])
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def get(self, profile_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, profile_uuid])
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/sources.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class SourcesCommand(DirdRESTCommand):
+    resource = 'sources'
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class StatusCommand(DirdRESTCommand):
+    resource = 'status'
+
+    def get(self, tenant_uuid=None):
+        headers = self.build_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_dird_client/commands/__init__.py
+Please review for update
+
+from . import (
+    backends,
+    conference_source,
+    config,
+    csv_source,
+    csv_ws_source,
+    directories,
+    displays,
+    graphql,
+    ldap_source,
+    personal,
+    personal_source,
+    phonebook,
+    phonebook_deprecated,
+    phonebook_source,
+    profiles,
+    sources,
+    status,
+    accent_source,
+)
+
+__all__ = [
+    'backends',
+    'conference_source',
+    'config',
+    'csv_source',
+    'csv_ws_source',
+    'directories',
+    'displays',
+    'graphql',
+    'ldap_source',
+    'personal_source',
+    'personal',
+    'phonebook_deprecated',
+    'phonebook',
+    'phonebook_source',
+    'profiles',
+    'sources',
+    'status',
+    'accent_source',
+]
+
+----------------------------------------
+
+File: accent_dird_client/commands/backends.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class BackendsCommand(DirdRESTCommand):
+    resource = 'backends'
+
+    def create_source(self, backend, body, tenant_uuid=None, token=None):
+        url = self._build_base_url(backend)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, headers=headers, json=body)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_source(self, backend, source_uuid, tenant_uuid=None, token=None):
+        url = self._build_url(backend, source_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def edit_source(self, backend, source_uuid, body, tenant_uuid=None, token=None):
+        url = self._build_url(backend, source_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, headers=headers, json=body)
+        self.raise_from_response(r)
+
+    def get_source(self, backend, source_uuid, tenant_uuid=None, token=None):
+        url = self._build_url(backend, source_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_sources(self, backend, tenant_uuid=None, token=None, **kwargs):
+        url = self._build_base_url(backend)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, headers=headers, params=kwargs)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def list_contacts_from_source(
+        self, backend, source_uuid, tenant_uuid=None, token=None, uuids=None, **kwargs
+    ):
+        if backend == 'accent' and uuids is not None:
+            kwargs['uuid'] = ','.join(uuid for uuid in uuids)
+        url = self._build_url(backend, source_uuid, 'contacts')
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, headers=headers, params=kwargs)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def _build_base_url(self, backend):
+        return '/'.join([self.base_url, backend, 'sources'])
+
+    def _build_url(self, backend, source_uuid, *args):
+        return '/'.join([self.base_url, backend, 'sources', source_uuid] + list(args))
+
+----------------------------------------
+
+File: accent_dird_client/commands/personal.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class PersonalCommand(DirdRESTCommand):
+    resource = 'personal'
+
+    def list(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def purge(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(self.base_url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def export_csv(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        del headers['Accept']
+        kwargs['format'] = 'text/csv'
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+
+        if r.status_code == 200:
+            return r.text
+
+        if r.status_code == 204:
+            return None
+
+        self.raise_from_response(r)
+
+    def get(self, contact_id, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        url = f'{self.base_url}/{contact_id}'
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def import_csv(
+        self, csv_text, encoding=None, token=None, tenant_uuid=None, **kwargs
+    ):
+        url = f'{self.base_url}/import'
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
+        headers['Content-Type'] = content_type
+        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create(self, contact_infos, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(
+            self.base_url, json=contact_infos, params=kwargs, headers=headers
+        )
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def edit(self, contact_id, contact_infos, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/{contact_id}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=contact_infos, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(self, contact_id, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/{contact_id}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_dird_client/exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class DirdError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidDirdError()
+
+        if not body:
+            raise InvalidDirdError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+
+        except KeyError:
+            raise InvalidDirdError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class InvalidDirdError(Exception):
+    pass
+
+
+class DirdServiceUnavailable(DirdError):
+    pass
+
+----------------------------------------
+
+File: accent_dird_client/types.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+from __future__ import annotations
+
+from typing import TypeAlias, Union
+
+JSON: TypeAlias = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+
+----------------------------------------
+

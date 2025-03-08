@@ -1,0 +1,8 @@
+services:
+
+  platuml:
+    image:  plantuml/plantuml:latest
+    container_name: plantuml
+    volumes:
+      - ./content:/content
+      - 

@@ -1,0 +1,4 @@
+[tool.djlint]
+reformat = true
+ignore = "H006,H021"
+extension = "jinja"

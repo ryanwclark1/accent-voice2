@@ -1,0 +1,33 @@
+general:
+  advertised_http_url: http://127.0.0.1:8667
+  tftp_port: 69
+  http_proxied_listen_interface: 127.0.0.1
+  http_proxied_listen_port: 18667
+  # Number of trusted HTTP reverse-proxies before a phone can reach
+  # accent-provd. This is used to detect the device's IP address.
+  # If 0, then the HTTP header X-Forwarded-For will be ignored.
+  http_proxied_trusted_proxies_count: 1
+  sync_service_type: "asterisk_ami"
+  syncdb:
+    interval_sec: 86400
+    start_sec: 60
+  http_auth_strategy: null
+rest_api:
+  ip: 127.0.0.1
+  port: 8666
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false
+amid:
+  host: localhost
+  port: 9491
+  prefix: null
+  https: false
+bus:
+  username: guest
+  password: guest
+  host: localhost
+  port: 5672
+  exchange_name: accent-headers

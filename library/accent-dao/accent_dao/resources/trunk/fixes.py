@@ -1,0 +1,41 @@
+# Copyright 2023 Accent Communications
+
+from sqlalchemy.orm import Load
+
+from accent_dao.alchemy.trunkfeatures import TrunkFeatures
+from accent_dao.alchemy.usercustom import UserCustom
+from accent_dao.alchemy.useriax import UserIAX
+
+
+class TrunkFixes:
+    def __init__(self, session):
+        self.session = session
+
+    def fix(self, trunk_id):
+        row = self.get_row(trunk_id)
+        self.fix_protocol(row)
+        self.session.flush()
+
+    def get_row(self, trunk_id):
+        query = (
+            self.session.query(TrunkFeatures, UserIAX, UserCustom)
+            .outerjoin(TrunkFeatures.endpoint_sip)
+            .outerjoin(TrunkFeatures.endpoint_iax)
+            .outerjoin(TrunkFeatures.endpoint_custom)
+            .options(
+                Load(TrunkFeatures).load_only("id", "context"),
+                Load(UserIAX).load_only("id", "category", "context"),
+                Load(UserCustom).load_only("id", "category", "context"),
+            )
+            .filter(TrunkFeatures.id == trunk_id)
+        )
+
+        return query.first()
+
+    def fix_protocol(self, row):
+        if row.UserIAX:
+            row.UserIAX.context = row.TrunkFeatures.context
+            row.UserIAX.category = 'trunk'
+        elif row.UserCustom:
+            row.UserCustom.context = row.TrunkFeatures.context
+            row.UserCustom.category = 'trunk'

@@ -1,0 +1,8 @@
+version: "3"
+services:
+  sync:
+    depends_on:
+      - plugind
+      - rabbitmq
+    environment:
+      TARGETS: "rabbitmq:5672 plugind:9503"

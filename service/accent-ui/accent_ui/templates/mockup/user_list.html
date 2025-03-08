@@ -1,0 +1,626 @@
+<html class="h-full bg-white">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.tailwindcss.js"></script>
+
+<body class="h-full" x-data="{ open: false, openModal: false }">
+
+  <div class="relative min-h-full">
+    <!-- Off-canvas menu for mobile, show/hide based on `open` state. -->
+    <div class="relative z-50 lg:hidden" role="dialog" aria-modal="true" x-show="open"
+      x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300"
+      x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;">
+      <!-- Off-canvas menu backdrop -->
+      <div class="fixed inset-0 bg-gray-900/80" aria-hidden="true" @click="open = false"></div>
+
+      <div class="fixed inset-0 flex">
+        <!-- Off-canvas menu panel -->
+        <div class="relative mr-16 flex w-full max-w-xs flex-1" x-show="open"
+          x-transition:enter="transition ease-in-out duration-300 transform"
+          x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+          x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0"
+          x-transition:leave-end="-translate-x-full" style="display: none;">
+          <!-- Close button -->
+          <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
+            <button type="button" class="-m-2.5 p-2.5" @click="open = false">
+              <span class="sr-only">Close sidebar</span>
+              <svg class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                aria-hidden="true" data-slot="icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Sidebar content -->
+          <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 ring-1 ring-white/10">
+            <div class="flex h-16 shrink-0 items-center">
+              <img class="h-8 w-auto" src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=500"
+                alt="Your Company">
+            </div>
+            <!-- Small/Partial Navigation -->
+            <nav class="flex flex-1 flex-col">
+              <ul role="list" class="flex flex-1 flex-col gap-y-7">
+                <li>
+                  <ul role="list" class="-mx-2 space-y-1">
+                    <li>
+                      <!-- Current: "bg-gray-800 text-white" -->
+                      <a href="#"
+                        class="group flex gap-x-3 rounded-md bg-gray-800 p-2 text-sm/6 font-semibold text-white">
+                        <svg class="size-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" aria-hidden="true" data-slot="icon">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                        </svg>
+                        Dashboard
+                      </a>
+                    </li>
+                    <!-- Add your other menu items as is -->
+                  </ul>
+                </li>
+                <!-- More nav items -->
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Static sidebar for desktop -->
+    <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+      <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
+        <div class="flex h-16 shrink-0 items-center">
+          <img class="h-8 w-auto" src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=500"
+            alt="Accent Voice">
+        </div>
+        <nav class="flex flex-1 flex-col">
+          <!-- Full/Desktop nav items go here -->
+          <ul role="list" class="flex flex-1 flex-col gap-y-7">
+            <li>
+              <ul role="list" class="-mx-2 space-y-1">
+                <li>
+                  <!-- Current: "bg-gray-800 text-white" -->
+                  <a href="#" class="group flex gap-x-3 rounded-md bg-gray-800 p-2 text-sm/6 font-semibold text-white">
+                    <svg class="size-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                      aria-hidden="true" data-slot="icon">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                    </svg>
+                    Dashboard
+                  </a>
+                </li>
+                <!-- Add your other menu items as is -->
+              </ul>
+            </li>
+            <!-- More nav items -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+
+    <div class="lg:pl-72">
+      <div
+        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="open = !open">
+          <span class="sr-only">Open sidebar</span>
+          <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+            aria-hidden="true" data-slot="icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+
+        <!-- Rest of top bar -->
+        <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <form class="grid flex-1 grid-cols-1" action="#" method="GET">
+            <input type="search" name="search" aria-label="Search" placeholder="Search"
+              class="col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-10 pr-3 text-base text-gray-900 placeholder:text-gray-400 outline outline-1 -outline-offset-1 outline-gray-300 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6">
+
+            <svg class="pointer-events-none col-start-1 row-start-1 ml-3 size-5 self-center text-gray-400" viewBox="0 0 20 20"
+              fill="currentColor" aria-hidden="true" data-slot="icon">
+              <path fill-rule="evenodd"
+                d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+                clip-rule="evenodd" />
+            </svg>
+          </form>
+          <div class="flex items-center gap-x-4 lg:gap-x-6">
+            <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+              <span class="sr-only">View notifications</span>
+              <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                aria-hidden="true" data-slot="icon">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+              </svg>
+            </button>
+
+            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true"></div>
+
+            <!-- Profile dropdown -->
+            <div class="relative" x-data="{ openProfileMenu: false }">
+              <button type="button" class="-m-1.5 flex items-center p-1.5" id="user-menu-button" aria-expanded="false"
+                aria-haspopup="true" @click="openProfileMenu = !openProfileMenu">
+                <span class="sr-only">Open user menu</span>
+                <img class="size-8 rounded-full bg-gray-50"
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e" alt="">
+                <span class="hidden lg:flex lg:items-center">
+                  <span class="ml-4 text-sm/6 font-semibold text-gray-900" aria-hidden="true">Tom Cook</span>
+                  <svg class="ml-2 size-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                    data-slot="icon">
+                    <path fill-rule="evenodd"
+                      d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </span>
+              </button>
+
+              <!-- Dropdown menu -->
+              <div
+                class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none"
+                role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1"
+                x-show="openProfileMenu" x-transition:enter="transition ease-out duration-100 transform"
+                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-75 transform"
+                x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                @click.outside="openProfileMenu = false" style="display: none;">
+                <a href="#" class="block px-3 py-1 text-sm/6 text-gray-900 hover:bg-gray-50" role="menuitem"
+                  tabindex="-1" id="user-menu-item-0">Your profile</a>
+                <a href="#" class="block px-3 py-1 text-sm/6 text-gray-900 hover:bg-gray-50" role="menuitem"
+                  tabindex="-1" id="user-menu-item-1">Sign out</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main class="pt-6 py-10">
+        <div class="px-4 sm:px-6 lg:px-8">
+          <!-- Your content -->
+           <!-- Headers and breadcrumbs -->
+          <div>
+            <div>
+              <nav class="sm:hidden" aria-label="Back">
+                <a href="#" class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700">
+                  <svg class="-ml-1 mr-1 size-5 shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                    data-slot="icon">
+                    <path fill-rule="evenodd"
+                      d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  Back
+                </a>
+              </nav>
+              <nav class="hidden sm:flex" aria-label="Breadcrumb">
+                <ol role="list" class="flex items-center space-x-4">
+                  <li>
+                    <div class="flex">
+                      <a href="#" class="text-sm font-medium text-gray-500 hover:text-gray-700">User Management</a>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="flex items-center">
+                      <svg class="size-5 shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                        data-slot="icon">
+                        <path fill-rule="evenodd"
+                          d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                          clip-rule="evenodd" />
+                      </svg>
+                      <a href="#" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Users</a>
+                    </div>
+                  </li>
+                </ol>
+              </nav>
+            </div>
+            <div class="mt-2 md:flex md:items-center md:justify-between">
+              <div class="min-w-0 flex-1">
+                <h2 class="text-2xl/7 font-bold text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">Users</h2>
+              </div>
+              <div class="mt-4 flex shrink-0 md:ml-4 md:mt-0">
+              </div>
+            </div>
+            <div class="mt-6"></div>
+          </div>
+
+          <!-- End Header -->
+
+          <!-- Table -->
+
+          <div class="px-4 sm:px-6 lg:px-8">
+            <div class="sm:flex sm:items-center">
+              <!-- "Add" button -->
+              <div class="sm:ml-4 sm:mt-0 sm:flex-none">
+              <button type="button"
+              class="inline-flex rounded-full items-center gap-x-2 bg-white px-2.5 py-1 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              @click="openModal = true">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                    class="size-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  <span>Add</span>
+                </button>
+              </div>
+
+
+
+              <!-- "Delete" button -->
+              <div class="sm:ml-4 sm:mt-0 sm:flex-none">
+              <button type="button"
+                class="inline-flex rounded-full items-center gap-x-2 bg-white px-2.5 py-1 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                @click="openModal = true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                  class="size-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107
+                    1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25
+                    2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108
+                    48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114
+                    1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5
+                    0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964
+                    51.964 0 0 0-3.32 0c-1.18.037-2.09
+                    1.022-2.09 2.201v.916m7.5
+                    0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+                <span>Delete</span>
+              </button>
+              </div>
+
+              <!-- Search input -->
+              <div class="flex flex-1 items-center justify-center px-2 lg:ml-6 lg:justify-end">
+                <div class="grid w-full max-w-lg grid-cols-1 lg:max-w-xs">
+                  <input type="search" name="search"
+                    class="col-start-1 row-start-1 block w-full rounded-md bg-white py-1.5 pl-10 pr-3 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                    placeholder="Search">
+                  <svg class="pointer-events-none col-start-1 row-start-1 ml-3 size-5 self-center text-gray-400" viewBox="0 0 20 20"
+                    fill="currentColor" aria-hidden="true" data-slot="icon">
+                    <path fill-rule="evenodd"
+                      d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="mt-4 flow-root">
+            <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+              <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <div class="overflow-hidden shadow ring-1 ring-black/5 sm:rounded-lg">
+                    <!-- Selected row actions, only show when rows are selected. -->
+                    <!-- <div class="absolute top-0 left-14 flex h-12 items-center space-x-3 bg-white sm:left-12"> -->
+                    <!--   <button type="button" class="inline-flex items-center rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white">Bulk edit</button> -->
+                    <!--   <button type="button" class="inline-flex items-center rounded bg-white px-2 py-1 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white">Delete all</button> -->
+                    <!-- </div> -->
+
+
+                    <table class="min-w-full divide-y divide-gray-300">
+
+                      <thead class="bg-gray-200">
+                        <tr>
+                          <th scope="col" class="relative px-7 sm:w-12 sm:px-6">
+                            <div class="group absolute left-4 top-1/2 -mt-2 grid size-4 grid-cols-1">
+                              <input type="checkbox"
+                                class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto">
+                              <svg
+                                class="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25"
+                                viewBox="0 0 14 14" fill="none">
+                                <path class="opacity-0 group-has-[:checked]:opacity-100" d="M3 8L6 11L11 3.5" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                                <path class="opacity-0 group-has-[:indeterminate]:opacity-100" d="M3 7H11" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                              </svg>
+                            </div>
+                          </th>
+
+                          <!-- Name column with stacked sorting arrows -->
+                          <th scope="col" class="min-w-[12rem] py-3.5 pr-3 text-left text-sm font-semibold text-gray-900">
+                            <div class="inline-flex items-center space-x-2">
+                              <span>Name</span>
+                              <div class="flex flex-col items-center justify-center">
+                                <!-- Up arrow -->
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                                </svg>
+                                <!-- Down arrow -->
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </th>
+
+                          <!-- Title column with stacked sorting arrows -->
+                          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                            <div class="inline-flex items-center space-x-2">
+                              <span>Title</span>
+                              <div class="flex flex-col items-center justify-center">
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                                </svg>
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </th>
+
+                          <!-- Email column with stacked sorting arrows -->
+                          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                            <div class="inline-flex items-center space-x-2">
+                              <span>Email</span>
+                              <div class="flex flex-col items-center justify-center">
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                                </svg>
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </th>
+
+                          <!-- Role column with stacked sorting arrows -->
+                          <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                            <div class="inline-flex items-center space-x-2">
+                              <span>Role</span>
+                              <div class="flex flex-col items-center justify-center">
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                                </svg>
+                                <svg class="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </th>
+
+                          <!-- Action column header -->
+                          <th scope="col" class="py-3.5 pl-3 pr-4 sm:pr-3 text-center text-sm font-semibold text-gray-900">
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody class="divide-y divide-gray-200 bg-white">
+                        <!-- Selected: "bg-gray-50" -->
+                        <tr class="hover:bg-gray-50" :class="{ 'bg-gray-100': isSelected }" @click="isSelected = !isSelected">
+                          <td class="relative px-7 sm:w-12 sm:px-6">
+                            <!-- Selected row marker, only show when row is selected. -->
+                            <!-- <div class="absolute inset-y-0 left-0 w-0.5 bg-indigo-600"></div> -->
+
+                            <div class="group absolute left-4 top-1/2 -mt-2 grid size-4 grid-cols-1">
+                              <input type="checkbox"
+                                class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto">
+                              <svg
+                                class="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25"
+                                viewBox="0 0 14 14" fill="none">
+                                <path class="opacity-0 group-has-[:checked]:opacity-100" d="M3 8L6 11L11 3.5" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                                <path class="opacity-0 group-has-[:indeterminate]:opacity-100" d="M3 7H11" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                              </svg>
+                            </div>
+                          </td>
+                          <!-- Selected: "text-indigo-600", Not Selected: "text-gray-900" -->
+                          <td class="whitespace-nowrap py-4 pr-3 text-sm font-medium text-gray-900">Lindsay Walton</td>
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Front-end Developer</td>
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">lindsay.walton@example.com</td>
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Member</td>
+                          <td class="whitespace-nowrap py-4 pl-3 pr-4 text-sm font-medium sm:pr-3 text-center">
+                            <div class="flex justify-center items-center space-x-4">
+                              <!-- View icon -->
+                              <a href="#" class="text-gray-600 hover:text-indigo-600" title="View record">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                  class="w-5 h-5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423
+                                          7.51 7.36 4.5 12 4.5c4.638 0
+                                          8.573 3.007 9.963 7.178.07.207.07.431 0
+                                          .639C20.577 16.49 16.64 19.5 12
+                                          19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6
+                                          0Z" />
+                                </svg>
+                              </a>
+                              <!-- Edit icon -->
+                              <a href="#" class="text-gray-600 hover:text-indigo-600" title="Edit record">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                  class="w-5 h-5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0
+                                          1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0
+                                          1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0
+                                          1 1.13-1.897l8.932-8.931Zm0 0L19.5
+                                          7.125M18 14v4.75A2.25 2.25 0 0 1 15.75
+                                          21H5.25A2.25 2.25 0 0 1 3
+                                          18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                </svg>
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+
+                        <tr class="hover:bg-gray-50" :class="{ 'bg-gray-100': isSelected }" @click="isSelected = !isSelected">
+                          <td class="relative px-7 sm:w-12 sm:px-6">
+                            <!-- Selected row marker, only show when row is selected. -->
+                            <!-- <div class="absolute inset-y-0 left-0 w-0.5 bg-indigo-600"></div> -->
+
+                            <div class="group absolute left-4 top-1/2 -mt-2 grid size-4 grid-cols-1">
+                              <input type="checkbox"
+                                class="col-start-1 row-start-1 appearance-none rounded border border-gray-300 bg-white checked:border-indigo-600 checked:bg-indigo-600 indeterminate:border-indigo-600 indeterminate:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:checked:bg-gray-100 forced-colors:appearance-auto">
+                              <svg
+                                class="pointer-events-none col-start-1 row-start-1 size-3.5 self-center justify-self-center stroke-white group-has-[:disabled]:stroke-gray-950/25"
+                                viewBox="0 0 14 14" fill="none">
+                                <path class="opacity-0 group-has-[:checked]:opacity-100" d="M3 8L6 11L11 3.5" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                                <path class="opacity-0 group-has-[:indeterminate]:opacity-100" d="M3 7H11" stroke-width="2"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                              </svg>
+                            </div>
+                          </td>
+                          <!-- Selected: "text-indigo-600", Not Selected: "text-gray-900" -->
+                          <td class="whitespace-nowrap py-4 pr-3 text-sm font-medium text-gray-900">Ryan Clark</td>
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Idiot</td>
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">ryanwclark@example.com</td>
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Member</td>
+                          <td class="whitespace-nowrap py-4 pl-3 pr-4 text-sm font-medium sm:pr-3 text-center">
+                            <div class="flex justify-center items-center space-x-4">
+                              <!-- View icon -->
+                              <a href="#" class="text-gray-600 hover:text-indigo-600" title="View record">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                  class="w-5 h-5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423
+                                                                    7.51 7.36 4.5 12 4.5c4.638 0
+                                                                    8.573 3.007 9.963 7.178.07.207.07.431 0
+                                                                    .639C20.577 16.49 16.64 19.5 12
+                                                                    19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6
+                                                                    0Z" />
+                                </svg>
+                              </a>
+                              <!-- Edit icon -->
+                              <a href="#" class="text-gray-600 hover:text-indigo-600" title="Edit record">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                  class="w-5 h-5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0
+                                                                    1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0
+                                                                    1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0
+                                                                    1 1.13-1.897l8.932-8.931Zm0 0L19.5
+                                                                    7.125M18 14v4.75A2.25 2.25 0 0 1 15.75
+                                                                    21H5.25A2.25 2.25 0 0 1 3
+                                                                    18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                </svg>
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                        <!-- More people... -->
+                      </tbody>
+                    </table>
+
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                <div class="flex flex-1 justify-between sm:hidden">
+                  <a href="#"
+                    class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
+                  <a href="#"
+                    class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
+                </div>
+                <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p class="text-sm text-gray-700">
+                      Showing
+                      <span class="font-medium">1</span>
+                      to
+                      <span class="font-medium">10</span>
+                      of
+                      <span class="font-medium">97</span>
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                      <a href="#"
+                        class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                        <span class="sr-only">Previous</span>
+                        <svg class="size-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
+                          <path fill-rule="evenodd"
+                            d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+                            clip-rule="evenodd" />
+                        </svg>
+                      </a>
+                      <!-- Current: "z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600", Default: "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0" -->
+                      <a href="#" aria-current="page"
+                        class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">1</a>
+                      <a href="#"
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
+                      <a href="#"
+                        class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">3</a>
+                      <span
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">...</span>
+                      <a href="#"
+                        class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">8</a>
+                      <a href="#"
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">9</a>
+                      <a href="#"
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">10</a>
+                      <a href="#"
+                        class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                        <span class="sr-only">Next</span>
+                        <svg class="size-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
+                          <path fill-rule="evenodd"
+                            d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                            clip-rule="evenodd" />
+                        </svg>
+                      </a>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+          <!-- End Table -->
+
+          <!--Modal-->
+            <div class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-show="openModal"
+              x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+              x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+              x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;">
+              <div class="fixed inset-0 bg-gray-500/75" aria-hidden="true" @click="openModal = false"></div>
+
+              <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                  <div
+                    class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6"
+                    x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="transition ease-in duration-200 transform"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                    <div>
+                      <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-green-100">
+                        <svg class="size-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                          aria-hidden="true" data-slot="icon">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                      </div>
+                      <div class="mt-3 text-center sm:mt-5">
+                        <h3 class="text-base font-semibold text-gray-900" id="modal-title">Add a new user</h3>
+                        <div class="mt-2">
+                          <!-- Modal content could be a form for adding a user -->
+                          <p class="text-sm text-gray-500">Fill out the user details below.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6 flex justify-between">
+                      <button type="button"
+                        class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        @click="openModal = false">
+                        Cancel
+                      </button>
+                      <button type="button"
+                        class="inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <!--End Modal-->
+
+
+        </div>
+      </main>
+    </div>
+
+
+
+  </div>
+
+</body>
+
+</html>

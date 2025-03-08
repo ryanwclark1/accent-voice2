@@ -1,0 +1,181 @@
+{% extends "layout.html" %}
+
+{% block content_header %}
+{{ build_breadcrumbs(current_breadcrumbs + [
+{ 'name': _('Devices'), 'link': url_for('.DeviceView:index'), 'icon': 'phone-square' }
+]) }}
+{% endblock %}
+
+{% block content %}
+<section class="content">
+  {% call build_list_containers(_('Devices'), 'phone-square') %}
+  {% call build_form_tabs_box() %}
+  {% call build_tabs_navigation() %}
+  {{ add_tab_navigation_item('all', _('All'), active=True) }}
+  {{ add_tab_navigation_item('unallocated', _('Unallocated')) }}
+  {% endcall %}
+  {% call build_tabs_content() %}
+
+  {% call build_tab_content_item('all', active=True) %}
+  {% call build_list_table('all', id='all') %}
+  {% call build_list_table_headers(get=url_for('.DeviceView:get', id=''), delete=url_for('.DeviceView:delete', id=''))
+  %}
+  <th style="width: 10px" class="no-sort"></th>
+  <th>{{ _('IP') }}</th>
+  <th>{{ _('MAC') }}</th>
+  <th>{{ _('Model') }}</th>
+  <th>{{ _('Plugin') }}</th>
+  <th>{{ _('Vendor') }}</th>
+  <th>{{ _('Version') }}</th>
+  <th style="width: 50px" class="no-sort"></th>
+  {% endcall %}
+  {% call(device) build_list_table_rows(resource_list['all']['items']) %}
+  <td>
+    {% if device.status == 'configured' %}
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+      class="size-6">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-green-500">
+      <path fill-rule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% elif device.status == 'autoprov' %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-yellow-500">
+      <path fill-rule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% elif device.status == 'not_configured' %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-red-500">
+      <path fill-rule="evenodd"
+        d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% else %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+      <path fill-rule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 0 1-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 0 1-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 0 1-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584ZM12 18a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% endif %}
+  </td>
+  <td>{{ device.ip or '-' }}</td>
+  <td>{{ device.mac or '-' }}</td>
+  <td>{{ device.model or '-' }}</td>
+  <td>{{ device.plugin or '-' }}</td>
+  <td>{{ device.vendor or '-' }}</td>
+  <td>{{ device.version or '-' }}</td>
+  <td id="data-column-actions">
+    <a href="{{ url_for('.DeviceView:synchronize', device_id=device['id']) }}" id="link-synchronize-device"
+      title="{{ _('Synchronize device') }}" data-toggle="confirmation"
+      data-title="{{ _('Are you sure you want to synchronize this device ?') }}"
+      class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-xs btn-default">
+      <i class="fa fa-fw fa-arrows-h"></i>
+    </a>
+    <a href="{{ url_for('.DeviceView:autoprov', device_id=device['id']) }}" id="link-reset-device"
+      title="{{ _('Reset device to autoprov mode') }}" data-toggle="confirmation"
+      data-title="{{ _('Are you sure you want to reset this device ?') }}"
+      class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-xs btn-default">
+      <i class="fa fa-fw fa-random"></i>
+    </a>
+  </td>
+  {% endcall %}
+  {% endcall %}
+  {% endcall %}
+
+  {% call build_tab_content_item('unallocated') %}
+  {% call build_list_table('unallocated', id='unallocated') %}
+  {% call build_list_table_headers(actions_column=false) %}
+  <th style="width: 10px" class="no-sort"></th>
+  <th>{{ _('IP') }}</th>
+  <th>{{ _('MAC') }}</th>
+  <th>{{ _('Model') }}</th>
+  <th>{{ _('Plugin') }}</th>
+  <th>{{ _('Vendor') }}</th>
+  <th>{{ _('Version') }}</th>
+  <th style="width: 50px" class="no-sort"></th>
+  {% endcall %}
+  {% call(device) build_list_table_rows(resource_list['unallocated']['items']) %}
+  <td>
+    {% if device.status == 'configured' %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-green-500">
+      <path fill-rule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% elif device.status == 'autoprov' %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-yellow-500">
+      <path fill-rule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% elif device.status == 'not_configured' %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-red-500">
+      <path fill-rule="evenodd"
+        d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z"
+        clip-rule="evenodd" />
+    </svg>
+    {% else %}
+    -
+    {% endif %}
+  </td>
+  <td>{{ device.ip or '-' }}</td>
+  <td>{{ device.mac or '-' }}</td>
+  <td>{{ device.model or '-' }}</td>
+  <td>{{ device.plugin or '-' }}</td>
+  <td>{{ device.vendor or '-' }}</td>
+  <td>{{ device.version or '-' }}</td>
+  <td id="data-column-actions">
+    <a href="{{ url_for('.DeviceView:assign_tenant', device_id=device['id']) }}" id="link-assign-device"
+      title="{{ _('Assign device to current tenant') }}" data-toggle="confirmation"
+      data-title="{{ _('Are you sure you want to assign this device to the current tenant?') }}"
+      class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-xs btn-default">
+      {{ _('Take') }}
+    </a>
+  </td>
+  {% endcall %}
+  {% endcall %}
+  {% endcall %}
+  {% endcall %}
+  {{ _('Status') }}:
+  (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-green-500">
+    <path fill-rule="evenodd"
+      d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+      clip-rule="evenodd" />
+  </svg> {{ _('Configured') }})
+  (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-yellow-500">
+    <path fill-rule="evenodd"
+      d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+      clip-rule="evenodd" />
+  </svg> {{ _('Autoprov') }})
+  (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-red-500">
+    <path fill-rule="evenodd"
+      d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z"
+      clip-rule="evenodd" />
+  </svg> {{ _('Not configured') }})
+
+  {% endcall %}
+
+  {% endcall %}
+
+  {% call build_hidden_add_containers(_('Add Device'), 'all-add-form') %}
+  {% call build_form() %}
+  {% call add_default_fields(form=form, submit_value=_('Add')) %}
+  {{ render_field(form.ip) }}
+  {{ render_field(form.mac) }}
+  {{ render_field(form.options.switchboard) }}
+  {{ render_field(form.description) }}
+  {% endcall %}
+  {% endcall %}
+  {% endcall %}
+</section>
+{% endblock %}
+
+
+{% block additional_js %}
+<script src="{{ url_for('.static', filename='js/device.js') }}"></script>
+{% endblock %}

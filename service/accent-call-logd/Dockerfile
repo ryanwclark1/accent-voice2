@@ -1,0 +1,72 @@
+###############################################
+# Base Image
+###############################################
+FROM python:3.12-slim-bookworm AS python-base
+LABEL maintainer="Ryan Clark <ryanc@accentservices.com>"
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_VIRTUALENVS_CREATE=true \
+    POETRY_NO_INTERACTION=true \
+    PYSETUP_PATH="/usr/src/accent-call-logd" \
+    VENV_PATH="/usr/src/accent-call-logd/.venv"
+
+ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+
+###############################################
+# Builder Image
+###############################################
+FROM python-base AS builder-base
+
+RUN true \
+    && apt-get update -qq  \
+    && apt-get install -y --no-install-recommends \
+    curl \
+    gcc \
+    libc6-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSL https://install.python-poetry.org | python3 -
+
+WORKDIR $PYSETUP_PATH
+
+COPY ./library ../../library
+
+COPY ./service/accent-call-logd/pyproject.toml ./service/accent-call-logd/poetry.lock ./
+COPY ./service/accent-call-logd/accent_call_logd/ ./accent_call_logd/
+
+RUN true \
+    && poetry install --only main \
+    && rm -rf ../../library
+
+###############################################
+# Production Image
+###############################################
+FROM python-base AS production
+COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
+
+COPY ./service/accent-call-logd/etc /etc
+COPY ./service/accent-call-logd/templates /var/lib/accent-call-logd/templates
+
+RUN true \
+    && apt-get -q update \
+    && apt-get -yq install --no-install-recommends \
+    libpq5 \
+    && adduser --quiet --system --group --home /var/lib/accent-call-logd accent-call-logd \
+    && mkdir -p /etc/accent-call-logd/conf.d \
+    && install -d -o accent-call-logd -g accent-call-logd /run/accent-call-logd/ \
+    && install -o accent-call-logd -g accent-call-logd /dev/null /var/log/accent-call-logd.log \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR $PYSETUP_PATH
+
+EXPOSE 9298
+
+ENV PATH="$VENV_PATH/bin:$PATH"
+CMD ["accent-call-logd", "--db-upgrade-on-startup"]

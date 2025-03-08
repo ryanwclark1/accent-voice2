@@ -1,0 +1,112 @@
+[tool.poetry]
+name = "accent-auth-cli"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Clark <ryanc@accentservices.com>"]
+packages = [
+    {include = "accent_auth_cli"}
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+cliff = "^3.10.1"
+requests = "^2.25.1"
+PyYAML = "^5.3.1"
+accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
+accent-auth-client = {path = "../../library/accent-auth-client"}
+accent = {path = "../../library/accent-lib-python"}
+
+[tool.poetry.group.dev.dependencies]
+commitizen = "^3.10.0"
+dunamai = "^1.18.1"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["UPDATE"]
+
+[tool.poetry.plugins."console_scripts"]
+accent-auth-cli = "accent_auth_cli.main:main"
+
+[tool.poetry.plugins."accent_auth_cli.commands"]
+group_add = "accent_auth_cli.commands.group:GroupAdd"
+group_create = "accent_auth_cli.commands.group:GroupCreate"
+group_delete = "accent_auth_cli.commands.group:GroupDelete"
+group_list = "accent_auth_cli.commands.group:GroupList"
+group_remove = "accent_auth_cli.commands.group:GroupRemove"
+group_show = "accent_auth_cli.commands.group:GroupShow"
+ldap_config_delete = "accent_auth_cli.commands.ldap_config:LDAPConfigDelete"
+ldap_config_show = "accent_auth_cli.commands.ldap_config:LDAPConfigShow"
+ldap_config_update = "accent_auth_cli.commands.ldap_config:LDAPConfigUpdate"
+policy_create = "accent_auth_cli.commands.policy:PolicyCreate"
+policy_delete = "accent_auth_cli.commands.policy:PolicyDelete"
+policy_list = "accent_auth_cli.commands.policy:PolicyList"
+policy_show = "accent_auth_cli.commands.policy:PolicyShow"
+session_delete = "accent_auth_cli.commands.session:SessionDelete"
+session_list = "accent_auth_cli.commands.session:SessionList"
+session_show = "accent_auth_cli.commands.session:SessionShow"
+session_wipe = "accent_auth_cli.commands.session:SessionWipe"
+tenant_add = "accent_auth_cli.commands.tenant:TenantAdd"
+tenant_create = "accent_auth_cli.commands.tenant:TenantCreate"
+tenant_delete = "accent_auth_cli.commands.tenant:TenantDelete"
+tenant_list = "accent_auth_cli.commands.tenant:TenantList"
+tenant_remove = "accent_auth_cli.commands.tenant:TenantRemove"
+tenant_show = "accent_auth_cli.commands.tenant:TenantShow"
+token_create = "accent_auth_cli.commands.token:TokenCreate"
+token_refresh_delete = "accent_auth_cli.commands.token:RefreshTokenDelete"
+token_refresh_list = "accent_auth_cli.commands.token:RefreshTokenList"
+token_revoke = "accent_auth_cli.commands.token:TokenRevoke"
+token_show = "accent_auth_cli.commands.token:TokenShow"
+user_add = "accent_auth_cli.commands.user:UserAdd"
+user_create = "accent_auth_cli.commands.user:UserCreate"
+user_delete = "accent_auth_cli.commands.user:UserDelete"
+user_list = "accent_auth_cli.commands.user:UserList"
+user_password = "accent_auth_cli.commands.user:UserSetPassword"
+user_remove = "accent_auth_cli.commands.user:UserRemove"
+user_show = "accent_auth_cli.commands.user:UserShow"
+user_update = "accent_auth_cli.commands.user:UserUpdate"

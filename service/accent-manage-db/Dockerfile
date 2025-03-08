@@ -1,0 +1,83 @@
+###############################################
+# Base Image
+###############################################
+FROM accentcommunications/accent-base-db AS db-base
+# FROM python:3.12-slim AS python-base
+LABEL maintainer="Ryan Clark <ryanc@accentservices.com>"
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_NO_INTERACTION=true \
+    PYSETUP_PATH="/usr/src/accent-manage-db" \
+    VENV_PATH="/usr/src/accent-manage-db/.venv"
+
+ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+
+###############################################
+# Builder Image
+###############################################
+FROM db-base AS builder-base
+
+RUN true \
+    && apt-get update -qq  \
+    && apt-get install -y --no-install-recommends \
+    curl \
+    gcc \
+    libc6-dev \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSL https://install.python-poetry.org | python3 -
+
+WORKDIR $PYSETUP_PATH
+
+COPY ./library ../../library
+
+COPY ./service/accent-manage-db/pyproject.toml ./service/accent-manage-db/poetry.lock ./
+COPY ./service/accent-manage-db/accent_db/ ./accent_db
+
+
+RUN true \
+    && poetry install --only main \
+    && rm -rf ../../library
+
+###############################################
+# Production Image
+###############################################
+FROM db-base AS production
+COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
+
+WORKDIR $PYSETUP_PATH
+
+COPY ./service/accent-manage-db/bin ./bin
+COPY ./service/accent-manage-db/populate ./populate
+COPY ./service/accent-manage-db/alembic ./alembic
+COPY ./service/accent-manage-db/alembic.ini ./
+
+ENV PATH="$PYSETUP_PATH/bin:$PATH"
+
+RUN true \
+    && apt-get -q update \
+    && apt-get -yq install --no-install-recommends \
+        libpq5 \
+    && accent-configure-uuid \
+    && mkdir /usr/share/accent-manage-db /usr/lib/accent-manage-db \
+    && cp -a alembic alembic.ini populate /usr/share/accent-manage-db \
+    && ln -s /usr/local/bin/pg-populate-db /usr/lib/accent-manage-db/pg-populate-db \
+    && pg_start \
+    && alembic -c alembic.ini branches \
+    && alembic -c alembic.ini show head \
+    && echo "Initializing database..." \
+    # && accent-init-db --init \
+    # && alembic -c alembic.ini branches \
+    # && alembic -c alembic.ini show head \
+    # && pg_stop \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && rm -rf /usr/src/accent-manage-db /var/lib/apt/lists/*
+
+USER postgres

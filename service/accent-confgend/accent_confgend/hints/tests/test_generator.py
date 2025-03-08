@@ -1,0 +1,105 @@
+# Copyright 2023 Accent Communications
+
+import unittest
+from unittest.mock import Mock, patch
+
+from hamcrest import assert_that, contains_exactly
+
+from .. import adaptor
+from ..adaptor import HintAdaptor
+from ..generator import HintGenerator
+
+CONTEXT = 'context'
+
+
+class TestGenerator(unittest.TestCase):
+    def test_given_an_adaptor_that_generates_nothing_then_generator_returns_an_empty_list(
+        self,
+    ):
+        adaptor = Mock(HintAdaptor)
+        adaptor.generate.return_value = []
+
+        generator = HintGenerator([adaptor], [])
+
+        assert_that(generator.generate(CONTEXT), contains_exactly())
+
+    def test_given_an_adaptor_generates_a_hint_then_generator_returns_formatted_hint(
+        self,
+    ):
+        adaptor = Mock(HintAdaptor)
+        adaptor.generate.return_value = [('4000', 'confbridge:1')]
+
+        generator = HintGenerator([adaptor], [])
+
+        assert_that(
+            generator.generate(CONTEXT),
+            contains_exactly('exten = 4000,hint,confbridge:1'),
+        )
+        adaptor.generate.assert_called_once_with(CONTEXT)
+
+    def test_given_2_adaptors_then_generates_hint_for_all_adaptors(self):
+        first_adaptor = Mock(HintAdaptor)
+        first_adaptor.generate.return_value = [('1000', '1000')]
+
+        second_adaptor = Mock(HintAdaptor)
+        second_adaptor.generate.return_value = [('4000', 'confbridge:1')]
+
+        generator = HintGenerator([first_adaptor, second_adaptor], [])
+
+        assert_that(
+            generator.generate(CONTEXT),
+            contains_exactly(
+                'exten = 1000,hint,1000', 'exten = 4000,hint,confbridge:1'
+            ),
+        )
+        first_adaptor.generate.assert_called_once_with(CONTEXT)
+        second_adaptor.generate.assert_called_once_with(CONTEXT)
+
+    def test_given_2_adaptors_generate_same_hint_then_generator_returns_hint_only_once(
+        self,
+    ):
+        first_adaptor = Mock(HintAdaptor)
+        first_adaptor.generate.return_value = [('1000', 'PJSIP/abcdef')]
+
+        second_adaptor = Mock(HintAdaptor)
+        second_adaptor.generate.return_value = [('1000', 'Custom:1000')]
+
+        generator = HintGenerator([first_adaptor, second_adaptor], [])
+
+        assert_that(
+            generator.generate(CONTEXT),
+            contains_exactly('exten = 1000,hint,PJSIP/abcdef'),
+        )
+        first_adaptor.generate.assert_called_once_with(CONTEXT)
+        second_adaptor.generate.assert_called_once_with(CONTEXT)
+
+    def test_that_global_adaptors_are_called(self):
+        first_adaptor = Mock(HintAdaptor)
+        first_adaptor.generate.return_value = [('1001', 'PJSIP/abc&SCCP/1042')]
+
+        generator = HintGenerator([], [first_adaptor])
+
+        assert_that(
+            generator.generate_global_hints(),
+            contains_exactly(
+                'exten = 1001,hint,PJSIP/abc&SCCP/1042',
+            ),
+        )
+
+    def test_that_user_generated_hints_are_not_overridden(self):
+        custom_adaptor = Mock(adaptor.CustomAdaptor)
+        user_adaptor = Mock(adaptor.UserAdaptor)
+        custom_adaptor.generate.return_value = [('1000', 'Custom:1000')]
+        user_adaptor.generate.return_value = [('1000', 'PJSIP/abcdef')]
+
+        with patch('accent_confgend.hints.generator.hint_adaptor') as adaptors:
+            adaptors.UserAdaptor.return_value = user_adaptor
+            adaptors.CustomAdaptor.return_value = custom_adaptor
+
+            generator = HintGenerator.build()
+
+            result = generator.generate(CONTEXT)
+            assert_that(
+                list(result),
+                contains_exactly('exten = 1000,hint,PJSIP/abcdef'),
+            )

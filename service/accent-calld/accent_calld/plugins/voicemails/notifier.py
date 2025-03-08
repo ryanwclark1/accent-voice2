@@ -1,0 +1,36 @@
+# Copyright 2023 Accent Communications
+
+from accent_bus.resources.voicemail.event import (
+    UserVoicemailMessageCreatedEvent,
+    UserVoicemailMessageDeletedEvent,
+    UserVoicemailMessageUpdatedEvent,
+)
+
+
+class VoicemailsNotifier:
+    def __init__(self, bus_publisher):
+        self._bus_publisher = bus_publisher
+
+    def create_user_voicemail_message(
+        self, user_uuid, tenant_uuid, voicemail_id, message_id, message
+    ):
+        event = UserVoicemailMessageCreatedEvent(
+            message_id, voicemail_id, message, tenant_uuid, user_uuid
+        )
+        self._bus_publisher.publish(event)
+
+    def update_user_voicemail_message(
+        self, user_uuid, tenant_uuid, voicemail_id, message_id, message
+    ):
+        event = UserVoicemailMessageUpdatedEvent(
+            message_id, voicemail_id, message, tenant_uuid, user_uuid
+        )
+        self._bus_publisher.publish(event)
+
+    def delete_user_voicemail_message(
+        self, user_uuid, tenant_uuid, voicemail_id, message_id, message
+    ):
+        event = UserVoicemailMessageDeletedEvent(
+            message_id, voicemail_id, message, tenant_uuid, user_uuid
+        )
+        self._bus_publisher.publish(event)

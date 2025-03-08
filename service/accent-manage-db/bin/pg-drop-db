@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Copyright 2023 Accent Communications
+
+# This script drop role and database
+#
+# It must be given a DB URI or be executed as user postgres with URI postgresql:///postgres.
+
+set -e
+export PGOPTIONS='--client-min-messages=warning'
+
+db_uri=$1
+db_name=$2
+psql="psql $db_uri -v ON_ERROR_STOP="
+
+
+$psql <<EOF
+
+DROP DATABASE IF EXISTS "$db_name";
+DROP ROLE IF EXISTS "$db_name";
+
+EOF

@@ -1,0 +1,21 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+hide stereotype
+
+Person(user, "Admin")
+
+System_Boundary(dird_system, "Plugin") {
+    Container(plugind_app, "accent-plugind", "Python", "Plugin service")
+    Container(auth, "accent-auth", "Python", "Authentication service") [["../documentation/overview/authentication.html"]]
+    Container(bus, "RabbitMQ", "Erlang", "Message bus")
+}
+
+System_Ext(git, "Git repository")
+
+Rel_U(plugind_app, auth, " ", "REST")
+Rel_R(user, plugind_app, " ", "REST")
+Rel_R(plugind_app, git, " ", "git")
+Rel_D(plugind_app, bus, " ", "AMQP")
+
+@enduml

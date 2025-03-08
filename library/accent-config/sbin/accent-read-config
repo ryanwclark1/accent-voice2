@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# TODO: use the _ACCENT_* namespace for generated variables
+
+[ -r /etc/accent/common.conf ] && . /etc/accent/common.conf
+
+
+_PF_EMAIL_ALERTS_LIST="pv-tech-client-alerts"
+
+
+create_pf_email_alerts()
+{
+  LIST_NAME=$1
+  SERVICE_NAME=$2
+
+  echo "${LIST_NAME}+${ACCENT_HOSTNAME}+${SERVICE_NAME}@lists.accentvoice.io"
+}
+
+get_full_email_alerts()
+{
+  SERVICE_NAME=$1
+
+  if [ "${PF_MAINTENANCE}" = "1" ]; then
+    EXTRA_EMAIL_ALERTS=$(create_pf_email_alerts ${_PF_EMAIL_ALERTS_LIST} ${SERVICE_NAME})
+  else
+    EXTRA_EMAIL_ALERTS=
+  fi
+
+  # accent-sysconfd < 15.16 could generate a "None" ACCENT_ALERT_EMAILS
+  if [ "${ACCENT_ALERT_EMAILS}"  = "None" ]; then
+      ACCENT_ALERT_EMAILS=""
+  fi
+
+  echo "${ACCENT_ALERT_EMAILS} ${EXTRA_EMAIL_ALERTS}"
+}
+
+PRODUCT="ACCENT"
+
+echo "Generating configuration"
+
+#### Set and check general variables ####
+
+if [ -z "${ACCENT_NET4_IP}" -o -z "${ACCENT_NET4_NETMASK}" ]; then
+  echo "ERROR: Network badly configured" >&2
+  exit 1
+fi
+
+if [ -z "${ACCENT_SMTP_ORIGIN}" ]; then
+  ACCENT_SMTP_ORIGIN="${ACCENT_HOSTNAME}.${ACCENT_DOMAIN}"
+fi
+
+ACCENT_NAMESERVER_LIST=
+if [ -n "${ACCENT_NAMESERVERS}" ]; then
+  for NS in ${ACCENT_NAMESERVERS}; do
+    ACCENT_NAMESERVER_LIST="${ACCENT_NAMESERVER_LIST}nameserver ${NS}\n"
+  done
+fi
+
+if [ "${ACCENT_DHCP_ACTIVE}" = "0" ]; then
+   ACCENT_DHCP_NETWORK_INTERFACES=""
+fi
+
+if [[ "${ACCENT_DHCP_ACTIVE}" = "1" && -n "${ACCENT_DHCP_POOL}" ]]; then
+  _ACCENT_DHCP_SUBNET="\# Include of the subnet declaration (DHCP is configured)\ninclude \"/etc/dhcp/dhcpd_subnet.conf\";"
+else
+  _ACCENT_DHCP_SUBNET="\# Subnet declaration not specified because DHCP is not configured\n\# Use dhcpd_extra.conf for custom configuration"
+fi
+
+if [ "${ACCENT_MAINTENANCE}" = "1" ]; then
+  _PF_EMAIL_ALERTS_LIST="pv-tech-accent-alerts"
+  _PF_EMAIL_ALERTS=$(create_pf_email_alerts ${_PF_EMAIL_ALERTS_LIST} "root")
+  _PF_EMAIL_REPORTS=$(create_pf_email_alerts "pv-tech-accent-reports" "root")
+
+  ACCENT_SMTP_CANONICAL="root\t${_PF_EMAIL_REPORTS}\nasterisk\t${_PF_EMAIL_REPORTS}"
+fi
+
+if [ -n "${ACCENT_SMTP_MYDOMAIN}" ]; then
+  _ACCENT_SMTP_MYDOMAIN=${ACCENT_SMTP_MYDOMAIN}
+else
+  _ACCENT_SMTP_MYDOMAIN=${ACCENT_DOMAIN}
+fi
+
+if [ -z "${ACCENT_PROVD_NET4_IP}" ]; then
+  ACCENT_PROVD_NET4_IP="${ACCENT_NET4_IP}"
+fi
+
+if [ -z "${ACCENT_PROVD_HTTP_PORT}" ]; then
+  ACCENT_PROVD_HTTP_PORT="8667"
+fi
+
+if [ -z "${ACCENT_PROVD_HTTP_BASE_URL}" ]; then
+  ACCENT_PROVD_HTTP_BASE_URL="http://${ACCENT_PROVD_NET4_IP}:${ACCENT_PROVD_HTTP_PORT}"
+fi
+
+if [ "${ACCENT_PROVD_DHCP_INTEGRATION}" = "1" ]; then
+  _ACCENT_PROVD_DHCP_INTEGRATION='on commit {\n            execute("dxtorc",\n                    "commit",\n                    binary-to-ascii(10, 8, ".", leased-address),\n                    binary-to-ascii(16, 8, ":", suffix(hardware, 6)),\n                    pick-first-value(concat("060", binary-to-ascii(16, 8, ".", option vendor-class-identifier)), "")\n                   );\n        }'
+else
+  _ACCENT_PROVD_DHCP_INTEGRATION=""
+fi
+
+_ACCENT_MONIT_MODE=active

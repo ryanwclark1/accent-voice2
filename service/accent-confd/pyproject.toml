@@ -1,0 +1,215 @@
+[tool.poetry]
+name = "accent-confd"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Clark <ryanc@accentservices.com>"]
+packages = [
+    {include = "accent_confd"}
+]
+include = [
+    "accent_confd/plugins/*/api.yml"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+cheroot = "^8.5.2"
+flask = "^1.1.2"
+Flask-Cors = "^3.0.10"
+Flask-RESTful = "^0.3.8"
+itsdangerous = "^1.1.0"
+Jinja2 = "^2.11.3"
+kombu = "^5.0.2"
+markupsafe = "^1.1.1"
+marshmallow = "^3.10.0"
+netifaces = "^0.10.9"
+phonenumbers = "^8.12.1"
+psycopg2 = "^2.8.6"
+pycountry = "^20.7.3"
+python-consul = "^1.1.0"
+pytz = "^2023.3.post1"
+PyYAML = "^5.3.1"
+requests = "^2.25.1"
+SQLAlchemy = ">=1.3.0, <1.4.0"
+stevedore = "^4.0.2"
+Unidecode = "^1.2.0"
+werkzeug = "^1.0.1"
+accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
+accent-auth-client = {path = "../../library/accent-auth-client"}
+accent-provd-client = {path = "../../library/accent-provd-client"}
+accent-bus = {path = "../../library/accent-bus"}
+accent-dao = {path = "../../library/accent-dao"}
+accent = {path = "../../library/accent-lib-python"}
+
+
+[tool.poetry.group.dev.dependencies]
+commitizen = "^3.10.0"
+dunamai = "^1.18.1"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["UPDATE"]
+
+[tool.poetry.plugins."console_scripts"]
+accent-confd-purge-meetings = "accent_confd.purge_meetings:main"
+accent-confd-sync-db = "accent_confd.sync_db:main"
+accent-confd-wait = "accent_confd.wait:main"
+accent-confd = "accent_confd.main:main"
+
+
+[tool.poetry.plugins."accent_confd.plugins"]
+access_feature = "accent_confd.plugins.access_feature.plugin:Plugin"
+agent = "accent_confd.plugins.agent.plugin:Plugin"
+agent_skill = "accent_confd.plugins.agent_skill.plugin:Plugin"
+api = "accent_confd.plugins.api.plugin:Plugin"
+application = "accent_confd.plugins.application.plugin:Plugin"
+call_filter = "accent_confd.plugins.call_filter.plugin:Plugin"
+call_filter_fallback = "accent_confd.plugins.call_filter_fallback.plugin:Plugin"
+call_filter_user = "accent_confd.plugins.call_filter_user.plugin:Plugin"
+call_permission = "accent_confd.plugins.call_permission.plugin:Plugin"
+call_pickup = "accent_confd.plugins.call_pickup.plugin:Plugin"
+call_pickup_member = "accent_confd.plugins.call_pickup_member.plugin:Plugin"
+confbridge = "accent_confd.plugins.confbridge.plugin:Plugin"
+conference = "accent_confd.plugins.conference.plugin:Plugin"
+conference_extension = "accent_confd.plugins.conference_extension.plugin:Plugin"
+configuration = "accent_confd.plugins.configuration.plugin:Plugin"
+context = "accent_confd.plugins.context.plugin:Plugin"
+context_context = "accent_confd.plugins.context_context.plugin:Plugin"
+context_range = "accent_confd.plugins.context_range.plugin:Plugin"
+device = "accent_confd.plugins.device.plugin:Plugin"
+dhcp = "accent_confd.plugins.dhcp.plugin:Plugin"
+email = "accent_confd.plugins.email.plugin:Plugin"
+endpoint_custom = "accent_confd.plugins.endpoint_custom.plugin:Plugin"
+endpoint_iax = "accent_confd.plugins.endpoint_iax.plugin:Plugin"
+endpoint_sccp = "accent_confd.plugins.endpoint_sccp.plugin:Plugin"
+endpoint_sip = "accent_confd.plugins.endpoint_sip.plugin:Plugin"
+event_handlers = "accent_confd.plugins.event_handlers.plugin:Plugin"
+extension = "accent_confd.plugins.extension.plugin:Plugin"
+extension_feature = "accent_confd.plugins.extension_feature.plugin:Plugin"
+external_app = "accent_confd.plugins.external_app.plugin:Plugin"
+features = "accent_confd.plugins.features.plugin:Plugin"
+func_key = "accent_confd.plugins.func_key.plugin:Plugin"
+group = "accent_confd.plugins.group.plugin:Plugin"
+group_call_permission = "accent_confd.plugins.group_call_permission.plugin:Plugin"
+group_extension = "accent_confd.plugins.group_extension.plugin:Plugin"
+group_fallback = "accent_confd.plugins.group_fallback.plugin:Plugin"
+group_member_user = "accent_confd.plugins.group_member.plugin:Plugin"
+group_schedule = "accent_confd.plugins.group_schedule.plugin:Plugin"
+ha = "accent_confd.plugins.ha.plugin:Plugin"
+hep = "accent_confd.plugins.hep.plugin:Plugin"
+iax_callnumberlimits = "accent_confd.plugins.iax_callnumberlimits.plugin:Plugin"
+iax_general = "accent_confd.plugins.iax_general.plugin:Plugin"
+incall = "accent_confd.plugins.incall.plugin:Plugin"
+incall_extension = "accent_confd.plugins.incall_extension.plugin:Plugin"
+incall_schedule = "accent_confd.plugins.incall_schedule.plugin:Plugin"
+info = "accent_confd.plugins.info.plugin:Plugin"
+ingress_http = "accent_confd.plugins.ingress_http.plugin:Plugin"
+ivr = "accent_confd.plugins.ivr.plugin:Plugin"
+line = "accent_confd.plugins.line.plugin:Plugin"
+line_application = "accent_confd.plugins.line_application.plugin:Plugin"
+line_device = "accent_confd.plugins.line_device.plugin:Plugin"
+line_endpoint = "accent_confd.plugins.line_endpoint.plugin:Plugin"
+line_extension = "accent_confd.plugins.line_extension.plugin:Plugin"
+line_sip = "accent_confd.plugins.line_sip.plugin:Plugin"
+localization = "accent_confd.plugins.localization.plugin:Plugin"
+meeting = "accent_confd.plugins.meeting.plugin:Plugin"
+meeting_authorization = "accent_confd.plugins.meeting_authorization.plugin:Plugin"
+moh = "accent_confd.plugins.moh.plugin:Plugin"
+outcall = "accent_confd.plugins.outcall.plugin:Plugin"
+outcall_call_permission = "accent_confd.plugins.outcall_call_permission.plugin:Plugin"
+outcall_extension = "accent_confd.plugins.outcall_extension.plugin:Plugin"
+outcall_schedule = "accent_confd.plugins.outcall_schedule.plugin:Plugin"
+outcall_trunk = "accent_confd.plugins.outcall_trunk.plugin:Plugin"
+paging = "accent_confd.plugins.paging.plugin:Plugin"
+paging_user = "accent_confd.plugins.paging_user.plugin:Plugin"
+parking_lot = "accent_confd.plugins.parking_lot.plugin:Plugin"
+parking_lot_extension = "accent_confd.plugins.parking_lot_extension.plugin:Plugin"
+phone_number = "accent_confd.plugins.phone_number.plugin:Plugin"
+pjsip = "accent_confd.plugins.pjsip.plugin:Plugin"
+provisioning_networking = "accent_confd.plugins.provisioning_networking.plugin:Plugin"
+queue = "accent_confd.plugins.queue.plugin:Plugin"
+queue_extension = "accent_confd.plugins.queue_extension.plugin:Plugin"
+queue_fallback = "accent_confd.plugins.queue_fallback.plugin:Plugin"
+queue_general = "accent_confd.plugins.queue_general.plugin:Plugin"
+queue_member = "accent_confd.plugins.queue_member.plugin:Plugin"
+queue_schedule = "accent_confd.plugins.queue_schedule.plugin:Plugin"
+register_iax = "accent_confd.plugins.register_iax.plugin:Plugin"
+registrar = "accent_confd.plugins.registrar.plugin:Plugin"
+rtp = "accent_confd.plugins.rtp.plugin:Plugin"
+sccp_general = "accent_confd.plugins.sccp_general.plugin:Plugin"
+schedule = "accent_confd.plugins.schedule.plugin:Plugin"
+skill = "accent_confd.plugins.skill.plugin:Plugin"
+skill_rule = "accent_confd.plugins.skill_rule.plugin:Plugin"
+sound = "accent_confd.plugins.sound.plugin:Plugin"
+sound_language = "accent_confd.plugins.sound_language.plugin:Plugin"
+status = "accent_confd.plugins.status.plugin:Plugin"
+switchboard = "accent_confd.plugins.switchboard.plugin:Plugin"
+switchboard_fallback = "accent_confd.plugins.switchboard_fallback.plugin:Plugin"
+switchboard_member = "accent_confd.plugins.switchboard_member.plugin:Plugin"
+tenant = "accent_confd.plugins.tenant.plugin:Plugin"
+timezone = "accent_confd.plugins.timezone.plugin:Plugin"
+trunk = "accent_confd.plugins.trunk.plugin:Plugin"
+trunk_endpoint = "accent_confd.plugins.trunk_endpoint.plugin:Plugin"
+trunk_register = "accent_confd.plugins.trunk_register.plugin:Plugin"
+user = "accent_confd.plugins.user.plugin:Plugin"
+user_agent = "accent_confd.plugins.user_agent.plugin:Plugin"
+user_call_permission = "accent_confd.plugins.user_call_permission.plugin:Plugin"
+user_callerid = "accent_confd.plugins.user_callerid.plugin:Plugin"
+user_external_app = "accent_confd.plugins.user_external_app.plugin:Plugin"
+user_fallback = "accent_confd.plugins.user_fallback.plugin:Plugin"
+user_group = "accent_confd.plugins.user_group.plugin:Plugin"
+user_import = "accent_confd.plugins.user_import.plugin:Plugin"
+user_line = "accent_confd.plugins.user_line.plugin:Plugin"
+user_line_associated = "accent_confd.plugins.user_line_associated.plugin:Plugin"
+user_schedule = "accent_confd.plugins.user_schedule.plugin:Plugin"
+user_subscription = "accent_confd.plugins.user_subscription.plugin:Plugin"
+user_voicemail = "accent_confd.plugins.user_voicemail.plugin:Plugin"
+voicemail = "accent_confd.plugins.voicemail.plugin:Plugin"
+voicemail_general = "accent_confd.plugins.voicemail_general.plugin:Plugin"
+voicemail_zonemessages = "accent_confd.plugins.voicemail_zonemessages.plugin:Plugin"
+wizard = "accent_confd.plugins.wizard.plugin:Plugin"

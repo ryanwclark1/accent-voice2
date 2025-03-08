@@ -1,0 +1,10 @@
+general:
+  plugin_server: http://pluginserver:8080/
+  verbose: true
+  listen_interface: 0.0.0.0
+rest_api:
+  ip: 0.0.0.0
+auth:
+  host: auth
+bus:
+    host: rabbitmq

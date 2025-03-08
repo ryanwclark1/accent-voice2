@@ -1,0 +1,8 @@
+*.pyc
+.git
+.github
+.tox
+.venv
+debian
+.vscode
+

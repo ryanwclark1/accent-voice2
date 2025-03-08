@@ -1,0 +1,6 @@
+services:
+  sync:
+    depends_on:
+      - rabbitmq
+    environment:
+      TARGETS: "rabbitmq:5672"

@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+# Copyright 2023 Accent Communications
+
+from accent_confgend.bin.daemon import main, twisted_application
+
+if __name__ == '__main__':
+    main()
+else:
+    application = twisted_application()

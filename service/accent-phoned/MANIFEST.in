@@ -1,0 +1,2 @@
+recursive-include accent_phoned/plugins/*/templates *.jinja
+recursive-include accent_phoned/translations *

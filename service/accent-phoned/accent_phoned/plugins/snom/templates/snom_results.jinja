@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<SnomIPPhoneMenu>
+{% for result in results -%}
+ <MenuItem name="{{ result.name|e }}">
+  <Url>snom://mb_nop#numberdial={{ result.number|e }}</Url>
+ </MenuItem>
+{% else -%}
+ <MenuItem name="{{ gettext('No entries') }}">
+ </MenuItem>
+{% endfor -%}
+
+{% if offset_previous is not none -%}
+<SoftKeyItem>
+<Label>{{ gettext('PrevPage') }}</Label>
+<URL>{{ base_url|e }}?accent_user_uuid={{ user_uuid|e }}&amp;term={{ term|e }}&amp;limit={{ limit|e }}&amp;offset={{ offset_previous|e }}</URL>
+<Name>F2</Name>
+</SoftKeyItem>
+{% endif -%}
+
+{% if offset_next is not none -%}
+<SoftKeyItem>
+<Label>{{ gettext('NextPage') }}</Label>
+<URL>{{ base_url|e }}?accent_user_uuid={{ user_uuid|e }}&amp;term={{ term|e }}&amp;limit={{ limit|e }}&amp;offset={{ offset_next|e }}</URL>
+<Name>F4</Name>
+</SoftKeyItem>
+{% endif -%}
+</SnomIPPhoneMenu>

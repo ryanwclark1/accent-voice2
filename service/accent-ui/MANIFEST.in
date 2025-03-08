@@ -1,0 +1,4 @@
+recursive-include accent_ui/templates *
+recursive-include accent_ui/static *
+recursive-include accent_ui/plugins/* *
+recursive-include accent_ui/translations *

@@ -1,0 +1,38 @@
+# Copyright 2023 Accent Communications
+
+from accent_dao.helpers import errors
+
+from accent_confd.helpers.validator import ValidationGroup, Validator
+
+from .schema import ASTERISK_CATEGORY
+from .storage import DEFAULT_DIRECTORIES, RESERVED_DIRECTORIES
+
+
+class SoundDeleteValidator(Validator):
+    def validate(self, sound):
+        if sound.name in DEFAULT_DIRECTORIES + [ASTERISK_CATEGORY]:
+            raise errors.not_permitted('Cannot delete default sound category')
+        if sound.name in RESERVED_DIRECTORIES:
+            raise errors.not_found('Sound', name=sound.name)
+
+
+class SoundFileUpdateValidator(Validator):
+    def validate(self, sound):
+        if sound.name == ASTERISK_CATEGORY:
+            raise errors.not_permitted('Cannot update system sounds')
+
+
+class SoundFileDeleteValidator(Validator):
+    def validate(self, sound):
+        if sound.name == ASTERISK_CATEGORY:
+            raise errors.not_permitted('Cannot delete system sounds')
+
+
+def build_validator():
+    return ValidationGroup(delete=[SoundDeleteValidator()])
+
+
+def build_validator_file():
+    return ValidationGroup(
+        edit=[SoundFileUpdateValidator()], delete=[SoundFileDeleteValidator()]
+    )

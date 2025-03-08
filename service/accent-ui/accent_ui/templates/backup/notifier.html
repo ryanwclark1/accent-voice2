@@ -1,0 +1,27 @@
+<div class="notifier" x-data="{ alerts: [] }"
+  @alert.window="alerts.push($event.detail); setTimeout(() => alerts.shift(), 5000)">
+  <template x-for="(alert, index) in alerts" :key="index">
+    <div class="p-4 mb-4 rounded-lg shadow-lg" :class="{
+        'bg-red-100 border-red-400 text-red-700': alert.type === 'error',
+        'bg-blue-100 border-blue-400 text-blue-700': alert.type === 'info',
+        'bg-yellow-100 border-yellow-400 text-yellow-700': alert.type === 'warning',
+        'bg-green-100 border-green-400 text-green-700': alert.type === 'success',
+      }">
+      <div class="flex justify-between items-center">
+        <div>
+          <h4 class="font-bold" x-text="alert.title"></h4>
+          <p x-text="alert.message"></p>
+        </div>
+        <button @click="alerts.splice(index, 1)" class="text-lg font-bold" aria-label="Close">&times;</button>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  function notify(type, title, message) {
+    window.dispatchEvent(new CustomEvent('alert', {
+      detail: { type, title, message }
+    }));
+  }
+</script>

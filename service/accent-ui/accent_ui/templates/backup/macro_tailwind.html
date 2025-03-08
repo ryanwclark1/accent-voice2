@@ -1,0 +1,325 @@
+{% macro build_menu(current_user, current_menu) %}
+  {% if current_user.is_authenticated %}
+    {% for item in current_menu.children recursive %}
+      {% if item.visible %}
+        <ul class="space-y-2">
+          <li class="{{ 'bg-gray-200 text-gray-900' if item.active else '' }}">
+            {% if item.children %}
+              {{ _build_menu_children_tailwind(item, current_user) }}
+            {% else %}
+              {{ _build_menu_link_tailwind(item, current_user) }}
+            {% endif %}
+          </li>
+        </ul>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
+{% macro _build_menu_link_tailwind(item, current_user) %}
+  <a href="{{ item.url }}" class="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+      stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="{{ item.svg if item.svg else 'M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'  | safe }}" />
+    </svg> {{ item.text }}
+  </a>
+{% endmacro %}
+
+{% macro _build_menu_children_tailwind(item, current_user) %}
+  {% if item.visible %}
+    <div x-data="{ open: false }" class="group">
+      <button @click="open = !open" class="flex items-center justify-between w-full p-2 rounded-md hover:bg-gray-100">
+        <div class="flex items-center gap-x-3">
+          <!-- Parent SVG Icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="{{ item.svg if item.svg else 'M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'  | safe }}" />
+          </svg>
+          <span>{{ item.text }}</span>
+        </div>
+      </button>
+      <div x-show="open" x-collapse class="mt-2 space-y-1">
+        {{ _build_chidren(item, false, current_user) }}
+      </div>
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro _build_ipbx_menu_tailwind(item, current_user) %}
+{% set tenants = current_user.get_current_tenants() %}
+{% if tenants|length > 0 %}
+<form id="working-tenant" action="{{ url_for('index.WorkingTenantView:set_working_tenant') }}"
+  class="flex items-center space-x-2">
+  <label for="tenant_uuid" class="text-sm font-medium text-gray-700">Tenant:</label>
+  <select name="tenant_uuid" id="tenant_uuid"
+    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+    {% for tenant in tenants %}
+    {% set selected = 'selected' if session['working_tenant_uuid'] == tenant.uuid else '' %}
+    <option value="{{ tenant.uuid }}" {{ selected }}>{{ tenant.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit"
+    class="ml-2 rounded-md bg-indigo-600 px-4 py-2 text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm">
+    Update
+  </button>
+</form>
+
+{% if session['working_tenant_uuid'] == current_user.get_user_tenant_uuid() %}
+<div class="mt-4 rounded-md bg-red-100 p-4 text-sm text-red-700">
+  <div class="flex">
+    <div class="flex-shrink-0">
+      <i class="fa fa-exclamation-circle"></i>
+    </div>
+    <div class="ml-3">
+      <span class="font-medium">Warning:</span> Don't use the <strong>master</strong> tenant for configuration!
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+{{ _build_children_tailwind(item, true, current_user) }}
+{% endmacro %}
+
+
+{% macro _build_children_tailwind(item, root, current_user) %}
+  <ul class="space-y-1">
+    {% for i in item.children %}
+      {% if i.children %}
+        {{ _build_menu_children_tailwind(i, current_user) }}
+      {% elif i.visible %}
+        <li>
+          {{ _build_menu_link(i, current_user) }}
+          <!-- <a href="{{ i.url }}" class="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
+            <i class="fa fa-{{ i.icon if i.icon else 'circle-o' }} text-gray-600"></i>
+            <span>{{ i.text }}</span>
+          </a> -->
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+{% macro build_breadcrumbs_tailwind(crumbs) %}
+  <nav class="content-header flex items-center space-x-2 text-sm text-gray-600" aria-label="Breadcrumb">
+    {% for crumb in crumbs %}
+      <div>
+        {% if crumb.link %}
+          <a href="{{ crumb.link }}" class="hover:underline">{{ crumb.name }}</a>
+        {% else %}
+          <span>{{ crumb.name }}</span>
+        {% endif %}
+        {% if not loop.last %}
+          <i class="fa fa-chevron-right mx-2 text-gray-400"></i>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </nav>
+{% endmacro %}
+
+{% macro build_section_row_tailwind() %}
+  <section class="py-6 bg-gray-50">
+    <div class="container mx-auto px-4">
+      {{ caller() }}
+    </div>
+  </section>
+{% endmacro %}
+
+{% macro build_form_box_tailwind(title, subtitle, icon) %}
+  <div class="bg-white rounded-md shadow-md p-6">
+    <div class="flex items-center space-x-2 mb-4">
+      <i class="fa fa-{{ icon }} text-gray-600"></i>
+      <div>
+        <h2 class="text-lg font-bold text-gray-800">{{ title }}</h2>
+        {% if subtitle %}
+          <p class="text-sm text-gray-500">{{ subtitle }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {{ caller() }}
+  </div>
+{% endmacro %}
+
+
+{% macro add_tab_navigation_item_tailwind(id, name, active=False) %}
+<li class="mr-1">
+  <a href="#{{ id }}"
+    class="inline-block px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-t {{ 'border-b-2 border-indigo-500 text-indigo-600' if active }}">
+    {{ name }}
+  </a>
+</li>
+{% endmacro %}
+
+
+{% macro add_tab_navigation_item_tailwind(id, name, active=False) %}
+<li class="mr-1">
+  <a href="#{{ id }}"
+    class="inline-block px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-t {{ 'border-b-2 border-indigo-500 text-indigo-600' if active }}">
+    {{ name }}
+  </a>
+</li>
+{% endmacro %}
+
+
+{% macro add_tab_navigation_header_tailwind(title, subtitle, icon) %}
+<div class="flex items-center space-x-2">
+  <i class="fa fa-{{ icon }} text-gray-600"></i>
+  <h3 class="text-lg font-semibold text-gray-700">{{ title }}</h3>
+  <span class="text-sm text-gray-500">{{ subtitle }}</span>
+</div>
+{% endmacro %}
+
+
+{% macro build_tabs_content_tailwind() %}
+<div class="tab-content">
+  {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{% macro build_tab_content_item_tailwind(id, active=False) %}
+<div id="{{ id }}" class="p-4 {{ 'block' if active else 'hidden' }}">
+  {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{% macro add_add_entry_button_tailwind() %}
+<button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
+  <i class="fa fa-plus"></i> Add
+</button>
+{% endmacro %}
+
+
+
+{% macro add_delete_entry_button_tailwind() %}
+  <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+    <i class="fa fa-minus"></i> Delete
+  </button>
+{% endmacro %}
+
+
+{% macro build_add_row_entry_header_tailwind() %}
+  <div class="flex justify-end">
+    {{ add_add_entry_button_tailwind() }}
+  </div>
+{% endmacro %}
+
+
+{% macro build_form_tailwind(method="post", action="", id="", class="", enctype="") %}
+  <form id="{{ id }}" class="space-y-6 {{ class }}" method="{{ method }}" action="{{ action }}" {{ 'enctype=' ~ enctype if enctype }}>
+    {{ caller() }}
+  </form>
+{% endmacro %}
+
+
+{% macro add_default_fields_tailwind(form, submit_value, delete_action=None) %}
+  <div class="space-y-4">
+    {{ form.csrf_token }}
+    {{ caller() }}
+  </div>
+  {% if submit_value or delete_action %}
+    <div class="flex justify-end space-x-4">
+      {% if submit_value %}
+        <button type="submit" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">{{ submit_value }}</button>
+      {% endif %}
+      {% if delete_action %}
+        <a href="{{ delete_action }}" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Delete</a>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+
+{% macro build_list_containers_tailwind(title, icon, size='12') %}
+<div class="col-span-{{ size }}">
+  <div class="bg-white shadow-md rounded-md p-4">
+    <div class="mb-4 flex items-center space-x-2">
+      <i class="fa fa-{{ icon }} text-indigo-500"></i>
+      <h3 class="text-lg font-semibold text-gray-700">{{ title }}</h3>
+    </div>
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}
+
+
+{% macro build_table_tailwind(id=None, data_list_url='', name=None, class_name='') %}
+  <table {{ 'id=' ~ id if id }} class="{{ class_name }} min-w-full table-auto border-collapse border border-gray-300" {{ 'data-list-url=' ~ data_list_url if data_list_url }} {{ 'data-name=' ~ name if name }}>
+    {{ caller() }}
+  </table>
+{% endmacro %}
+
+{% macro build_list_table_tailwind(name=None, list='', id=None) %}
+  {% set caller_ = caller %}
+  {% call build_table_tailwind(id=id or 'table-list', data_list_url=list, name=name, class_name='server-side' if list else 'client-side') %}
+    {{ caller_() }}
+  {% endcall %}
+{% endmacro %}
+
+
+{% macro build_table_headers_tailwind() %}
+  <thead class="bg-gray-50">
+    <tr>
+      {{ caller() }}
+    </tr>
+  </thead>
+{% endmacro %}
+
+
+{% macro build_list_table_headers_tailwind(get='', delete='', add='', actions_column=true, import='', export='', update='') %}
+  <thead class="bg-gray-50">
+    {% if actions_column %}
+    <tr class="table-data-tooltip text-left text-sm font-medium text-gray-500" {% if add %} data-add-url="{{ add }}"
+      data-add-tooltip="{{ _('Add') }}" {% endif %} {% if get %} data-get-url="{{ get }}"
+      data-get-tooltip="{{ _('Edit') }}" {% endif %} {% if import %} data-import-url="{{ import }}"
+      data-import-tooltip="{{ _('Import CSV') }}" {% endif %} {% if export %} data-export-url="{{ export }}"
+      data-export-tooltip="{{ _('Export CSV') }}" {% endif %} {% if update %} data-update-url="{{ update }}"
+      data-update-tooltip="{{ _('Update from CSV') }}" {% endif %} {% if delete %} data-delete-url="{{ delete }}"
+      data-delete-tooltip="{{ _('Delete') }}" {% endif %}>
+      {% else %}
+    <tr class="text-left text-sm font-medium text-gray-500">
+      {% endif %}
+      {{ caller() }}
+    </tr>
+  </thead>
+{% endmacro %}
+
+
+{% macro build_table_body_tailwind(class_='') %}
+  <tbody class="{{ class_ }}">
+    {{ caller() }}
+  </tbody>
+{% endmacro %}
+
+
+{% macro build_list_table_rows_tailwind(items, non_unique_id=false) %}
+  {% call build_table_body_tailwind() %}
+    {% for item in items %}
+      <tr data-id="{{ item.id if item.id }}" data-uuid="{{ item.uuid if item.uuid }}" data-non-unique-id="{{ non_unique_id if non_unique_id }}" data-get-url="{{ item.get_url if item.get_url }}" class="hover:bg-gray-100">
+        {{ caller(item) }}
+      </tr>
+    {% endfor %}
+  {% endcall %}
+{% endmacro %}
+
+
+{% macro build_hidden_add_containers_tailwind(title, name='modal', class='') %}
+  <div id="{{ name }}" class="fixed inset-0 z-50 hidden overflow-y-auto {{ class }}">
+    <div class="flex items-center justify-center min-h-screen">
+      <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-900">{{ title }}</h3>
+          <button onclick="document.getElementById('{{ name }}').classList.add('hidden')" class="text-gray-400 hover:text-gray-500">
+            <i class="fa fa-close"></i>
+          </button>
+        </div>
+        <div>
+          {{ caller() }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}

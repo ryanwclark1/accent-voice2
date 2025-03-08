@@ -1,0 +1,70 @@
+{
+	"_copyright": "Copyright 2023 Accent Communications",
+	"_author": "Accent",
+	"_svn_revision": "$Revision$",
+	"apiVersion": "2.0.0",
+	"swaggerVersion": "1.1",
+	"basePath": "http://localhost:8088/ari",
+	"resourcePath": "/api-docs/amqp.{format}",
+	"apis": [
+		{
+			"path": "/amqp/{applicationName}",
+			"description": "Stasis application",
+			"operations": [
+				{
+					"httpMethod": "POST",
+					"summary": "Create a stasis subscription to AMQP.",
+					"notes": "Create a Stasis application and subscribe to its events and forward them to AMQP. The application's name must be unique.",
+					"nickname": "stasisSubscribe",
+					"responseClass": "Application",
+					"parameters": [
+						{
+							"name": "applicationName",
+							"description": "Application's name",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 400,
+							"reason": "Bad request."
+						}
+					]
+				},
+				{
+					"httpMethod": "DELETE",
+					"summary": "Delete a stasis subscription to AMQP.",
+					"notes": "Delete a Stasis application and subscribe to its events and forward them to AMQP. The application's name must be unique.",
+					"nickname": "stasisUnsubscribe",
+					"responseClass": "Application",
+					"parameters": [
+						{
+							"name": "applicationName",
+							"description": "Application's name",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 400,
+							"reason": "Bad request."
+						},
+						{
+							"code": 404,
+							"reason": "Stasis subscription not found"
+						}
+					]
+				}
+			]
+		}
+	],
+	"models": {
+
+	}
+}

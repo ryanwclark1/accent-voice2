@@ -1,0 +1,9 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - confd
+      - calld
+      - rabbitmq
+    environment:
+      TARGETS: "calld:9500 rabbitmq:5672 confd:9486 auth:9497"

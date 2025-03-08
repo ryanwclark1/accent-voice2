@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+
+<head>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script>
+  <script src="https://unpkg.com/@alpinejs/ui@3.14.6/dist/cdn.min.js"></script>
+</head>
+
+<body class="h-full">
+  <div class="wrapper">
+    <div x-show="open" class="relative z-50 lg:hidden"
+      x-description="Off-canvas menu for mobile, show/hide based on off-canvas menu state." x-ref="dialog"
+      aria-modal="true" style="display: none;">
+
+      <div x-show="open" x-transition:enter="transition-opacity ease-linear duration-300"
+        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/80"
+        x-description="Off-canvas menu backdrop, show/hide based on off-canvas menu state." style="display: none;">
+      </div>
+
+
+      <div class="fixed inset-0 flex">
+
+        <div x-show="open" x-transition:enter="transition ease-in-out duration-300 transform"
+          x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+          x-transition:leave="transition ease-in-out duration-300 transform" x-transition:leave-start="translate-x-0"
+          x-transition:leave-end="-translate-x-full"
+          x-description="Off-canvas menu, show/hide based on off-canvas menu state."
+          class="relative mr-16 flex w-full max-w-xs flex-1" @click.away="open = false" style="display: none;">
+
+          <div x-show="open" x-transition:enter="ease-in-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="ease-in-out duration-300"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+            x-description="Close button, show/hide based on off-canvas menu state."
+            class="absolute left-full top-0 flex w-16 justify-center pt-5" style="display: none;">
+            <button type="button" class="-m-2.5 p-2.5" @click="open = false">
+              <span class="sr-only">Close sidebar</span>
+              <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Sidebar component, swap this element with another sidebar if you like -->
+          <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
+            <div class="flex h-16 shrink-0 items-center">
+              <img class="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&amp;shade=600"
+                alt="Your Company">
+            </div>
+            <nav class="flex flex-1 flex-col">
+              <ul role="list" class="flex flex-1 flex-col gap-y-7">
+                <li>
+                  <!-- Nav List-->
+                  <ul role="list" class="-mx-2 space-y-1">
+                    <li>
+                      <a href="#"
+                        class="bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700"
+                        x-state:on="Current" x-state:off="Default"
+                        x-state-description="Current: &quot;bg-gray-50&quot;, Default: &quot;hover:bg-gray-50&quot;">
+                        <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25">
+                          </path>
+                        </svg>
+                        Dashboard
+                      </a>
+                    </li>
+                    <li>
+                      <div x-data="{ open: false }">
+                        <button type="button"
+                          class="hover:bg-gray-50 flex items-center w-full text-left rounded-md p-2 gap-x-3 text-sm leading-6 font-semibold text-gray-700"
+                          aria-controls="sub-menu-1" @click="open = !open" aria-expanded="false"
+                          x-bind:aria-expanded="open.toString()">
+                          <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z">
+                            </path>
+                          </svg>
+                          Teams
+                          <svg class="ml-auto h-5 w-5 shrink-0 text-gray-400" x-state:on="Expanded"
+                            x-state:off="Collapsed"
+                            :class="{ 'rotate-90 text-gray-500': open, 'text-gray-400': !(open) }" viewBox="0 0 20 20"
+                            fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd"
+                              d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                              clip-rule="evenodd"></path>
+                          </svg>
+                        </button>
+                        <ul x-description="Expandable link section, show/hide based on state." class="mt-1 px-2"
+                          id="sub-menu-1" x-show="open" style="display: none;">
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">Engineering</a>
+                          </li>
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">Human
+                              Resources</a>
+                          </li>
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">Customer
+                              Success</a>
+                          </li>
+
+                        </ul>
+                      </div>
+                    </li>
+                    <li>
+                      <div x-data="{ open: false }">
+                        <button type="button"
+                          class="hover:bg-gray-50 flex items-center w-full text-left rounded-md p-2 gap-x-3 text-sm leading-6 font-semibold text-gray-700"
+                          aria-controls="sub-menu-2" @click="open = !open" aria-expanded="false"
+                          x-bind:aria-expanded="open.toString()">
+                          <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z">
+                            </path>
+                          </svg>
+                          Projects
+                          <svg class="text-gray-400 ml-auto h-5 w-5 shrink-0" x-state:on="Expanded"
+                            x-state:off="Collapsed"
+                            :class="{ 'rotate-90 text-gray-500': open, 'text-gray-400': !(open) }" viewBox="0 0 20 20"
+                            fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd"
+                              d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                              clip-rule="evenodd"></path>
+                          </svg>
+                        </button>
+                        <ul x-description="Expandable link section, show/hide based on state." class="mt-1 px-2"
+                          id="sub-menu-2" x-show="open" style="display: none;">
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">GraphQL
+                              API</a>
+                          </li>
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">iOS
+                              App</a>
+                          </li>
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">Android
+                              App</a>
+                          </li>
+                          <li>
+                            <!-- 44px -->
+                            <a href="#"
+                              class="hover:bg-gray-50 block rounded-md py-2 pr-2 pl-9 text-sm leading-6 text-gray-700">New
+                              Customer Portal</a>
+                          </li>
+
+                        </ul>
+                      </div>
+                    </li>
+                    <li>
+                      <a href="#"
+                        class="hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700"
+                        x-state-description="undefined: &quot;bg-gray-50&quot;, undefined: &quot;hover:bg-gray-50&quot;">
+                        <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5">
+                          </path>
+                        </svg>
+                        Calendar
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#"
+                        class="hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700"
+                        x-state-description="undefined: &quot;bg-gray-50&quot;, undefined: &quot;hover:bg-gray-50&quot;">
+                        <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75">
+                          </path>
+                        </svg>
+                        Documents
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#"
+                        class="hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700"
+                        x-state-description="undefined: &quot;bg-gray-50&quot;, undefined: &quot;hover:bg-gray-50&quot;">
+                        <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z">
+                          </path>
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z">
+                          </path>
+                        </svg>
+                        Reports
+                      </a>
+                    </li>
+
+                  </ul>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- Static sidebar for desktop -->
+    <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+      <!-- Sidebar component, swap this element with another sidebar if you like -->
+      <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
+        <div class="flex h-16 shrink-0 items-center">
+          <a href="/engine/users/">
+            <img class="h-8 w-auto" src="../static/img/accent-text-bird-reverse.svg" alt="Accent Voice">
+          </a>
+        </div>
+        <nav class="flex flex-1 flex-col">
+          <form class="navbar-form navbar-left mb-2" id="working-tenant"
+            action="/set_working_tenant_uuid/set_working_tenant/">
+            <div class="form-group">
+              <select name="tenant_uuid"
+                class="selectfield block w-full px-2 py-1 rounded-md border-gray-300 text-gray-700 select2-hidden-accessible"
+                tabindex="-1" aria-hidden="true">
+                <option value="cb05b71c-b03f-4f93-aad0-a29572d607d6">accent-master</option>
+                <option value="438c6519-6b6f-480a-b631-87c4b0b45cab" selected="">master</option>
+              </select><span class="select2 select2-container select2-container--bootstrap" dir="ltr"><span
+                  class="selection"><span class="select2-selection select2-selection--single" role="combobox"
+                    aria-haspopup="true" aria-expanded="false" tabindex="0"
+                    aria-labelledby="select2-tenant_uuid-ct-container"><span class="select2-selection__rendered"
+                      id="select2-tenant_uuid-ct-container" title="master">master</span><span
+                      class="select2-selection__arrow" role="presentation"><b
+                        role="presentation"></b></span></span></span><span class="dropdown-wrapper"
+                  aria-hidden="true"></span></span>
+            </div>
+          </form>
+          <div class="alert alert-error alert-dismissible bg-red-50 text-red-800 p-3 rounded-md mb-2">
+            <button type="button" class="close text-red-800" data-dismiss="alert" aria-hidden="true">×</button>
+            <i>Don't use <strong>master</strong> tenant for configuration!</i>
+          </div>
+          <ul class="flex flex-1 flex-col gap-y-7 tree">
+            <li>
+              <ul role="list" class="-mx-2 space-y-1">
+                <li>
+                  <div x-data="{ open: false }">
+                    <button type="button"
+                      class="hover:bg-gray-50 flex items-center w-full text-left rounded-md p-2 gap-x-3 text-sm leading-6 font-semibold text-gray-700"
+                      aria-controls="sub-menu-1" @click="open = !open" aria-expanded="false"
+                      x-bind:aria-expanded="open.toString()">
+                      <!-- <i class="fa fa-users"></i> -->
+                      <svg class="h-6 w-6 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        User Management <svg class="ml-auto h-5 w-5 shrink-0 text-gray-400" x-state:on="Expanded"
+                        x-state:off="Collapsed" :class="{ 'rotate-90 text-gray-500': open, 'text-gray-400': !(open) }"
+                        viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd"
+                          d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                          clip-rule="evenodd"></path>
+                      </svg>
+                    </button>
+                    <ul x-description="Expandable link section, show/hide based on state." class="mt-1 px-2"
+                      id="sub-menu-1" x-show="open" style="display: none;">
+                      <li class=" multi-tenant">
+                        <a href="/engine/users/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-user"></i>
+                          <span>Users</span>
+                        </a>
+
+                      </li>
+                      <li class="active multi-tenant">
+                        <a href="/engine/groups/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-users"></i>
+                          <span>Ring Groups</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/lines/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-exchange"></i>
+                          <span>Lines</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/devices/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-phone-square"></i>
+                          <span>Devices</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/voicemails/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-envelope"></i>
+                          <span>Voicemails</span>
+                        </a>
+
+                      </li>
+
+                    </ul>
+                  </div>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-phone"></i>
+                    <span>Call Management</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/incalls/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-long-arrow-right"></i>
+                          <span>Incalls</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/outcalls/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-long-arrow-left"></i>
+                          <span>Outcalls</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/callfilters/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-filter"></i>
+                          <span>BS Filters</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/callpermissions/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-ban"></i>
+                          <span>Call Permissions</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/callpickups/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-rotate-left"></i>
+                          <span>Call Pickups</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/schedules/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-clock-o"></i>
+                          <span>Schedules</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/trunks/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-server"></i>
+                          <span>Trunks</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-support"></i>
+                    <span>Call Center</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/agents/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-users"></i>
+                          <span>Agents</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/queues/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-cubes"></i>
+                          <span>Queues</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/skillrules/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-sticky-note-o"></i>
+                          <span>Skill Rules</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/skills/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-trophy"></i>
+                          <span>Skills</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-user-secret"></i>
+                    <span>Credentials</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/identities/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-user"></i>
+                          <span>Identities</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/identity_groups/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-users"></i>
+                          <span>Groups</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/policies/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-lock"></i>
+                          <span>Policies</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/ldap_config/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-wrench"></i>
+                          <span>LDAP</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/external_auths/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-external-link"></i>
+                          <span>External Auth</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-address-book"></i>
+                    <span>Directory</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/dird_profiles/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-user"></i>
+                          <span>Profile</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/dird_sources/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-random"></i>
+                          <span>Sources</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-book"></i>
+                    <span>Phonebooks</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/phonebooks/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-wrench"></i>
+                          <span>Configuration</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/manage_phonebooks/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-users"></i>
+                          <span>Contacts</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-pie-chart"></i>
+                    <span>Reporting</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" ">
+                        <a href="/engine/cdrs/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-newspaper-o"></i>
+                          <span>CDR</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-star"></i>
+                    <span>Services</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/applications/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-cubes"></i>
+                          <span>Applications</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/conferences/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-compress"></i>
+                          <span>Conferences</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/ivrs/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-navicon"></i>
+                          <span>IVR</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/pagings/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-bullhorn"></i>
+                          <span>Pagings</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/parkinglots/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-automobile"></i>
+                          <span>Parking Lots</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/switchboards/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-desktop"></i>
+                          <span>Switchboards</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/webhooks/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-globe"></i>
+                          <span>Webhooks</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-music"></i>
+                    <span>Sounds &amp; Greetings</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/moh/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-music"></i>
+                          <span>Musics</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/sound/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-file-sound-o"></i>
+                          <span>Sound Files</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="#"
+                    class="group flex gap-x-3 rounded-md p-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 hover:text-white"
+                    x-on:click.prevent="open = !open">
+                    <i class="fa fa-gears"></i>
+                    <span>Advanced</span>
+                    <svg class="ml-auto h-4 w-4 transform transition-transform duration-300"
+                      :class="{ 'rotate-180': open }" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </a>
+                  <ul class="treeview-menu pl-6 transition-all duration-300 overflow-hidden"
+                    :class="{ 'max-h-0': !open, 'max-h-screen': open }">
+                    <ul class="treeview-menu">
+                      <li class=" multi-tenant">
+                        <a href="/engine/extensions/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-tty"></i>
+                          <span>Extensions</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/contexts/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-random"></i>
+                          <span>Contexts</span>
+                        </a>
+
+                      </li>
+                      <li class=" multi-tenant">
+                        <a href="/engine/sip_templates/"
+                          class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                          <i class="fa fa-compress"></i>
+                          <span>SIP Templates</span>
+                        </a>
+
+                      </li>
+                    </ul>
+
+                  </ul>
+                </li>
+
+                <li>
+                  <a href="/engine/global_settings/"
+                    class="block px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md">
+                    <i class="fa fa-gears"></i>
+                    <span>Global Settings</span>
+                  </a>
+
+                </li>
+              </ul>
+            </li>
+          </ul>
+
+
+
+        </nav>
+      </div>
+    </div>
+    <div class="lg:pl-72">
+      <!-- Header -->
+      <div
+        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden">
+          <span class="sr-only">Open sidebar</span>
+          <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+            aria-hidden="true" data-slot="icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5">
+            </path>
+          </svg>
+        </button>
+        <!-- Separator -->
+        <div class="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true">
+        </div>
+        <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+          <div class="grid flex-1 grid-cols-1">
+          </div>
+          <div class="flex items-center gap-x-4 lg:gap-x-6">
+            <button type="button" class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+              <span class="sr-only">View notifications</span>
+              <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                aria-hidden="true" data-slot="icon">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0">
+                </path>
+              </svg>
+            </button>
+            <!-- Separator -->
+            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10" aria-hidden="true"></div>
+            <!-- Profile dropdown -->
+            <div class="relative" x-data="{ open: false }">
+              <div x-menu="">
+                <!-- Button -->
+                <button type="button" class="-m-1.5 flex items-center p-1.5" id="user-menu-button" aria-expanded="false"
+                  aria-haspopup="true" x-on:click="open = !open" :aria-expanded="open.toString()">
+                  <span class="sr-only">Open user menu</span>
+                  <span class="hidden lg:flex lg:items-center">
+                    <span class="ml-4 text-sm/6 font-semibold text-gray-900" aria-hidden="true">
+                      accent-auth-cli </span>
+                    <svg class="ml-2 size-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fill-rule="evenodd"
+                        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd"></path>
+                    </svg>
+                  </span>
+                </button>
+                <!-- Dropdown Menu -->
+                <div
+                  class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none"
+                  role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" x-show="open"
+                  x-transition:enter="transition ease-out duration-100"
+                  x-transition:enter-start="transform opacity-0 scale-95"
+                  x-transition:enter-end="transform opacity-100 scale-100"
+                  x-transition:leave="transition ease-in duration-75"
+                  x-transition:leave-start="transform opacity-100 scale-100"
+                  x-transition:leave-end="transform opacity-0 scale-95" x-on:click.outside="open = false" x-cloak="">
+                  <a x-menu:item="" href="/logout/" class="block px-3 py-1 text-sm/6 text-gray-900" role="menuitem"
+                    tabindex="-1" id="user-menu-item-1">
+                    Sign out
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <main class="py-10">
+        <div class="px-4 sm:px-6 lg:px-8">
+          <div class="box-notifier">
+            <div class="alert alert-error alert-dismissible hidden">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+              <h4><i class="icon fa fa-ban"></i> <span id="alert-title"></span></h4>
+              <span id="alert-message"></span>
+            </div>
+
+            <div class="alert alert-info alert-dismissible hidden">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+              <h4><i class="icon fa fa-info"></i> <span id="alert-title"></span></h4>
+              <span id="alert-message"></span>
+            </div>
+
+            <div class="alert alert-warning alert-dismissible hidden">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+              <h4><i class="icon fa fa-warning"></i> <span id="alert-title"></span></h4>
+              <span id="alert-message"></span>
+            </div>
+
+            <div class="alert alert-success alert-dismissible hidden">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+              <h4><i class="icon fa fa-check"></i> <span id="alert-title"></span></h4>
+              <span id="alert-message"></span>
+            </div>
+          </div>
+          <section class="content-header">
+            <ol class="breadcrumb">
+              <li>
+                <a href="/engine/groups/"> <i class="fa fa-users"></i> &nbsp;Groups
+                </a>
+              </li>
+            </ol>
+          </section>
+          <section class="content">
+            <div class="col-xs-12">
+              <div class="box box-primary">
+                <div class="box-body">
+                  <div id="table-list_wrapper" class="dataTables_wrapper form-inline dt-bootstrap no-footer">
+                    <div class="flex flex-wrap -mx-2">
+                      <div class="sm:w-8/12 px-2">
+                        <div class="dt-buttons btn-group"> <button
+                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-default buttons-select-all"
+                            tabindex="0" aria-controls="table-list"><span>Select all</span></button> <button
+                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-default buttons-select-none disabled"
+                            tabindex="0" aria-controls="table-list"><span>Deselect all</span></button> <button
+                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-default"
+                            tabindex="0" aria-controls="table-list" id="add-form" data-toggle="modal"
+                            data-target="#view-add-form"><span><i class="fa fa-plus"></i></span></button> <button
+                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-default edit-selected-rows disabled"
+                            tabindex="0" aria-controls="table-list" title="Edit" id="edit-selected-row"><span><i
+                                class="fa fa-edit"></i></span></button> </div>
+                      </div>
+                      <div class="sm:w-4/12 px-2">
+                        <div id="table-list_filter" class="dataTables_filter"><label>Search:<input type="search"
+                              class="form-control input-sm" placeholder="" aria-controls="table-list"></label></div>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap -mx-2">
+                      <div class="sm:w-full px-2">
+                        <table id="table-list"
+                          class="table table-condensed table-striped table-bordered client-side dataTable no-footer dtr-inline"
+                          role="grid" aria-describedby="table-list_info" data-row-id="0">
+                          <thead>
+                            <tr class="table-data-tooltip" data-get-url="/engine/groups//" data-get-tooltip="Edit"
+                              data-delete-url="/engine/groups/delete/" data-delete-tooltip="Delete" role="row">
+                              <th class="sorting" tabindex="0" aria-controls="table-list" rowspan="1" colspan="1"
+                                aria-label="Label: activate to sort column ascending">Label</th>
+                              <th class="sorting" tabindex="0" aria-controls="table-list" rowspan="1" colspan="1"
+                                aria-label="Name: activate to sort column ascending">Name</th>
+                              <th class="sorting" tabindex="0" aria-controls="table-list" rowspan="1" colspan="1"
+                                aria-label="Extension: activate to sort column ascending">Extension</th>
+                              <th width="10" class="delete-header"></th>
+                            </tr>
+                          </thead>
+                          <tbody class="">
+                            <tr class="odd">
+                              <td valign="top" colspan="3" class="dataTables_empty">No data available in table</td>
+                              <td class="delete-empty"></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap -mx-2">
+                      <div class="sm:w-5/12 px-2">
+                        <div class="dataTables_info" id="table-list_info" role="status" aria-live="polite">Showing 0 to
+                          0 of 0 entries</div>
+                        <div class="dataTables_length" id="table-list_length"><label>Show <select
+                              name="table-list_length" aria-controls="table-list"
+                              class="form-control input-sm select2-hidden-accessible" tabindex="-1" aria-hidden="true">
+                              <option value="20">20</option>
+                              <option value="50">50</option>
+                              <option value="100">100</option>
+                              <option value="-1">All</option>
+                            </select><span class="select2 select2-container select2-container--bootstrap" dir="ltr"
+                              style="width: 84px;"><span class="selection"><span
+                                  class="select2-selection select2-selection--single" role="combobox"
+                                  aria-haspopup="true" aria-expanded="false" tabindex="0"
+                                  aria-labelledby="select2-table-list_length-86-container"><span
+                                    class="select2-selection__rendered" id="select2-table-list_length-86-container"
+                                    title="20">20</span><span class="select2-selection__arrow" role="presentation"><b
+                                      role="presentation"></b></span></span></span><span class="dropdown-wrapper"
+                                aria-hidden="true"></span></span> entries</label></div>
+                      </div>
+                      <div class="sm:w-7/12 px-2">
+                        <div class="dataTables_paginate paging_simple_numbers" id="table-list_paginate">
+                          <ul class="pagination">
+                            <li class="paginate_button previous disabled" id="table-list_previous"><a href="#"
+                                aria-controls="table-list" data-dt-idx="0" tabindex="0">Previous</a></li>
+                            <li class="paginate_button next disabled" id="table-list_next"><a href="#"
+                                aria-controls="table-list" data-dt-idx="1" tabindex="0">Next</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal fade " id="view-add-form" role="dialog" aria-labelledby="view-add-form"
+              aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><i class="fa fa-close"></i></button>
+                    <h4 class="modal-title">Add Group</h4>
+                  </div>
+                  <div class="modal-body clearfix">
+                    <form class="form-horizontal " method="post" action="" data-toggle="validator" novalidate="true">
+                      <div class="box-body">
+                        <input id="csrf_token" name="csrf_token" type="hidden"
+                          value="IjczOTgyMTFhMjE1MzFjMmI0Njg3YWRhMzIxNDc4NmM5ZjExMTkwZjgi.Z09jjw.-oHvAG2SQwvgAngzvZm4LBN3MZ8">
+                        <div class="form-group">
+                          <label for="label" class="col-sm-4 control-label">
+                            <abbr title="Required">Label</abbr>
+                          </label>
+                          <div class="sm:w-8/12 px-2" id="form-group-input-label">
+                            <input class=" required form-control" id="label" maxlength="128" name="label"
+                              placeholder="Label" required="" type="text" value="">
+                          </div>
+                        </div>
+                        <div class="ui-helper-clearfix">
+                          <label for="extensions-0-context" class="col-sm-4 control-label">
+                            Context
+                          </label>
+
+                          <div class="sm:w-4/12 px-2" id="form-group-input-extensions-0-context">
+                            <select class="group-context selectfield form-control select2-hidden-accessible"
+                              data-listing-href="/engine/contexts_listing/list_json_by_type/internal/"
+                              id="extensions-0-context" label="Extension" name="extensions-0-context" tabindex="-1"
+                              aria-hidden="true">
+                              <option value="None">None</option>
+                            </select><span class="select2 select2-container select2-container--bootstrap"
+                              dir="ltr"><span class="selection"><span
+                                  class="select2-selection select2-selection--single" role="combobox"
+                                  aria-haspopup="true" aria-expanded="false" tabindex="0"
+                                  aria-labelledby="select2-extensions-0-context-container"><span
+                                    class="select2-selection__rendered" id="select2-extensions-0-context-container"
+                                    title="None">None</span><span class="select2-selection__arrow"
+                                    role="presentation"><b role="presentation"></b></span></span></span><span
+                                class="dropdown-wrapper" aria-hidden="true"></span></span>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <div class="sm:w-4/12 px-2" id="form-group-input-extensions-0-exten">
+                            <select class="group-exten selectfield form-control select2-hidden-accessible"
+                              data-allow-clear="true" data-allow-custom-values=""
+                              data-listing-href="/engine/extensions_listing/list_available_exten_group/"
+                              id="extensions-0-exten" name="extensions-0-exten" tabindex="-1" aria-hidden="true">
+                              <option></option>
+                            </select><span class="select2 select2-container select2-container--bootstrap" dir="ltr"
+                              style="width: 53px;"><span class="selection"><span
+                                  class="select2-selection select2-selection--single" role="combobox"
+                                  aria-haspopup="true" aria-expanded="false" tabindex="0"
+                                  aria-labelledby="select2-extensions-0-exten-container"><span
+                                    class="select2-selection__rendered" id="select2-extensions-0-exten-container"><span
+                                      class="select2-selection__placeholder">Select...</span></span><span
+                                    class="select2-selection__arrow" role="presentation"><b
+                                      role="presentation"></b></span></span></span><span class="dropdown-wrapper"
+                                aria-hidden="true"></span></span>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label for="members-user_uuids" class="col-sm-4 control-label">
+                            Members
+                          </label>
+                          <div class="sm:w-8/12 px-2" id="form-group-input-members-user_uuids">
+                            <select class="selectfield form-control select2-hidden-accessible"
+                              data-listing-href="/engine/users_listing/uuid_list_json/" id="members-user_uuids"
+                              multiple="" name="members-user_uuids" tabindex="-1" aria-hidden="true"></select><span
+                              class="select2 select2-container select2-container--bootstrap" dir="ltr"><span
+                                class="selection"><span class="select2-selection select2-selection--multiple"
+                                  role="combobox" aria-haspopup="true" aria-expanded="false" tabindex="-1">
+                                  <ul class="select2-selection__rendered ui-sortable">
+                                    <li class="select2-search select2-search--inline ui-sortable-handle"><input
+                                        class="select2-search__field" type="search" tabindex="0" autocomplete="off"
+                                        autocorrect="off" autocapitalize="none" spellcheck="false" role="textbox"
+                                        aria-autocomplete="list" placeholder="Select..." style=""></li>
+                                  </ul>
+                                </span></span><span class="dropdown-wrapper" aria-hidden="true"></span></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="box-footer text-center">
+                        <div class="sm:w-5/12 px-2"></div>
+                        <div class="sm:w-1/12 px-2" id="form-group-input-submit">
+                          <input
+                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-primary disabled"
+                            id="submit" name="submit" type="submit" value="Add">
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+      <footer class="main-footer"></footer>
+    </div>
+  </div>
+  <script src="/engine/accent_ui.plugins.group.plugin/js/group.js"></script>
+</body>
+
+</html>

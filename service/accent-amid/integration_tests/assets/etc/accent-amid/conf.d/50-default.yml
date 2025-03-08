@@ -1,0 +1,26 @@
+debug: True
+publish_ami_events: True
+
+auth:
+  host: auth
+  username: accent-amid
+  password: opensesame
+
+ajam:
+  host: asterisk-ajam
+  username: accent_amid
+  password: opensesame
+
+ami:
+  host: asterisk-ami
+  username: accent_amid
+  password: opensesame
+
+rest_api:
+  listen: 0.0.0.0
+
+bus:
+  host: rabbitmq
+  username: guest
+  password: guest
+  startup_connection_delay: 1

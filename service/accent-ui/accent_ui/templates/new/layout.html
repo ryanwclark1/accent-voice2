@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-white">
+  <head>
+    {% include 'head.html' %}
+    {% block additional_css %}{% endblock %}
+  </head>
+  {% from "macro.html" import build_breadcrumb,
+                              build_breadcrumbs,
+                              build_section_row,
+                              build_form_box,
+                              build_form_tabs_box,
+                              build_tabs_content,
+                              build_tab_content_item,
+                              build_tabs_navigation,
+                              add_tab_navigation_item,
+                              add_tab_navigation_header,
+                              add_delete_entry_button,
+                              build_add_row_entry_header,
+                              build_form,
+                              add_default_fields,
+                              build_table,
+                              build_table_headers,
+                              build_table_body,
+                              build_list_containers,
+                              build_list_table,
+                              build_list_table_headers,
+                              build_list_table_rows,
+                              build_hidden_add_containers %}
+  {% from "macro_render_field.html" import render_field %}
+  {% if current_user.is_authenticated %}
+    <body class="h-full">
+      <div x-data="{ open: false }" @keydown.window.escape="open = false">
+        <!-- Sidebar -->
+        {% include 'sidebar.html' %}
+        <div class="lg:pl-72">
+          <!-- Header -->
+          {% include 'header.html' %}
+          <main class="py-10">
+            <div class="px-4 sm:px-6 lg:px-8">
+            {% include 'flashed_messages.html' %}
+            {% include 'notifier.html' %}
+              <!-- Breadcrumb -->
+              {% block breadcrumb %}
+                {{ build_breadcrumb(current_menu) }}
+              {% endblock %}
+              <!-- Content Header -->
+              {% block content_header %}
+              {% endblock %}
+            <!-- Content -->
+            {% block content %}{% endblock %}
+            </div>
+          </main>
+          {% include 'footer.html' %}
+        </div>
+      </div>
+      {% include 'js.html' %}
+      {% block additional_js %}{% endblock %}
+    </body>
+  {% endif %}
+</html>

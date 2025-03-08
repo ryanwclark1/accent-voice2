@@ -1,0 +1,148 @@
+[tool.poetry]
+name = "accent-confd-client"
+version = "1.1.2"
+description = "Client library for the accent-confd HTTP interface"
+authors = ["Ryan Clark <ryanc@accentservices.com>"]
+packages = [
+    {include = "accent_confd_client"}
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+requests = "^2.25.1"
+stevedore = "^4.0.2"
+accent-lib-rest-client = {path = "../accent-lib-rest-client"}
+
+[tool.poetry.group.dev.dependencies]
+commitizen = "^3.10.0"
+dunamai = "^1.18.1"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["UPDATE"]
+
+[tool.poetry.plugins."accent_confd_client.commands"]
+access_features = "accent_confd_client.commands.access_features:AccessFeaturesCommand"
+agent_skills = "accent_confd_client.commands.skills:SkillsCommand"
+agents = "accent_confd_client.commands.agents:AgentsCommand"
+applications = "accent_confd_client.commands.applications:ApplicationsCommand"
+call_filters = "accent_confd_client.commands.call_filters:CallFiltersCommand"
+call_logs = "accent_confd_client.commands.call_logs:CallLogsCommand"
+call_permissions = "accent_confd_client.commands.call_permissions:CallPermissionsCommand"
+call_pickups = "accent_confd_client.commands.call_pickups:CallPickupsCommand"
+confbridge_accent_default_bridge = "accent_confd_client.commands.confbridge_accent_default_bridge:ConfBridgeAccentDefaultBridgeCommand"
+confbridge_accent_default_user = "accent_confd_client.commands.confbridge_accent_default_user:ConfBridgeAccentDefaultUserCommand"
+conferences = "accent_confd_client.commands.conferences:ConferencesCommand"
+configuration = "accent_confd_client.commands.configuration:ConfigurationCommand"
+contexts = "accent_confd_client.commands.contexts:ContextsCommand"
+devices = "accent_confd_client.commands.devices:DevicesCommand"
+dhcp = "accent_confd_client.commands.dhcp:DHCPCommand"
+emails = "accent_confd_client.commands.emails:EmailsCommand"
+endpoints_custom = "accent_confd_client.commands.endpoints_custom:EndpointsCustomCommand"
+endpoints_iax = "accent_confd_client.commands.endpoints_iax:EndpointsIAXCommand"
+endpoints_sccp = "accent_confd_client.commands.endpoints_sccp:EndpointsSccpCommand"
+endpoints_sip = "accent_confd_client.commands.endpoints_sip:EndpointsSipCommand"
+endpoints_sip_templates = "accent_confd_client.commands.endpoints_sip_templates:EndpointsSipTemplatesCommand"
+entities = "accent_confd_client.commands.entities:EntitiesCommand"
+extensions = "accent_confd_client.commands.extensions:ExtensionsCommand"
+extensions_features = "accent_confd_client.commands.extensions_features:ExtensionsFeaturesCommand"
+external_apps = "accent_confd_client.commands.external_apps:ExternalAppsCommand"
+features_applicationmap = "accent_confd_client.commands.features_applicationmap:FeaturesApplicationmapCommand"
+features_featuremap = "accent_confd_client.commands.features_featuremap:FeaturesFeaturemapCommand"
+features_general = "accent_confd_client.commands.features_general:FeaturesGeneralCommand"
+funckeys = "accent_confd_client.commands.funckeys:FuncKeysCommand"
+groups = "accent_confd_client.commands.groups:GroupsCommand"
+guests = "accent_confd_client.commands.guests:GuestsCommand"
+ha = "accent_confd_client.commands.ha:HACommand"
+hep_general = "accent_confd_client.commands.hep_general:HEPGeneralCommand"
+iax_callnumberlimits = "accent_confd_client.commands.iax_callnumberlimits:IAXCallNumberLimitsCommand"
+iax_general = "accent_confd_client.commands.iax_general:IAXGeneralCommand"
+incalls = "accent_confd_client.commands.incalls:IncallsCommand"
+infos = "accent_confd_client.commands.infos:InfosCommand"
+ingress_http = "accent_confd_client.commands.ingress_http:IngressHttpCommand"
+ivr = "accent_confd_client.commands.ivr:IVRCommand"
+lines = "accent_confd_client.commands.lines:LinesCommand"
+localization = "accent_confd_client.commands.localization:LocalizationCommand"
+meetings = "accent_confd_client.commands.meetings:MeetingsCommand"
+moh = "accent_confd_client.commands.moh:MOHCommand"
+my_guest_meetings = "accent_confd_client.commands.my_guest_meetings:GuestsMeMeetingsCommand"
+my_meetings = "accent_confd_client.commands.my_meetings:UsersMeMeetingsCommand"
+outcalls = "accent_confd_client.commands.outcalls:OutcallsCommand"
+pagings = "accent_confd_client.commands.pagings:PagingsCommand"
+parking_lots = "accent_confd_client.commands.parking_lots:ParkingLotsCommand"
+phone_numbers = "accent_confd_client.commands.phone_numbers:PhoneNumbersCommand"
+pjsip_doc = "accent_confd_client.commands.pjsip_doc:PJSIPDocCommand"
+pjsip_global = "accent_confd_client.commands.pjsip_global:PJSIPGlobalCommand"
+pjsip_system = "accent_confd_client.commands.pjsip_system:PJSIPSystemCommand"
+provisioning_networking = "accent_confd_client.commands.provisioning_networking:ProvisioningNetworkingCommand"
+queue_skill_rules = "accent_confd_client.commands.skill_rules:SkillRulesCommand"
+queues = "accent_confd_client.commands.queues:QueuesCommand"
+queues_general = "accent_confd_client.commands.queues_general:QueuesGeneralCommand"
+registers_iax = "accent_confd_client.commands.registers_iax:RegistersIAXCommand"
+registers_sip = "accent_confd_client.commands.registers_sip:RegistersSipCommand"
+registrars = "accent_confd_client.commands.registrars:RegistrarsCommand"
+rtp_general = "accent_confd_client.commands.rtp_general:RTPGeneralCommand"
+rtp_ice_host_candidates = "accent_confd_client.commands.rtp_ice_host_candidates:RTPIceHostCandidatesCommand"
+sccp_general = "accent_confd_client.commands.sccp_general:SCCPGeneralCommand"
+schedules = "accent_confd_client.commands.schedules:SchedulesCommand"
+sip_transports = "accent_confd_client.commands.sip_transports:SIPTransportsCommand"
+sounds = "accent_confd_client.commands.sounds:SoundsCommand"
+sounds_languages = "accent_confd_client.commands.sounds_languages:SoundsLanguagesCommand"
+status = "accent_confd_client.commands.status:StatusCommand"
+switchboards = "accent_confd_client.commands.switchboards:SwitchboardsCommand"
+tenants = "accent_confd_client.commands.tenants:TenantsCommand"
+timezones = "accent_confd_client.commands.timezones:TimezonesCommand"
+trunks = "accent_confd_client.commands.trunks:TrunksCommand"
+unallocated_devices = "accent_confd_client.commands.devices:UnallocatedDevicesCommand"
+users = "accent_confd_client.commands.users:UsersCommand"
+voicemail_general = "accent_confd_client.commands.voicemail_general:VoicemailGeneralCommand"
+voicemail_zonemessages = "accent_confd_client.commands.voicemail_zonemessages:VoicemailZoneMessagesCommand"
+voicemails = "accent_confd_client.commands.voicemails:VoicemailsCommand"
+wait_until_ready = "accent_confd_client.commands.wait_until_ready:WaitUntilReadyCommand"
+wizard = "accent_confd_client.commands.wizard:WizardCommand"

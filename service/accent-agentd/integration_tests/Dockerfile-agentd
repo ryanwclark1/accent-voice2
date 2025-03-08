@@ -1,0 +1,8 @@
+FROM accentcommunications/accent-agentd
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+COPY . /usr/src/accent-agentd
+
+WORKDIR /usr/src/accent-agentd
+RUN python3 -m pip install -e .

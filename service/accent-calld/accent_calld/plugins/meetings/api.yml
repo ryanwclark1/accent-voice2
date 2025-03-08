@@ -1,0 +1,140 @@
+paths:
+  /guests/me/meetings/{meeting_uuid}/status:
+    get:
+      summary: Get the status of a meeting
+      description: Returns the status of a meeting that should be visible to a guest.
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+      tags:
+        - meetings
+      responses:
+        '200':
+          description: The status of a meeting is returned
+          schema:
+            $ref: '#/definitions/MeetingStatus'
+        '404':
+          $ref: '#/responses/NoSuchMeeting'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /meetings/{meeting_uuid}/participants:
+    get:
+      summary: List participants of a meeting
+      description: '**Required ACL:** `calld.meetings.{meeting_uuid}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+      tags:
+        - meetings
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchMeeting'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/meetings/{meeting_uuid}/participants:
+    get:
+      summary: List participants of a meeting as a user
+      description: '**Required ACL:** `calld.users.me.meetings.{meeting_uuid}.participants.read`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+      tags:
+        - meetings
+        - users
+      responses:
+        '200':
+          description: The list of participant is returned
+          schema:
+            $ref: '#/definitions/ParticipantList'
+        '404':
+          $ref: '#/responses/NoSuchMeeting'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /meetings/{meeting_uuid}/participants/{participant_id}:
+    delete:
+      summary: Kick a participant from a meeting
+      description: '**Required ACL:** `calld.meetings.{meeting_uuid}.participants.delete`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - meetings
+      responses:
+        '204':
+          description: The participant was kicked
+        '404':
+          $ref: '#/responses/NoSuchMeetingOrParticipant'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+  /users/me/meetings/{meeting_uuid}/participants/{participant_id}:
+    delete:
+      summary: Kick a participant from a meeting as a user
+      description: '**Required ACL:** `calld.users.me.meetings.participants.delete`'
+      parameters:
+        - $ref: '#/parameters/MeetingUUID'
+        - $ref: '#/parameters/ParticipantID'
+      tags:
+        - meetings
+        - users
+      responses:
+        '204':
+          description: The participant was kicked
+        '404':
+          $ref: '#/responses/NoSuchMeetingOrParticipant'
+        '503':
+          $ref: '#/responses/AnotherServiceUnavailable'
+responses:
+  NoSuchMeeting:
+    description: The specified meeting does not exist
+    schema:
+      $ref: '#/definitions/Error'
+  NoSuchMeetingOrParticipant:
+    description: The specified meeting or participant does not exist
+    schema:
+      $ref: '#/definitions/Error'
+parameters:
+  MeetingUUID:
+    name: meeting_uuid
+    in: path
+    description: Unique identifier of the meeting
+    required: true
+    type: string
+  ParticipantID:
+    name: participant_id
+    in: path
+    description: Unique identifier of the participant
+    required: true
+    type: string
+definitions:
+  MeetingStatus:
+    type: object
+    properties:
+      full:
+        description: Wether the meeting is full of not
+        type: boolean
+  ParticipantList:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Participant'
+  Participant:
+    type: object
+    properties:
+      id:
+        description: The participant's ID
+        type: string
+      caller_id_name:
+        description: The participant's name
+        type: string
+      caller_id_num:
+        description: The participant's number
+        type: string
+      call_id:
+        description: The ID of the participant's call
+        type: string
+      user_uuid:
+        description: The UUID of the participant's user. `null` when there is no user.
+        type: string

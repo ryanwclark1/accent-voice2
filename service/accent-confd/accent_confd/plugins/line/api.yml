@@ -1,0 +1,268 @@
+paths:
+  /lines:
+    get:
+      operationId: list_lines
+      summary: List lines
+      description: '**Required ACL:** `confd.lines.read`'
+      tags:
+      - lines
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/recurse'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: Line list
+          schema:
+            $ref: '#/definitions/LineItems'
+    post:
+      operationId: create_line
+      summary: Create line
+      description: |
+        **Required ACL:** `confd.lines.create`
+
+        When creating a line with an extension or a SIP endpoint as part of it's body, the line's context
+        will be used as a default for the endpoint and context if ommited.
+      tags:
+      - lines
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/LineCreate'
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '201':
+          description: Line created
+          schema:
+            $ref: '#/definitions/LineView'
+        '400':
+          $ref: '#/responses/CreateError'
+  /lines/{line_id}:
+    get:
+      operationId: get_line
+      summary: Get line
+      description: '**Required ACL:** `confd.lines.{line_id}.read`'
+      tags:
+      - lines
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/lineid'
+      responses:
+        '200':
+          description: Line
+          schema:
+            $ref: '#/definitions/LineView'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    put:
+      operationId: update_line
+      summary: Update line
+      description: '**Required ACL:** `confd.lines.{line_id}.update`'
+      tags:
+      - lines
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/lineid'
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/Line'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceUpdated'
+        '400':
+          $ref: '#/responses/UpdateError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: delete_line
+      summary: Delete line
+      description: '**Required ACL:** `confd.lines.{line_id}.delete`
+
+
+        **Disclaimer**: if `recursive=true`, the line is deleted, all their
+        associations with any related resources are removed.'
+      tags:
+      - lines
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/lineid'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceDeleted'
+        '404':
+          $ref: '#/responses/NotFoundError'
+
+parameters:
+  lineid:
+    required: true
+    type: integer
+    name: line_id
+    in: path
+
+definitions:
+  LineItems:
+    title: LineItems
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/LineView'
+        type: array
+      total:
+        type: integer
+    required:
+    - total
+  LineView:
+    title: Line
+    allOf:
+    - $ref: '#/definitions/LineRelationBase'
+    - properties:
+        tenant_uuid:
+          type: string
+          description: The UUID of the tenant
+          readOnly: true
+        context:
+          type: string
+          description: The name of an internal context
+        caller_id_name:
+          type: string
+          description: Name to display when calling
+        caller_id_num:
+          type: string
+          description: Number to display when calling
+        device_id:
+          type: string
+          description: ID of the device associated to the line
+          readOnly: true
+        device_slot:
+          type: integer
+          description: '*Deprecated* Please use `position`'
+          readOnly: true
+        protocol:
+          type: string
+          enum:
+          - sip
+          description: Line's protocol
+          readOnly: true
+        provisioning_extension:
+          type: string
+          description: '*Deprecated* Please use `provisioning_code`'
+          readOnly: true
+        provisioning_code:
+          type: string
+          description: Code used to provision a device
+        position:
+          type: integer
+          description: Line's position on the device
+        registrar:
+          type: string
+          description: Name of the template line used by the device
+      required:
+      - context
+    - $ref: '#/definitions/LineRelationApplication'
+    - $ref: '#/definitions/LineRelationEndpoints'
+    - $ref: '#/definitions/LineRelationExtensions'
+    - $ref: '#/definitions/LineRelationUsers'
+  LineRelationBase:
+    properties:
+      id:
+        type: integer
+        description: Line ID
+        readOnly: true
+      name:
+        type: string
+        description: The name of the line
+        readOnly: true
+  LineRelationApplication:
+    properties:
+      application:
+        $ref: '#/definitions/ApplicationRelationBase'
+  LineRelationEndpoints:
+    properties:
+      endpoint_sip:
+        readOnly: true
+        $ref: '#/definitions/EndpointSipRelationBase'
+      endpoint_sccp:
+        readOnly: true
+        $ref: '#/definitions/EndpointSccpRelationBase'
+      endpoint_custom:
+        readOnly: true
+        $ref: '#/definitions/EndpointCustomRelationBase'
+  LineRelationExtensions:
+    properties:
+      extensions:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/ExtensionRelationBase'
+  LineRelationUsers:
+    properties:
+      users:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/UserRelationBase'
+  Line:
+    title: Line
+    properties:
+      id:
+        type: integer
+        description: Line ID
+        readOnly: true
+      context:
+        type: string
+        description: The name of an internal context
+      position:
+        type: integer
+        description: Line's position on the device
+      caller_id_name:
+        type: string
+        description: Name to display when calling
+      caller_id_num:
+        type: string
+        description: Number to display when calling
+      provisioning_code:
+        type: string
+        description: Code used to provision a device
+      registrar:
+        type: string
+        description: Name of the template line used by the device
+    required:
+    - context
+  LineEndpointSIP:
+    title: LineEndpointSIP
+    properties:
+      endpoint_sip:
+        $ref: '#/definitions/EndpointSIP'
+  LineEndpointSCCP:
+    title: LineEndpointSCCP
+    properties:
+      endpoint_sccp:
+        $ref: '#/definitions/EndpointSccp'
+  LineEndpointCustom:
+    title: LineEndpointCustom
+    properties:
+      endpoint_custom:
+        $ref: '#/definitions/EndpointCustom'
+  LineExtensions:
+    title: LineExtensions
+    properties:
+      extensions:
+        type: array
+        items:
+          $ref: '#/definitions/ExtensionRelationBase'
+  LineCreate:
+    title: LineCreate
+    allOf:
+      - $ref: '#/definitions/Line'
+      - $ref: '#/definitions/LineExtensions'
+      - $ref: '#/definitions/LineEndpointSIP'
+      - $ref: '#/definitions/LineEndpointSCCP'
+      - $ref: '#/definitions/LineEndpointCustom'

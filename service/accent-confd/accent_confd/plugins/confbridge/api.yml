@@ -1,0 +1,98 @@
+paths:
+  /asterisk/confbridge/accent_default_bridge:
+    get:
+      operationId: list_asterisk_confbridge_accent_default_bridge
+      summary: List ConfBridge accent_default_bridge options
+      description: "**Required ACL:** `confd.asterisk.confbridge.accent_default_bridge.read`"
+      tags:
+        - asterisk
+        - conferences
+      responses:
+        "200":
+          description: ConfBridge accent_default_bridge
+          schema:
+            $ref: "#/definitions/ConfBridgeConfiguration"
+    put:
+      operationId: update_asterisk_confbridge_accent_default_bridge
+      summary: Update ConfBridge accent_default_bridge option
+      description: |
+        **Required ACL:** `confd.asterisk.confbridge.accent_default_bridge.update`
+
+        **WARNING** This endpoint restore to default value or delete all fields that
+        are not defined.
+
+        All available configuration options are listed in the
+        [sample](https://raw.githubusercontent.com/asterisk/asterisk/master/configs/samples/confbridge.conf.sample)
+        Asterisk configuration file.
+      tags:
+        - asterisk
+        - conferences
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/ConfBridgeConfiguration"
+      responses:
+        "204":
+          $ref: "#/responses/ResourceUpdated"
+        "400":
+          $ref: "#/responses/UpdateError"
+        "404":
+          $ref: "#/responses/NotFoundError"
+  /asterisk/confbridge/accent_default_user:
+    get:
+      operationId: list_asterisk_confbridge_accent_default_user
+      summary: List ConfBridge accent_default_user options
+      description: "**Required ACL:** `confd.asterisk.confbridge.accent_default_user.read`"
+      tags:
+        - asterisk
+        - conferences
+      responses:
+        "200":
+          description: ConfBridge accent_default_user
+          schema:
+            $ref: "#/definitions/ConfBridgeConfiguration"
+    put:
+      operationId: update_asterisk_confbridge_accent_default_user
+      summary: Update ConfBridge accent_default_user option
+      description: |
+        **Required ACL:** `confd.asterisk.confbridge.accent_default_user.update`
+
+
+        **WARNING** This endpoint restore to default value or delete all fields that
+        are not defined.
+
+        All available configuration options are listed in the
+        [sample](https://raw.githubusercontent.com/asterisk/asterisk/master/configs/samples/confbridge.conf.sample)
+        Asterisk configuration file.
+      tags:
+        - asterisk
+        - conferences
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/ConfBridgeConfiguration"
+      responses:
+        "204":
+          $ref: "#/responses/ResourceUpdated"
+        "400":
+          $ref: "#/responses/UpdateError"
+        "404":
+          $ref: "#/responses/NotFoundError"
+definitions:
+  ConfBridgeConfiguration:
+    title: ConfBridgeConfiguration
+    description:
+      "This configuration will be in the file 'confbridge.conf' used by asterisk.
+
+      Please consult the asterisk documentation for further details on available parameters."
+    properties:
+      options:
+        description: "These options must be unique and unordered.\
+          \ Otherwise, use `ordered_options`. Option must have the following form:\n\
+          \n```\n{\n  \"options\": {\n    \"name1\": \"value1\",\n    ...\n  }\n}\n\
+          ```\n\n"
+        type: object

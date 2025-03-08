@@ -1,0 +1,52 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: /etc/accent-agid/conf.d/
+
+# Owner of the process
+user: accent-agid
+
+# Change the log level to debug.
+debug: false
+
+# Log file.
+logfile: /var/log/accent-agid.log
+
+# Database connection settings
+db_uri: postgresql://asterisk:password123@localhost/asterisk?application_name=accent-agid
+
+# AGI server settings
+listen_address: 127.0.0.1
+listen_port: 4573
+
+# accent-agentd connection settings
+agentd:
+  host: localhost
+  port: 9493
+  prefix: null
+  https: false
+
+# accent-dird connection settings
+dird:
+  host: localhost
+  port: 9489
+  prefix: null
+  https: false
+  timeout: 1
+
+# accent-auth connection settings
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false
+  key_file: /var/lib/accent-auth-keys/accent-agid-key.yml
+
+# accent-confd connection settings
+confd:
+  host: localhost
+  port: 9486
+  prefix: null
+  https: false

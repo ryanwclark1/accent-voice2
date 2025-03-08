@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+# Copyright 2023 Accent Communications
+
+import sys
+
+from OpenSSL import crypto
+
+
+def main():
+    cert_path = sys.argv[1]
+
+    with open(cert_path) as cert_file:
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_file.read())
+
+    if has_wildcard_issuer(cert) and has_wildcard_subject(cert) and not has_subjectaltname(cert):
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+
+def has_wildcard_subject(cert):
+    if (b'CN', b'*') in cert.get_subject().get_components():
+        return True
+    return False
+
+
+def has_wildcard_issuer(cert):
+    if (b'CN', b'*') in cert.get_issuer().get_components():
+        return True
+    return False
+
+
+def has_subjectaltname(cert):
+    extension_names = [
+        cert.get_extension(extension_index).get_short_name() for extension_index in range(cert.get_extension_count())
+    ]
+    if b'subjectAltName' in extension_names:
+        return True
+    return False
+
+
+if __name__ == '__main__':
+    main()

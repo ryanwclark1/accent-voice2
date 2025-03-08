@@ -1,0 +1,1481 @@
+File: accent_calld_client/__init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_calld_client.client import CalldClient as Client  # noqa
+
+----------------------------------------
+
+File: accent_calld_client/client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+
+class CalldClient(BaseClient):
+    namespace = 'accent_calld_client.commands'
+
+    def __init__(self, host, port=443, prefix='/api/calld', version='1.0', **kwargs):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: accent_calld_client/command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import CalldError, InvalidCalldError
+
+
+class CalldCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response):
+        try:
+            raise CalldError(response)
+        except InvalidCalldError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: accent_calld_client/commands/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: accent_calld_client/commands/adhoc_conferences.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class AdhocConferencesCommand(CalldCommand):
+    resource = 'adhoc_conferences'
+
+    def create_from_user(self, host_call_id, *participant_call_ids):
+        body = {
+            'host_call_id': host_call_id,
+            'participant_call_ids': participant_call_ids,
+        }
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', 'conferences', 'adhoc')
+        r = self.session.post(url, json=body, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_from_user(self, adhoc_conference_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users',
+            'me',
+            'conferences',
+            'adhoc',
+            adhoc_conference_id,
+        )
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def add_participant_from_user(self, adhoc_conference_id, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users',
+            'me',
+            'conferences',
+            'adhoc',
+            adhoc_conference_id,
+            'participants',
+            call_id,
+        )
+        r = self.session.put(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def remove_participant_from_user(self, adhoc_conference_id, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users',
+            'me',
+            'conferences',
+            'adhoc',
+            adhoc_conference_id,
+            'participants',
+            call_id,
+        )
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_calld_client/commands/applications.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class ApplicationsCommand(CalldCommand):
+    resource = 'applications'
+
+    def create_node(self, application_uuid, call_ids):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'nodes')
+        body = {'calls': [{'id': call_id} for call_id in call_ids]}
+
+        r = self.session.post(url, json=body, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_node(self, application_uuid, node_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'nodes', node_uuid)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def get(self, application_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_nodes(self, application_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'nodes')
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_node(self, application_uuid, node_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'nodes', node_uuid)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def answer_call(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'answer'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def hangup_call(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'calls', call_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def join_node(self, application_uuid, node_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'nodes', node_uuid, 'calls', call_id
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def list_calls(self, application_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'calls')
+
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def make_call(self, application_uuid, call):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'calls')
+        r = self.session.post(url, json=call, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def make_call_to_node(self, application_uuid, node_uuid, call):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'nodes', node_uuid, 'calls'
+        )
+        r = self.session.post(url, json=call, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_call_from_node(self, application_uuid, node_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'nodes', node_uuid, 'calls', call_id
+        )
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def make_call_user_to_node(self, application_uuid, node_uuid, call):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'nodes', node_uuid, 'calls', 'user'
+        )
+        r = self.session.post(url, json=call, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def send_playback(self, application_uuid, call_id, playback):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'playbacks'
+        )
+        r = self.session.post(url, json=playback, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_playback(self, application_uuid, playback_uuid):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'playbacks', playback_uuid
+        )
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def snoops(self, application_uuid, call_id, snoop):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'snoops'
+        )
+        r = self.session.post(url, json=snoop, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def update_snoop(self, application_uuid, snoop_uuid, snoop):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'snoops', snoop_uuid)
+        r = self.session.put(url, json=snoop, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete_snoop(self, application_uuid, snoop_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'snoops', snoop_uuid)
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def get_snoop(self, application_uuid, snoop_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'snoops', snoop_uuid)
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_snoops(self, application_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, application_uuid, 'snoops')
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def start_progress(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'progress', 'start'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_progress(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'progress', 'stop'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_hold(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'hold', 'start'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_hold(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'hold', 'stop'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_moh(self, application_uuid, call_id, moh_uuid):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'moh', moh_uuid, 'start'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_moh(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'moh', 'stop'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_mute(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'mute', 'start'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_mute(self, application_uuid, call_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'mute', 'stop'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def send_dtmf_digits(self, application_uuid, call_id, digits):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, application_uuid, 'calls', call_id, 'dtmf'
+        )
+        params = {'digits': digits}
+        r = self.session.put(url, headers=headers, params=params)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_calld_client/commands/calls.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+
+from ..command import CalldCommand
+
+
+class CallsCommand(CalldCommand):
+    resource = 'calls'
+
+    def list_calls(
+        self,
+        application=None,
+        application_instance=None,
+        recurse=None,
+        tenant_uuid=None,
+    ):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource)
+        params = {}
+        if application:
+            params['application'] = application
+        if application_instance:
+            params['application_instance'] = application_instance
+        if recurse is not None:
+            params['recurse'] = recurse
+
+        r = self.session.get(url, headers=headers, params=params)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_calls_from_user(self, application=None, application_instance=None):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        params = {}
+        if application:
+            params['application'] = application
+        if application_instance:
+            params['application_instance'] = application_instance
+
+        r = self.session.get(url, headers=headers, params=params)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_call(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def make_call(self, call, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource)
+        r = self.session.post(url, json=call, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+        return r.json()
+
+    def make_call_from_user(
+        self,
+        extension,
+        variables=None,
+        line_id=None,
+        from_mobile=False,
+        all_lines=False,
+        auto_answer_caller=False,
+    ):
+        body = {'extension': extension}
+        if variables:
+            body['variables'] = variables
+        if line_id:
+            body['line_id'] = line_id
+        if from_mobile:
+            body['from_mobile'] = from_mobile
+        if all_lines:
+            body['all_lines'] = all_lines
+        if auto_answer_caller:
+            body['auto_answer_caller'] = auto_answer_caller
+
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.post(url, json=body, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def hangup(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def hangup_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def connect_user(self, call_id, user_id, tenant_uuid=None, **kwargs):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'user', user_id)
+        r = self.session.put(url, headers=headers, json=kwargs if kwargs else None)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def start_mute(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'mute', 'start')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_mute(self, call_id, tenant_uuid=None):
+        headers = self._get_headers()
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'mute', 'stop')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_mute_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'mute', 'start')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_mute_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'mute', 'stop')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def send_dtmf_digits(self, call_id, digits, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'dtmf')
+        params = {'digits': digits}
+        r = self.session.put(url, headers=headers, params=params)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def send_dtmf_digits_from_user(self, call_id, digits):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'dtmf')
+        params = {'digits': digits}
+        r = self.session.put(url, headers=headers, params=params)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_hold(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'hold', 'start')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_hold(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'hold', 'stop')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_hold_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'hold', 'start')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_hold_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'hold', 'stop')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def answer(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'answer')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def answer_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'answer')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_record(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'record', 'start')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def start_record_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'record', 'start')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_record(self, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'record', 'stop')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_record_from_user(self, call_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'record', 'stop')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def park(
+        self,
+        call_id: str,
+        parking_id: str,
+        preferred_slot: str | None = None,
+        timeout: int | None = None,
+        tenant_uuid: str | None = None,
+    ) -> Mapping:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, call_id, 'park')
+        body = {
+            'parking_id': parking_id,
+            'preferred_slot': preferred_slot,
+            'timeout': timeout,
+        }
+        r = self.session.put(url, headers=headers, json=body)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def park_from_user(
+        self,
+        call_id: str,
+        parking_id: str,
+        preferred_slot: str | None = None,
+        timeout: int | None = None,
+    ) -> Mapping:
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, call_id, 'park')
+        body = {
+            'parking_id': parking_id,
+            'preferred_slot': preferred_slot,
+            'timeout': timeout,
+        }
+        r = self.session.put(url, headers=headers, json=body)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/conferences.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class ConferencesCommand(CalldCommand):
+    resource = 'conferences'
+
+    def list_participants(self, conference_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, conference_id, 'participants')
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def user_list_participants(self, conference_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users', 'me', self.resource, conference_id, 'participants'
+        )
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def kick_participant(self, conference_id, participant_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, conference_id, 'participants', participant_id
+        )
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def mute_participant(self, conference_id, participant_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, conference_id, 'participants', participant_id, 'mute'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def unmute_participant(self, conference_id, participant_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, conference_id, 'participants', participant_id, 'unmute'
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def record(self, conference_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, conference_id, 'record')
+        r = self.session.post(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def stop_record(self, conference_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, conference_id, 'record')
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_calld_client/commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+
+from accent_calld_client.command import CalldCommand
+
+
+class ConfigCommand(CalldCommand):
+    resource = 'config'
+
+    def get(self):
+        headers = self._get_headers()
+        url = self.base_url
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def patch(self, config_patch):
+        headers = self._get_headers()
+        url = self.base_url
+        r = self.session.patch(url, headers=headers, json=config_patch)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/faxes.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class FaxesCommand(CalldCommand):
+    resource = 'faxes'
+
+    def send(
+        self,
+        fax_content,
+        context,
+        extension,
+        caller_id=None,
+        ivr_extension=None,
+        wait_time=None,
+    ):
+        url = self._client.url(self.resource)
+        headers = self._get_headers()
+        headers['Content-Type'] = 'application/pdf'
+        fax_infos = {'context': context, 'extension': extension}
+        if caller_id:
+            fax_infos['caller_id'] = caller_id
+        if ivr_extension:
+            fax_infos['ivr_extension'] = ivr_extension
+        if wait_time:
+            fax_infos['wait_time'] = wait_time
+        r = self.session.post(url, headers=headers, params=fax_infos, data=fax_content)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+        return r.json()
+
+    def send_from_user(
+        self, fax_content, extension, caller_id=None, ivr_extension=None, wait_time=None
+    ):
+        url = self._client.url('users', 'me', self.resource)
+        headers = self._get_headers()
+        headers['Content-Type'] = 'application/pdf'
+        fax_infos = {'extension': extension}
+        if caller_id:
+            fax_infos['caller_id'] = caller_id
+        if ivr_extension:
+            fax_infos['ivr_extension'] = ivr_extension
+        if wait_time:
+            fax_infos['wait_time'] = wait_time
+        r = self.session.post(url, headers=headers, params=fax_infos, data=fax_content)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/lines.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class LinesCommand(CalldCommand):
+    resource = 'lines'
+
+    def list_lines(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource)
+
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/meetings.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class MeetingsCommand(CalldCommand):
+    resource = 'meetings'
+
+    def guest_status(self, meeting_uuid):
+        headers = self._get_headers()
+        url = self._client.url(
+            'guests',
+            'me',
+            self.resource,
+            meeting_uuid,
+            'status',
+        )
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_participants(self, meeting_uuid):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, meeting_uuid, 'participants')
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def user_list_participants(self, meeting_uuid):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users', 'me', self.resource, meeting_uuid, 'participants'
+        )
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def kick_participant(self, meeting_uuid, participant_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, meeting_uuid, 'participants', participant_id
+        )
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+    def user_kick_participant(self, meeting_uuid, participant_id):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users', 'me', self.resource, meeting_uuid, 'participants', participant_id
+        )
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_calld_client/commands/relocates.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class RelocatesCommand(CalldCommand):
+    resource = 'relocates'
+
+    def list_from_user(self):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_from_user(self, relocate_uuid):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, relocate_uuid)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create_from_user(
+        self,
+        initiator,
+        destination,
+        location=None,
+        completions=None,
+        timeout=None,
+        auto_answer=None,
+    ):
+        body = {'initiator_call': initiator, 'destination': destination}
+        if location:
+            body['location'] = location
+        if completions:
+            body['completions'] = completions
+        if timeout:
+            body['timeout'] = timeout
+        if auto_answer:
+            body['auto_answer'] = auto_answer
+
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.post(url, json=body, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def complete_from_user(self, relocate_uuid):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, relocate_uuid, 'complete')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def cancel_from_user(self, relocate_uuid):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, relocate_uuid, 'cancel')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_calld_client/commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_calld_client.command import CalldCommand
+
+
+class StatusCommand(CalldCommand):
+    resource = 'status'
+
+    def get(self):
+        headers = self._get_headers()
+        url = self.base_url
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/transfers.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class TransfersCommand(CalldCommand):
+    resource = 'transfers'
+
+    def list_transfers_from_user(self):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_transfer(self, transfer_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, transfer_id)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def make_transfer(
+        self,
+        transferred,
+        initiator,
+        context,
+        exten,
+        flow='attended',
+        variables=None,
+        timeout=None,
+    ):
+        variables = variables or {}
+        body = {
+            'transferred_call': transferred,
+            'initiator_call': initiator,
+            'context': context,
+            'exten': exten,
+            'flow': flow,
+            'variables': variables,
+            'timeout': timeout,
+        }
+        headers = self._get_headers()
+        url = self.base_url
+        r = self.session.post(url, json=body, headers=headers)
+
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def make_transfer_from_user(self, exten, initiator, flow, timeout=None):
+        body = {
+            'exten': exten,
+            'initiator_call': initiator,
+            'flow': flow,
+            'timeout': timeout,
+        }
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.post(url, json=body, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def complete_transfer(self, transfer_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, transfer_id, 'complete')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def complete_transfer_from_user(self, transfer_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, transfer_id, 'complete')
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def cancel_transfer(self, transfer_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, transfer_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def cancel_transfer_from_user(self, transfer_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, transfer_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_calld_client/commands/trunks.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class TrunksCommand(CalldCommand):
+    resource = 'trunks'
+
+    def list_trunks(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/parking_lots.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+
+from accent_calld_client.command import CalldCommand
+
+
+class ParkingLotsCommand(CalldCommand):
+    resource = 'parkinglots'
+
+    def get(self, parking_id: int) -> Mapping:
+        headers = self._get_headers()
+        url = self._client.url(self.resource, parking_id)
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_(self) -> Mapping:
+        headers = self._get_headers()
+        url = self._client.url(self.resource)
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/switchboards.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class SwitchboardsCommand(CalldCommand):
+    resource = 'switchboards'
+
+    def list_queued_calls(self, switchboard_uuid, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, switchboard_uuid, 'calls', 'queued')
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def answer_queued_call_from_user(self, switchboard_uuid, call_id, line_id=None):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, switchboard_uuid, 'calls', 'queued', call_id, 'answer'
+        )
+        params = {'line_id': line_id} if line_id else None
+        r = self.session.put(url, params=params, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def hold_call(self, switchboard_uuid, call_id, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(
+            self.resource, switchboard_uuid, 'calls', 'held', call_id
+        )
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def list_held_calls(self, switchboard_uuid, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url(self.resource, switchboard_uuid, 'calls', 'held')
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def answer_held_call_from_user(self, switchboard_uuid, call_id, line_id=None):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, switchboard_uuid, 'calls', 'held', call_id, 'answer'
+        )
+        params = {'line_id': line_id} if line_id else None
+        r = self.session.put(url, params=params, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/commands/voicemails.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import CalldCommand
+
+
+class VoicemailsCommand(CalldCommand):
+    resource = 'voicemails'
+    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+    def get_voicemail(self, voicemail_id):
+        url = self._client.url(self.resource, voicemail_id)
+        return self._get(url)
+
+    def get_voicemail_from_user(self):
+        url = self._client.url('users', 'me', 'voicemails')
+        return self._get(url)
+
+    def get_voicemail_folder(self, voicemail_id, folder_id):
+        url = self._client.url(self.resource, voicemail_id, 'folders', folder_id)
+        return self._get(url)
+
+    def get_voicemail_folder_from_user(self, folder_id):
+        url = self._client.url('users', 'me', 'voicemails', 'folders', folder_id)
+        return self._get(url)
+
+    def get_voicemail_message(self, voicemail_id, message_id):
+        url = self._client.url(self.resource, voicemail_id, 'messages', message_id)
+        return self._get(url)
+
+    def get_voicemail_message_from_user(self, message_id):
+        url = self._client.url('users', 'me', 'voicemails', 'messages', message_id)
+        return self._get(url)
+
+    def delete_voicemail_message(self, voicemail_id, message_id):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, voicemail_id, 'messages', message_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete_voicemail_message_from_user(self, message_id):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', 'voicemails', 'messages', message_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def move_voicemail_message(self, voicemail_id, message_id, dest_folder_id):
+        url = self._client.url(self.resource, voicemail_id, 'messages', message_id)
+        return self._move_message(url, dest_folder_id)
+
+    def move_voicemail_message_from_user(self, message_id, dest_folder_id):
+        url = self._client.url('users', 'me', 'voicemails', 'messages', message_id)
+        return self._move_message(url, dest_folder_id)
+
+    def _move_message(self, url, dest_folder_id):
+        headers = self._get_headers()
+        body = {'folder_id': dest_folder_id}
+        r = self.session.put(url, json=body, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def get_voicemail_recording(self, voicemail_id, message_id):
+        url = self._client.url(
+            self.resource,
+            voicemail_id,
+            'messages',
+            message_id,
+            'recording',
+        )
+        return self._get_recording(url)
+
+    def get_voicemail_recording_from_user(self, message_id):
+        url = self._client.url(
+            'users', 'me', 'voicemails', 'messages', message_id, 'recording'
+        )
+        return self._get_recording(url)
+
+    def voicemail_greeting_exists(self, voicemail_id, greeting):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, voicemail_id, 'greetings', greeting)
+        response = self.session.head(url, headers=headers)
+        # FIXME: invalid voicemail_id return 400 instead 404
+        if response.status_code in (404, 400):
+            return False
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return True
+
+    def get_voicemail_greeting(self, voicemail_id, greeting):
+        url = self._client.url(self.resource, voicemail_id, 'greetings', greeting)
+        return self._get_recording(url)
+
+    def voicemail_greeting_from_user_exists(self, greeting):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', 'voicemails', 'greetings', greeting)
+        response = self.session.head(url, headers=headers)
+        if response.status_code == 404:
+            return False
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return True
+
+    def get_voicemail_greeting_from_user(self, greeting):
+        url = self._client.url('users', 'me', 'voicemails', 'greetings', greeting)
+        return self._get_recording(url)
+
+    def create_voicemail_greeting(self, voicemail_id, greeting, data):
+        url = self._client.url(self.resource, voicemail_id, 'greetings', greeting)
+        self._create_recording(url, data)
+
+    def create_voicemail_greeting_from_user(self, greeting, data):
+        url = self._client.url('users', 'me', 'voicemails', 'greetings', greeting)
+        self._create_recording(url, data)
+
+    def update_voicemail_greeting(self, voicemail_id, greeting, data):
+        url = self._client.url(self.resource, voicemail_id, 'greetings', greeting)
+        self._put_recording(url, data)
+
+    def update_voicemail_greeting_from_user(self, greeting, data):
+        url = self._client.url('users', 'me', 'voicemails', 'greetings', greeting)
+        self._put_recording(url, data)
+
+    def delete_voicemail_greeting(self, voicemail_id, greeting):
+        headers = self._get_headers()
+        url = self._client.url(self.resource, voicemail_id, 'greetings', greeting)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete_voicemail_greeting_from_user(self, greeting):
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', 'voicemails', 'greetings', greeting)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def copy_voicemail_greeting(self, voicemail_id, greeting, dest_greeting):
+        headers = self._get_headers()
+        url = self._client.url(
+            self.resource, voicemail_id, 'greetings', greeting, 'copy'
+        )
+        body = {'dest_greeting': dest_greeting}
+        r = self.session.post(url, json=body, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def copy_voicemail_greeting_from_user(self, greeting, dest_greeting):
+        headers = self._get_headers()
+        url = self._client.url(
+            'users', 'me', 'voicemails', 'greetings', greeting, 'copy'
+        )
+        body = {'dest_greeting': dest_greeting}
+        r = self.session.post(url, json=body, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def _create_recording(self, url, data):
+        headers = self._get_headers()
+        headers['Content-type'] = 'audio/wav'
+        r = self.session.post(url, headers=headers, data=data)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def _put_recording(self, url, data):
+        headers = self._get_headers()
+        headers['Content-type'] = 'audio/wav'
+        r = self.session.put(url, headers=headers, data=data)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def _get_recording(self, url):
+        headers = self._get_headers()
+        headers['Accept'] = 'audio/wav'
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.content
+
+    def _get(self, url):
+        headers = self._get_headers()
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_calld_client/exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class CalldError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidCalldError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+        except KeyError:
+            raise InvalidCalldError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class InvalidCalldError(Exception):
+    pass
+
+----------------------------------------
+

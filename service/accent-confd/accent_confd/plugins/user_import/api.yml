@@ -1,0 +1,182 @@
+paths:
+  /users/export:
+    get:
+      operationId: export_users_csv
+      summary: Mass export users and associated resources
+      description: '**Required ACL:** `confd.users.export.read`
+
+
+        CSV field list available at https://accentvoice.io/uc-doc/administration/users/csv_import'
+      externalDocs:
+        description: Complete documentation on the CSV data format and fields
+        url: https://accentvoice.io/uc-doc/administration/users/csv_import
+      tags:
+      - users
+      produces:
+      - text/csv; charset=utf-8
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      responses:
+        '200':
+          description: Users exported successfully
+          schema:
+            $ref: '#/definitions/UserExport'
+  /users/import:
+    post:
+      operationId: import_users_csv
+      summary: Mass import users and associated resources
+      description: '**Required ACL:** `confd.users.import.create`
+
+
+        CSV field list available at https://accentvoice.io/uc-doc/administration/users/csv_import'
+      externalDocs:
+        description: Complete documentation on the CSV data format and fields
+        url: https://accentvoice.io/uc-doc/administration/users/csv_import
+      consumes:
+      - text/csv; charset=utf-8
+      tags:
+      - users
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/csvbody'
+      responses:
+        '201':
+          description: Users imported successfully
+          schema:
+            $ref: '#/definitions/UserImport'
+        '400':
+          description: Errors occurred during import
+          schema:
+            $ref: '#/definitions/UserImportError'
+    put:
+      operationId: update_users_csv
+      summary: '**Disabled!** Mass import users and associated resources'
+      description: '** This endpoint is disabled.**
+
+      **Required ACL:** `confd.users.import.update`
+
+
+        CSV field list available at https://accentvoice.io/uc-doc/administration/users/csv_import
+
+        This resource has been disabled since it creates invalid configurations'
+      externalDocs:
+        description: Complete documentation on the CSV data format and fields
+        url: https://accentvoice.io/uc-doc/administration/users/csv_import
+      consumes:
+      - text/csv; charset=utf-8
+      tags:
+      - users
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/csvbody'
+      responses:
+        '200':
+          description: Users updated successfully
+          schema:
+            $ref: '#/definitions/UserUpdate'
+        '400':
+          description: Errors occurred during update
+          schema:
+            $ref: '#/definitions/UserImportError'
+        '405':
+          description: This method is not supported for this resource
+
+parameters:
+  csvbody:
+    name: body
+    in: body
+    required: true
+    description: CSV field list available at https://accentvoice.io/uc-doc/administration/users/csv_import
+    schema:
+      type: string
+
+definitions:
+  UserExport:
+    title: UserExport
+    type: string
+  UserImport:
+    title: UserImport
+    description: List of users successfully imported
+    properties:
+      created:
+        type: array
+        items:
+          title: UserImportIDs
+          type: object
+          properties:
+            extension_id:
+              type: integer
+              description: Extension ID
+            user_id:
+              type: integer
+              description: User ID
+            line_id:
+              type: integer
+              description: Line ID
+            sip_uuid:
+              type: string
+              description: SIP UUID
+            voicemail_id:
+              type: integer
+              description: Voicemail ID
+            incall_extension_id:
+              type: integer
+              description: ID of the Extension used for incoming calls
+            row_number:
+              type: integer
+              description: Line number corresponding to the CSV data
+  UserUpdate:
+    title: UserUpdate
+    description: List of users successfully updated
+    properties:
+      updated:
+        type: array
+        items:
+          title: UserUpdateIDs
+          type: object
+          properties:
+            extension_id:
+              type: integer
+              description: Extension ID
+            user_id:
+              type: integer
+              description: User ID
+            line_id:
+              type: integer
+              description: Line ID
+            sip_uuid:
+              type: string
+              description: SIP UUID
+            voicemail_id:
+              type: integer
+              description: Voicemail ID
+            incall_extension_id:
+              type: integer
+              description: ID of the Extension used for incoming calls
+            row_number:
+              type: integer
+              description: Line number corresponding to the CSV data
+  UserImportError:
+    title: UserImportError
+    description: List of errors that occurred during import
+    properties:
+      errors:
+        type: array
+        items:
+          type: object
+          properties:
+            message:
+              type: string
+              description: Error message
+            timestamp:
+              type: integer
+              description: Time at which the error occurred
+            details:
+              type: object
+              properties:
+                row_number:
+                  type: integer
+                  description: Line number corresponding to the CSV data
+                row:
+                  type: object
+                  description: Original data that caused the error

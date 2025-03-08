@@ -1,0 +1,10 @@
+services:
+  sync:
+    depends_on:
+      - agentd
+      - auth
+      - amid
+      - postgres
+      - rabbitmq
+    environment:
+      TARGETS: "agentd:9493 auth:9497 amid:9491 postgres:5432 rabbitmq:5672"

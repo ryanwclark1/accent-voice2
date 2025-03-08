@@ -1,0 +1,8 @@
+services:
+  sync:
+    depends_on:
+      - ui
+      - auth
+      - browser
+    environment:
+      TARGETS: "browser:4444 ui:9296 auth:9497"

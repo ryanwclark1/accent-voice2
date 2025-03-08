@@ -1,0 +1,8 @@
+FROM accentcommunications/accent-setupd
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+COPY . /usr/src/accent-setupd
+
+WORKDIR /usr/src/accent-setupd
+RUN python3 -m pip install -e .

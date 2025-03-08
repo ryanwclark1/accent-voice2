@@ -1,0 +1,240 @@
+#!/bin/bash
+# Copyright 2023 Accent Communications
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+action=$1
+service_filter=${2:-default}
+include_monit=1
+accent_services="accent-dxtora accent-provd accent-agid asterisk accent-amid accent-call-logd accent-agentd accent-phoned accent-calld accent-websocketd"
+default_services="accent-plugind accent-webhookd accent-sysconfd accent-confgend accent-confd accent-auth accent-dird accent-chatd $accent_services"
+all_services="rabbitmq-server postgresql nginx $default_services"
+accent_disabled_file="/var/lib/accent/disabled"
+
+
+usage() {
+    cat <<-EOF
+	usage : $0 action [service_filter]
+	available actions:
+	    status     : print status of all accent services
+	    restart    : restart all accent services
+	    stop       : stop all accent services
+	    start      : start all accent services
+	    enable     : enable all accent services
+	    disable    : disable all accent services
+
+	available service filters:
+	    accent       : manage services only used on an active Accent
+	    default    : accent + messaging and configuration
+	    all        : default + web and database servers
+
+	impacted services ($service_filter) : $services
+	EOF
+
+    exit 0
+}
+
+if [ "$service_filter" = default ]; then
+    services=$default_services
+elif [ "$service_filter" = all ]; then
+    services=$all_services
+elif [ "$service_filter" = accent ]; then
+    services=$accent_services
+elif [ "$service_filter" = "accent-nomonit" ]; then
+    services=$accent_services
+    service_filter="accent"
+    include_monit=0
+elif [ "$service_filter" = accent ]; then
+    echo 'Warning: accent action is a deprecated alias to accent: use accent-service accent' >&2
+    service_filter="accent"
+    services=$accent_services
+elif [ "$service_filter" = "accent-nomonit" ]; then
+    echo 'Warning: accent-nomonit action is a deprecated alias to accent-nomonit: use accent-service accent-nomonit' >&2
+    services=$accent_services
+    service_filter="accent"
+    include_monit=0
+else
+    echo "Invalid service filter \"$service_filter\""
+    usage
+fi
+
+
+reverse_list() {
+    local service_list=$1
+    /bin/echo "$service_list" | tac -s' '
+}
+
+reversed_services=$(reverse_list "$services")
+
+accent_status() {
+    accent-service-python status "$service_filter"
+}
+
+accent_enable() {
+    echo "Enabling Accent services..."
+    rm -f $accent_disabled_file
+    enable_monit
+}
+
+accent_disable() {
+    echo "Disabling Accent services..."
+    touch $accent_disabled_file
+    disable_monit
+}
+
+disable_monit() {
+    systemctl disable monit &> /dev/null
+}
+
+stop_monit() {
+    if [ $include_monit -eq 1 ]; then
+        systemctl stop monit > /dev/null
+    fi
+}
+
+enable_monit() {
+    systemctl enable monit &> /dev/null
+}
+
+start_monit() {
+    if [ $include_monit -eq 1 ] && [ ! -f $accent_disabled_file ]; then
+        systemctl start monit > /dev/null
+    fi
+}
+
+close_sip_port() {
+    echo "Closing port 5060."
+    iptables -n --list | grep -q '^DROP.*5060'
+    if [ $? -eq 1 ]; then
+        iptables -I INPUT 1 -p udp --dport 5060 -j DROP
+    fi
+}
+
+open_sip_port() {
+    echo "Opening port 5060."
+    iptables -n --list | grep -q '^DROP.*5060'
+    if [ $? -eq 0 ]; then
+        iptables -D INPUT -p udp --dport 5060 -j DROP
+    fi
+}
+
+is_enabled() {
+    local service=$1
+    enabled=0
+    if [ "$service" = "asterisk" ]; then
+       test ! -f $accent_disabled_file
+       enabled=$?
+    fi
+    for srv in $accent_services; do
+        if [ "$srv" != "asterisk" ]; then
+            if [ "$srv" = "$service" ]; then
+               test ! -f $accent_disabled_file
+               enabled=$?
+            fi
+        fi
+    done
+    echo $enabled
+}
+
+is_running() {
+    local service=$1
+    systemctl is-active --quiet "$service" > /dev/null
+    echo $?
+}
+
+exists() {
+    local service=$1
+    systemctl cat "$service" > /dev/null 2> /dev/null
+    echo $?
+}
+
+start_services() {
+    local services=$1
+    for service in $services; do
+        if [ "$service" = postgresql ]; then
+            service=postgresql@13-main
+        fi
+        exists=$(exists $service)
+        enabled=$(is_enabled $service)
+        running=$(is_running $service)
+        start_service "$exists" "$enabled" "$running"
+    done
+    start_monit
+}
+
+start_service() {
+    local exists=$1
+    local enabled=$2
+    local running=$3
+
+    if [ "$enabled" -ne 0 ]; then
+        echo -e "\t$service is disabled"
+        return
+    fi
+    if [ "$running" -eq 0 ]; then
+        return
+    fi
+
+    echo -en "\tstarting $service ..."
+    if ! systemctl start "$service"; then
+        echo " NOK"
+        open_sip_port
+        exit 1
+    fi
+
+    echo " OK"
+}
+
+
+stop_services() {
+    stop_monit
+    local services=$1
+    for service in $services; do
+        if [ "$service" = postgresql ]; then
+            service=postgresql@15-main
+        fi
+        systemctl stop $service
+    done
+    return 0
+}
+
+accent_start_and_open() {
+    local service_list=$1
+    echo "Waiting for services to start successfully..."
+    start_services "$service_list"
+    open_sip_port
+}
+
+accent_close_and_stop() {
+    local service_list=$1
+    close_sip_port
+    echo "Waiting for services to stop successfully..."
+    stop_services "$service_list"
+}
+
+accent_start() {
+    accent_start_and_open "$services"
+    echo "Accent fully booted"
+}
+
+accent_stop() {
+    accent_close_and_stop "$reversed_services"
+}
+
+accent_restart() {
+    accent_stop
+    accent_start
+}
+
+if [ "$(basename "$0")" == 'accent-service' ]; then
+    echo 'Warning: accent-service is a deprecated alias to accent-service: use accent-service instead' >&2
+fi
+
+case $action in
+    status|monitor)  accent_status;;
+    force-reload|restart) accent_restart;;
+    start)   accent_start;;
+    stop)    accent_stop;;
+    enable)  accent_enable;;
+    disable) accent_disable;;
+    *) usage;;
+esac

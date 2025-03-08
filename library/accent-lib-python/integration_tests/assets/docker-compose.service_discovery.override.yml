@@ -1,0 +1,7 @@
+services:
+  sync:
+    depends_on:
+      - rabbitmq
+      - consul
+    environment:
+      TARGETS: "rabbitmq:5672 consul:8500"

@@ -1,0 +1,13 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - dird
+      - rabbitmq
+      - phoned
+    environment:
+      TARGETS: "rabbitmq:5672 phoned:9499 dird:9489 auth:9497"
+
+  phoned:
+    volumes:
+      - "./etc/accent-phoned/conf.d/20-http-disabled.yml:/etc/accent-phoned/conf.d/20-http-disabled.yml"

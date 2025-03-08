@@ -1,0 +1,255 @@
+paths:
+  /groups:
+    get:
+      operationId: list_groups
+      summary: List groups
+      description: "**Required ACL:** `confd.groups.read`"
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/recurse"
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search"
+      responses:
+        "200":
+          description: Groups list
+          schema:
+            $ref: "#/definitions/GroupItems"
+    post:
+      operationId: create_group
+      summary: Create group
+      description: "**Required ACL:** `confd.groups.create`"
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - name: body
+          in: body
+          description: Group to create
+          required: true
+          schema:
+            $ref: "#/definitions/Group"
+      responses:
+        "201":
+          description: Group created
+          schema:
+            $ref: "#/definitions/Group"
+        "400":
+          $ref: "#/responses/CreateError"
+  /groups/{group_uuid}:
+    get:
+      operationId: get_group
+      summary: Get group
+      description: "**Required ACL:** `confd.groups.{group_uuid}.read`"
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/groupuuid"
+      responses:
+        "200":
+          description: Group
+          schema:
+            $ref: "#/definitions/Group"
+        "404":
+          $ref: "#/responses/NotFoundError"
+    put:
+      operationId: update_group
+      summary: Update group
+      description: "**Required ACL:** `confd.groups.{group_uuid}.update`"
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/groupuuid"
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Group"
+      responses:
+        "204":
+          $ref: "#/responses/ResourceUpdated"
+        "400":
+          $ref: "#/responses/UpdateError"
+        "404":
+          $ref: "#/responses/NotFoundError"
+    delete:
+      operationId: delete_group
+      summary: Delete group
+      description: "**Required ACL:** `confd.groups.{group_uuid}.delete`"
+      tags:
+        - groups
+      parameters:
+        - $ref: "#/parameters/tenantuuid"
+        - $ref: "#/parameters/groupuuid"
+      responses:
+        "204":
+          $ref: "#/responses/ResourceDeleted"
+        "400":
+          $ref: "#/responses/DeleteError"
+        "404":
+          $ref: "#/responses/NotFoundError"
+parameters:
+  groupid:
+    required: true
+    type: integer
+    name: group_id
+    in: path
+    description: the group's ID
+  groupuuid:
+    required: true
+    type: string
+    name: group_uuid
+    in: path
+    description: the group's UUID
+
+definitions:
+  Group:
+    title: Group
+    allOf:
+      - $ref: "#/definitions/GroupRelationBase"
+      - properties:
+          ring_strategy:
+            type: string
+            default: all
+            enum:
+              - all
+              - random
+              - least_recent
+              - linear
+              - fewest_calls
+              - memorized_round_robin
+              - weight_random
+          preprocess_subroutine:
+            type: string
+          timeout:
+            type: integer
+            description: Number of seconds the group will ring before falling back
+          user_timeout:
+            type: integer
+            default: 15
+            description: Number of seconds the member of group will ring
+          retry_delay:
+            type: integer
+            default: 5
+            description: Number of seconds before the member of group will ring again
+          ring_in_use:
+            type: boolean
+            default: true
+            description: Notify the member even if it already in communication
+          music_on_hold:
+            type: string
+            description: Name of the MOH category to use for music on hold
+          caller_id_mode:
+            type: string
+            enum:
+              - prepend
+              - overwrite
+              - append
+            description: How the caller_id_name will be treated
+          caller_id_name:
+            type: string
+            description: Name to display
+          mark_answered_elsewhere:
+            type: boolean
+            default: false
+            description: Mark all calls as "answered elsewhere" when cancelled
+          enabled:
+            type: boolean
+            default: true
+            description: Enable/Disable the group
+          max_calls:
+            type: integer
+            default: 0
+            description: Number of maximum calls waiting in the group. 0 means unlimited.
+          tenant_uuid:
+            type: string
+            description: The UUID of the tenant
+            readOnly: true
+      - $ref: "#/definitions/GroupRelationExtensions"
+      - $ref: "#/definitions/GroupRelationFallbacks"
+      - $ref: "#/definitions/GroupRelationIncalls"
+      - $ref: "#/definitions/GroupRelationMembers"
+      - $ref: "#/definitions/GroupRelationSchedules"
+      - $ref: "#/definitions/GroupRelationCallPermissions"
+      - required:
+          - name
+  GroupRelationBase:
+    properties:
+      name:
+        type: string
+        description: The name of the group
+        readOnly: true
+      id:
+        type: integer
+        readOnly: true
+        description: The id of the group
+      uuid:
+        type: string
+        description: Group UUID. This ID is globally unique across multiple Accent instances
+        readOnly: true
+  GroupRelationExtensions:
+    properties:
+      extensions:
+        type: array
+        readOnly: true
+        items:
+          $ref: "#/definitions/ExtensionRelationBase"
+  GroupRelationFallbacks:
+    properties:
+      fallbacks:
+        readOnly: true
+        $ref: "#/definitions/GroupFallbacks"
+  GroupRelationIncalls:
+    properties:
+      incalls:
+        type: array
+        readOnly: true
+        items:
+          $ref: "#/definitions/GroupRelationIncall"
+  GroupRelationIncall:
+    allOf:
+      - $ref: "#/definitions/IncallRelationBase"
+      - $ref: "#/definitions/IncallRelationExtensions"
+  GroupRelationMembers:
+    properties:
+      members:
+        readOnly: true
+        $ref: "#/definitions/GroupRelationMemberUsers"
+  GroupRelationMemberUsers:
+    properties:
+      users:
+        type: array
+        readOnly: true
+        items:
+          $ref: "#/definitions/UserRelationBase"
+  GroupRelationSchedules:
+    properties:
+      schedules:
+        type: array
+        readOnly: true
+        items:
+          $ref: "#/definitions/ScheduleRelationBase"
+  GroupRelationCallPermissions:
+    properties:
+      call_permissions:
+        type: array
+        readOnly: true
+        items:
+          $ref: "#/definitions/CallPermissionRelationBase"
+  GroupItems:
+    title: GroupItems
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/Group"
+      total:
+        type: integer
+    required:
+      - total

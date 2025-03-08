@@ -1,0 +1,20 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - dird
+      - db
+      # - confd  # not confd, we WANT it to take time to start
+    environment:
+      TARGETS: "dird:9489 auth:9497 db:5432"
+  dird:
+    depends_on:
+      - america
+    volumes:
+      - "./etc/accent-dird/conf.d/20-bus-disabled.yml:/etc/accent-dird/conf.d/20-bus-disabled.yml"
+  america:
+    image: python:3.9-slim-bullseye
+    volumes:
+      - "./confd_data/asset.accent_users_late_confd:/tmp"
+    command: /tmp/run_confd

@@ -1,0 +1,56 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
+
+  phoned:
+    image: accent-phoned-test
+    ports:
+      - "9498"
+      - "9499"
+    volumes:
+      - "../..:/usr/src/accent-phoned"
+      - "./ssl:/etc/ssl"
+      - "./auth_keys:/tmp/auth_keys"
+      - "./etc/accent-phoned/conf.d/50-default.yml:/etc/accent-phoned/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+    environment:
+        ACCENT_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b93
+
+  dird:
+    image: accentcommunications/flask
+    expose:
+      - "9489"
+    volumes:
+      - "./dird_data:/tmp"
+    command: "python /tmp/mock-accent-dird.py 9489"
+
+  auth:
+    image: "accentcommunications/accent-auth-mock"
+    ports:
+      - "9497"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - 5672
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  amid:
+    image: accentcommunications/flask
+    ports:
+      - 9491
+    volumes:
+      - ./amid_data:/usr/local/share/accent-amid
+    command: python /usr/local/share/accent-amid/mock-accent-amid.py 9491
+
+  confd:
+    image: accentcommunications/flask
+    ports:
+      - 9486
+    volumes:
+      - ./confd_data:/usr/local/share/accent-confd
+    command: python /usr/local/share/accent-confd/mock-accent-confd.py 9486

@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+
+
+import warnings
+
+from accent_agentd_cli.main import main
+
+warnings.warn("accent-agentd-cli is deprecated, please use accent-agentd-cli")
+main()

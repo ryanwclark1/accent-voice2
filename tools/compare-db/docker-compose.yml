@@ -1,0 +1,21 @@
+services:
+  postgresql-installed:
+    image: postgres:11
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DATABASE: asterisk
+    ports:
+      - 127.0.0.1::5432
+    volumes:
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+  postgresql-migrated:
+    image: postgres:11
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DATABASE: asterisk
+    ports:
+      - 127.0.0.1::5432
+    volumes:
+      - type: tmpfs
+        target: /var/lib/postgresql/data

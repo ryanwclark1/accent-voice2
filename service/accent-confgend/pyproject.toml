@@ -1,0 +1,103 @@
+[tool.poetry]
+name = "accent-confgend"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Clark <ryanc@accentservices.com>"]
+packages = [
+    {include = "accent_confgend"}
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+automat = "^20.2.0"
+Jinja2 = "^2.11.3"
+psycopg2 = "^2.8.6"
+PyYAML = "^5.3.1"
+SQLAlchemy = ">=1.3.0, <1.4.0"
+sqlalchemy-utils = "^0.37.2"
+stevedore = "^4.0.2"
+Twisted = "^21.2.0"
+Unidecode = "^1.2.0"
+accent = {path = "../../library/accent-lib-python"}
+accent-dao = {path = "../../library/accent-dao"}
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+pre-commit = "^2.20.0"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["accent_confgend"]
+
+[tool.poetry.plugins."console_scripts"]
+accent-confgend = "accent_confgend.bin.daemon:main"
+
+[tool.poetry.plugins."accent_confgend.asterisk.confbridge.conf"]
+accent = "accent_confgend.plugins.confbridge_conf:ConfBridgeConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.asterisk.hep.conf"]
+accent = "accent_confgend.plugins.hep_conf:HEPConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.asterisk.modules.conf"]
+accent = "accent_confgend.plugins.modules_conf:ModulesConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.asterisk.musiconhold.conf"]
+accent = "accent_confgend.plugins.musiconhold_conf:MOHConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.asterisk.rtp.conf"]
+accent = "accent_confgend.plugins.rtp_conf:RTPConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.asterisk.pjsip.conf"]
+accent = "accent_confgend.plugins.pjsip_conf:PJSIPConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.provd.network.yml"]
+accent = "accent_confgend.plugins.provd_conf:ProvdNetworkConfGenerator"
+
+[tool.poetry.plugins."accent_confgend.asterisk.features.conf"]
+accent = "accent_confgend.plugins.features_conf:FeaturesConfGenerator"

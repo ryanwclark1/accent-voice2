@@ -1,0 +1,5 @@
+auth:
+  username: accent-auth-cli
+  password: password123
+  backend: accent_user
+  host: auth

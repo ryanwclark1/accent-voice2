@@ -1,0 +1,8 @@
+services:
+  sync:
+    depends_on:
+      - ari
+      - auth
+      - calld
+    environment:
+      TARGETS: "ari:5039 auth:9497 calld:9500"

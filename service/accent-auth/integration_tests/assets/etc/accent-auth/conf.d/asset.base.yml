@@ -1,0 +1,49 @@
+token_cleanup_interval: 2.0
+
+enabled_backend_plugins:
+  broken_init: true
+  broken_verify_password: true
+
+default_user_policy: accent_default_admin_policy # For testing only, not a legitimate configuration
+
+password_reset_email_template: "/var/lib/accent-auth/templates/raw_password_reset_email.jinja"
+password_reset_from_name: password_reset_from_name_sentinel
+password_reset_from_address: password_reset_from_address_sentinel@example.com
+email_confirmation_get_response_body_template: "/var/lib/accent-auth/templates/email_confirmation_get_body.jinja"
+email_confirmation_get_mimetype: "text/x-test"
+email_confirmation_from_name: confirmation_from_name_sentinel
+email_confirmation_from_address: confirmation_from_address_sentinel@example.com
+
+all_users_policies:
+  accent-all-users-policy: true
+
+default_policies:
+  accent-all-users-policy:
+    acl:
+      - integration_tests.access
+      - integration_tests.another_access
+
+tenant_default_groups:
+  accent_default_admin_group:
+    policies:
+      accent_default_admin_policy: true
+
+bootstrap_user_on_startup: True
+bootstrap_user_username: admin
+bootstrap_user_password: s3cre7
+
+oauth2_synchronization_ws_url_template: "ws://oauth2sync:80/ws/{state}"
+oauth2_synchronization_redirect_url_template: "http://oauth2sync:80/{auth_type}/authorize/{state}"
+
+google:
+  authorization_base_url: "https://accounts.google.com/o/oauth2/v2/auth"
+  redirect_uri: "http://oauth2sync:80/google/authorize"
+  token_url: "http://oauth2sync:80/google/token"
+  websocket_host: "ws://oauth2sync:80"
+
+microsoft:
+  authorization_base_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+  redirect_uri: "http://oauth2sync:80/microsoft/authorize"
+  scope: ["offline_access", "Contacts.Read"]
+  token_url: "http://oauth2sync:80/microsoft/token"
+  websocket_host: "ws://oauth2sync:80"

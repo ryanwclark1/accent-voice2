@@ -1,0 +1,12 @@
+---
+description: Python Rules
+globs: *.py
+---
+
+# Python Rules
+
+- Use Python 3.13 syntax
+- Mandatory type hints & Google-style docstrings.
+- Sort imports
+
+

@@ -1,0 +1,12 @@
+[tool.mypy]
+python_version = "3.12"
+exclude = ["alembic/", "tests/", "migrations/"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+strict = true
+warn_return_any = true
+warn_unreachable = true
+disallow_any_generics = true
+namespace_packages = true
+cache_dir = ".mypy_cache"
+sqlite_cache = true

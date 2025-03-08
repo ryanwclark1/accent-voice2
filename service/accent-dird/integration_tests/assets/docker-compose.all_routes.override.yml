@@ -1,0 +1,21 @@
+version: '3'
+services:
+  sync:
+    image: accentcommunications/wait
+    depends_on:
+      - auth
+      - dird
+      - db
+      - rabbitmq
+    environment:
+      TARGETS: "dird:9489 auth:9497 db:5432 rabbitmq:5672"
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+  dird:
+    volumes:
+      - "./etc/accent-dird/conf.d/20-broken-bus.yml:/etc/accent-dird/conf.d/20-broken-bus.yml"
+      - "./tmp/data/asset.all_routes.test.csv:/tmp/data/test.csv"
+      - "./tmp/data/asset.all_routes.test_no_email.csv:/tmp/data/test_no_email.csv"
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"

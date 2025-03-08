@@ -1,0 +1,3 @@
+
+from repo_check.check_local_accent_repositories import main
+main()

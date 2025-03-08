@@ -1,0 +1,56 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - 9497
+
+  provd:
+    image: accentcommunications/accent-provd
+    ports:
+      - "8666"
+    volumes:
+      - "./etc/accent-provd/config.yml:/etc/accent-provd/config.yml"
+      - "./keys/accent-provd-key.yml:/var/lib/accent-auth-keys/accent-provd-key.yml"
+      - "./provd/null:/var/lib/accent-provd/plugins/null"
+      - "./provd/zero:/var/lib/accent-provd/plugins/zero"
+
+  postgres:
+    image: accentcommunications/accent-confd-db-test:local
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  sysconfd:
+    image: accentcommunications/flask
+    ports:
+      - "8668"
+    volumes:
+      - "./mocks/sysconfd.py:/tmp/sysconfd.py"
+    command: "python /tmp/sysconfd.py"
+
+  confd:
+    image: accent-confd-test
+    ports:
+      - "9486"
+    command: "accent-confd -d"
+    volumes:
+      - "../..:/usr/src/accent-confd"
+      - "./etc/accent-confd/conf.d/50-default.yml:/etc/accent-confd/conf.d/50-default.yml"
+      - "./doc/pjsip.json.gz:/usr/share/doc/asterisk-doc/json/pjsip.json.gz"
+      # - "${LOCAL_GIT_REPOS}/accent-auth-client/accent_auth_client:/opt/venv/lib/python3.9/site-packages/accent_auth_client"
+      # - "${LOCAL_GIT_REPOS}/accent-provd-client/accent_provd_client:/opt/venv/lib/python3.9/site-packages/accent_provd_client"
+      # - "${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus"
+      # - "${LOCAL_GIT_REPOS}/accent-dao/accent_dao:/opt/venv/lib/python3.9/site-packages/accent_dao"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"

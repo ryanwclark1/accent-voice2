@@ -1,0 +1,93 @@
+# Translations template for accent-phoned.
+# Copyright 2023 Accent Communications
+# This file is distributed under the same license as the
+# accent-phoned project.
+# Accent Dev Team (help@accentvoice.io), 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: accent-phoned 1.0\n"
+"Report-Msgid-Bugs-To: 'help@accentvoice.io'\n"
+"POT-Creation-Date: 2019-12-17 16:04-0500\n"
+"PO-Revision-Date: 2019-11-13 19:57+0000\n"
+"Language-Team: Russian (https://app.transifex.com/accent/teams/69545/ru/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.6.0\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: accent_phoned/plugins/aastra/templates/aastra_input.jinja:3
+#: accent_phoned/plugins/cisco/templates/cisco_input.jinja:3
+#: accent_phoned/plugins/fanvil/templates/fanvil_input.jinja:3
+#: accent_phoned/plugins/polycom/templates/polycom_input.jinja:4
+#: accent_phoned/plugins/polycom/templates/polycom_results.jinja:4
+#: accent_phoned/plugins/snom/templates/snom_input.jinja:3
+msgid "Accent Search"
+msgstr ""
+
+#: accent_phoned/plugins/aastra/templates/aastra_input.jinja:4
+#: accent_phoned/plugins/polycom/templates/polycom_input.jinja:9
+#: accent_phoned/plugins/snom/templates/snom_input.jinja:4
+msgid "Name or number:"
+msgstr ""
+
+#: accent_phoned/plugins/aastra/templates/aastra_results.jinja:5
+#: accent_phoned/plugins/polycom/templates/polycom_results.jinja:9
+msgid "Previous Page"
+msgstr ""
+
+#: accent_phoned/plugins/aastra/templates/aastra_results.jinja:17
+#: accent_phoned/plugins/cisco/templates/cisco_results.jinja:10
+#: accent_phoned/plugins/fanvil/templates/fanvil_results.jinja:10
+#: accent_phoned/plugins/htek/templates/htek_results.jinja:10
+#: accent_phoned/plugins/polycom/templates/polycom_results.jinja:15
+#: accent_phoned/plugins/snom/templates/snom_results.jinja:10
+#: accent_phoned/plugins/thomson/templates/thomson_results.jinja:10
+#: accent_phoned/plugins/yealink/templates/yealink_results.jinja:10
+msgid "No entries"
+msgstr ""
+
+#: accent_phoned/plugins/aastra/templates/aastra_results.jinja:24
+#: accent_phoned/plugins/polycom/templates/polycom_results.jinja:19
+msgid "Next Page"
+msgstr ""
+
+#: accent_phoned/plugins/cisco/templates/cisco_input.jinja:4
+#: accent_phoned/plugins/cisco/templates/cisco_input.jinja:7
+#: accent_phoned/plugins/fanvil/templates/fanvil_input.jinja:4
+#: accent_phoned/plugins/fanvil/templates/fanvil_input.jinja:7
+#: accent_phoned/plugins/snom/templates/snom_input.jinja:7
+msgid "Name or number"
+msgstr ""
+
+#: accent_phoned/plugins/cisco/templates/cisco_menu.jinja:4
+msgid "Accent Directory"
+msgstr ""
+
+#: accent_phoned/plugins/cisco/templates/cisco_results.jinja:17
+#: accent_phoned/plugins/fanvil/templates/fanvil_results.jinja:17
+msgid "Dial"
+msgstr ""
+
+#: accent_phoned/plugins/cisco/templates/cisco_results.jinja:24
+#: accent_phoned/plugins/fanvil/templates/fanvil_results.jinja:24
+#: accent_phoned/plugins/snom/templates/snom_results.jinja:17
+msgid "PrevPage"
+msgstr ""
+
+#: accent_phoned/plugins/cisco/templates/cisco_results.jinja:31
+#: accent_phoned/plugins/fanvil/templates/fanvil_results.jinja:31
+msgid "Exit"
+msgstr ""
+
+#: accent_phoned/plugins/cisco/templates/cisco_results.jinja:38
+#: accent_phoned/plugins/fanvil/templates/fanvil_results.jinja:38
+#: accent_phoned/plugins/snom/templates/snom_results.jinja:25
+msgid "NextPage"
+msgstr ""
+
+#: accent_phoned/plugins/polycom/templates/polycom_input.jinja:13
+msgid "Search"
+msgstr ""

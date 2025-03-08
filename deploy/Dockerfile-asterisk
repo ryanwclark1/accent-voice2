@@ -1,0 +1,56 @@
+FROM debian:bookworm-slim
+
+LABEL maintainer="Ryan Clark <ryanc@accentservices.com>"
+
+ENV ASTERISK_VERSION=20.5.0
+ENV OPUS_CODEC=asterisk-20.0/x86-64/codec_opus-20.0_current-x86_64
+
+COPY ./deploy/asterisk/build-asterisk.sh /
+COPY ./deploy/asterisk/docker-entrypoint.sh /
+COPY ./service/accent-res-stasis-amqp /usr/src/accent-res-stasis-amqp
+COPY ./service/accent-res-amqp /usr/src/accent-res-amqp
+COPY ./library/accent-asterisk-config/etc/asterisk /etc/accent-asterisk-config
+
+RUN --mount=type=secret,id=github_token \
+    export GITHUB_TOKEN=$(cat /run/secrets/github_token) && \
+    ./build-asterisk.sh
+
+
+ENV PYSETUP_PATH="/usr/src/accent-confgend-client" \
+    VENV_PATH="/usr/src/accent-confgend-client/.venv"
+
+WORKDIR $PYSETUP_PATH
+
+COPY ./library/accent-confgend-client/pyproject.toml ./library/accent-confgend-client/poetry.lock ./
+COPY ./library/accent-confgend-client/accent_confgend_client ./accent_confgend_client
+COPY ./library/accent-confgend-client/accent_confgend_client/main.py ./bin/accent-confgen
+COPY ./library/accent-confgend-client/etc/ /etc
+COPY ./deploy/etc/accent-asterisk-config.conf /etc/systemd/system/asterisk.service.d/accent-asterisk-config.conf
+COPY ./deploy/etc/accent-res-stasis-amqp.conf /etc/systemd/system/asterisk.service.d/accent-res-stasis-amqp.conf
+COPY ./deploy/etc/asterisk.service /etc/systemd/system/asterisk.service
+
+RUN true \
+    && apt-get update -qq \
+    && apt-get install -y \
+        netcat-openbsd \
+        odbc-postgresql \
+        libpq-dev \
+        python3 \
+        python3-pip \
+        python3-poetry \
+    && poetry config virtualenvs.create true \
+    && poetry config virtualenvs.in-project true \
+    && poetry install --only main \
+    && ln -s /usr/src/accent-confgend-client/.venv/bin/accent-confgen /usr/bin/accent-confgen \
+    && systemctl enable asterisk \
+    && rm -rf /var/lib/apt/lists/*
+
+# VOLUME /var/lib/asterisk/sounds /var/lib/asterisk/keys /var/lib/asterisk/phoneprov /var/spool/asterisk /var/log/asterisk
+
+ENV PATH="$VENV_PATH/bin:$PATH"
+
+WORKDIR /
+
+EXPOSE 5060/udp 5060/tcp 5061/tcp 5038/tcp 5039/tcp
+# EXPOSE 2000 5038 5039 5060/udp
+ENTRYPOINT ["/docker-entrypoint.sh"]

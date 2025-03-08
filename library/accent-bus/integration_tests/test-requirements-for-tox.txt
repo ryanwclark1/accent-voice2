@@ -1,0 +1,8 @@
+https://github/ryanwclark1/accent-test-helpers/archive/master.zip
+pyhamcrest
+pytest
+requests
+
+# From accent-bus
+kombu==5.0.2
+

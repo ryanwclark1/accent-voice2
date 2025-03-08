@@ -1,0 +1,248 @@
+File: accent_chatd_client/commands/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: accent_chatd_client/commands/helpers/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: accent_chatd_client/commands/helpers/base.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_chatd_client.command import ChatdCommand
+
+
+class BaseCommand(ChatdCommand):
+    pass
+
+----------------------------------------
+
+File: accent_chatd_client/commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class ConfigCommand(BaseCommand):
+    resource = 'config'
+
+    def get(self):
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def patch(self, config_patch):
+        headers = self._get_headers()
+        r = self.session.patch(self.base_url, headers=headers, json=config_patch)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_chatd_client/commands/rooms.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class RoomCommand(BaseCommand):
+    resource = 'users/me/rooms'
+
+    def list_from_user(self, **params):
+        headers = self._get_headers()
+        if 'user_uuids' in params:
+            params['user_uuid'] = ','.join(params.pop('user_uuids'))
+        url = f'{self.base_url}'
+        r = self.session.get(url, headers=headers, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    def create_from_user(self, room_args):
+        headers = self._get_headers()
+        url = f'{self.base_url}'
+        r = self.session.post(url, json=room_args, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_messages_from_user(self, room_uuid, **params):
+        headers = self._get_headers()
+        url = f'{self.base_url}/{room_uuid}/messages'
+        r = self.session.get(url, headers=headers, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    def create_message_from_user(self, room_uuid, message_args):
+        headers = self._get_headers()
+        url = f'{self.base_url}/{room_uuid}/messages'
+        r = self.session.post(url, json=message_args, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def search_messages_from_user(self, **params):
+        headers = self._get_headers()
+        url = f'{self.base_url}/messages'
+        r = self.session.get(url, headers=headers, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_chatd_client/commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class StatusCommand(BaseCommand):
+    resource = 'status'
+
+    def get(self):
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_chatd_client/commands/user_presences.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class UserPresenceCommand(BaseCommand):
+    resource = 'users'
+
+    def list(self, **params):
+        headers = self._get_headers(**params)
+        if 'user_uuids' in params:
+            params['user_uuid'] = ','.join(params.pop('user_uuids'))
+
+        url = f'{self.base_url}/presences'
+        r = self.session.get(url, headers=headers, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get(self, user_uuid, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}/presences'
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def update(self, user_args, tenant_uuid=None):
+        user_uuid = user_args['uuid']
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}/presences'
+        r = self.session.put(url, json=user_args, headers=headers)
+        self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_chatd_client/__init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_chatd_client.client import ChatdClient as Client
+
+__all__ = [
+    'Client',
+]
+
+----------------------------------------
+
+File: accent_chatd_client/client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+
+class ChatdClient(BaseClient):
+    namespace = 'accent_chatd_client.commands'
+
+    def __init__(self, host, port=443, prefix='/api/chatd', version='1.0', **kwargs):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: accent_chatd_client/command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import ChatdError, ChatdServiceUnavailable, InvalidChatdError
+
+
+class ChatdCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response):
+        if response.status_code == 503:
+            raise ChatdServiceUnavailable(response)
+
+        try:
+            raise ChatdError(response)
+        except InvalidChatdError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: accent_chatd_client/exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class ChatdError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidChatdError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+            if body.get('resource', None):
+                self.resource = body['resource']
+        except KeyError:
+            raise InvalidChatdError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class ChatdServiceUnavailable(ChatdError):
+    pass
+
+
+class InvalidChatdError(Exception):
+    pass
+
+----------------------------------------
+

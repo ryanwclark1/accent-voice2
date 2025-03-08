@@ -1,0 +1,12 @@
+kombu
+openapi-spec-validator<0.6.0  # dependency conflict on requests version (>2.31.0) with accent clients (=2.25.1)
+pyhamcrest
+pytest
+requests
+sqlalchemy<2
+stevedore
+https://github.com/accentcommunications/accent-auth-client/archive/master.zip
+https://github.com/accentcommunications/accent-lib-rest-client/archive/master.zip
+https://github.com/accentcommunications/accent-setupd-client/archive/master.zip
+https://github.com/accentcommunications/accent-lib-python/archive/master.zip
+https://github.com/accentcommunications/accent-test-helpers/archive/master.zip

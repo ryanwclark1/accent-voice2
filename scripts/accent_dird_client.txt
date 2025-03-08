@@ -1,0 +1,2208 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.client import DirdClient as Client
+
+__all__ = ['Client']
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+import accent_dird_client.commands
+
+
+class DirdClient(BaseClient):
+    namespace = 'accent_dird_client.commands'
+
+    backends: accent_dird_client.commands.backends.BackendsCommand
+    conference_source: accent_dird_client.commands.conference_source.Command
+    config: accent_dird_client.commands.config.ConfigCommand
+    csv_source: accent_dird_client.commands.csv_source.Command
+    csv_ws_source: accent_dird_client.commands.csv_ws_source.Command
+    directories: accent_dird_client.commands.directories.DirectoriesCommand
+    displays: accent_dird_client.commands.displays.DisplaysCommand
+    graphql: accent_dird_client.commands.graphql.GraphQLCommand
+    ldap_source: accent_dird_client.commands.ldap_source.Command
+    personal: accent_dird_client.commands.personal.PersonalCommand
+    phonebook: accent_dird_client.commands.phonebook.PhonebookCommand
+    phonebook_deprecated: accent_dird_client.commands.phonebook_deprecated.DeprecatedPhonebookCommand
+    accent_source: accent_dird_client.commands.accent_source.Command
+    personal_source: accent_dird_client.commands.personal_source.Command
+    phonebook_source: accent_dird_client.commands.phonebook_source.Command
+    profiles: accent_dird_client.commands.profiles.ProfilesCommand
+    sources: accent_dird_client.commands.sources.SourcesCommand
+    status: accent_dird_client.commands.status.StatusCommand
+
+    def __init__(self, host, port=443, prefix='/api/dird', version='0.1', **kwargs):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import DirdError, DirdServiceUnavailable, InvalidDirdError
+
+
+class DirdCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response):
+        if response.status_code == 503:
+            raise DirdServiceUnavailable(response)
+
+        try:
+            raise DirdError(response)
+        except InvalidDirdError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: commands/__init__.py
+Please review for update
+
+from . import (
+    backends,
+    conference_source,
+    config,
+    csv_source,
+    csv_ws_source,
+    directories,
+    displays,
+    graphql,
+    ldap_source,
+    personal,
+    personal_source,
+    phonebook,
+    phonebook_deprecated,
+    phonebook_source,
+    profiles,
+    sources,
+    status,
+    accent_source,
+)
+
+__all__ = [
+    'backends',
+    'conference_source',
+    'config',
+    'csv_source',
+    'csv_ws_source',
+    'directories',
+    'displays',
+    'graphql',
+    'ldap_source',
+    'personal_source',
+    'personal',
+    'phonebook_deprecated',
+    'phonebook',
+    'phonebook_source',
+    'profiles',
+    'sources',
+    'status',
+    'accent_source',
+]
+
+----------------------------------------
+
+File: commands/accent_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/accent/sources'
+
+----------------------------------------
+
+File: commands/backends.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class BackendsCommand(DirdRESTCommand):
+    resource = 'backends'
+
+    def create_source(self, backend, body, tenant_uuid=None, token=None):
+        url = self._build_base_url(backend)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, headers=headers, json=body)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_source(self, backend, source_uuid, tenant_uuid=None, token=None):
+        url = self._build_url(backend, source_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def edit_source(self, backend, source_uuid, body, tenant_uuid=None, token=None):
+        url = self._build_url(backend, source_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, headers=headers, json=body)
+        self.raise_from_response(r)
+
+    def get_source(self, backend, source_uuid, tenant_uuid=None, token=None):
+        url = self._build_url(backend, source_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_sources(self, backend, tenant_uuid=None, token=None, **kwargs):
+        url = self._build_base_url(backend)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, headers=headers, params=kwargs)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def list_contacts_from_source(
+        self, backend, source_uuid, tenant_uuid=None, token=None, uuids=None, **kwargs
+    ):
+        if backend == 'accent' and uuids is not None:
+            kwargs['uuid'] = ','.join(uuid for uuid in uuids)
+        url = self._build_url(backend, source_uuid, 'contacts')
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, headers=headers, params=kwargs)
+        self.raise_from_response(r)
+
+        return r.json()
+
+    def _build_base_url(self, backend):
+        return '/'.join([self.base_url, backend, 'sources'])
+
+    def _build_url(self, backend, source_uuid, *args):
+        return '/'.join([self.base_url, backend, 'sources', source_uuid] + list(args))
+
+----------------------------------------
+
+File: commands/conference_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/conference/sources'
+
+----------------------------------------
+
+File: commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.command import DirdCommand
+
+from ..types import JSON
+
+
+class ConfigCommand(DirdCommand):
+    resource = 'config'
+
+    def get(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def patch(self, config_patch: dict[str, JSON]) -> JSON:
+        headers = self._get_headers()
+        r = self.session.patch(self.base_url, headers=headers, json=config_patch)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: commands/csv_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/csv/sources'
+
+----------------------------------------
+
+File: commands/csv_ws_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/csv_ws/sources'
+
+----------------------------------------
+
+File: commands/directories.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import logging
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+logger = logging.getLogger(__name__)
+
+
+class DirectoriesCommand(DirdRESTCommand):
+    resource = 'directories'
+
+    def lookup(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/lookup/{profile}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def lookup_user(self, profile, user_uuid, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/lookup/{profile}/{user_uuid}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def reverse(self, profile, user_uuid=None, token=None, tenant_uuid=None, **kwargs):
+        if not user_uuid and 'accent_user_uuid' in kwargs:
+            logger.warning(
+                'The "accent_user_uuid" argument has been renamed to "user_uuid"'
+            )
+            user_uuid = kwargs.pop('accent_user_uuid')
+
+        url = f'{self.base_url}/reverse/{profile}/{user_uuid}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def headers(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/lookup/{profile}/headers'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def favorites(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/favorites/{profile}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def new_favorite(self, directory, contact, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/favorites/{directory}/{contact}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def remove_favorite(
+        self, directory, contact, token=None, tenant_uuid=None, **kwargs
+    ):
+        url = f'{self.base_url}/favorites/{directory}/{contact}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def personal(self, profile, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/personal/{profile}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_sources(self, profile, token=None, tenant_uuid=None, **list_params):
+        url = f'{self.base_url}/{profile}/sources'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=list_params, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: commands/displays.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class DisplaysCommand(DirdRESTCommand):
+    resource = 'displays'
+
+    def create(self, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=body, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, display_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, display_uuid])
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def edit(self, display_uuid, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, display_uuid])
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def get(self, display_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, display_uuid])
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/graphql.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base_command import DirdRESTCommand
+
+
+class GraphQLCommand(DirdRESTCommand):
+    resource = 'graphql'
+
+    def query(self, query, token=None, tenant_uuid=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=query, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/helpers/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/helpers/base_command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client import RESTCommand
+
+
+class DirdRESTCommand(RESTCommand):
+    def build_headers(self, tenant_uuid=None, token=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        return self._build_headers(headers, token)
+
+    # Keep only for compatibility with external plugins
+    build_rw_headers = build_headers
+    build_ro_headers = build_headers
+
+    def _build_headers(self, headers, token):
+        if token:
+            headers['X-Auth-Token'] = token
+        return headers
+
+----------------------------------------
+
+File: commands/helpers/base_source_command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class SourceCommand(DirdRESTCommand):
+    def create(self, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=body, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, source_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, source_uuid])
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def get(self, source_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, source_uuid])
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def edit(self, source_uuid, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, source_uuid])
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/ldap_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/ldap/sources'
+
+----------------------------------------
+
+File: commands/personal.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class PersonalCommand(DirdRESTCommand):
+    resource = 'personal'
+
+    def list(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def purge(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(self.base_url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def export_csv(self, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        del headers['Accept']
+        kwargs['format'] = 'text/csv'
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+
+        if r.status_code == 200:
+            return r.text
+
+        if r.status_code == 204:
+            return None
+
+        self.raise_from_response(r)
+
+    def get(self, contact_id, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        url = f'{self.base_url}/{contact_id}'
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def import_csv(
+        self, csv_text, encoding=None, token=None, tenant_uuid=None, **kwargs
+    ):
+        url = f'{self.base_url}/import'
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
+        headers['Content-Type'] = content_type
+        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create(self, contact_infos, token=None, tenant_uuid=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(
+            self.base_url, json=contact_infos, params=kwargs, headers=headers
+        )
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def edit(self, contact_id, contact_infos, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/{contact_id}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=contact_infos, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(self, contact_id, token=None, tenant_uuid=None, **kwargs):
+        url = f'{self.base_url}/{contact_id}'
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: commands/personal_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/personal/sources'
+
+----------------------------------------
+
+File: commands/phonebook.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base_command import DirdRESTCommand
+
+
+class PhonebookCommand(DirdRESTCommand):
+    resource = 'phonebooks'
+
+    def create(self, token=None, phonebook_body=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_all_url()
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_all_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, token=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_all_url()
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_contacts(
+        self, token=None, phonebook_uuid=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._contact_all_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(self, token=None, phonebook_uuid=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_one_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        phonebook_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._phonebook_one_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get(self, token=None, phonebook_uuid=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_one_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(phonebook_uuid, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def edit_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_uuid=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(phonebook_uuid, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_contact(
+        self,
+        token=None,
+        phonebook_uuid=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(phonebook_uuid, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def import_csv(
+        self,
+        phonebook_uuid=None,
+        csv_text=None,
+        encoding=None,
+        token=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_import_url(phonebook_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
+        headers['Content-Type'] = content_type
+        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def _contact_all_url(self, phonebook_uuid):
+        return f'{self._phonebook_one_url(phonebook_uuid)}/contacts'
+
+    def _contact_one_url(self, phonebook_uuid, contact_uuid):
+        return f'{self._contact_all_url(phonebook_uuid)}/{contact_uuid}'
+
+    def _contact_import_url(self, phonebook_uuid):
+        return f'{self._contact_all_url(phonebook_uuid)}/import'
+
+    def _phonebook_all_url(self):
+        return f'{self.base_url}'
+
+    def _phonebook_one_url(self, phonebook_uuid):
+        return f'{self._phonebook_all_url()}/{phonebook_uuid}'
+
+----------------------------------------
+
+File: commands/phonebook_deprecated.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class DeprecatedPhonebookCommand(DirdRESTCommand):
+    resource = 'tenants'
+
+    def create(
+        self, token=None, tenant=None, phonebook_body=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._phonebook_all_url(tenant)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_all_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, token=None, tenant=None, tenant_uuid=None, **kwargs):
+        url = self._phonebook_all_url(tenant)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list_contacts(
+        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._contact_all_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(
+        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        phonebook_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=phonebook_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get(
+        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
+    ):
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(url, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def edit_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_uuid=None,
+        contact_body=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.put(url, json=contact_body, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete_contact(
+        self,
+        token=None,
+        tenant=None,
+        phonebook_id=None,
+        contact_uuid=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.delete(url, params=kwargs, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def import_csv(
+        self,
+        tenant=None,
+        phonebook_id=None,
+        csv_text=None,
+        encoding=None,
+        token=None,
+        tenant_uuid=None,
+        **kwargs,
+    ):
+        url = self._contact_import_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
+        headers['Content-Type'] = content_type
+        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def _contact_all_url(self, tenant, phonebook_id):
+        return f'{self._phonebook_one_url(tenant, phonebook_id)}/{"contacts"}'
+
+    def _contact_one_url(self, tenant, phonebook_id, contact_uuid):
+        return f'{self._contact_all_url(tenant, phonebook_id)}/{contact_uuid}'
+
+    def _contact_import_url(self, tenant, phonebook_id):
+        return f'{self._contact_all_url(tenant, phonebook_id)}/import'
+
+    def _phonebook_all_url(self, tenant):
+        return f'{self.base_url}/{tenant}/phonebooks'
+
+    def _phonebook_one_url(self, tenant, phonebook_id):
+        return f'{self._phonebook_all_url(tenant)}/{phonebook_id}'
+
+----------------------------------------
+
+File: commands/phonebook_source.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_source_command import SourceCommand
+
+
+class Command(SourceCommand):
+    resource = 'backends/phonebook/sources'
+
+----------------------------------------
+
+File: commands/profiles.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class ProfilesCommand(DirdRESTCommand):
+    resource = 'profiles'
+
+    def create(self, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.post(self.base_url, json=body, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, profile_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, profile_uuid])
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def edit(self, profile_uuid, body, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, profile_uuid])
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def get(self, profile_uuid, tenant_uuid=None, token=None):
+        headers = self.build_headers(tenant_uuid, token)
+        url = '/'.join([self.base_url, profile_uuid])
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/sources.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class SourcesCommand(DirdRESTCommand):
+    resource = 'sources'
+
+    def list(self, tenant_uuid=None, token=None, **kwargs):
+        headers = self.build_headers(tenant_uuid, token)
+        r = self.session.get(self.base_url, params=kwargs, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
+
+
+class StatusCommand(DirdRESTCommand):
+    resource = 'status'
+
+    def get(self, tenant_uuid=None):
+        headers = self.build_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/tests/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/tests/test_backends.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from hamcrest import assert_that, equal_to
+from accent_lib_rest_client.tests.command import RESTCommandTestCase
+
+from ..backends import BackendsCommand
+
+
+class TestBackends(RESTCommandTestCase):
+    Command = BackendsCommand
+
+    def test_list_contacts_from_source(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.list_contacts_from_source(
+            backend='accent', source_uuid='source-uuid', uuids=['uuid1', 'uuid2']
+        )
+
+        self.session.get.assert_called_once_with(
+            'backends/accent/sources/source-uuid/contacts',
+            params={'uuid': 'uuid1,uuid2'},
+            headers={'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+----------------------------------------
+
+File: commands/tests/test_directories.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from unittest.mock import sentinel as s
+
+from hamcrest import assert_that, equal_to, none
+from accent_lib_rest_client.tests.command import RESTCommandTestCase
+
+from ..directories import DirectoriesCommand
+
+
+class TestDirectories(RESTCommandTestCase):
+    Command = DirectoriesCommand
+
+    def test_lookup(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.lookup(profile='default', term='Alice', token=s.token)
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/lookup/default',
+            params={'term': 'Alice'},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_lookup_when_not_200(self):
+        self.session.get.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(self.command.lookup, profile='my_profile')
+
+    def test_lookup_user(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.lookup_user(
+            profile='default',
+            user_uuid='user-uuid',
+            term='Alice',
+            token=s.token,
+        )
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/lookup/default/user-uuid',
+            params={'term': 'Alice'},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_reverse(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.reverse(
+            profile='default', user_uuid='abcd-1234', exten='1234', token=s.token
+        )
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/reverse/default/abcd-1234',
+            params={'exten': '1234'},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_reverse_deprecated_version(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.reverse(
+            profile='default', accent_user_uuid='abcd-1234', exten='1234', token=s.token
+        )
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/reverse/default/abcd-1234',
+            params={'exten': '1234'},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_reverse_when_not_200(self):
+        self.session.get.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(
+            self.command.reverse, profile='my_profile', accent_user_uuid='abcd-1234'
+        )
+
+    def test_headers(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.headers(profile='default', token=s.token)
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/lookup/default/headers',
+            params={},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_headers_when_not_200(self):
+        self.session.get.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(self.command.headers, profile='my_profile')
+
+    def test_favorites(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.favorites(profile='default', token=s.token)
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/favorites/default',
+            params={},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_favorites_when_not_200(self):
+        self.session.get.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(self.command.favorites, profile='my_profile')
+
+    def test_new_favorite(self):
+        self.session.put.return_value = self.new_response(204)
+
+        result = self.command.new_favorite('my_directory', 'my_contact', token=s.token)
+
+        self.session.put.assert_called_once_with(
+            f'{self.base_url}/favorites/my_directory/my_contact',
+            params={},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, none())
+
+    def test_new_favorite_when_not_204(self):
+        self.session.put.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(
+            self.command.new_favorite, 'my_directory', 'my_contact'
+        )
+
+    def test_remove_favorite(self):
+        self.session.delete.return_value = self.new_response(204)
+
+        result = self.command.remove_favorite(
+            'my_directory', 'my_contact', token=s.token
+        )
+
+        self.session.delete.assert_called_once_with(
+            f'{self.base_url}/favorites/my_directory/my_contact',
+            params={},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, none())
+
+    def test_remove_favorite_when_not_204(self):
+        self.session.delete.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(
+            self.command.remove_favorite, 'my_directory', 'my_contact'
+        )
+
+    def test_personal(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.personal(profile='default', token=s.token)
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/personal/default',
+            params={},
+            headers={'X-Auth-Token': s.token, 'Accept': 'application/json'},
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_personal_when_not_200(self):
+        self.session.get.return_value = self.new_response(404)
+
+        self.assertRaisesHTTPError(self.command.personal, profile='my_profile')
+
+----------------------------------------
+
+File: commands/tests/test_personal.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from unittest.mock import sentinel as s
+
+from hamcrest import assert_that, equal_to, is_, none
+from accent_lib_rest_client.tests.command import RESTCommandTestCase
+
+from ..personal import PersonalCommand
+
+
+class TestPersonal(RESTCommandTestCase):
+    Command = PersonalCommand
+
+    def test_list(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.list(token=s.token)
+
+        self.session.get.assert_called_once_with(
+            self.base_url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_purge(self):
+        self.session.delete.return_value = self.new_response(204)
+
+        result = self.command.purge(token=s.token)
+
+        self.session.delete.assert_called_once_with(
+            self.base_url,
+            params={},
+            headers={
+                'Accept': 'application/json',
+                'X-Auth-Token': s.token,
+            },
+        )
+        assert_that(result, none())
+
+    def test_list_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.list, s.token)
+
+    def test_export_csv(self):
+        csv = 'firstname\r\nAlice'
+        self.session.get.return_value = self.new_response(200, body=csv)
+
+        result = self.command.export_csv(token=s.token)
+
+        self.session.get.assert_called_once_with(
+            self.base_url,
+            params={'format': 'text/csv'},
+            headers={'X-Auth-Token': s.token},
+        )
+        assert_that(result, equal_to(csv))
+
+    def test_export_csv_when_empty(self):
+        self.session.get.return_value = self.new_response(204)
+
+        result = self.command.export_csv(token=s.token)
+
+        assert_that(result, is_(none()))
+
+    def test_export_csv_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.export_csv, s.token)
+
+    def test_get(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+        contact_id = 'my_contact_id'
+
+        result = self.command.get(contact_id, token=s.token)
+
+        self.session.get.assert_called_once_with(
+            f'{self.base_url}/{contact_id}',
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_get_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.get, 'my_contact_id', s.token)
+
+    def test_import_csv(self):
+        self.session.post.return_value = self.new_response(
+            201, json={'return': 'value'}
+        )
+        csv = 'firstname,lastname\ndaniel,martini'
+
+        result = self.command.import_csv(csv, encoding='cp1252', token=s.token)
+
+        self.session.post.assert_called_once_with(
+            f'{self.base_url}/import',
+            data=csv,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Content-Type': 'text/csv; charset=cp1252',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_import_csv_when_not_201(self):
+        self.session.post.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.import_csv, 'firstname,lastname\ndaniel,martini'
+        )
+
+    def test_create(self):
+        self.session.post.return_value = self.new_response(
+            201, json={'return': 'value'}
+        )
+        contact = {'firstname': 'Alice'}
+
+        result = self.command.create(contact, token=s.token)
+
+        self.session.post.assert_called_once_with(
+            self.base_url,
+            json=contact,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_create_when_not_201(self):
+        self.session.post.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.create, {'firstname': 'Alice'}, s.token)
+
+    def test_edit(self):
+        self.session.put.return_value = self.new_response(200, json={'return': 'value'})
+        contact_id = 'my_contact_id'
+        contact = {'firstname': 'Alice'}
+
+        result = self.command.edit(contact_id, contact, token=s.token)
+
+        self.session.put.assert_called_once_with(
+            f'{self.base_url}/{contact_id}',
+            json=contact,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_edit_when_not_200(self):
+        self.session.put.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.edit,
+            'my_contact_id',
+            {'firstname': 'Alice'},
+            s.token,
+        )
+
+    def test_delete(self):
+        self.session.delete.return_value = self.new_response(204)
+        contact_id = 'my_contact_id'
+
+        result = self.command.delete(contact_id, token=s.token)
+
+        self.session.delete.assert_called_once_with(
+            f'{self.base_url}/{contact_id}',
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, none())
+
+    def test_delete_when_not_201(self):
+        self.session.delete.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.delete, {'firstname': 'Alice'}, s.token)
+
+----------------------------------------
+
+File: commands/tests/test_phonebook.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from unittest.mock import sentinel as s
+from uuid import uuid4
+
+from hamcrest import assert_that, equal_to, none
+from accent_lib_rest_client.tests.command import RESTCommandTestCase
+
+from ..phonebook import PhonebookCommand
+
+
+class TestPhonebookContact(RESTCommandTestCase):
+    Command = PhonebookCommand
+    command: PhonebookCommand
+
+    def setUp(self):
+        super().setUp()
+        self.tenant = str(uuid4())
+        self.phonebook_uuid = str(uuid4())
+
+    def test_create(self):
+        self.session.post.return_value = self.new_response(
+            201, json={'return': 'value'}
+        )
+        contact_body = {'firstname': 'Foo', 'lastname': 'Bar'}
+
+        result = self.command.create_contact(
+            phonebook_uuid=self.phonebook_uuid,
+            token=s.token,
+            contact_body=contact_body,
+            tenant_uuid=self.tenant,
+        )
+
+        url = f'{self.base_url}/{self.phonebook_uuid}/contacts'
+        self.session.post.assert_called_once_with(
+            url,
+            json=contact_body,
+            params={},
+            headers={
+                'Accept': 'application/json',
+                'X-Auth-Token': s.token,
+                'Accent-Tenant': self.tenant,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_create_when_not_201(self):
+        self.session.post.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.create,
+            phonebook_body={},
+            tenant_uuid=self.tenant,
+            token=s.token,
+        )
+
+    def test_list(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.list_contacts(
+            tenant_uuid=self.tenant, token=s.token, phonebook_uuid=self.phonebook_uuid
+        )
+
+        url = f'{self.base_url}/{self.phonebook_uuid}/contacts'
+        self.session.get.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': self.tenant,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_list_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.list_contacts,
+            token=s.token,
+            tenant_uuid=self.tenant,
+            phonebook_uuid=self.phonebook_uuid,
+        )
+
+    def test_get(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.get_contact(
+            token=s.token,
+            tenant_uuid=self.tenant,
+            phonebook_uuid=self.phonebook_uuid,
+            contact_uuid=s.contact_uuid,
+        )
+
+        url = f'{self.base_url}/' f'{self.phonebook_uuid}/contacts/{s.contact_uuid}'
+        self.session.get.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': self.tenant,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_get_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.get_contact,
+            token=s.token,
+            tenant_uuid=self.tenant,
+            phonebook_uuid=self.phonebook_uuid,
+            contact_uuid=s.contact_uuid,
+        )
+
+    def test_edit(self):
+        self.session.put.return_value = self.new_response(200, json={'return': 'value'})
+        body = {'firstname': 'test'}
+
+        result = self.command.edit_contact(
+            tenant_uuid=self.tenant,
+            phonebook_uuid=self.phonebook_uuid,
+            contact_uuid=s.contact_uuid,
+            contact_body=body,
+            token=s.token,
+        )
+
+        url = f'{self.base_url}/' f'{self.phonebook_uuid}/contacts/{s.contact_uuid}'
+
+        self.session.put.assert_called_once_with(
+            url,
+            json=body,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': self.tenant,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_edit_when_not_200(self):
+        self.session.put.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.edit_contact)
+
+    def test_delete(self):
+        self.session.delete.return_value = self.new_response(204)
+
+        result = self.command.delete_contact(
+            tenant_uuid=self.tenant,
+            phonebook_uuid=self.phonebook_uuid,
+            contact_uuid=s.contact_uuid,
+            token=s.token,
+        )
+
+        url = f'{self.base_url}/' f'{self.phonebook_uuid}/contacts/{s.contact_uuid}'
+        self.session.delete.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': self.tenant,
+            },
+        )
+        assert_that(result, none())
+
+    def test_delete_when_not_204(self):
+        self.session.delete.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.delete,
+            token=s.token,
+            tenant_uuid=s.tenant,
+            phonebook_uuid=s.phonebook_uuid,
+        )
+
+
+class TestPhonebook(RESTCommandTestCase):
+    Command = PhonebookCommand
+
+    def test_create(self):
+        self.session.post.return_value = self.new_response(
+            201, json={'return': 'value'}
+        )
+        phonebook_body = {'name': 'main', 'description': 'The main phonebook'}
+        tenant = 'mytenant'
+
+        result = self.command.create(
+            tenant_uuid=tenant, token=s.token, phonebook_body=phonebook_body
+        )
+
+        url = f'{self.base_url}'
+        self.session.post.assert_called_once_with(
+            url,
+            json=phonebook_body,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': tenant,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_create_when_not_201(self):
+        self.session.post.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.create,
+            phonebook_body={'name': 'main'},
+            tenant_uuid='thetenant',
+            token=s.token,
+        )
+
+    def test_list_phonebook(self):
+        tenant = 'mytenant'
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.list(tenant_uuid=tenant, token=s.token)
+
+        url = f'{self.base_url}'
+        self._assert_get(url=url, token=s.token, tenant=tenant)
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_list_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.list, s.token, 'mytenant')
+
+    def test_get(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        tenant, phonebook_uuid = 'atenant', 42
+
+        result = self.command.get(
+            token=s.token, tenant_uuid=tenant, phonebook_uuid=phonebook_uuid
+        )
+
+        url = f'{self.base_url}/{phonebook_uuid}'
+        self._assert_get(url, s.token, tenant)
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_get_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.get,
+            token=s.token,
+            tenant_uuid='mytenant',
+            phonebook_uuid=42,
+        )
+
+    def test_edit(self):
+        self.session.put.return_value = self.new_response(200, json={'return': 'value'})
+        tenant = 'thetenant'
+        phonebook_uuid = 'my_contact_id'
+        body = {'name': 'test'}
+
+        result = self.command.edit(
+            tenant_uuid=tenant,
+            phonebook_uuid=phonebook_uuid,
+            phonebook_body=body,
+            token=s.token,
+        )
+
+        url = f'{self.base_url}/{phonebook_uuid}'
+        self.session.put.assert_called_once_with(
+            url,
+            json=body,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': tenant,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_edit_when_not_200(self):
+        self.session.put.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.edit,
+            tenant_uuid=s.tenant,
+            phonebook_body={},
+            token=s.token,
+        )
+
+    def test_delete(self):
+        self.session.delete.return_value = self.new_response(204)
+        phonebook_uuid, tenant = 'my_phonebook_uuid', 'zetenant'
+
+        result = self.command.delete(
+            tenant_uuid=tenant, phonebook_uuid=phonebook_uuid, token=s.token
+        )
+
+        url = f'{self.base_url}/{phonebook_uuid}'
+        self.session.delete.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+                'Accent-Tenant': tenant,
+            },
+        )
+        assert_that(result, none())
+
+    def test_delete_when_not_204(self):
+        self.session.delete.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.delete,
+            token=s.token,
+            tenant_uuid=s.tenant,
+            phonebook_uuid=s.phonebook_uuid,
+        )
+
+    def _assert_get(self, url, token, tenant=None):
+        headers = {
+            'X-Auth-Token': token,
+            'Accept': 'application/json',
+        }
+        if tenant:
+            headers['Accent-Tenant'] = tenant
+        self.session.get.assert_called_once_with(url, params={}, headers=headers)
+
+----------------------------------------
+
+File: commands/tests/test_phonebook_deprecated.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from unittest.mock import sentinel as s
+
+from hamcrest import assert_that, equal_to, none
+from accent_lib_rest_client.tests.command import RESTCommandTestCase
+
+from ..phonebook_deprecated import DeprecatedPhonebookCommand
+
+
+class TestPhonebookContactDeprecated(RESTCommandTestCase):
+    Command = DeprecatedPhonebookCommand
+
+    def setUp(self):
+        super().setUp()
+        self.tenant = 'atenant'
+        self.phonebook_id = 42
+
+    def test_create(self):
+        self.session.post.return_value = self.new_response(
+            201, json={'return': 'value'}
+        )
+        contact_body = {'firstname': 'Foo', 'lastname': 'Bar'}
+
+        result = self.command.create_contact(
+            tenant=self.tenant,
+            phonebook_id=self.phonebook_id,
+            token=s.token,
+            contact_body=contact_body,
+        )
+
+        url = f'{self.base_url}/{self.tenant}/phonebooks/{self.phonebook_id}/contacts'
+        self.session.post.assert_called_once_with(
+            url,
+            json=contact_body,
+            params={},
+            headers={
+                'Accept': 'application/json',
+                'X-Auth-Token': s.token,
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_create_when_not_201(self):
+        self.session.post.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.create, phonebook_body={}, tenant=self.tenant, token=s.token
+        )
+
+    def test_list(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.list_contacts(
+            tenant=self.tenant, token=s.token, phonebook_id=self.phonebook_id
+        )
+
+        url = f'{self.base_url}/{self.tenant}/phonebooks/{self.phonebook_id}/contacts'
+        self.session.get.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_list_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.list_contacts,
+            token=s.token,
+            tenant=self.tenant,
+            phonebook_id=self.phonebook_id,
+        )
+
+    def test_get(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.get_contact(
+            token=s.token,
+            tenant=self.tenant,
+            phonebook_id=self.phonebook_id,
+            contact_uuid=s.contact_uuid,
+        )
+
+        url = (
+            f'{self.base_url}/{self.tenant}/phonebooks/'
+            f'{self.phonebook_id}/contacts/{s.contact_uuid}'
+        )
+        self.session.get.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_get_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.get_contact,
+            token=s.token,
+            tenant=self.tenant,
+            phonebook_id=self.phonebook_id,
+            contact_uuid=s.contact_uuid,
+        )
+
+    def test_edit(self):
+        self.session.put.return_value = self.new_response(200, json={'return': 'value'})
+        body = {'firstname': 'test'}
+
+        result = self.command.edit_contact(
+            tenant=self.tenant,
+            phonebook_id=self.phonebook_id,
+            contact_uuid=s.contact_uuid,
+            contact_body=body,
+            token=s.token,
+        )
+
+        url = (
+            f'{self.base_url}/{self.tenant}/phonebooks/'
+            f'{self.phonebook_id}/contacts/{s.contact_uuid}'
+        )
+
+        self.session.put.assert_called_once_with(
+            url,
+            json=body,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_edit_when_not_200(self):
+        self.session.put.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.edit_contact)
+
+    def test_delete(self):
+        self.session.delete.return_value = self.new_response(204)
+
+        result = self.command.delete_contact(
+            tenant=self.tenant,
+            phonebook_id=self.phonebook_id,
+            contact_uuid=s.contact_uuid,
+            token=s.token,
+        )
+
+        url = (
+            f'{self.base_url}/{self.tenant}/phonebooks/'
+            f'{self.phonebook_id}/contacts/{s.contact_uuid}'
+        )
+        self.session.delete.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, none())
+
+    def test_delete_when_not_204(self):
+        self.session.delete.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.delete,
+            token=s.token,
+            tenant=s.tenant,
+            phonebook_id=s.phonebook_id,
+        )
+
+
+class TestPhonebook(RESTCommandTestCase):
+    Command = DeprecatedPhonebookCommand
+
+    def test_create(self):
+        self.session.post.return_value = self.new_response(
+            201, json={'return': 'value'}
+        )
+        phonebook_body = {'name': 'main', 'description': 'The main phonebook'}
+        tenant = 'mytenant'
+
+        result = self.command.create(
+            tenant=tenant, token=s.token, phonebook_body=phonebook_body
+        )
+
+        url = f'{self.base_url}/mytenant/phonebooks'
+        self.session.post.assert_called_once_with(
+            url,
+            json=phonebook_body,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_create_when_not_201(self):
+        self.session.post.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.create,
+            phonebook_body={'name': 'main'},
+            tenant='thetenant',
+            token=s.token,
+        )
+
+    def test_list_phonebook(self):
+        tenant = 'mytenant'
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        result = self.command.list(tenant=tenant, token=s.token)
+
+        url = f'{self.base_url}/mytenant/phonebooks'
+        self._assert_get(url=url, token=s.token)
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_list_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(self.command.list, s.token, 'mytenant')
+
+    def test_get(self):
+        self.session.get.return_value = self.new_response(200, json={'return': 'value'})
+
+        tenant, phonebook_id = 'atenant', 42
+
+        result = self.command.get(
+            token=s.token, tenant=tenant, phonebook_id=phonebook_id
+        )
+
+        url = f'{self.base_url}/{tenant}/phonebooks/{phonebook_id}'
+        self._assert_get(url, s.token)
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_get_when_not_200(self):
+        self.session.get.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.get,
+            token=s.token,
+            tenant='mytenant',
+            phonebook_id=42,
+        )
+
+    def test_edit(self):
+        self.session.put.return_value = self.new_response(200, json={'return': 'value'})
+        tenant = 'thetenant'
+        phonebook_id = 'my_contact_id'
+        body = {'name': 'test'}
+
+        result = self.command.edit(
+            tenant=tenant, phonebook_id=phonebook_id, phonebook_body=body, token=s.token
+        )
+
+        url = f'{self.base_url}/{tenant}/phonebooks/{phonebook_id}'
+        self.session.put.assert_called_once_with(
+            url,
+            json=body,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, equal_to({'return': 'value'}))
+
+    def test_edit_when_not_200(self):
+        self.session.put.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.edit,
+            tenant=s.tenant,
+            phonebook_body={},
+            token=s.token,
+        )
+
+    def test_delete(self):
+        self.session.delete.return_value = self.new_response(204)
+        phonebook_id, tenant = 'my_phonebook_id', 'zetenant'
+
+        result = self.command.delete(
+            tenant=tenant, phonebook_id=phonebook_id, token=s.token
+        )
+
+        url = f'{self.base_url}/{tenant}/phonebooks/{phonebook_id}'
+        self.session.delete.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': s.token,
+                'Accept': 'application/json',
+            },
+        )
+        assert_that(result, none())
+
+    def test_delete_when_not_204(self):
+        self.session.delete.return_value = self.new_response(401)
+
+        self.assertRaisesHTTPError(
+            self.command.delete,
+            token=s.token,
+            tenant=s.tenant,
+            phonebook_id=s.phonebook_id,
+        )
+
+    def _assert_get(self, url, token):
+        self.session.get.assert_called_once_with(
+            url,
+            params={},
+            headers={
+                'X-Auth-Token': token,
+                'Accept': 'application/json',
+            },
+        )
+
+----------------------------------------
+
+File: exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class DirdError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidDirdError()
+
+        if not body:
+            raise InvalidDirdError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+
+        except KeyError:
+            raise InvalidDirdError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class InvalidDirdError(Exception):
+    pass
+
+
+class DirdServiceUnavailable(DirdError):
+    pass
+
+----------------------------------------
+
+File: types.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+from __future__ import annotations
+
+from typing import TypeAlias, Union
+
+JSON: TypeAlias = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+
+----------------------------------------
+

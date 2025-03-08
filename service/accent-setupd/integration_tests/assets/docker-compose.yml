@@ -1,0 +1,61 @@
+version: '3.7'
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: '${INTEGRATION_TEST_TIMEOUT}'
+
+  nestbox:
+    image: nginx
+    ports:
+      - '443'
+    volumes:
+      - ./etc/nginx/conf.d/api.conf:/etc/nginx/conf.d/api.conf:ro
+      - ./ssl:/usr/local/share/ssl:ro
+    depends_on:
+      - nestbox-auth
+      - nestbox-deployd
+
+  nestbox-auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - '9497'
+
+  nestbox-deployd:
+    image: accentcommunications/accent-deployd-mock
+    ports:
+      - '9800'
+    command: /usr/local/bin/accent-deployd-mock.py 9800
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - '9497'
+
+  confd:
+    image: accentcommunications/accent-confd-mock
+    ports:
+      - '9486'
+
+  setupd:
+    image: accent-setupd-test
+    environment:
+      ACCENT_UUID: cd030e68-ace9-4ad4-bc4e-13c8dec67898
+    volumes:
+      - ../..:/usr/src/accent-setupd:ro
+      - ./etc/accent-setupd/conf.d/50-default-config.yml:/etc/accent-setupd/conf.d/50-default-config.yml:ro
+      - ./keys/accent-setupd-key.yml:/var/lib/accent-auth-keys/accent-setupd-key.yml:ro
+      # - '${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent'
+    ports:
+      - '9302'
+
+  sysconfd:
+    image: accentcommunications/accent-sysconfd-mock
+    ports:
+      - '8668'
+
+  webhookd:
+    image: accentcommunications/accent-webhookd-mock
+    ports:
+      - '9300'
+    command: /usr/local/bin/accent-webhookd-mock.py 9300

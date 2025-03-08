@@ -1,0 +1,15 @@
+{
+    "version": "1.1",
+    "description": "Plugin that offers no configuration service and rejects TFTP/HTTP requests.",
+    "capabilities": {
+        "*, *, *": {
+            "lines": 0,
+            "high_availability": true,
+            "function_keys": 0,
+            "expansion_modules": 0,
+            "switchboard": false,
+            "protocol": "sip",
+            "type": "generic"
+        }
+    }
+}

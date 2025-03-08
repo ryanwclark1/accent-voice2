@@ -1,0 +1,41 @@
+###############################################
+# Bootstrap Builder Image
+###############################################
+FROM accentcommunications/accent-auth-cli:latest AS bootstrap-builder-base
+
+
+RUN true \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        build-essential \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSL https://install.python-poetry.org | python3 -
+
+WORKDIR $PYSETUP_PATH
+
+COPY ./library ../../library
+COPY ./service ../../service
+
+RUN true \
+    && poetry add ../../library/accent-auth-keys/ \
+    && poetry add psycopg2@^2.8.6 \
+    && poetry install --with main \
+    && rm -rf ../../library \
+    && rm -rf ../../service
+
+###############################################
+# Bootstrap Production Image
+###############################################
+FROM accentcommunications/accent-auth-cli:latest AS bootstrap-production
+COPY --from=bootstrap-builder-base $PYSETUP_PATH $PYSETUP_PATH
+
+RUN true \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        dnsutils \
+        iproute2 \
+    && mkdir -p /etc/accent-auth-keys/conf.d \
+    && mkdir -p /var/lib/accent-auth-keys

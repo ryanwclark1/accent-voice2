@@ -1,0 +1,9 @@
+debug: false
+websocket:
+  listen: 0.0.0.0
+
+auth:
+  host: auth
+
+bus:
+  host: rabbitmq

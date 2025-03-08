@@ -1,0 +1,22 @@
+{
+  "recommendations": [
+    "GitHub.copilot",
+    "CraigRBroughton.htmx-attributes",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-speech",
+    "adrianwilczynski.alpine-js-intellisense",
+    "ms-azuretools.vscode-docker",
+    "tamasfe.even-better-toml",
+    "donjayamanne.githistory",
+    "github.vscode-github-actions",
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "GitHub.vscode-pull-request-github",
+    "golang.go",
+    "ms-vscode.makefile-tools",
+    "yzhang.markdown-all-in-one",
+    "bradlc.vscode-tailwindcss",
+    "a-h.templ",
+    "redhat.vscode-yaml"
+  ]
+}

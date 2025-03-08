@@ -1,0 +1,15 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - dird
+      - db
+      - rabbitmq
+    environment:
+      TARGETS: "dird:9489 auth:9497 db:5432 rabbitmq:5672"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"

@@ -1,0 +1,55 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: '${INTEGRATION_TEST_TIMEOUT}'
+
+  chatd:
+    image: accent-chatd-test
+    environment:
+      ACCENT_UUID: 00000000-0000-0000-0000-0000000c4a7d
+    volumes:
+      - ../..:/usr/src/accent-chatd:ro
+      - ./etc/accent-chatd/conf.d/50-default.yml:/etc/accent-chatd/conf.d/50-default.yml:ro
+      # - '${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent'
+      # - '${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus'
+      # - '${LOCAL_GIT_REPOS}/accent-auth-client/accent_auth_client:/opt/venv/lib/python3.9/site-packages/accent_auth_client'
+      # - '${LOCAL_GIT_REPOS}/accent-confd-client/accent_confd_client:/opt/venv/lib/python3.9/site-packages/accent_confd_client'
+    ports:
+      - '9304'
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - '9497'
+
+  postgres:
+    image: accentcommunications/accent-chatd-db
+    ports:
+      - "5432"
+
+  amid:
+    image: accentcommunications/accent-amid-mock
+    ports:
+      - 9491
+
+  confd:
+    image: accentcommunications/accent-confd-mock
+    ports:
+      - 9486
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672'
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  microsoft:
+    image: microsoft-graphql-mock
+    ports:
+      - 9991
+    volumes:
+      - ./microsoft_graphql:/usr/local/share/microsoft
+    command: python3 -u /usr/local/share/microsoft/mock_microsoft.py 9991

@@ -1,0 +1,17 @@
+services:
+  apiclient:
+  build:
+    context: .
+    args:
+      # Add the values for the build arguments you want to set
+      - VARIANT=1.22-bookworm
+    dockerfile: ../service/apiclient/.devcontainer/Dockerfile
+  env_file:
+    # Ensure that the variables in .env match the same variables in devcontainer.json
+    - ../service/apiclient/.devcontainer/.env
+
+  volumes:
+    - ../service/apiclient:/workspaces:cached
+
+  # Overrides default command so things don't shut down after the process ends.
+  command: sleep infinity

@@ -1,0 +1,19 @@
+debug: false
+rest_api:
+  listen: 0.0.0.0
+
+ajam:
+  host: asterisk
+  username: accent_amid # accent_amid
+  password: password123
+
+ami:
+  host: asterisk
+  username: accent_amid # accent_amid
+  password: password123
+
+bus:
+  host: rabbitmq
+
+auth:
+  host: auth

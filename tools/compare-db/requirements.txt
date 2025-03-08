@@ -1,0 +1,11 @@
+git+https://github.com/accentcommunications/accent-dao
+git+https://github.com/accentcommunications/accent-lib-python  # from accent-dao
+alembic==1.0.0
+migra[pg]
+packaging  # missing from sqlbag -> from migra
+pytz==2019.1
+pyyaml
+sh
+sqlalchemy-utils==0.37.2
+sqlalchemy==1.2.18
+unidecode==1.0.23  # from alembic scripts

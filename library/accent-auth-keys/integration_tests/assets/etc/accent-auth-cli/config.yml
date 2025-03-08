@@ -1,0 +1,8 @@
+auth:
+    username: accent-auth-cli
+    password: secret
+    backend: accent_user
+    host: auth
+    port: 9497
+    prefix: null
+    https: False

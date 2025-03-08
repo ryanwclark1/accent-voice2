@@ -1,0 +1,197 @@
+paths:
+  /directories/input/{profile}/fanvil:
+    get:
+      summary:
+        Given informations about how make request lookup for Fanvil Unified
+        IP Phones
+      description: |
+        The `input` query will return a XML to give informations about how make request
+        lookup for Fanvil Unified IP Phones.
+      operationId: fanvil_input
+      tags:
+        - fanvil
+        - directories
+      produces:
+        - text/xml
+      responses:
+        "200":
+          description: XML to make request lookup
+          schema:
+            $ref: "#/definitions/FanvilIPPhoneInput"
+      parameters:
+        - $ref: "#/parameters/Profile"
+        - $ref: "#/parameters/AccentUserUUID"
+        - $ref: "#/parameters/AcceptLanguage"
+  /directories/lookup/{profile}/fanvil:
+    get:
+      summary: Search for contacts with Fanvil Unified IP Phones
+      description: |
+        The `lookup` query will return a list of result matching the searched term
+        formated for Fanvil Unified IP Phones. The results will be retrieved from a lookup query to
+        accent-dird.
+      operationId: fanvil_lookup
+      tags:
+        - fanvil
+        - directories
+      produces:
+        - text/xml
+      responses:
+        "200":
+          description: A list of contacts
+          schema:
+            $ref: "#/definitions/FanvilIPPhoneDirectory"
+        "400":
+          $ref: "#/responses/LimitOffsetInvalid"
+        "404":
+          $ref: "#/responses/ProfileInvalid"
+        "503":
+          $ref: "#/responses/AnotherServiceUnavailable"
+      parameters:
+        - $ref: "#/parameters/Profile"
+        - $ref: "#/parameters/AccentUserUUID"
+        - $ref: "#/parameters/Term"
+        - $ref: "#/parameters/Limit16"
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/AcceptLanguage"
+  /directories/lookup/{profile}/fanvil-v2:
+    get:
+      summary: Search for contacts with Fanvil Unified IP Phones for V2
+      description: |
+        The `lookup` query will return a list of result matching the searched term
+        formated for Fanvil Unified IP Phones. The results will be retrieved from a lookup query to
+        accent-dird.
+      operationId: fanvil_lookup_v2
+      tags:
+        - fanvil
+        - directories
+      produces:
+        - text/xml
+      responses:
+        "200":
+          description: A list of contacts
+          schema:
+            $ref: "#/definitions/PhoneBook"
+        "400":
+          $ref: "#/responses/LimitOffsetInvalid"
+        "404":
+          $ref: "#/responses/ProfileInvalid"
+        "503":
+          $ref: "#/responses/AnotherServiceUnavailable"
+      parameters:
+        - $ref: "#/parameters/Profile"
+        - $ref: "#/parameters/AccentUserUUID"
+        - $ref: "#/parameters/Term"
+        - $ref: "#/parameters/Offset"
+        - $ref: "#/parameters/AcceptLanguage"
+  /fanvil/users/{user_uuid}/services/dnd/enable:
+    get:
+      summary: Enable the DND service for a particular user.
+      description: |
+        This `dnd` service endpoint will enable the user DND service through
+        `accent-confd`.
+      operationId: fanvil_user_service_dnd_enable
+      tags:
+        - fanvil
+        - services
+      produces:
+        - text/xml
+      responses:
+        "200":
+          description: The status was changed
+        "400":
+          description: Provided data is incorrect or a required field is missing
+          schema:
+            $ref: "#/responses/InvalidDataError"
+        "404":
+          $ref: "#/responses/NoSuchUser"
+      parameters:
+        - $ref: "#/parameters/UserUUID"
+  /fanvil/users/{user_uuid}/services/dnd/disable:
+    get:
+      summary: Disable the DND service for a particular user.
+      description: |
+        This `dnd` service endpoint will disable the user DND service through
+        `accent-confd`.
+      operationId: fanvil_user_service_dnd_disable
+      tags:
+        - fanvil
+        - services
+      produces:
+        - text/xml
+      responses:
+        "200":
+          description: The status was changed
+        "400":
+          description: Provided data is incorrect or a required field is missing
+          schema:
+            $ref: "#/responses/InvalidDataError"
+        "404":
+          $ref: "#/responses/NoSuchUser"
+      parameters:
+        - $ref: "#/parameters/UserUUID"
+
+definitions:
+  PhoneBook:
+    properties:
+      DirectoryEntry:
+        type: array
+        items:
+          $ref: "#/definitions/FanvilDirectoryEntryV2"
+  FanvilDirectoryEntryV2:
+    properties:
+      Name:
+        type: string
+      Telephone:
+        type: string
+      Mobile:
+        type: string
+      Other:
+        type: string
+      Ring:
+        type: string
+      Group:
+        type: string
+  FanvilIPPhoneDirectory:
+    properties:
+      DirectoryEntry:
+        type: array
+        items:
+          $ref: "#/definitions/FanvilDirectoryEntry"
+      SoftKeyItem:
+        type: array
+        items:
+          $ref: "#/definitions/FanvilSoftKeyItem"
+  FanvilDirectoryEntry:
+    properties:
+      Name:
+        type: string
+      Telephone:
+        type: string
+  FanvilSoftKeyItem:
+    properties:
+      Name:
+        type: string
+      URL:
+        type: string
+      position:
+        type: integer
+  FanvilIPPhoneInput:
+    properties:
+      Title:
+        type: string
+      Prompt:
+        type: string
+      URL:
+        type: string
+      InputItem:
+        $ref: "#/definitions/FanvilInputItem"
+  FanvilInputItem:
+    properties:
+      DisplayName:
+        type: string
+      QueryStringParam:
+        type: string
+      DefaultValue:
+        type: string
+      InputFlags:
+        type: string

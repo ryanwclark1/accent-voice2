@@ -1,0 +1,17 @@
+debug: true
+listen_address: 0.0.0.0
+auth:
+  host: auth
+  username: accent-agid
+  password: secret-key
+bus:
+  host: rabbitmq
+db_uri: postgresql://asterisk:password123@postgres/asterisk
+calld:
+  host: calld
+confd:
+  host: confd
+agentd:
+  host: agentd
+dird:
+  host: dird

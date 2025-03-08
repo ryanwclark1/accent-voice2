@@ -1,0 +1,161 @@
+paths:
+  /switchboards:
+    get:
+      summary: List switchboards
+      description: '**Required ACL:** `confd.switchboards.read`'
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/recurse'
+        - $ref: '#/parameters/order'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: List of switchboards
+          schema:
+            type: object
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/definitions/Switchboard'
+    post:
+      summary: Create a switchboard
+      description: '**Required ACL:** `confd.switchboard.create`'
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - name: body
+          in: body
+          description: Switchboard parameters
+          required: true
+          schema:
+            $ref: '#/definitions/Switchboard'
+      tags:
+        - switchboards
+      responses:
+        '201':
+          description: The switchboard has been created
+          schema:
+            $ref: '#/definitions/Switchboard'
+        '400':
+          $ref: '#/responses/CreateError'
+  /switchboards/{switchboard_uuid}:
+    get:
+      summary: Get a switchboard
+      description: '**Required ACL:** `confd.switchboards.{switchboard_uuid}.read`'
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/switchboard_uuid'
+      responses:
+        '200':
+          description: Switchboard
+          schema:
+            $ref: '#/definitions/Switchboard'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    put:
+      summary: Update a switchboard
+      description: '**Required ACL:** `confd.switchboards.{switchboard_uuid}.update`'
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/switchboard_uuid'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Switchboard'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceUpdated'
+        '400':
+          $ref: '#/responses/UpdateError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      summary: Delete a switchboard
+      description: '**Required ACL:** `confd.switchboard.{switchboard_uuid}.delete`'
+      tags:
+        - switchboards
+      parameters:
+        - $ref: '#/parameters/tenantuuid'
+        - $ref: '#/parameters/switchboard_uuid'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceDeleted'
+        '404':
+          $ref: '#/responses/NotFoundError'
+definitions:
+  Switchboard:
+    type: object
+    allOf:
+    - properties:
+        uuid:
+          type: string
+          readOnly: true
+        tenant_uuid:
+          type: string
+          description: The UUID of the tenant
+          readOnly: true
+        name:
+          type: string
+        timeout:
+          type: integer
+          description: Maximum time allowed for a call to be queued. When the timeout expires, the call is redirected to the no-answer fallback.
+        queue_music_on_hold:
+          type: string
+        waiting_room_music_on_hold:
+          type: string
+    - $ref: '#/definitions/SwitchboardRelationIncalls'
+    - $ref: '#/definitions/SwitchboardRelationMembers'
+    - $ref: '#/definitions/SwitchboardRelationFallbacks'
+  SwitchboardRelationBase:
+    properties:
+        uuid:
+          type: string
+          description: Switchboard UUID
+          readOnly: true
+        name:
+          type: string
+          description: Switchboard name
+  SwitchboardRelationFallbacks:
+    properties:
+      fallbacks:
+        readOnly: true
+        $ref: '#/definitions/SwitchboardFallbacks'
+  SwitchboardRelationIncalls:
+    properties:
+      incalls:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/SwitchboardRelationIncall'
+  SwitchboardRelationIncall:
+    allOf:
+      - $ref: '#/definitions/IncallRelationBase'
+      - $ref: '#/definitions/IncallRelationExtensions'
+  SwitchboardRelationMembers:
+    properties:
+      members:
+        readOnly: true
+        $ref: '#/definitions/SwitchboardRelationMemberUsers'
+  SwitchboardRelationMemberUsers:
+    properties:
+      users:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/UserRelationBase'
+parameters:
+  switchboard_uuid:
+    name: switchboard_uuid
+    in: path
+    required: True
+    type: string

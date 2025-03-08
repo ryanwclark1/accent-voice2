@@ -1,0 +1,145 @@
+#!/usr/bin/python3
+from __future__ import annotations
+
+import json
+from urllib.parse import urlencode
+from urllib.request import (
+    HTTPDigestAuthHandler,
+    HTTPPasswordMgrWithDefaultRealm,
+    Request,
+    build_opener,
+)
+
+
+# Basic configuration provd for Accent
+
+# FIXME: since authentication has been added to provd, this script does not work.
+# To fix it, it would be necessary to get a valid token from accent-auth and use accent-provd-client
+
+
+ADDRESS = '192.168.113.99'  # Accent ip address
+PROVD_ADDRESS = '192.168.32.41'
+
+
+class HTTPRequest:
+    def __init__(
+        self,
+        host: str = '127.0.0.1',
+        port: int = 80,
+        headers: dict[str, str] | None = None,
+        username: str | None = None,
+        password: str | None = None,
+    ):
+        self._host = host
+        self._port = port
+        self._url = f'{self._host}:{self._port}'
+        self._headers = {'Content-Type': 'application/json', 'Accept': 'text/plain'}
+        if headers:
+            self._headers |= headers
+        self._opener = self._build_opener(username, password)
+
+    def run(self, uri: str = '', qry=None, data=None):
+        url = self._url
+        if uri:
+            url = f'{url}/{uri}'
+        if qry is not None:
+            url = f'{url}?{self._build_qry(qry)}'
+        if isinstance(data, dict):
+            data = json.dumps(data)
+        request = Request(url=url, data=data, headers=self._headers)
+        handle = self._opener.open(request)
+        try:
+            response = handle.read()
+            response_code = handle.code
+        finally:
+            handle.close()
+        return response_code, response
+
+    def _build_opener(self, username, password):
+        handlers = []
+        if username is not None and password is not None:
+            pwd_manager = HTTPPasswordMgrWithDefaultRealm()
+            pwd_manager.add_password(None, self._host, username, password)
+            handlers.append(HTTPDigestAuthHandler(pwd_manager))
+        return build_opener(*handlers)
+
+    def _build_qry(self, qry):
+        return urlencode(qry)
+
+
+def provd():
+    config = {
+        'X_type': 'registrar',
+        'id': 'default',
+        'deletable': False,
+        'displayname': 'local',
+        'parent_ids': [],
+        'raw_config': {'X_key': 'accent'},
+        'proxy_main': ADDRESS,
+        'registrar_main': ADDRESS,
+    }
+    data = {'config': config}
+    provd_http_request.run('provd/cfg_mgr/configs', data=data)
+
+    config = {
+        'X_type': 'internal',
+        'id': 'base',
+        'deletable': False,
+        'displayname': 'base',
+        'parent_ids': [],
+        'raw_config': {
+            'X_key': 'accent',
+            'ntp_enabled': True,
+            'ntp_ip': ADDRESS,
+            'X_accent_phonebook_ip': ADDRESS,
+        },
+    }
+    data = {'config': config}
+    provd_http_request.run('provd/cfg_mgr/configs', data=data)
+
+    config = {
+        'X_type': 'device',
+        'deletable': False,
+        'id': 'defaultconfigdevice',
+        'label': 'Default config device',
+        'parent_ids': [],
+        'raw_config': {'ntp_enabled': True, 'ntp_ip': ADDRESS},
+    }
+    data = {'config': config}
+    provd_http_request.run('provd/cfg_mgr/configs', data=data)
+
+    config = {
+        'X_type': 'internal',
+        'deletable': False,
+        'id': 'autoprov',
+        'parent_ids': ['base', 'defaultconfigdevice'],
+        'raw_config': {
+            'sccp_call_managers': {'1': {'ip': ADDRESS}},
+            'ip': ADDRESS,
+            'http_port': 8667,
+            'sip_lines': {
+                '1': {
+                    'display_name': 'Autoprov',
+                    'number': 'autoprov',
+                    'password': 'autoprov',
+                    'proxy_ip': ADDRESS,
+                    'registrar_ip': ADDRESS,
+                    'username': 'apYgW48ycP',
+                }
+            },
+        },
+        'role': 'autocreate',
+    }
+    data = {'config': config}
+    provd_http_request.run('provd/cfg_mgr/configs', data=data)
+
+
+if __name__ == '__main__':
+    provd_http_request = HTTPRequest(
+        f'http://{PROVD_ADDRESS}',
+        8666,
+        {'Content-Type': 'application/vnd.accent.provd+json'},
+        'admin',
+        'admin',
+    )
+    provd()

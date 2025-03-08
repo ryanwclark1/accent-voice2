@@ -1,0 +1,21 @@
+debug: false
+rest_api:
+  listen: 0.0.0.0
+
+db_uri: postgresql://asterisk:password123@postgres/accent
+cel_db_uri: postgresql://asterisk:password123@postgres/accent
+
+celery:
+  broker: amqp://guest:guest@rabbitmq:5672
+
+bus:
+  host: rabbitmq
+
+auth:
+  host: auth
+
+confd:
+  host: confd
+
+smtp:
+  host: NOT-IMPLEMENTED

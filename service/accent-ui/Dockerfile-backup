@@ -1,0 +1,31 @@
+FROM python:3.12-slim-bullseye AS compile-image
+
+RUN python -m venv /opt/venv
+# Activate virtual env
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY ./library /usr/src/library
+COPY ./service /usr/src/service
+
+RUN ls -la /usr/src/service/ \
+    && ls -la /usr/src/service/accent-ui
+
+WORKDIR /usr/src/service/accent-ui
+RUN pip install -r requirements.txt
+RUN python setup.py install
+
+FROM python:3.12-slim-bullseye AS build-image
+COPY --from=compile-image /opt/venv /opt/venv
+
+
+COPY ./service/accent-ui/etc/accent-ui /etc/accent-ui
+RUN true \
+  && adduser --quiet --system --group --home /var/lib/accent-ui accent-ui \
+  && mkdir -p /etc/accent-ui/conf.d \
+  && install -o accent-ui -g accent-ui /dev/null /var/log/accent-ui.log
+
+EXPOSE 9296
+
+# Activate virtual env
+ENV PATH="/opt/venv/bin:$PATH"
+CMD ["accent-ui", "-d"]

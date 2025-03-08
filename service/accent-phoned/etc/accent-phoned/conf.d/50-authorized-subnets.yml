@@ -1,0 +1,2 @@
+!exec
+command: accent-confgen phoned/config.yml

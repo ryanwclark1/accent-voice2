@@ -1,0 +1,153 @@
+paths:
+  /users/presences:
+    get:
+      operationId: list_presences
+      summary: List presences
+      description: '**Required ACL:** `chatd.users.presences.read`'
+      tags:
+      - presences
+      parameters:
+      - $ref: '#/parameters/tenant_uuid'
+      - $ref: '#/parameters/recurse'
+      - $ref: '#/parameters/user_uuid_query'
+      responses:
+        '200':
+          description: Presences list
+          schema:
+            $ref: '#/definitions/PresenceList'
+  /users/{user_uuid}/presences:
+    get:
+      operationId: get_user_presence
+      summary: Get user presence
+      description: '**Required ACL:** `chatd.users.{user_uuid}.presences.read`'
+      tags:
+      - presences
+      parameters:
+      - $ref: '#/parameters/tenant_uuid'
+      - $ref: '#/parameters/user_uuid'
+      responses:
+        '200':
+          description: Presence
+          schema:
+            $ref: '#/definitions/Presence'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    put:
+      operationId: update_user_presence
+      summary: Update user presence
+      description: '**Required ACL:** `chatd.users.{user_uuid}.presences.update`'
+      tags:
+      - presences
+      parameters:
+      - $ref: '#/parameters/tenant_uuid'
+      - $ref: '#/parameters/user_uuid'
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/Presence'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceUpdated'
+        '400':
+          $ref: '#/responses/InvalidRequest'
+        '404':
+          $ref: '#/responses/NotFoundError'
+
+definitions:
+  PresenceList:
+    title: PresenceList
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Presence'
+      filtered:
+        type: integer
+        description: The number of result matching the searched terms
+      total:
+        type: integer
+        description: The number of results without filter
+
+  Presence:
+    title: Presence
+    properties:
+      uuid:
+        type: string
+        description: The UUID of the user
+        readOnly: true
+      tenant_uuid:
+        type: string
+        description: The UUID of the tenant of the user
+        readOnly: true
+      state:
+        type: string
+        description: The presence state of the user.
+        enum:
+          - available
+          - away
+          - unavailable
+          - invisible
+      status:
+        type: string
+        description: An extended description of the user presence.
+      do_not_disturb:
+        type: boolean
+        description: The "do not disturb" status of the user.
+        readOnly: true
+      last_activity:
+        type: string
+        description: The date time in UTC of the user's last activity. The value is updated when the user changes his state explicitly. The value is NULL for new user.
+        readOnly: True
+      line_state:
+        type: string
+        description:
+          "The current state of the most prioritize state line.
+           The prioritization of each state is the following:
+           ringing > progressing > holding > talking > available > unavailable"
+        readOnly: True
+        enum:
+          - available
+          - holding
+          - ringing
+          - progressing
+          - talking
+          - unavailable
+      lines:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/Line'
+      mobile:
+        type: boolean
+        readOnly: true
+        description: |
+          If the user uses a mobile application and can be considered reachable.
+
+          mobile will be true in the following situations
+
+          * The user has a mobile refresh token
+          * The user has a mobile session
+      connected:
+        type: boolean
+        readOnly: true
+        description: If the user has active connections.
+    required:
+      - state
+
+  Line:
+    properties:
+      id:
+        type: integer
+        readOnly: True
+      state:
+        type: string
+        description: The current state of the line.
+        readOnly: True
+        enum:
+          - available
+          - holding
+          - ringing
+          - progressing
+          - talking
+          - unavailable

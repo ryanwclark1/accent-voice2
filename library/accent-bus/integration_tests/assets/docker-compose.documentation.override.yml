@@ -1,0 +1,24 @@
+services:
+  sync:
+    profiles:
+      - dummy
+
+  spec-generator:
+    image: local/bus-documentation-test
+    build:
+      context: ../..
+      dockerfile: contribs/Dockerfile
+    volumes:
+      - ../../contribs/documentation.py:/app/documentation.py:ro
+      - ../../accent_bus:/app/accent_bus:ro
+
+  spec-validator:
+    image: asyncapi/cli
+
+  rabbitmq:
+    profiles:
+      - dummy
+
+  bus:
+    profiles:
+      - dummy

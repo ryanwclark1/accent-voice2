@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block content_header %}
+  {{ build_breadcrumbs([
+    { 'name': _('Schedule'), 'link': url_for('.ScheduleView:index'), 'icon': 'clock-o', 'svg': 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' }
+  ]) }}
+{% endblock %}
+
+{% block content %}
+  <section class="content">
+    {% call build_list_containers(_('Schedules'), 'long-arrow-right') %}
+      {% call build_list_table() %}
+        {% call build_list_table_headers(get=url_for('.ScheduleView:get', id=''), delete=url_for('.ScheduleView:delete', id='')) %}
+          <th>{{ _('Name') }}</th>
+          <th>{{ _('Timezone') }}</th>
+        {% endcall %}
+        {% call(schedule) build_list_table_rows(resource_list['items']) %}
+          <td>{{ schedule.name }}</td>
+          <td>{{ schedule.timezone }}</td>
+        {% endcall %}
+      {% endcall %}
+    {% endcall %}
+
+    {% call build_hidden_add_containers(_('Add Schedule')) %}
+      {% call build_form() %}
+        {% call add_default_fields(form=form, submit_value=_('Add')) %}
+          {{ render_field(form.name) }}
+          {{ render_field(form.timezone,
+                          data_listing_href=url_for(listing_urls['timezone']),
+                          data_allow_clear='true',
+                          data_placeholder=_('Choose Timezone')) }}
+          {{ render_field(form.closed_destination, with_label=False) }}
+        {% endcall %}
+      {% endcall %}
+    {% endcall %}
+  </section>
+{% endblock %}

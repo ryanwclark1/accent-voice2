@@ -1,0 +1,14 @@
+FROM accentcommunications/accent-base-db
+
+COPY . /usr/src/accent-auth
+WORKDIR /usr/src/accent-auth
+ENV ALEMBIC_DB_URI=postgresql://accent-auth:password123@localhost/accent-auth
+
+RUN true \
+    && python3 setup.py install \
+    && pg_start \
+    && accent-auth-init-db --user postgres --pg_db_uri postgresql:///postgres --auth_db_uri postgresql:///accent-auth --db accent-auth --owner accent-auth --password password123 \
+    && (cd /usr/src/accent-auth && python3 -m alembic.config -c accent_auth/database/alembic.ini upgrade head) \
+    && pg_stop \
+    && true
+USER postgres

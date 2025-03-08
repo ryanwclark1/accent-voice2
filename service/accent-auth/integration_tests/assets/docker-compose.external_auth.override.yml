@@ -1,0 +1,14 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - postgres
+      - rabbitmq
+      - smtp
+      - oauth2sync
+    environment:
+      TARGETS: "smtp:25 oauth2sync:80 auth:9497 postgres:5432 rabbitmq:5672"
+
+  auth:
+    volumes:
+      - "./etc/accent-auth/conf.d/asset.external_auth.yml:/etc/accent-auth/conf.d/asset.external_auth.yml"

@@ -1,0 +1,8 @@
+FROM accentcommunications/accent-phoned
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+COPY . /usr/src/accent-phoned
+
+WORKDIR /usr/src/accent-phoned
+RUN pip install -e .

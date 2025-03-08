@@ -1,0 +1,526 @@
+File: accent_lib_rest_client/exceptions.py
+Please review for update
+
+from typing import Any
+
+import httpx
+from pydantic import ValidationError
+
+from .models import ErrorResponse
+
+
+class ClientError(Exception):
+    """Base exception for client errors."""
+
+    pass
+
+
+class InvalidArgumentError(ClientError):
+    """Raised when an argument is invalid."""
+
+    def __init__(self, argument_name: str) -> None:
+        super().__init__(f'Invalid value for argument "{argument_name}"')
+
+
+class ResponseValidationError(ClientError):
+    """Raised when response validation fails."""
+
+    def __init__(self, validation_error: ValidationError) -> None:
+        self.validation_error = validation_error
+        super().__init__(str(validation_error))
+
+
+class HTTPError(ClientError):
+    """Enhanced HTTP error with structured error data."""
+
+    def __init__(self, response: httpx.Response) -> None:
+        try:
+            error_data = ErrorResponse.model_validate(response.json())
+            message = (
+                f"{error_data.message}: {error_data.details}"
+                if error_data.details
+                else error_data.message
+            )
+        except (ValueError, ValidationError):
+            message = f"HTTP {response.status_code}: {response.text}"
+
+        super().__init__(message)
+        self.response = response
+
+----------------------------------------
+
+File: accent_lib_rest_client/__init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .command import HTTPCommand, RESTCommand
+
+
+__all__ = ['HTTPCommand', 'RESTCommand']
+
+----------------------------------------
+
+File: accent_lib_rest_client/client.py
+Please review for update
+
+# Copyright 2024 Accent Communications
+
+from __future__ import annotations
+
+import logging
+import os
+import sys
+from typing import Any, TypeVar
+from uuid import UUID
+
+import httpx
+from stevedore import extension
+from urllib3 import disable_warnings
+
+from .models import ClientConfig, RequestParameters, TenantConfig, TokenConfig, URLConfig
+
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound="BaseClient")
+
+global PLUGINS_CACHE
+PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
+
+
+class BaseClient:
+    """Base REST client with modern features."""
+
+    namespace: str | None = None
+
+    def __init__(
+        self,
+        host: str,
+        https: bool = True,
+        port: int = 443,
+        prefix: str | None = None,
+        tenant_uuid: UUID | str | None = None,
+        timeout: int = 10,
+        token: str | None = None,
+        user_agent: str = "",
+        verify_certificate: bool = True,
+        version: str = "",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the REST client with validation."""
+        # Convert string UUID to UUID object if necessary
+        if isinstance(tenant_uuid, str):
+            tenant_uuid = UUID(tenant_uuid)
+
+        # Create and validate configuration
+        self.config = ClientConfig(
+            host=host,
+            https=https,
+            port=port,
+            prefix=prefix,
+            tenant_uuid=tenant_uuid,
+            timeout=timeout,
+            token=token,
+            user_agent=user_agent or os.path.basename(sys.argv[0]),
+            verify_certificate=verify_certificate,
+            version=version,
+        )
+
+        # Initialize URL configuration
+        self._url_config = URLConfig(
+            scheme="https" if self.config.https else "http",
+            host=self.config.host,
+            port=self.config.port,
+            prefix=self.config.prefix,
+            version=self.config.version
+        )
+
+        # Initialize tenant and token configurations
+        self._tenant_config = TenantConfig(tenant_uuid=tenant_uuid)
+        self._token_config = TokenConfig(token=token) if token else None
+
+        # Set internal state from validated config
+        for key, value in self.config.model_dump().items():
+            setattr(self, f"_{key}", value)
+
+        if kwargs:
+            logger.debug(
+                "%s received unexpected arguments: %s",
+                self.__class__.__name__,
+                list(kwargs.keys()),
+            )
+
+        self._load_plugins()
+
+    @property
+    def tenant_uuid(self) -> UUID | None:
+        """Get the current tenant UUID."""
+        return self._tenant_config.tenant_uuid if self._tenant_config else None
+
+    @tenant_uuid.setter
+    def tenant_uuid(self, value: UUID | str | None) -> None:
+        """Set the tenant UUID for subsequent requests."""
+        if isinstance(value, str):
+            value = UUID(value)
+
+        if self._tenant_config is None:
+            self._tenant_config = TenantConfig(tenant_uuid=value)
+        else:
+            self._tenant_config.tenant_uuid = value
+
+    def set_token(self, token: str) -> None:
+        """Set the authentication token for subsequent requests."""
+        self._token_config = TokenConfig(token=token)
+        self._token = token
+
+    def session(self, parameters: RequestParameters | None = None) -> httpx.Client:
+        """Create an HTTP client session with the current configuration."""
+        headers = {"Connection": "close"}
+
+        if self._token_config and self._token_config.token:
+            headers["X-Auth-Token"] = self._token_config.token
+
+        if self._tenant_config and self._tenant_config.tenant_uuid:
+            headers["Accent-Tenant"] = str(self._tenant_config.tenant_uuid)
+
+        if self._user_agent:
+            headers["User-agent"] = self._user_agent
+
+        verify = self._verify_certificate if self._https else False
+        if not verify:
+            disable_warnings()
+
+        return httpx.Client(
+            timeout=self._timeout,
+            headers=headers,
+            verify=verify,
+            follow_redirects=True
+        )
+
+    def url(self, *fragments: str) -> str:
+        """Build a complete URL for the API endpoint."""
+        return self._url_config.build_url(*fragments)
+
+    def is_server_reachable(self) -> bool:
+        """Check if the server is reachable."""
+        try:
+            with self.session() as client:
+                client.head(self.url())
+            return True
+        except httpx.HTTPStatusError:
+            return True
+        except httpx.RequestError as e:
+            logger.debug("Server unreachable: %s", e)
+            return False
+
+----------------------------------------
+
+File: accent_lib_rest_client/command.py
+Please review for update
+
+# Copyright 2024 Accent Communications
+
+from __future__ import annotations
+
+from abc import ABCMeta, abstractmethod
+from typing import Any, ClassVar, TypeVar
+from uuid import UUID
+
+import httpx
+from pydantic import BaseModel, ValidationError
+
+from .client import BaseClient
+from .exceptions import HTTPError, ResponseValidationError
+
+
+T = TypeVar('T', bound=BaseModel)
+ResponseType = TypeVar('ResponseType')
+
+
+class HTTPCommand:
+    """Base class for HTTP commands."""
+
+    def __init__(self, client: BaseClient) -> None:
+        self._client = client
+
+    @property
+    def session(self) -> httpx.Client:
+        return self._client.session()
+
+    def validate_response(
+        self,
+        response: httpx.Response,
+        model: type[T] | None = None
+    ) -> Any:
+        """Validate and parse response data.
+
+        Args:
+            response: HTTP response to validate
+            model: Optional Pydantic model to validate against
+
+        Returns:
+            Validated response data
+
+        Raises:
+            HTTPError: For HTTP-level errors
+            ResponseValidationError: For validation errors
+        """
+        try:
+            response.raise_for_status()
+            data = response.json()
+
+            if model is not None:
+                try:
+                    return model.model_validate(data)
+                except ValidationError as e:
+                    raise ResponseValidationError(e) from e
+
+            return data
+
+        except httpx.HTTPStatusError as e:
+            raise HTTPError(e.response) from e
+
+
+class RESTCommand(HTTPCommand, metaclass=ABCMeta):
+    """Base class for REST commands with validation."""
+
+    _headers: ClassVar[dict[str, str]] = {'Accept': 'application/json'}
+
+    @property
+    @abstractmethod
+    def resource(self) -> str:
+        """Resource endpoint for this command."""
+        pass
+
+    def __init__(self, client: BaseClient) -> None:
+        super().__init__(client)
+        self.base_url = self._client.url(self.resource)
+        self.timeout = self._client.timeout
+
+    def _get_headers(
+        self,
+        tenant_uuid: UUID | str | None = None,
+        **kwargs: str
+    ) -> dict[str, str]:
+        """Build headers for the request.
+
+        Args:
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional header values
+
+        Returns:
+            Complete headers dictionary
+        """
+        headers = dict(self._headers)
+
+        if tenant_uuid:
+            headers['Accent-Tenant'] = str(tenant_uuid)
+
+        headers.update(kwargs)
+        return headers
+
+    def get(
+        self,
+        *path_segments: str,
+        response_model: type[T] | None = None,
+        **kwargs: Any
+    ) -> Any:
+        """Perform GET request.
+
+        Args:
+            *path_segments: URL path segments to append
+            response_model: Optional response validation model
+            **kwargs: Additional request parameters
+
+        Returns:
+            Validated response data
+        """
+        url = self._client.url(self.resource, *path_segments)
+        return self.handle_request('GET', url, response_model, **kwargs)
+
+    def post(
+        self,
+        *path_segments: str,
+        response_model: type[T] | None = None,
+        **kwargs: Any
+    ) -> Any:
+        """Perform POST request.
+
+        Args:
+            *path_segments: URL path segments to append
+            response_model: Optional response validation model
+            **kwargs: Additional request parameters
+
+        Returns:
+            Validated response data
+        """
+        url = self._client.url(self.resource, *path_segments)
+        return self.handle_request('POST', url, response_model, **kwargs)
+
+    def put(
+        self,
+        *path_segments: str,
+        response_model: type[T] | None = None,
+        **kwargs: Any
+    ) -> Any:
+        """Perform PUT request.
+
+        Args:
+            *path_segments: URL path segments to append
+            response_model: Optional response validation model
+            **kwargs: Additional request parameters
+
+        Returns:
+            Validated response data
+        """
+        url = self._client.url(self.resource, *path_segments)
+        return self.handle_request('PUT', url, response_model, **kwargs)
+
+    def delete(
+        self,
+        *path_segments: str,
+        response_model: type[T] | None = None,
+        **kwargs: Any
+    ) -> Any:
+        """Perform DELETE request.
+
+        Args:
+            *path_segments: URL path segments to append
+            response_model: Optional response validation model
+            **kwargs: Additional request parameters
+
+        Returns:
+            Validated response data
+        """
+        url = self._client.url(self.resource, *path_segments)
+        return self.handle_request('DELETE', url, response_model, **kwargs)
+
+----------------------------------------
+
+File: accent_lib_rest_client/example_cmd.py
+Please review for update
+
+# Copyright 2024 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+
+class ExampleCommand(RESTCommand):
+    """Example REST command implementation."""
+
+    resource = 'test'
+
+    def __call__(self) -> bytes:
+        """Execute the test command."""
+        return self.test()
+
+    def test(self) -> bytes:
+        """Perform test request."""
+        response = self.get(response_model=None)
+        return response.content
+
+----------------------------------------
+
+File: accent_lib_rest_client/models.py
+Please review for update
+
+from datetime import datetime
+
+from pydantic import UUID4, BaseModel, Field, field_validator
+
+
+class URLConfig(BaseModel):
+    """Configuration for URL formatting."""
+    scheme: str
+    host: str
+    port: int | None = None
+    prefix: str | None = None
+    version: str = ""
+
+    @field_validator('scheme')
+    @classmethod
+    def validate_scheme(cls, v: str) -> str:
+        if v not in ('http', 'https'):
+            raise ValueError('Scheme must be either http or https')
+        return v
+
+    @field_validator('prefix')
+    @classmethod
+    def validate_prefix(cls, v: str | None) -> str:
+        if not v:
+            return ''
+        return v if v.startswith('/') else f'/{v}'
+
+    @field_validator('version')
+    @classmethod
+    def validate_version(cls, v: str) -> str:
+        if not v:
+            return ''
+        return v if v.startswith('/') else f'/{v}'
+
+    def build_base_url(self) -> str:
+        """Build the base URL from configuration."""
+        base = f"{self.scheme}://{self.host}"
+        if self.port:
+            base += f":{self.port}"
+        if self.prefix:
+            base += self.prefix
+        if self.version:
+            base += self.version
+        return base
+
+    def build_url(self, *fragments: str) -> str:
+        """Build complete URL with optional path fragments."""
+        base = self.build_base_url()
+        if not fragments:
+            return base
+
+        path = '/'.join(str(fragment) for fragment in fragments)
+        return f"{base}/{path}"
+
+
+class RequestParameters(BaseModel):
+    """Base model for request parameters."""
+    tenant_uuid: str | None = None
+    timeout: int | None = None
+    verify_ssl: bool = True
+
+
+class ErrorResponse(BaseModel):
+    """Standard error response format."""
+    message: str
+    error_id: str | None = None
+    details: str | None = None
+    timestamp: datetime | None = None
+    resource: str | None = None
+
+
+class ClientConfig(BaseModel):
+    """Client configuration with validation."""
+    host: str
+    https: bool = True
+    port: int = Field(default=443, gt=0, lt=65536)
+    prefix: str | None = None
+    tenant_uuid: UUID4 | None = None
+    timeout: int = Field(default=10, gt=0)
+    token: str | None = None
+    user_agent: str = Field(default="")
+    verify_certificate: bool = True
+    version: str = ""
+
+
+class TenantConfig(BaseModel):
+    """Configuration for tenant management."""
+    tenant_uuid: UUID4 | None = None
+    tenant_enabled: bool = True
+
+
+class TokenConfig(BaseModel):
+    """Configuration for token management."""
+    token: str
+    token_type: str = "Bearer"
+    expires_at: str | None = None
+
+----------------------------------------
+

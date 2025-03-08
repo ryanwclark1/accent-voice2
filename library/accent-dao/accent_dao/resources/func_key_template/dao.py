@@ -1,0 +1,38 @@
+# Copyright 2023 Accent Communications
+
+from accent_dao.helpers.db_manager import daosession
+from accent_dao.helpers.db_utils import flush_session
+
+from accent_dao.resources.func_key_template.persistor import build_persistor
+
+
+@daosession
+def search(session, tenant_uuids=None, **parameters):
+    persistor = build_persistor(session, tenant_uuids=tenant_uuids)
+    return persistor.search(parameters)
+
+
+@daosession
+def create(session, template):
+    persistor = build_persistor(session)
+    with flush_session(session):
+        return persistor.create(template)
+
+
+@daosession
+def get(session, template_id, tenant_uuids=None):
+    persistor = build_persistor(session, tenant_uuids=tenant_uuids)
+    return persistor.get(template_id)
+
+
+@daosession
+def edit(session, template):
+    persistor = build_persistor(session)
+    with flush_session(session):
+        return persistor.edit(template)
+
+
+@daosession
+def delete(session, template):
+    persistor = build_persistor(session)
+    return persistor.delete(template)

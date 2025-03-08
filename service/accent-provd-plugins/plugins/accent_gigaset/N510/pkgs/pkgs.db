@@ -1,0 +1,15 @@
+[pkg_N510-fw]
+description: Firmware for Gigaset N510 IP PRO
+description_fr: Micrologiciel pour Gigaset N510 IP PRO
+version: 42.262.00.000.000
+files: N510-fw
+install: gigasetn510-fw
+
+[install_gigasetn510-fw]
+a-b: unzip $FILE1
+
+[file_N510-fw]
+filename: accent-gigaset-N510-42.462.zip
+url: http://provd.accentvoice.io/firmwares/gigaset/accent-gigaset-N510-42.462.zip
+size: 161056418
+sha1sum: 911667f1d68afbc3f2409907517b307b5c05a55c

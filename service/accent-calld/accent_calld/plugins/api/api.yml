@@ -1,0 +1,117 @@
+swagger: "2.0"
+info:
+  title: accent-calld
+  description: Control your calls from a REST API
+  version: 1.0.0
+  contact:
+    name: Accent Dev Team
+    url: https://accentvoice.io/
+    email: help@accentservices.com
+  x-logo:
+    url: "https://accentvoice.io/images/logo-black.svg"
+    backgroundColor: "#FAFAFA"
+    altText: "Accent Logo"
+schemes:
+  - http
+basePath: /1.0
+produces:
+  - application/json
+x-accent-port: 9500
+x-accent-name: calld
+securityDefinitions:
+  accent_auth_token:
+    type: apiKey
+    name: X-Auth-Token
+    in: header
+security:
+  - accent_auth_token: []
+responses:
+  AnotherServiceUnavailable:
+    description:
+      Another service is unavailable (e.g. accent-auth, accent-confd, Asterisk,
+      ...)
+    schema:
+      $ref: "#/definitions/Error"
+  NotFoundError:
+    description: The resource requested was not found on the server
+    schema:
+      $ref: "#/definitions/Error"
+  InvalidRequest:
+    description: Invalid request
+    schema:
+      $ref: "#/definitions/Error"
+definitions:
+  Error:
+    title: Error
+    description: Error message for the client
+    properties:
+      message:
+        description: Human readable explanation of the error
+        type: string
+      error_id:
+        description:
+          Identifier of the type of error. It is more precise than the
+          HTTP status code.
+        type: string
+      details:
+        description:
+          Additional information about the error. The keys are specific
+          to each error.
+        type: object
+      timestamp:
+        description: Time when the error occured
+        type: number
+        format: timestamp
+parameters:
+  TokenID:
+    name: token
+    in: query
+    description: The token's ID
+    type: string
+  TenantUUID:
+    name: Accent-Tenant
+    type: string
+    in: header
+    description: "The tenant's UUID, defining the ownership of a given resource."
+    required: false
+  direction:
+    required: false
+    name: direction
+    in: query
+    type: string
+    enum:
+      - asc
+      - desc
+    description: Sort list of items in 'asc' (ascending) or 'desc' (descending) order
+  limit:
+    required: false
+    name: limit
+    in: query
+    type: integer
+    description: Maximum number of items to return in the list
+  offset:
+    required: false
+    name: offset
+    in: query
+    type: integer
+    description: Number of items to skip over in the list. Useful for pagination.
+  order:
+    required: false
+    name: order
+    in: query
+    type: string
+    description: Name of the field to use for sorting the list of items returned.
+  search:
+    required: false
+    name: search
+    in: query
+    type: string
+    description:
+      Search term for filtering a list of items. Only items with a field
+      containing the search term will be returned.
+  DTMFDigits:
+    name: digits
+    in: query
+    description: Digits to send via DTMF. Must contain only `0-9*#`.
+    required: True
+    type: string

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -x
+
+source /var/lib/accent/helpers
+
+db_host='postgres'
+db_port='5432'
+db_name='accent'
+db_username='asterisk'
+db_password='password123'
+db_uri="postgresql://$db_username:$db_password@$db_host:$db_port"
+
+echo Waiting for postgres...
+wait_for_service $db_host $db_port
+
+export ALEMBIC_DB_URI="$db_uri/$db_name"
+psql_cmd="psql $db_uri/$db_name"
+if ! $psql_cmd -tA $db_name $db_username --quiet -c "SELECT count(*) from infos" > /dev/null 2>&1; then
+  echo Initializing database...
+  accent-init-db --init \
+    --pg_db_uri "$db_uri/postgres" \
+    --owner "$db_username" \
+    --password "$db_password" \
+    --db "$db_name" \
+    --app_db_uri "$db_uri/$db_name"
+fi
+
+echo Updating database...
+accent-update-db
+
+echo Waiting for asterisk documentation file...
+wait_for_file /var/lib/accent-confd/asterisk-doc/core-en_US.xml
+echo Extracting asterisk documentation...
+accent-asterisk-doc-extractor /var/lib/accent-confd/asterisk-doc/core-en_US.xml > /var/lib/accent-confd/pjsip.json
+gzip -f /var/lib/accent-confd/pjsip.json
+
+echo Waiting for key file...
+wait_for_file /var/lib/accent-auth-keys/accent-confd-key.yml
+wait_for_file /var/lib/accent-auth-keys/accent-wizard-key.yml
+
+exec "$@"

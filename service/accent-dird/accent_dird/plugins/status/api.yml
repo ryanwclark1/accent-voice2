@@ -1,0 +1,32 @@
+paths:
+  /status:
+    get:
+      summary: Print infos about internal status of accent-dird`
+      description: '**Required ACL:** `dird.status.read`'
+      tags:
+        - status
+      responses:
+        '200':
+          description: The internal infos of accent-dird
+          schema:
+            $ref: '#/definitions/StatusSummary'
+definitions:
+  StatusSummary:
+    type: object
+    properties:
+      bus_consumer:
+        $ref: '#/definitions/ComponentWithStatus'
+      master_tenant:
+        $ref: '#/definitions/ComponentWithStatus'
+      rest_api:
+        $ref: '#/definitions/ComponentWithStatus'
+  ComponentWithStatus:
+    type: object
+    properties:
+      status:
+        $ref: '#/definitions/StatusValue'
+  StatusValue:
+    type: string
+    enum:
+      - fail
+      - ok

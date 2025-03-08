@@ -1,0 +1,48 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+#extra_config_files: /etc/accent-websocketd/conf.d
+
+## Change the log level to debug level.
+#debug: false
+
+## Log file.
+#log_file: /var/log/accent-websocketd.log
+
+## Log level.
+#log_level: info
+
+## User to run process as.
+#user: accent-websocketd
+
+## WebSocket server
+#websocket:
+#
+#  # Listening address
+#  listen: 0.0.0.0
+#
+#  # Listening port
+#  port: 9502
+#
+#  ping_interval: 60
+
+## accent-auth (authentication daemon) connection settings.
+#auth:
+#  host: localhost
+#  port: 9497
+#  prefix: null
+#  https: false
+
+## Event bus (AMQP) connection settings
+#bus:
+#  host: localhost
+#  port: 5672
+#  username: guest
+#  password: guest
+#  exchange_name: accent-headers
+#  exchange_type: headers
+
+## Developer options -- do not use them
+#auth_check_strategy: dynamic

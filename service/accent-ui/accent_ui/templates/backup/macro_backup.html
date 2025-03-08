@@ -1,0 +1,544 @@
+{% macro build_menu(current_user, current_menu) %}
+  {% if current_user.is_authenticated %}
+    {% for item in current_menu.children recursive %}
+      {% if item.visible %}
+        {% if item.name == 'ipbx' %}
+          {{ _build_ipbx_menu(item, current_user) }}
+        {% else %}
+          <ul class="sidebar-menu" data-widget="tree">
+            <li class="{{ 'active' if item.active }} {{ 'multi-tenant' if item.multi_tenant }}">
+              {% if item.children %}
+                {{ _build_menu_chidren(item, current_user) }}
+              {% else %}
+                {{ _build_menu_link(item, current_user) }}
+              {% endif %}
+            </li>
+          </ul>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endmacro %}
+
+
+{% macro _build_menu_link(item, current_user) %}
+<a href="{{ item.url }}"
+  class="group flex items-center gap-x-3 rounded-md p-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+  <!-- Item SVG Icon -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+    stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round"
+      d="{{ item.svg if item.svg else 'M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'  | safe }}" />
+  </svg> {{ item.text }}
+</a>
+{% endmacro %}
+
+
+{% macro _build_menu_chidren(item, current_user) %}
+{% if item.visible %}
+<li x-data="{ isOpen: false }" class="pb-2">
+  <button @click="isOpen = !isOpen"
+    class="group flex w-full items-center justify-between p-2 text-sm font-semibold text-gray-400 hover:bg-gray-700 hover:text-white rounded-md">
+    <div class="flex items-center gap-x-3">
+      <!-- Parent SVG Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+        stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="{{ item.svg if item.svg else 'M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'  | safe }}" />
+      </svg>
+      <span>{{ item.text }}</span>
+    </div>
+    <!-- Expand/Collapse Indicator -->
+    <svg x-show="!isOpen" class="w-5 h-5 text-gray-400 group-hover:text-white" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+        clip-rule="evenodd" />
+    </svg>
+    <svg x-show="isOpen" class="w-5 h-5 text-gray-400 group-hover:text-white" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M8.22 -5.22a.75.75 0 0 1 0 -1.06L11.94 -10l-3.72 -3.72a.75.75 0 1 1 -1.06 -1.06l4.25 -4.25a.75.75 0 0 1 1.06 0l-4.25 4.25a.75.75 0 0 1 -1.06 0Z"
+        clip-rule="evenodd" />
+    </svg>
+  </button>
+  <!-- Child Items -->
+  <div x-show="isOpen" x-collapse class="mt-2 space-y-1">
+    {{ _build_chidren(item, false, current_user) }}
+  </div>
+</li>
+{% endif %}
+{% endmacro %}
+
+
+{% macro _build_ipbx_menu(item, current_user) %}
+{% set tenants = current_user.get_current_tenants() %}
+{% if tenants|length > 0 %}
+<form class="mb-4" id="working-tenant" action="{{ url_for('index.WorkingTenantView:set_working_tenant') }}">
+  <div class="form-group">
+    <select name="tenant_uuid" class="selectfield">
+      {% for tenant in tenants %}
+      {% set selected = 'selected' if session['working_tenant_uuid'] == tenant.uuid else '' %}
+      <option value="{{ tenant.uuid }}" {{ selected }}>{{ tenant.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+{% if session['working_tenant_uuid'] == current_user.get_user_tenant_uuid() %}
+<div class="alert rounded-md bg-red-50 p-4">
+  <p class="text-sm font-medium text-red-800">
+    Don't use <strong>master</strong> tenant for configuration!
+  </p>
+</div>
+{% endif %}
+{% endif %}
+
+{{ _build_chidren(item, true, current_user) }}
+{% endmacro %}
+
+
+{% macro _build_chidren(item, root, current_user) %}
+<ul class="space-y-1">
+  {% for i in item.children %}
+  {% if i.children and i.text and i.name != 'global_settings' %}
+  {{ _build_menu_chidren(i, current_user) }}
+  {% elif i.visible %}
+  <li>
+    {{ _build_menu_link(i, current_user) }}
+  </li>
+  {% endif %}
+  {% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro build_breadcrumb(name, description, icon, path) %}
+<section class="content-header bg-gray-100 py-4 px-6 shadow-md">
+  <div class="flex flex-col">
+    <div class="flex items-center gap-2">
+      <!-- Icon -->
+      <svg class="w-6 h-6 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path d="{{ icon if icon else 'M12 4.5v15m-7.5-7.5h15' }}" />
+      </svg>
+      <!-- Title -->
+      <h1 class="text-lg font-semibold text-gray-900">{{ name }}</h1>
+    </div>
+    <!-- Description -->
+    {% if description %}
+    <p class="text-sm text-gray-600 mt-1">{{ description }}</p>
+    {% endif %}
+  </div>
+  {% if path %}
+  <nav class="mt-4">
+    <ol class="flex space-x-4 text-sm text-gray-600">
+      <li class="flex items-center">
+        <!-- Icon -->
+        <svg class="w-4 h-4 text-gray-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path d="{{ icon if icon else 'M12 4.5v15m-7.5-7.5h15' }}" />
+        </svg>
+        <span>{{ name }}</span>
+      </li>
+      {% for link in path %}
+      <li class="flex items-center">
+        <svg class="w-4 h-4 text-gray-400 mx-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+        <span>{{ link }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </nav>
+  {% endif %}
+</section>
+{% endmacro %}
+
+
+{% macro build_breadcrumbs(crumbs) %}
+<section class="bg-gray-100 py-4 px-6 shadow-md">
+  <nav>
+    <ol class="flex space-x-4 text-sm text-gray-600">
+      {% for crumb in crumbs %}
+      <li class="flex items-center">
+        {% if crumb.link %}
+        <a href="{{ crumb.link }}" class="flex items-center text-blue-500 hover:text-blue-700">
+          {% if crumb.icon %}
+          <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <!-- <path d="{{ crumb.icon if crumb.icon else 'M12 4.5v15m-7.5-7.5h15' }}" /> -->
+            <path d="M12 4.5v15m-7.5-7.5h15" />
+          </svg>
+          {% endif %}
+          <span>{{ crumb.name }}</span>
+        </a>
+        {% else %}
+        {% if crumb.icon %}
+        <svg class="w-4 h-4 mr-2 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <!-- <path d="{{ crumb.icon if crumb.icon else 'M12 4.5v15m-7.5-7.5h15' }}" /> -->
+          <path d="M12 4.5v15m-7.5-7.5h15" />
+        </svg>
+        {% endif %}
+        <span>{{ crumb.name }}</span>
+        {% endif %}
+      </li>
+      {% if not loop.last %}
+      <li class="flex items-center text-gray-400">
+        <svg class="w-4 h-4 mx-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ol>
+  </nav>
+</section>
+{% endmacro %}
+
+
+{% macro build_section_row() %}
+<section class="content">
+  <div class="row">
+    {{ caller() }}
+  </div>
+</section>
+{% endmacro %}
+
+
+{% macro build_form_tabs_box(box_class, without_tab=False, container_class='col-xs-12') %}
+<div class="{{ container_class }}">
+  <div class="{{ box_class }}{{ ' box box-primary' if without_tab }}">
+    <div class="nav-tabs-custom">
+      {{ caller() }}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+
+
+{% macro build_form_box(title, subtitle, icon, box_class, container_class='col-xs-12') %}
+  {% set caller_ = caller %}
+  {% call build_form_tabs_box(box_class, without_tab=True, container_class=container_class) %}
+    {% call build_tabs_navigation() %}
+      {{ add_tab_navigation_header(title, subtitle, icon) }}
+    {% endcall %}
+    {{ caller_() }}
+  {% endcall %}
+{% endmacro %}
+
+
+{% macro build_tabs_navigation() %}
+  <ul class="nav nav-tabs pull-right">
+    {{ caller() }}
+  </ul>
+{% endmacro %}
+
+
+{% macro add_tab_navigation_item(id, name, active=False) %}
+<li class="{{ 'active' if active }}">
+  <a href="#{{ id }}" data-toggle="tab">{{ name }}</a>
+</li>
+{% endmacro %}
+
+{% macro add_tab_navigation_header(title, subtitle, icon) %}
+<li class="pull-left header"><i class="fa fa-{{ icon }}"></i> {{ title }}</li>
+<li class="pull-left header"><small>{{ subtitle }}</small></li>
+{% endmacro %}
+
+{% macro add_tab_navigation_header(title, subtitle, icon) %}
+  <li class="pull-left header">
+    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <!-- <path d="{{ icon if icon else 'M10 3L20 12H3z' }}" /> -->
+      <path d="M10 3L20 12H3z" />
+    </svg>
+    <span>{{ title }}</span>
+  </li>
+  <li class="pull-left header">
+    <small>
+      {{ subtitle }}
+    </small>
+  </li>
+{% endmacro %}
+
+
+{% macro build_tabs_content() %}
+<div class="tab-content">
+  {{ caller() }}
+</div>
+{% endmacro %}
+
+
+{% macro build_tab_content_item(id, active=False) %}
+<div class="{{ 'active' if active }} tab-pane" id="{{ id }}">
+  <div class="row">
+    <div class="col-md-12">
+      {{ caller() }}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+
+{% macro add_add_entry_button() %}
+<button class="btn btn-box-tool add-row-entry">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd"
+      d="M10 5a1 1 0 01 1 1v3h3a1 1 0 01 0 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 01 0-2h3V6a1 1 0 01 1-1z"
+      clip-rule="evenodd" />
+  </svg>
+  Add
+</button>
+{% endmacro %}
+
+
+{% macro add_delete_entry_button() %}
+<button class="btn btn-xs btn-danger delete-row-entry">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+    <path fill-rule="evenodd" d="M6 4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5a1 1 0 00-1-1H6z"
+      clip-rule="evenodd" />
+  </svg>
+  Delete
+</button>
+{% endmacro %}
+
+
+{% macro build_add_row_entry_header() %}
+<div class="box-header">
+  <div class="box-tools">
+    {{ add_add_entry_button() }}
+  </div>
+</div>
+{% endmacro %}
+
+
+{% macro build_form(method="post", action="", id="", class="", enctype="") %}
+<form id="{{ id }}" class="form-horizontal {{ class }}" method="{{ method }}" action="{{ action }}" {{ 'enctype=' ~
+  enctype if enctype }} data-toggle="validator">
+  {{ caller() }}
+</form>
+{% endmacro %}
+
+
+{% macro add_default_fields(form, submit_value, delete_action=None) %}
+  {% from "macro_render_field.html" import render_field %}
+  <div class="box-body">
+    {{ form.csrf_token }}
+    {{ caller() }}
+  </div>
+  {% if submit_value or delete_action %}
+    <div class="box-footer text-center">
+      <div class="col-sm-5"></div>
+      {{ render_field(form.submit, class_="btn btn-primary", value=submit_value, with_label=False, divclass='col-sm-1') }}
+      {% if delete_action %}
+      <div class="col-sm-1">
+        <a href="{{ delete_action }}" class="btn btn-danger">Delete</a>
+      </div>
+      <div class="col-sm-5"></div>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+
+{% macro build_list_containers(title, icon, size='12') %}
+  <div class="col-xs-{{ size }}">
+    <div class="box box-primary">
+      <div class="box-body">
+        {{ caller() }}
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+
+{% macro build_table(id=None, data_list_url='', name=None, class_name='') %}
+  <table {{ 'id=' ~ id if id }} class="table table-condensed table-striped table-bordered {{ class_name }}"
+    {{ 'data-list-url=' ~ data_list_url if data_list_url }} {{ 'data-name=' ~ name if name }}>
+    {{ caller() }}
+  </table>
+{% endmacro %}
+
+
+{% macro build_list_table(name=None, list='', id=None) %}
+  {% set caller_ = caller %}
+  {% set class_name = 'client-side' %}
+  {% set table_id = id or 'table-list' %}
+
+  {% if list %}
+    {% set table_id = "table-list-serverside" %}
+    {% set class_name = "server-side" %}
+  {% endif %}
+
+  {% call build_table(id=table_id, data_list_url=list, name=name, class_name=class_name) %}
+    {{ caller_() }}
+  {% endcall %}
+{% endmacro %}
+
+
+{% macro build_table_headers() %}
+  <thead>
+    <tr>
+      {{ caller() }}
+    </tr>
+  </thead>
+{% endmacro %}
+
+
+{% macro build_list_table_headers(get='', delete='', add='', actions_column=true,  import='', export='', update='') %}
+  <thead>
+  {% if actions_column %}
+    <tr
+      class="table-data-tooltip"
+      {% if add %}
+      data-add-url="{{ add }}"
+      data-add-tooltip="{{ _('Add') }}"
+      {% endif %}
+      {% if get %}
+      data-get-url="{{ get }}"
+      data-get-tooltip="{{ _('Edit') }}"
+      {% endif %}
+      {% if import %}
+      data-import-url="{{ import }}"
+      data-import-tooltip="{{ _('Import CSV') }}"
+      {% endif %}
+      {% if export %}
+      data-export-url="{{ export }}"
+      data-export-tooltip="{{ _('Export CSV') }}"
+      {% endif %}
+      {% if update %}
+      data-update-url="{{ update }}"
+      data-update-tooltip="{{ _('Update from CSV') }}"
+      {% endif %}
+      {% if delete %}
+      data-delete-url="{{ delete }}"
+      data-delete-tooltip="{{ _('Delete') }}"
+      {% endif %}
+    >
+  {%  else %}
+    <tr>
+  {% endif %}
+    {{ caller() }}
+    </tr>
+  </thead>
+{% endmacro %}
+
+
+{% macro build_table_body(class_='') %}
+  <tbody class="{{ class_ }}">
+    {{ caller() }}
+  </tbody>
+{% endmacro %}
+
+
+{% macro build_list_table_rows(items, non_unique_id=false) %}
+  {% set caller_ = caller %}
+  {% call build_table_body() %}
+    {% for item in items %}
+      {% set editable = false if item.editable == False else true %}
+      <tr{{ ' data-id=' ~ item.id if item.id }}{{ ' data-uuid=' ~ item.uuid if item.uuid }}{{ ' data-tenant-uuid=' ~ item.tenant_uuid if item.tenant_uuid }}{{ ' data-non-unique-id=' ~ non_unique_id if non_unique_id }}{{ ' data-get_url=' ~ item.get_url if item.get_url }} data-editable="{{ editable }}">
+        {{ caller_(item) }}
+      </tr>
+    {% endfor %}
+  {% endcall %}
+{% endmacro %}
+
+
+{% macro build_hidden_add_containers(title, name = 'view-add-form', class='') %}
+    <div class="modal fade {{ class }}" id="{{ name }}" role="dialog" aria-labelledby="{{ name }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><i class="fa fa-close"></i></button>
+            <h4 class="modal-title">{{ title }}</h4>
+          </div>
+          <div class="modal-body clearfix">{{ caller() }}</div>
+        </div>
+      </div>
+    </div>
+{% endmacro %}
+
+
+{% macro tailwind_table(id, headers, data_list_url, actions=True) %}
+<div class="overflow-x-auto">
+  <table id="{{ id }}" class="min-w-full divide-y divide-gray-200" data-list-url="{{ data_list_url }}">
+    <thead class="bg-gray-50">
+      <tr>
+        {% for header in headers %}
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          {{ header }}
+        </th>
+        {% endfor %}
+        {% if actions %}
+        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Actions
+        </th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      {{ caller() }}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro tailwind_button(text, button_class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600", **kwargs) %}
+<button class="{{ button_class }}" {% for key, value in kwargs.items() %} {{ key }}="{{ value }}" {% endfor %}>
+  {{ text }}
+</button>
+{% endmacro %}
+
+{% macro tailwind_modal(id, title, body, footer_buttons=[]) %}
+<div id="{{ id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg max-w-md w-full">
+    <div class="border-b px-6 py-4 flex justify-between items-center">
+      <h3 class="text-lg font-medium">{{ title }}</h3>
+      <button class="text-gray-500 hover:text-gray-700"
+        onclick="document.getElementById('{{ id }}').classList.add('hidden')">&times;</button>
+    </div>
+    <div class="px-6 py-4">
+      {{ body }}
+    </div>
+    {% if footer_buttons %}
+    <div class="border-t px-6 py-4 flex justify-end gap-2">
+      {% for button in footer_buttons %}
+      {{ button|safe }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro tailwind_pagination(data, current_page, total_pages) %}
+<nav class="flex justify-between items-center">
+  <button class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300" {% if current_page <=1 %}disabled{% else
+    %}onclick="window.location.href='{{ data }}?page={{ current_page - 1 }}'" {% endif %}>
+    Previous
+  </button>
+  <span class="text-sm text-gray-600">Page {{ current_page }} of {{ total_pages }}</span>
+  <button class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300" {% if current_page>= total_pages %}disabled{% else
+    %}onclick="window.location.href='{{ data }}?page={{ current_page + 1 }}'"{% endif %}>
+    Next
+  </button>
+</nav>
+{% endmacro %}
+
+{% macro tailwind_form(action, method="post", fields=[], submit_text="Submit") %}
+<form action="{{ action }}" method="{{ method }}" class="space-y-4">
+  {% for field in fields %}
+  <div>
+    <label for="{{ field.id }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+    <input type="{{ field.type }}" id="{{ field.id }}" name="{{ field.name }}"
+      class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-blue-300"
+      {% if field.required %}required{% endif %}>
+  </div>
+  {% endfor %}
+  <div>
+    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+      {{ submit_text }}
+    </button>
+  </div>
+</form>
+{% endmacro %}

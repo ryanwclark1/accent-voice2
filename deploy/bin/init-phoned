@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -x
+
+source /var/lib/accent/helpers
+
+echo Waiting for key files...
+wait_for_file /var/lib/accent-auth-keys/accent-phoned-key.yml
+
+exec "$@"

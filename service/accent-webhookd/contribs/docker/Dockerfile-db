@@ -1,0 +1,16 @@
+FROM accentcommunications/accent-base-db
+
+COPY . /usr/src/accent-webhookd
+WORKDIR /usr/src/accent-webhookd
+ENV ALEMBIC_DB_URI=postgresql://accent-webhookd:password123@localhost/accent-webhookd
+
+RUN true \
+    && python3 setup.py install \
+    && pg_start \
+    && su postgres -c "psql -c \"CREATE ROLE \\"'"'"accent-webhookd\\"'"'" LOGIN PASSWORD 'password123';\"" \
+    && su postgres -c "psql -c 'CREATE DATABASE \"accent-webhookd\" WITH OWNER \"accent-webhookd\";'" \
+    && su postgres -c "psql \"accent-webhookd\" -c 'CREATE EXTENSION \"uuid-ossp\";'" \
+    && (cd /usr/src/accent-webhookd && python3 -m alembic.config -c alembic.ini upgrade head) \
+    && pg_stop \
+    && true
+USER postgres

@@ -1,0 +1,12 @@
+FROM accentcommunications/accent-purge-db
+
+RUN pip install sqlalchemy_utils==0.36.8
+
+COPY . /usr/src/accent-call-logd
+WORKDIR /usr/src/accent-call-logd
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+RUN python setup.py develop
+
+ENTRYPOINT ["./integration_tests/docker/entrypoint.sh"]

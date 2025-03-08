@@ -1,0 +1,21 @@
+# Copyright 2023 Accent Communications
+
+from sqlalchemy.schema import Column, Index, PrimaryKeyConstraint
+from sqlalchemy.types import Boolean, Integer, String
+
+from accent_dao.helpers.db_manager import Base
+
+
+class StatQueue(Base):
+    __tablename__ = 'stat_queue'
+    __table_args__ = (
+        PrimaryKeyConstraint('id'),
+        Index('stat_queue__idx_name', 'name'),
+        Index('stat_queue__idx_tenant_uuid', 'tenant_uuid'),
+    )
+
+    id = Column(Integer)
+    name = Column(String(128), nullable=False)
+    tenant_uuid = Column(String(36), nullable=False)
+    queue_id = Column(Integer)
+    deleted = Column(Boolean, nullable=False, server_default='false')

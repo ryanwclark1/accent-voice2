@@ -1,0 +1,113 @@
+# Directory in which to place config overrides
+# extra_config_files: /etc/accent-confgend/conf.d/
+
+debug: false
+
+# Log file.
+# log_filename: /var/log/accent-confgend.log
+
+# Listen address and port the accent-confgen
+listen_address: 0.0.0.0
+# listen_port: 8669
+
+# Cache location
+# cache: /var/cache/accent-confgend
+
+db_uri: postgresql://asterisk:password123@postgres/accent
+# db_uri: postgresql://asterisk:password123@postgres:5432/asterisk?application_name=accent-confgend
+
+# Templates location
+# templates:
+  # contextsconf: /etc/accent-confgend/templates/contexts.conf
+  # modulesconf: /etc/accent-confgend/templates/modules.conf.jinja2
+
+enabled_asterisk_modules:
+  # Remove error log from asterisk
+  # app_adsiprog.so: false
+  # app_alarmreceiver.so: false
+  # app_amd.so: false
+  # app_cdr.so: false
+  # app_dictate.so: false
+  # app_externalivr.so: false
+  # app_festival.so: false
+  # app_followme.so: false
+  # app_forkcdr.so: false
+  # app_ices.so: false
+  # app_jack.so: false
+  app_meetme.so: false
+  # app_minivm.so: false
+  # app_morsecode.so: false
+  # app_mp3.so: false
+  # app_nbscat.so: false
+  # app_speech_utils.so: false
+  # app_test.so: false
+  # cdr_adaptive_odbc.so: false
+  # cdr_csv.so: false
+  # cdr_custom.so: false
+  # cdr_manager.so: false
+  # cdr_odbc.so: false
+  # cdr_pgsql.so: false
+  # cdr_radius.so: false
+  # cdr_sqlite3_custom.so: false
+  # cdr_syslog.so: false
+  # cdr_tds.so: false
+  # cel_custom.so: false
+  # cel_pgsql.so: false
+  # cel_radius.so: false
+  # cel_sqlite3_custom.so: false
+  # cel_tds.so: false
+  # chan_alsa.so: false
+  # chan_console.so: false
+  # chan_dahdi.so: false
+  # chan_mgcp.so: false
+  # chan_motif.so: false
+  # chan_oss.so: false
+  # chan_phone.so: false
+  # chan_sip.so: false
+  # chan_skinny.so: false
+  # chan_unistim.so: false
+  # codec_dahdi.so: false
+  # func_cdr.so: false
+  # func_odbc.so: false
+  # pbx_ael.so: false
+  # pbx_loopback.so: false
+  # pbx_lua.so: false
+  # res_ari_mailboxes.so: false
+  # res_calendar_caldav.so: false
+  # res_calendar_ews.so: false
+  # res_calendar_exchange.so: false
+  # res_calendar_icalendar.so: false
+  # res_calendar.so: false
+  # res_chan_stats.so: false
+  # res_clialiases.so: false
+  # res_config_ldap.so: false
+  # res_config_pgsql.so: false
+  # res_config_sqlite.so: false
+  # res_config_sqlite3.so: false
+  # res_endpoint_stats.so: true
+  # res_hep_pjsip.so: false
+  # res_hep_rtcp.so: false
+  # res_mwi_external.so: true
+  # res_phoneprov.so: false
+  # res_pjsip_config_wizard.so: false
+  # res_pjsip_phoneprov_provider.so: false
+  res_prometheus.so: true
+  # res_snmp.so: false
+  # res_stasis_mailbox.so: false
+  # res_statsd.so: true
+  # res_stun_monitor.so: false
+  res_timing_dahdi: false
+  # res_voicemail_odbc.so: false
+  # res_xmpp.so: false
+
+# Plugins to use to generate the configuration files
+# plugins:
+#   asterisk.confbridge.conf: accent
+#   asterisk.hep.conf: accent
+#   asterisk.musiconhold.conf: accent
+#   asterisk.modules.conf: accent
+#   asterisk.rtp.conf: accent
+#   asterisk.sip.conf: accent
+#   asterisk.pjsip.conf: accent
+#   provd.network.yml: accent
+#   asterisk.features.conf: accent

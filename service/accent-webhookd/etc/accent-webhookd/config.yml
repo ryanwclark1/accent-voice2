@@ -1,0 +1,109 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: "/etc/accent-webhookd/conf.d"
+
+debug: false
+log_level: info
+log_file: /var/log/accent-webhookd.log
+
+# Authentication server connection settings
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false
+  key_file: /var/lib/accent-auth-keys/accent-webhookd-key.yml
+
+# Event bus (AMQP) connection settings
+bus:
+  username: guest
+  password: guest
+  host: localhost
+  port: 5672
+  exchange_name: accent-headers
+  exchange_type: headers
+
+# Celery (task queue) connection settings
+celery:
+  broker: amqp://guest:guest@localhost:5672
+  exchange_name: celery-webhookd
+  queue_name: celery-webhookd
+  worker_pid_file: /run/accent-webhookd/celery-worker.pid
+  worker_min: 3
+  worker_max: 5
+
+# Database connection settings
+db_uri: postgresql://asterisk:password123@localhost/asterisk?application_name=accent-webhookd
+
+hook_max_attempts: 10
+
+# REST API server
+rest_api:
+  # Address to listen on
+  listen: 127.0.0.1
+
+  # Port to listen on
+  port: 9300
+
+  # CORS configuration. See Flask-CORS documentation for other values.
+  cors:
+    # Enabled by default
+    enabled: True
+
+    # Allow JSON preflight requests
+    allow_headers: [Content-Type, X-Auth-Token, Accent-Tenant]
+
+  # Maximum of concurrent threads processing requests
+
+  max_threads: 10
+
+enabled_plugins:
+  api: true
+  config: true
+  services: true
+  status: true
+  subscriptions: true
+
+enabled_services:
+  http: True
+  mobile: True
+
+mobile_apns_call_topic: org.accentvoice.voip
+mobile_apns_default_topic: org.accentvoice
+mobile_apns_host: api.push.apple.com
+mobile_apns_port: 443
+
+service_discovery:
+  enabled: false
+# Example settings to enable service discovery
+#
+# Necessary to use service discovery
+# consul:
+#   scheme: http
+#   host: consul.example.com
+#   port: 8500
+#   token: 'the_one_ring'
+#
+# # All time intervals are in seconds
+# service_discovery:
+#   # Indicates whether of not to use service discovery.
+#   enabled: true
+#   # The address that will be received by other services using service discovery.
+#   # Use "advertise_address: auto" to enable ip address detection based on
+#   # advertise_address_interface
+#   advertise_address: auto
+#   # If advertise_address is "auto" this interface will be used to find the ip
+#   # address to advertise. Ignored otherwise
+#   advertise_address_interface: eth0
+#   advertise_port: 9300
+#   # The number of seconds that consul will wait between 2 ttl messages to mark
+#   # this service as up
+#   ttl_interval: 30
+#   # The time interval before the service sends a new ttl message to consul
+#   refresh_interval: 27
+#   # The time interval to detect that the service is running when starting
+#   retry_interval: 2
+#   extra_tags: []

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Copyright 2023 Accent Communications
+
+# This script initialize role and database
+#
+# It must either be given a DB URI or be executed as user postgres with URI postgresql:///asterisk.
+
+set -e
+export PGOPTIONS='--client-min-messages=warning'
+export POPULATE_SCRIPT='/usr/share/accent-manage-db/populate/populate.sql'
+
+accent_uuid=$1
+db_uri=$2
+psql="psql $db_uri -v ON_ERROR_STOP="
+
+$psql < $POPULATE_SCRIPT
+$psql <<< "UPDATE infos SET uuid = '${accent_uuid}'";

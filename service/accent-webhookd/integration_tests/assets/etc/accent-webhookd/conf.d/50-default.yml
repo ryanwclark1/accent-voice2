@@ -1,0 +1,14 @@
+rest_api:
+  listen: 0.0.0.0
+auth:
+  host: auth
+  username: webhookd-service
+  password: webhookd-password
+db_uri: postgresql://accent-webhookd:password123@postgres/accent-webhookd
+bus:
+  host: rabbitmq
+celery:
+  broker: amqp://guest:guest@rabbitmq:5672
+enabled_plugins:
+  sentinel: True
+hook_max_attempts: 3

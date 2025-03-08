@@ -1,0 +1,402 @@
+swagger: '2.0'
+info:
+  title: accent-dird
+  description: "Contacts and directories in Accent are managed by the accent-dird daemon.\
+    \ This service provides a public API that can be used to query the directories\
+    \ that are configured on a Accent. \n\n\nA contact can contain various information\
+    \ such as a person's phone number, number, office number, department, office number,\
+    \ etc. The information displayed is selected via a profile. Directories can be\
+    \ aggregated using multiple data sources such as an LDAP server, a CSV file, another\
+    \ Accent server, etc.\n\n\nPlease refer to [the documentation](https://accentvoice.io/uc-doc)\
+    \ for further details.\n\n\nNote: The 0.1 API is currently in development. Major\
+    \ changes could still happen and new resources will be added over time."
+  version: '0.1'
+  license:
+    name: GPL v3
+    url: http://www.gnu.org/licenses/gpl.txt
+  contact:
+    name: Accent Dev Team
+    url: https://accentvoice.io/
+    email: help@accentservices.com
+  x-logo:
+    url: "https://accentvoice.io/images/logo-black.svg"
+    backgroundColor: "#FAFAFA"
+    altText: "Accent Logo"
+x-accent-port: 9489
+x-accent-name: dird
+schemes:
+- http
+basePath: /0.1
+consumes:
+- application/json
+produces:
+- application/json
+securityDefinitions:
+  accent_auth_token:
+    type: apiKey
+    name: X-Auth-Token
+    in: header
+security:
+- accent_auth_token: []
+responses:
+  InvalidParameters:
+    description: Invalid parameters
+    schema:
+      $ref: '#/definitions/Error'
+  ProfileInvalid:
+    description: The profile does not exist
+    schema:
+      $ref: '#/definitions/Error'
+  AnotherServiceUnavailable:
+    description: Another service is unavailable (e.g. accent-auth, postgresql, ...)
+    schema:
+      $ref: '#/definitions/Error'
+  LimitOffsetInvalid:
+    description: The limit or offset should be positive
+    schema:
+      $ref: '#/definitions/Error'
+  DuplicateFavorite:
+    description: The contact has already been favorited
+    schema:
+      $ref: '#/definitions/Error'
+  DuplicateContact:
+    description: This contact already exists
+    schema:
+      $ref: '#/definitions/Error'
+parameters:
+  ContactID:
+    name: contact_id
+    in: path
+    type: string
+    required: true
+    description: The ID of contact.
+  direction:
+    required: false
+    name: direction
+    in: query
+    type: string
+    enum:
+    - asc
+    - desc
+    description: Sort list of items in 'asc' (ascending) or 'desc' (descending) order
+  Directory:
+    name: directory
+    in: path
+    type: string
+    description: The directory where the contact is stored.
+    required: true
+  Exten:
+    name: exten
+    in: query
+    type: string
+    description: A search exten to look for
+    required: true
+  FavoriteID:
+    name: contact
+    in: path
+    type: string
+    description: The ID of the contact. This ID is unique within the {directory}.
+    required: true
+  Limit:
+    name: limit
+    in: query
+    type: integer
+    description: The limit defines the number of individual objects that are returned
+    required: false
+  Limit8:
+    name: limit
+    in: query
+    type: integer
+    description: The limit defines the number of individual objects that are returned
+    default: 8
+    required: false
+  Limit16:
+    name: limit
+    in: query
+    type: integer
+    description: The limit defines the number of individual objects that are returned
+    default: 16
+    required: false
+  Offset:
+    name: offset
+    in: query
+    type: integer
+    description: The offset defines the number of items of the collection to skip
+    default: 0
+    required: false
+  order:
+    required: false
+    name: order
+    in: query
+    type: string
+    description: Name of the field to use for sorting the list of items returned.
+  Profile:
+    name: profile
+    in: path
+    type: string
+    description: The profile defines the list of directories to query and how the
+      results are displayed. The profile is the context name of the user who
+      started the contact lookup, e.g. `default`. More precisely, it is the name
+      of the "Direct directory" defined in the web interface.
+    required: true
+  recurse:
+    name: recurse
+    in: query
+    type: boolean
+    description: Should the query include sub-tenants
+    default: false
+    required: false
+  tenantuuid:
+    name: Accent-Tenant
+    type: string
+    in: header
+    description: "The tenant's UUID, defining the ownership of a given resource."
+    required: false
+  ProxyUrl:
+    name: Proxy-URL
+    in: header
+    type: string
+    required: false
+    description: URL that will be integrated in the XML response. (not working on
+      swagger 2.1)
+  search:
+    required: false
+    name: search
+    in: query
+    type: string
+    description: Search term for filtering a list of items. Only items with a field
+      containing the search term will be returned.
+  Term:
+    name: term
+    in: query
+    type: string
+    description: A search term to look for
+    required: true
+  UserUUID:
+    name: user_uuid
+    in: path
+    type: string
+    description: The user UUID of the user doing that query
+    required: true
+definitions:
+  Error:
+    title: Error
+    description: Error message for the client
+    properties:
+      timestamp:
+        description: Time at which the error occured
+        type: array
+        items:
+          type: number
+          format: timestamp
+      reason:
+        description: Human readable explanation of the error
+        type: array
+        items:
+          type: string
+      status_code:
+        description: HTTP status code
+        type: integer
+  Header:
+    properties:
+      column_headers:
+        type: array
+        description: Labels for the headers
+        items:
+          type: string
+      column_types:
+        type: array
+        description: Data types for the headers
+        items:
+          type: string
+  Contact:
+    properties:
+      column_values:
+        items:
+          type: string
+        type: array
+      relations:
+        $ref: '#/definitions/Relation'
+      source:
+        type: string
+      backend:
+        type: string
+        description: Backend type
+  Relation:
+    properties:
+      accent_id:
+        type: string
+      user_id:
+        type: string
+      user_uuid:
+        type: string
+      endpoint_id:
+        type: string
+      agent_id:
+        type: string
+      source_entry_id:
+        type: string
+  Source:
+    properties:
+      uuid:
+        type: string
+        description: The source's UUID
+        readOnly: true
+      name:
+        type: string
+        description: The source's name
+      searched_columns:
+        type: array
+        items:
+          type: string
+          description: A list of columns which should be searched when doing a look up
+      first_matched_columns:
+        type: array
+        items:
+          type: string
+        description: A list of columns which should be searched when doing a reverse look up
+      format_columns:
+        type: object
+        description: A mapping of new fields and a python format string to generate the new columns value
+  SourceItems:
+    properties:
+      total:
+        type: integer
+        description: The number of configured sources for this backend
+        readOnly: true
+      filtered:
+        type: integer
+        description: The number of configured sources matching the searched terms for this backend
+        readOnly: true
+  PhonebookContact:
+    properties:
+      id:
+        type: string
+        readOnly: true
+      firstname:
+        type: string
+      lastname:
+        type: string
+    additionalProperties:
+      type: string
+  PhonebookContactList:
+    type: array
+    items:
+      $ref: '#/definitions/PhonebookContact'
+  ContactBodySample:
+    description: Those are only example attributes. The API accepts any arbitrary attributes.
+    properties:
+      firstname:
+        type: string
+      lastname:
+        type: string
+  ContactImportResponse:
+    properties:
+      created:
+        type: array
+        items:
+          type: object
+      failed:
+        type: array
+        items:
+          $ref: '#/definitions/ContactImportFailure'
+  PhonebookContactImportResponse:
+    $ref: '#/definitions/ContactImportResponse'
+    properties:
+      created:
+        $ref: '#/definitions/PhonebookContactList'
+  ContactImportFailure:
+    properties:
+      line:
+        type: integer
+      errors:
+        type: array
+        items:
+          type: string
+  PhonebookBody:
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+    required:
+    - name
+  Phonebook:
+    properties:
+      id:
+        type: integer
+      uuid:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+  Reverse:
+    properties:
+      display:
+        type: string
+      exten:
+        type: string
+        description: A search exten to look for
+      source:
+        type: string
+      fields:
+        description: Fields defined for each source
+        $ref: '#/definitions/ResultFields'
+    required:
+    - display
+    - exten
+    - fields
+    - source
+  ResultFields: {}
+  AccentAuthConfig:
+    title: Auth
+    allOf:
+      - $ref: '#/definitions/ExternalServiceConfig'
+      - $ref: '#/definitions/AccentAuthConfigNoAuth'
+      - properties:
+          key_file:
+            type: string
+            description: The path the the file containing the credentials
+          username:
+            type: string
+            description: The username to use when not using a key_file
+          password:
+            type: string
+            description: The password to use when not using a key_file
+  AccentAuthConfigNoAuth:
+    title: Auth
+    allOf:
+      - $ref: '#/definitions/ExternalServiceConfig'
+      - properties:
+          port:
+            type: integer
+            default: 9497
+          version:
+            type: string
+            default: "0.1"
+  ExternalServiceConfig:
+    properties:
+      host:
+        type: string
+        default: localhost
+      verify_certificate:
+        type: string
+        description: If the HTTPs certificates should be verified and the path of the certificate if a custom certificate is used.
+        default: 'true'
+      timeout:
+        type: number
+  ConfdConfig:
+    title: Confd
+    allOf:
+      - $ref: '#/definitions/ExternalServiceConfig'
+      - properties:
+          port:
+            type: integer
+            default: 9486
+          https:
+            type: boolean
+            default: true
+          version:
+            type: string
+            default: "1.1"

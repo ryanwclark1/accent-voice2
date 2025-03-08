@@ -1,0 +1,8 @@
+FROM accentcommunications/accent-confgend
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+COPY . /usr/local/src/accent-confgend
+
+WORKDIR /usr/local/src/accent-confgend
+RUN pip install -e .

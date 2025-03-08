@@ -1,0 +1,96 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: '/etc/accent-setupd/conf.d'
+
+debug: false
+log_level: info
+log_file: /var/log/accent-setupd.log
+# After a successful setup, accent-setupd will stop itself after this delay (in seconds)
+self_stop_delay: 10.0
+
+# Authentication server connection settings
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false
+
+# Event bus (AMQP) connection settings
+bus:
+  username: guest
+  password: guest
+  host: localhost
+  port: 5672
+  exchange_name: accent-headers
+
+# Configuration server connection settings
+confd:
+  host: localhost
+  port: 9486
+  prefix: null
+  https: false
+
+# REST API server settings
+rest_api:
+
+  # Address to listen on
+  listen: 127.0.0.1
+
+  # Port to listen on
+  port: 9302
+
+  # CORS configuration. See Flask-CORS documentation for other values.
+  cors:
+
+    # Enabled by default
+    enabled: True
+
+    # Allow JSON preflight requests
+    allow_headers: [Content-Type, X-Auth-Token]
+
+# System configuration server connection settings
+sysconfd:
+  host: localhost
+  port: 8668
+
+enabled_plugins:
+  api: true
+  config: true
+  setup: true
+  status: true
+
+service_discovery:
+  enabled: false
+
+# Example settings to enable service discovery
+#
+# Necessary to use service discovery
+# consul:
+#   scheme: http
+#   host: consul.example.com
+#   port: 8500
+#   token: 'the_one_ring'
+#
+# # All time intervals are in seconds
+# service_discovery:
+#   # Indicates whether of not to use service discovery.
+#   enabled: true
+#   # The address that will be received by other services using service discovery.
+#   # Use "advertise_address: auto" to enable ip address detection based on
+#   # advertise_address_interface
+#   advertise_address: auto
+#   # If advertise_address is "auto" this interface will be used to find the ip
+#   # address to advertise. Ignored otherwise
+#   advertise_address_interface: eth0
+#   advertise_port: 9302
+#   # The number of seconds that consul will wait between 2 ttl messages to mark
+#   # this service as up
+#   ttl_interval: 30
+#   # The time interval before the service sends a new ttl message to consul
+#   refresh_interval: 27
+#   # The time interval to detect that the service is running when starting
+#   retry_interval: 2
+#   extra_tags: []

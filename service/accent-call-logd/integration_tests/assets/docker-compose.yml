@@ -1,0 +1,58 @@
+version: '3'
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - "9497"
+
+  call-logd:
+    image: accent-call-logd-test
+    volumes:
+      - "../..:/usr/src/accent-call-logd"
+      - "./etc/accent-call-logd/conf.d/50-default.yml:/etc/accent-call-logd/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+      # - "${LOCAL_GIT_REPOS}/accent-dao/accent_dao:/opt/venv/lib/python3.9/site-packages/accent_dao"
+      # - "${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus"
+    ports:
+      - "9298"
+    environment:
+      ACCENT_UUID: "08c56466-8f29-45c7-9856-92bf1ba89b92"
+
+  confd:
+    image: accentcommunications/accent-confd-mock
+    ports:
+      - "9486"
+
+  cel-postgres:
+    image: accentcommunications/accent-confd-db-test
+    ports:
+      - "5432"
+
+  postgres:
+    image: accentcommunications/accent-call-logd-db
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  purge-db:
+    image: accent-purge-db-test
+    volumes:
+      - "../..:/usr/src/accent-call-logd"
+      - "./etc/accent-purge-db/conf.d/50-default.yml:/etc/accent-purge-db/conf.d/50-default.yml"
+
+  smtp:
+    image: munkyboy/fakesmtp
+    ports:
+      - "25"

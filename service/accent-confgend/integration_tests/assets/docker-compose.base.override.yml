@@ -1,0 +1,7 @@
+services:
+  sync:
+    depends_on:
+      - confgend
+      - postgres
+    environment:
+      TARGETS: confgend:8669 postgres:5432

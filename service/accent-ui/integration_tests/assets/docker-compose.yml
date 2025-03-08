@@ -1,0 +1,27 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  ui:
+    image: accent-ui-test
+    ports:
+      - "9296"
+    expose:
+      - "9296"
+    volumes:
+      - "../..:/usr/src/accent-ui"
+      - "./etc/accent-ui/conf.d/default.yml:/etc/accent-ui/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.7/site-packages/accent"
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - "9497"
+
+  browser:
+    image: selenium/standalone-firefox
+    ports:
+      - "4444"
+    shm_size: '2GB'

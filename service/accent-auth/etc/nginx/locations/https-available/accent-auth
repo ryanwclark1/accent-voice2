@@ -1,0 +1,22 @@
+location ^~ /api/auth/0.1/backends {
+    proxy_pass http://127.0.0.1:9497/0.1/backends;
+    include /etc/nginx/accent-auth-shared.conf;
+    include /etc/nginx/accent-no-auth-shared[.]conf;
+}
+
+location ^~ /api/auth/0.1/status {
+    proxy_pass http://127.0.0.1:9497/0.1/status;
+    include /etc/nginx/accent-auth-shared.conf;
+    include /etc/nginx/accent-no-auth-shared[.]conf;
+}
+
+location ^~ /api/auth/0.1/saml {
+    proxy_pass http://127.0.0.1:9497/0.1/saml;
+    include /etc/nginx/accent-auth-shared.conf;
+    include /etc/nginx/accent-no-auth-shared[.]conf;
+}
+
+location ^~ /api/auth/ {
+    proxy_pass http://127.0.0.1:9497/;
+    include /etc/nginx/accent-auth-shared.conf;
+}

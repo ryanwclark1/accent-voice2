@@ -1,0 +1,182 @@
+paths:
+  /incalls:
+    get:
+      operationId: list_incalls
+      summary: List incoming calls
+      description: '**Required ACL:** `confd.incalls.read`'
+      tags:
+      - incalls
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/recurse'
+      - $ref: '#/parameters/order'
+      - $ref: '#/parameters/direction'
+      - $ref: '#/parameters/limit'
+      - $ref: '#/parameters/offset'
+      - $ref: '#/parameters/search'
+      responses:
+        '200':
+          description: Incoming calls list
+          schema:
+            $ref: '#/definitions/IncallItems'
+    post:
+      operationId: create_incall
+      summary: Create incoming call
+      description: '**Required ACL:** `confd.incalls.create`'
+      tags:
+      - incalls
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - name: body
+        in: body
+        description: Incoming call to create
+        required: true
+        schema:
+          $ref: '#/definitions/Incall'
+      responses:
+        '201':
+          description: Incoming call created
+          schema:
+            $ref: '#/definitions/Incall'
+        '400':
+          $ref: '#/responses/CreateError'
+  /incalls/{incall_id}:
+    get:
+      operationId: get_incall
+      summary: Get incoming call
+      description: '**Required ACL:** `confd.incalls.{incall_id}.read`'
+      tags:
+      - incalls
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/incallid'
+      responses:
+        '200':
+          description: Incoming call
+          schema:
+            $ref: '#/definitions/Incall'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    put:
+      operationId: update_incall
+      summary: Update incoming call
+      description: '**Required ACL:** `confd.incalls.{incall_id}.update`'
+      tags:
+      - incalls
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/incallid'
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/Incall'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceUpdated'
+        '400':
+          $ref: '#/responses/UpdateError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: delete_incall
+      summary: Delete incoming call
+      description: '**Required ACL:** `confd.incalls.{incall_id}.delete`'
+      tags:
+      - incalls
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/incallid'
+      responses:
+        '204':
+          $ref: '#/responses/ResourceDeleted'
+        '400':
+          $ref: '#/responses/DeleteError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+parameters:
+  incallid:
+    required: true
+    type: integer
+    name: incall_id
+    in: path
+    description: Incoming call's ID
+definitions:
+  Incall:
+    title: Incall
+    allOf:
+    - $ref: '#/definitions/IncallRelationBase'
+    - properties:
+        tenant_uuid:
+          type: string
+          description: The UUID of the tenant
+          readOnly: true
+        preprocess_subroutine:
+          type: string
+          description: Name of the subroutine to execute in asterisk before receiving
+            a call
+        description:
+          type: string
+          description: Additional information about the incoming call
+        caller_id_mode:
+          type: string
+          enum:
+          - prepend
+          - overwrite
+          - append
+          description: How the caller_id_name will be treated
+        caller_id_name:
+          type: string
+          description: Name to display when calling
+        destination:
+          description: The destination where the incoming call will be redirected
+          $ref: '#/definitions/DestinationType'
+        greeting_sound:
+          type: string
+          description: The name of the sound file to be played before redirecting the caller to the destination
+    - $ref: '#/definitions/IncallRelationExtensions'
+    - $ref: '#/definitions/IncallRelationSchedules'
+    - required:
+      - destination
+    example:
+      id: 1
+      preprocess_subroutine: subroutine
+      description: My incall
+      caller_id_mode: prepend
+      caller_id_name: incall_
+      destination:
+        type: user
+        user_id: 2
+        ring_time: 10.5
+  IncallRelationBase:
+    title: IncallRelation
+    properties:
+      id:
+        type: integer
+        readOnly: true
+        description: The id of the incoming call
+  IncallRelationExtensions:
+    properties:
+      extensions:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/ExtensionRelationBase'
+  IncallRelationSchedules:
+    properties:
+      schedules:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/ScheduleRelationBase'
+  IncallItems:
+    title: IncallItems
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/Incall'
+      total:
+        type: integer
+    required:
+    - total

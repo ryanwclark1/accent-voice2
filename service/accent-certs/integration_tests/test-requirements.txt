@@ -1,0 +1,4 @@
+cryptography==3.3.2
+pyhamcrest
+pyopenssl==20.0.1
+pytest

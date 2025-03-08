@@ -1,0 +1,253 @@
+services:
+  # Since the Loki containers are running as user 10001 and the mounted data volume is owned by root,
+  # Loki would not have permissions to create the directories.
+  # Therefore the init container changes permissions of the mounted directory.
+  init:
+    image: &lokiImage grafana/loki:latest
+    profiles: ["logging", "all"]
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/loki"
+    volumes:
+      - ./etc/loki:/loki
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    profiles: ["monitoring", "all"]
+    container_name: cadvisor
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      - "/dev/disk:/dev/disk:ro"
+    privileged: true
+    devices:
+      - "/dev/kmsg"
+    command:
+      - "--storage_duration=5m0s" # Increase local in-memory storage from 2m to 5m
+      - "--housekeeping_interval=30s"
+      - "--global_housekeeping_interval=1m0s"
+      - "--max_housekeeping_interval=1m0s"
+      # - "--docker_only=true"
+
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    profiles: ["monitoring", "all"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      [
+        "--log.level=debug",
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--enable-feature=remote-write-receiver",
+        "--query.lookback-delta=30s",
+      ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`${PROM_URL}`)"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.service=prometheus"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls.certresolver=myresolver"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
+      - "traefik.http.middlewares.traefik-auth.basicauth.removeheader=true"
+      - "traefik.http.routers.prometheus.middlewares=traefik-auth"
+
+  # promtail:
+  #   image: grafana/promtail:latest
+  #   volumes:
+  #     - ./loki/:/var/log/
+  #     - ./etc/promtail/:/etc/promtail/
+  #   ports:
+  #     - 9080
+  #   command: -config.file=/etc/promtail/promtail.yaml
+
+  # alertmanager to enable receiving alerts
+  alertmanager:
+    image: prom/alertmanager:latest
+    profiles: ["monitoring", "all"]
+    restart: always
+    ports:
+      - 9093:9093
+    volumes:
+      - ./etc/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./etc/alertmanager/template:/etc/alertmanager/template:ro
+      - alertmanager-data:/data
+    command: [
+        --config.file=/etc/alertmanager/alertmanager.yml
+        --log.level=debug,
+      ]
+
+  #   loki-read:
+  #     image: *lokiImage
+  #     volumes:
+  #       - ./etc/loki/:/etc/loki/
+  #       - ./etc/rules:/loki/rules:ro
+  #     # only needed for interactive debugging with dlv
+  #     # cap_add:
+  #     #   - SYS_PTRACE
+  #     # security_opt:
+  #     #   - apparmor=unconfined
+  #     ports:
+  #       - "3100"
+  #       - "7946"
+  #       # uncomment to use interactive debugging
+  #       # - "40000-40002:40000" # makes the replicas available on ports 40000, 40001, 40002
+  #     command: "-config.expand-env -config.file=/etc/loki/loki.yaml -target=read -legacy-read-mode=false"
+  #     restart: always
+  #     # deploy:
+  #     #   mode: replicated
+  #     #   replicas: 3
+
+  # ##### Loki Docker Stack #####
+  #   loki-write:
+  #     image: *lokiImage
+  #     volumes:
+  #       - ./etc/loki/:/etc/loki/
+  #     # only needed for interactive debugging with dlv
+  #     # cap_add:
+  #     #   - SYS_PTRACE
+  #     # security_opt:
+  #     #   - apparmor=unconfined
+  #     ports:
+  #       - "3100"
+  #       - "7946"
+  #       # uncomment to use interactive debugging
+  #       # - "50000-50002:40000" #  makes the replicas available on ports 50000, 50001, 50002
+  #     command: "-config.expand-env -config.file=/etc/loki/loki.yaml -target=write"
+  #     restart: always
+  #     # deploy:
+  #     #   mode: replicated
+  #     #   replicas: 3
+
+  #   loki-backend:
+  #     image: *lokiImage
+  #     volumes:
+  #       - ./etc/loki/:/etc/loki/
+  #       - ./etc/rules:/loki/rules:ro
+  #     # only needed for interactive debugging with dlv
+  #     # cap_add:
+  #     #   - SYS_PTRACE
+  #     # security_opt:
+  #     #   - apparmor=unconfined
+  #     ports:
+  #       - "3100"
+  #       - "7946"
+  #       # uncomment to use interactive debugging
+  #       # - "60000-60002:40000" #  makes the replicas available on ports 60000, 60001, 60002
+  #     command: "-config.expand-env -config.file=/etc/loki/loki.yaml -target=backend -legacy-read-mode=false"
+  #     restart: always
+  #     # deploy:
+  #     #   mode: replicated
+  #     #   replicas: 3
+
+  ### Minio S3 compatible storage for testing ###
+  minio:
+    image: minio/minio:latest
+    profiles: ["storage", "all"]
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/loki-data && \
+        mkdir -p /data/loki-ruler &&
+        minio server --address "0.0.0.0:9000" --console-address "0.0.0.0:9001" /data
+    environment:
+      - MINIO_ROOT_USER=accent
+      - MINIO_ROOT_PASSWORD=password123
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    expose:
+      - 9000
+      - 9001
+    volumes:
+      - ./.data/minio:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.minio.rule=Host(`minio.accentvoice.io`)"
+      - "traefik.http.routers.minio.tls=true"
+      - "traefik.http.routers.minio.service=minio"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls.certresolver=myresolver"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minioadmin.rule=Host(`minioadmin.accentvoice.io`)"
+      - "traefik.http.routers.minioadmin.tls=true"
+      - "traefik.http.routers.minioadmin.service=minioadmin"
+      - "traefik.http.routers.minioadmin.entrypoints=websecure"
+      - "traefik.http.routers.minioadmin.tls.certresolver=myresolver"
+      - "traefik.http.services.minioadmin.loadbalancer.server.port=9001"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    profiles: ["exorter", "all"]
+    ports:
+      - "9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://asterisk:password123@postgres:5432/accent?sslmode=disable"
+    links:
+      - postgres
+      - prometheus
+
+  statsd-exporter:
+    image: prom/statsd-exporter:latest
+    profiles: ["exporter", "all"]
+    ports:
+      - "8125:8125"
+      - "9102:9102"
+    # expose:
+    #   - 8125
+    command:
+      - "--statsd.listen-udp=:8125"
+      - "--statsd.listen-tcp=:8125"
+      # - "-statsd.mapping-config=/tmp/statsd_mapping.conf"
+    # volumes:
+    #   - "./statsd_mapping.conf:/tmp/statsd_mapping.conf"
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    profiles: ["monitoring", "all"]
+    expose:
+      - 3000
+    volumes:
+      - ./etc/grafana/provisioning/datasources/:/etc/grafana/provisioning/datasources/
+      - ./etc/grafana/provisioning/dashboards/:/etc/grafana/provisioning/dashboards/
+      - ./etc/grafana/dashboards/:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_PATHS_CONFIG	/etc/grafana/grafana.ini
+      - GF_PATHS_DATA	/var/lib/grafana
+      - GF_PATHS_HOME	/usr/share/grafana
+      - GF_PATHS_LOGS	/var/log/grafana
+      - GF_PATHS_PLUGINS	/var/lib/grafana/plugins
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_SERVER_ROOT_URL=https://grafana.accentvoice.io
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`${GRAFANA_URL}`)"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.service=grafana"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=myresolver"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    profiles: ["monitoring", "all"]
+    expose:
+      - 9100
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro

@@ -1,0 +1,71 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files in the extra_config_files directory to override
+# the content from this file
+
+# Extra configuration directory where the config files overriding this file
+# should be.
+# extra_config_files: /etc/accent-ui/conf.d/
+
+# Change the log level to debug level.
+# debug: false
+
+# # Log file.
+# log_filename: /var/log/accent-ui.log
+#
+# http:
+#   listen: 127.0.0.1
+#   port: 9296
+#
+# amid:
+#   host: localhost
+#   port: 9491
+#   prefix: None
+#   https: false
+#
+# auth:
+#   host: localhost
+#   port: 9497
+#   prefix: None
+#   https: false
+#
+# call-logd:
+#   host: localhost
+#   port: 9298
+#   prefix: None
+#   https: false
+#
+# confd:
+#   host: localhost
+#   port: 9486
+#   prefix: None
+#   https: false
+#
+# dird:
+#   host: localhost
+#   port: 9489
+#   prefix: None
+#   https: false
+#
+# plugind:
+#   host: localhost
+#   port: 9503
+#   prefix: None
+#   https: false
+#
+# provd:
+#   host: localhost
+#   port: 8666
+#   prefix: None
+#   https: false
+#
+# webhookd:
+#   host: localhost
+#   port: 9300
+#   prefix: None
+#   https: false
+#
+# websocketd:
+#   host: null  # populated with browser url
+#   port: 443
+#   prefix: /api/websocketd
+#   verify_certificate: False

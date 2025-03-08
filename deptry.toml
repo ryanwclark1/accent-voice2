@@ -1,0 +1,9 @@
+[tool.deptry]
+# Ignore virtual environments & migrations
+ignore-packages = ["venv", "alembic", "migrations"]
+
+# Treat all dependencies as required unless in dev
+ignore-not-listed = true
+
+# Enforce cleanup of unused dependencies
+fail-on-obsolete = true

@@ -1,0 +1,7 @@
+version: '3.7'
+services:
+  sync:
+    depends_on:
+      - setupd
+    environment:
+      TARGETS: setupd:9302

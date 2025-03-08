@@ -1,0 +1,19 @@
+@startuml
+
+actor Alice
+actor Bob
+
+Alice -> webhookd: Listen to 'user_voicemail_message_created'
+webhookd -> auth: Validate token
+auth --> webhookd: Token OK
+webhookd -> Bus: Subscribe to 'user_voicemail_message_created'
+webhookd --> Alice: OK
+
+Bob -> Asterisk: Leave voicemail message
+Asterisk -> Bus: AMI event 'MessageWaiting'
+Bus -> "accent-calld": parse 'MessageWaiting'
+"accent-calld" -> Bus: Send event 'user_voicemail_message_created'
+Bus -> webhookd: Publish event 'user_voicemail_message_created'
+webhookd -> "SMS Service\n(external)": Make HTTP request
+
+@enduml

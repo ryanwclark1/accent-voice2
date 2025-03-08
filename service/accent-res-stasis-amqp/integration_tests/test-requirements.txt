@@ -1,0 +1,6 @@
+git+https://github.com/rsichny/swagger-py.git  # the digium release does not support python3
+https://github.com/accentcommunications/ari-py/archive/0.4.0.zip
+https://github.com/accentcommunications/accent-test-helpers/archive/master.zip
+kombu
+pyhamcrest
+pytest

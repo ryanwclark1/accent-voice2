@@ -1,0 +1,13 @@
+FROM python:3.9-bullseye
+
+COPY integration_tests/assets/bin /usr/local/bin
+COPY . /tmp/accent
+
+WORKDIR /tmp/accent
+
+RUN true && \
+    pip install -r requirements.txt kombu && \
+    python setup.py install && \
+    true
+
+CMD ["myservice.py"]

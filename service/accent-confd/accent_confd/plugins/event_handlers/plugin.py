@@ -1,0 +1,51 @@
+# Copyright 2023 Accent Communications
+
+import logging
+
+from accent_dao import tenant_dao
+from accent_dao.helpers.db_utils import session_scope
+from accent_dao.resources.endpoint_sip import dao as sip_dao
+from accent_dao.resources.pjsip_transport import dao as transport_dao
+
+from ..._sysconfd import SysconfdPublisher
+from ...sync_db import remove_tenant
+from .service import DefaultSIPTemplateService
+
+logger = logging.getLogger(__name__)
+
+
+class TenantEventHandler:
+    def __init__(self, tenant_dao, service, sysconfd):
+        self.tenant_dao = tenant_dao
+        self.service = service
+        self.sysconfd = sysconfd
+
+    def subscribe(self, bus_consumer):
+        bus_consumer.subscribe('auth_tenant_added', self._auth_tenant_added)
+        bus_consumer.subscribe('auth_tenant_deleted', self._auth_tenant_deleted)
+
+    def _auth_tenant_added(self, event):
+        tenant_uuid = event['uuid']
+        slug = event['slug']
+        with session_scope():
+            tenant = self.tenant_dao.find_or_create_tenant(tenant_uuid)
+            self.service.generate_sip_templates(tenant)
+            self.service.copy_slug(tenant, slug)
+
+    def _auth_tenant_deleted(self, event):
+        remove_tenant(event['uuid'], self.sysconfd)
+
+
+class Plugin:
+    def load(self, dependencies):
+        bus_consumer = dependencies['bus_consumer']
+        config = dependencies['config']
+
+        service = DefaultSIPTemplateService(sip_dao, transport_dao)
+        sysconfd = SysconfdPublisher.from_config(config)
+        tenant_event_handler = TenantEventHandler(
+            tenant_dao,
+            service,
+            sysconfd,
+        )
+        tenant_event_handler.subscribe(bus_consumer)

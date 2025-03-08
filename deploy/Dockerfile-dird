@@ -1,0 +1,9 @@
+FROM accentcommunications/accent-dird:latest
+
+# COPY ./service/accent-dird/ /usr/local/src/accent-dird/
+
+RUN true \
+    && apt-get -q update \
+    && apt-get -yq install \
+        netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*

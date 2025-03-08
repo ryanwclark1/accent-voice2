@@ -1,0 +1,14 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - dird
+      - auth
+      - db
+    environment:
+      TARGETS: "dird:9489 auth:9497 db:5432"
+  dird:
+    volumes:
+      - "./etc/accent-dird/conf.d/asset.multiple_sources.yml:/etc/accent-dird/conf.d/20-config.yml"
+      - "./tmp/data/asset.multiple_sources.other.csv:/tmp/data/other.csv"
+      - "./tmp/data/asset.multiple_sources.test.csv:/tmp/data/test.csv"

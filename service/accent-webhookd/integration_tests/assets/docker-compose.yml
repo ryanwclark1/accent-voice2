@@ -1,0 +1,69 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  auth:
+    image: "accentcommunications/accent-auth-mock"
+    ports:
+      - "9497"
+
+  third-party-http:
+    image: jamesdbloom/mockserver:mockserver-5.7.0
+    ports:
+      - "1080"
+
+  api.push.apple.com:
+    image: nginx
+    volumes:
+        - ./fake-apple-ca/nginx.conf:/etc/nginx/nginx.conf:ro
+        - ./fake-apple-ca/certs:/etc/nginx/certs:ro
+    depends_on:
+      - third-party-http
+    user: root
+    ports:
+      - "443"
+    command: [nginx-debug, '-g', 'daemon off;']
+
+  fcm.googleapis.com:
+    image: jamesdbloom/mockserver:mockserver-5.7.0
+    command: ["-logLevel", "DEBUG", "-serverPort", "443", "-proxyPort", "1090", "-genericJVMOptions", "-Dmockserver.sslCertificateDomainName='fcm.googleapis.com'"]
+    user: root
+    ports:
+      - "443"
+
+  fcm.proxy.example.com:
+    image: jamesdbloom/mockserver:mockserver-5.7.0
+    command: ["-logLevel", "DEBUG", "-serverPort", "443", "-proxyPort", "1090", "-genericJVMOptions", "-Dmockserver.sslCertificateDomainName='fcm.proxy.example.com'"]
+    user: root
+    ports:
+      - "443"
+
+  oauth2.googleapis.com:
+    image: jamesdbloom/mockserver:mockserver-5.7.0
+    command: ["-logLevel", "DEBUG", "-serverPort", "443", "-proxyPort", "1090", "-genericJVMOptions", "-Dmockserver.sslCertificateDomainName='oauth2.googleapis.com'"]
+    user: root
+    ports:
+      - "443"
+
+  postgres:
+    image: accentcommunications/accent-webhookd-db:local
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+
+  webhookd:
+    image: "accent-webhookd-test"
+    environment:
+      ACCENT_UUID: "cd030e68-ace9-4ad4-bc4e-13c8dec67898"
+    volumes:
+      - "../..:/usr/src/accent-webhookd"
+      - "./etc/accent-webhookd/conf.d/50-default.yml:/etc/accent-webhookd/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+    ports:
+      - "9300"

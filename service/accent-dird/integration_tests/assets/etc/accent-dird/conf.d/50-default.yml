@@ -1,0 +1,16 @@
+db_uri: postgresql://accent-dird:password123@db/accent-dird
+
+rest_api:
+  listen: 0.0.0.0
+
+auth:
+  host: auth
+  username: dird-service
+  password: dird-password
+
+bus:
+  host: rabbitmq
+  port: 5672
+  username: guest
+  password: guest
+  enabled: true

@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block content_header %}
+{{ build_breadcrumbs(current_breadcrumbs + [
+{ 'name': _('External Auth'), 'link': url_for('.ExternalAuthView:index'), 'icon': 'external-link' }
+]) }}
+{% endblock %}
+
+{% block content %}
+<section class="content">
+  {% call build_list_containers(_('External Auth'), 'external-link') %}
+  {% call build_list_table() %}
+  {% call build_list_table_headers(get=url_for('.ExternalAuthView:get', id=''),
+  delete=url_for('.ExternalAuthView:delete', id='')) %}
+  <th>{{ _('Type') }}</th>
+  {% endcall %}
+  {% call(external_auth) build_list_table_rows(resource_list['items']) %}
+  <td>{{ external_auth.type }}</td>
+  {% endcall %}
+  {% endcall %}
+  {% endcall %}
+
+  {% if type_list | length %}
+  {% call build_hidden_add_containers(_('Add External Authentication')) %}
+  {% for type in type_list %}
+  <a class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-block btn-default"
+    href="{{ url_for('.ExternalAuthView:new', type=type) }}">
+    {{ type }}
+  </a>
+  {% endfor %}
+  {% endcall %}
+  {% endif %}
+</section>
+{% endblock %}

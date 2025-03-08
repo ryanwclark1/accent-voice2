@@ -1,0 +1,6 @@
+accent-lib-rest-client @ file:///home/administrator/accent-voice/library/accent-lib-rest-client ; python_version >= "3.9" and python_version < "4.0"
+accent-auth-client @ file:///home/administrator/accent-voice/library/accent-auth-client ; python_version >= "3.9" and python_version < "4.0"
+accent-test-helpers @ file:///home/administrator/accent-voice/library/accent-test-helpers ; python_version >= "3.9" and python_version < "4.0"
+pyhamcrest
+pytest
+pyyaml

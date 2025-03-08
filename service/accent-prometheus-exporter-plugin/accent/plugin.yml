@@ -1,0 +1,16 @@
+
+name: accent-prometheus-exporter
+namespace: accentplatform
+version: 0.0.4
+author: Accent Communications
+display_name: Prometheus Metrics
+min_accent_version: 0.0.1
+tags:
+  - prometheus
+  - metrics
+homepage: https://github.com/ryanwclark1/accent-prometheus-exporter-plugin
+debian_depends:
+  - python3-prometheus-flask-exporter
+  - python3-starlette-exporter
+  - prometheus-nginx-exporter
+  - docker.io

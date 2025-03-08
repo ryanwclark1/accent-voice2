@@ -1,0 +1,46 @@
+version: '3'
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  auth:
+    image: "accentcommunications/accent-auth-mock"
+    ports:
+      - "9497"
+
+  dird:
+    image: accent-dird-test
+    ports:
+      - "9489"
+    volumes:
+      - "../..:/usr/src/accent-dird"
+      - "./etc/accent-dird/conf.d/50-default.yml:/etc/accent-dird/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+      # - "${LOCAL_GIT_REPOS}/accent-auth-client/accent_auth_client:/opt/venv/lib/python3.9/site-packages/accent_auth_client"
+      # - "${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus"
+
+  db:
+    image: accentcommunications/accent-dird-db:local
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+
+  people.googleapis.com:
+    image: jamesdbloom/mockserver:mockserver-5.7.0
+    user: root
+    ports:
+      - "443"
+    command: ["-serverPort", "443"]
+
+  microsoft.com:
+    image: jamesdbloom/mockserver:mockserver-5.7.0
+    user: root
+    ports:
+      - "443"
+    command: ["-serverPort", "443"]

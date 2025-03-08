@@ -1,0 +1,11 @@
+debug: true
+websocket:
+  listen: 0.0.0.0
+
+auth:
+  host: auth
+  username: websocketd-service
+  password: websocketd-password
+
+bus:
+  host: rabbitmq

@@ -1,0 +1,149 @@
+[tool.poetry]
+name = "accent-dird"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Clark <ryanc@accentservice.com>"]
+packages = [
+    {include = "accent_dird"}
+]
+include = [
+    "accent_dird/plugins/*/api.yml"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+alembic = "^1.13.0"
+cheroot = "^8.5.2"
+flask = "^1.1.2"
+Flask-Cors = "^3.0.9"
+Flask-RESTful = "^0.3.8"
+graphene = "^3.2.1"
+graphql-server = {version = "^3.0.0b5", extras = ["flask"]}
+itsdangerous = "^1.1.0"
+Jinja2 = "^2.11.3"
+jsonpatch = "^1.21"
+kombu = "^5.0.2"
+markupsafe = "^1.1.1"
+marshmallow = "^3.10.0"
+psycopg2 = "^2.8.6"
+python-consul = "^1.1.0"
+python-ldap = "^3.2.0"
+PyYAML = "^5.3.1"
+requests = "^2.25.1"
+SQLAlchemy = ">=1.3.0, <1.4.0"
+stevedore = "^4.0.2"
+Unidecode = "^1.2.0"
+werkzeug = "^1.0.1"
+accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
+accent-auth-client = {path = "../../library/accent-auth-client"}
+accent-confd-client = {path = "../../library/accent-confd-client"}
+accent-bus = {path = "../../library/accent-bus"}
+accent = {path = "../../library/accent-lib-python"}
+
+
+[tool.poetry.group.dev.dependencies]
+commitizen = "^3.10.0"
+dunamai = "^1.18.1"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["UPDATE"]
+
+[tool.poetry.plugins."console_scripts"]
+accent-dird = "accent_dird.main:main"
+accent-dird-init-db = "accent_dird.init_db:main"
+
+[tool.poetry.plugins."accent_dird.services"]
+cleanup = "accent_dird.plugins.cleanup_service.plugin:StorageCleanupServicePlugin"
+config = "accent_dird.plugins.config_service.plugin:ConfigServicePlugin"
+display = "accent_dird.plugins.display_service.plugin:DisplayServicePlugin"
+favorites = "accent_dird.plugins.favorites_service.plugin:FavoritesServicePlugin"
+lookup = "accent_dird.plugins.lookup_service.plugin:LookupServicePlugin"
+personal = "accent_dird.plugins.personal_service.plugin:PersonalServicePlugin"
+phonebook = "accent_dird.plugins.phonebook_service.plugin:PhonebookServicePlugin"
+profile = "accent_dird.plugins.profile_service.plugin:ProfileServicePlugin"
+reverse = "accent_dird.plugins.reverse_service.plugin:ReverseServicePlugin"
+service_discovery = "accent_dird.plugins.service_discovery_service.plugin:ServiceDiscoveryServicePlugin"
+source = "accent_dird.plugins.source_service.plugin:SourceServicePlugin"
+
+[tool.poetry.plugins."accent_dird.backends"]
+accent = "accent_dird.plugins.accent_user_backend.plugin:AccentUserPlugin"
+conference = "accent_dird.plugins.conference_backend.plugin:ConferencePlugin"
+csv = "accent_dird.plugins.csv_backend.plugin:CSVPlugin"
+csv_ws = "accent_dird.plugins.csv_ws_backend.plugin:CSVWSPlugin"
+google = "accent_dird.plugins.google_backend.plugin:GooglePlugin"
+ldap = "accent_dird.plugins.ldap_backend.plugin:LDAPPlugin"
+office365 = "accent_dird.plugins.office365_backend.plugin:Office365Plugin"
+personal = "accent_dird.plugins.personal_backend.plugin:PersonalBackend"
+phonebook = "accent_dird.plugins.phonebook_backend.plugin:PhonebookPlugin"
+
+[tool.poetry.plugins."accent_dird.views"]
+accent_backend = "accent_dird.plugins.accent_user_backend.plugin:AccentUserView"
+api_view = "accent_dird.plugins.api.plugin:ApiViewPlugin"
+backends_view = "accent_dird.plugins.backends.plugin:BackendsViewPlugin"
+conference_view = "accent_dird.plugins.conference_backend.plugin:ConferenceViewPlugin"
+config_view = "accent_dird.plugins.config.plugin:ConfigViewPlugin"
+csv_backend = "accent_dird.plugins.csv_backend.plugin:CSVView"
+csv_ws_backend = "accent_dird.plugins.csv_ws_backend.plugin:CSVWSView"
+default_json = "accent_dird.plugins.default_json.plugin:JsonViewPlugin"
+displays_view = "accent_dird.plugins.displays.plugin:DisplaysViewPlugin"
+google_view = "accent_dird.plugins.google_backend.plugin:GoogleViewPlugin"
+graphql_view = "accent_dird.plugins.graphql.plugin:GraphQLViewPlugin"
+headers_view = "accent_dird.plugins.headers.plugin:HeadersViewPlugin"
+ldap_backend = "accent_dird.plugins.ldap_backend.plugin:LDAPView"
+office365_backend = "accent_dird.plugins.office365_backend.plugin:Office365View"
+personal_backend = "accent_dird.plugins.personal_backend.plugin:PersonalView"
+personal_view = "accent_dird.plugins.personal.plugin:PersonalViewPlugin"
+phonebook_backend = "accent_dird.plugins.phonebook_backend.plugin:PhonebookView"
+phonebook_deprecated_view = "accent_dird.plugins.phonebook_deprecated.plugin:DeprecatedPhonebookViewPlugin"
+phonebook_view = "accent_dird.plugins.phonebook.plugin:PhonebookViewPlugin"
+profile_sources_view = "accent_dird.plugins.profile_sources.plugin:SourceViewPlugin"
+profiles_view = "accent_dird.plugins.profiles.plugin:ProfilesViewPlugin"
+sources_view = "accent_dird.plugins.sources.plugin:SourcesViewPlugin"
+status_view = "accent_dird.plugins.status.plugin:StatusViewPlugin"

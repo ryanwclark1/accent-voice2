@@ -1,0 +1,47 @@
+#!/bin/sh
+
+AST_ETC_PATH="/etc/asterisk"
+AST_USR_PATH="/usr/share/asterisk"
+AST_SPOOL_PATH="/var/spool/asterisk"
+AST_VARLIB_PATH="/var/lib/asterisk"
+ACCENT_VARLIB_PATH="/var/lib/accent"
+
+AST_VARLIB_MOH_PATH="${AST_VARLIB_PATH}/moh"
+AST_USR_MOH_PATH="${AST_USR_PATH}/moh"
+ACCENT_MOH_PATH="${ACCENT_VARLIB_PATH}/moh"
+
+ACCENT_WEBI_MAKE_DIRS="${AST_SPOOL_PATH}/monitor
+                ${AST_VARLIB_MOH_PATH}/default
+                ${AST_VARLIB_PATH}/sounds/custom
+                ${ACCENT_VARLIB_PATH}/sounds/tenants"
+
+ACCENT_WEBI_FIX_PATH_RIGHTS="${AST_ETC_PATH}
+               ${AST_USR_PATH}/moh
+               ${AST_SPOOL_PATH}/fax
+               ${AST_SPOOL_PATH}/monitor
+               ${AST_VARLIB_MOH_PATH}
+               ${AST_VARLIB_PATH}/sounds/custom
+               ${ACCENT_VARLIB_PATH}
+               ${ACCENT_VARLIB_PATH}/sounds
+               ${ACCENT_VARLIB_PATH}/sounds/tenants"
+
+echo "${ACCENT_WEBI_MAKE_DIRS}"|while read ACCENT_WEBI_DIR;
+do
+	mkdir -p "${ACCENT_WEBI_DIR}";
+done;
+
+if [ ! -L "${AST_USR_MOH_PATH}" ]; then
+	if [ ! -L "${AST_USR_MOH_PATH}" ]; then
+		ln -s "${AST_VARLIB_MOH_PATH}" "${AST_USR_MOH_PATH}"
+	fi
+	if [ ! -L "${ACCENT_MOH_PATH}" ]; then
+		ln -s "${AST_VARLIB_MOH_PATH}" "${ACCENT_MOH_PATH}"
+	fi
+fi
+
+echo "${ACCENT_WEBI_FIX_PATH_RIGHTS}"|while read ACCENT_WEBI_PATH_RIGHTS;
+do
+	chown -R asterisk:www-data "${ACCENT_WEBI_PATH_RIGHTS}"
+	find "${ACCENT_WEBI_PATH_RIGHTS}" -type d -exec chmod 2775 '{}' \;
+	find "${ACCENT_WEBI_PATH_RIGHTS}" -type f -exec chmod 660 '{}' \;
+done;

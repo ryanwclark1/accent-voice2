@@ -1,0 +1,112 @@
+paths:
+  /lines/{line_id}/endpoints/custom/{custom_id}:
+    put:
+      operationId: associate_line_endpoint_custom
+      summary: Associate line and Custom endpoint
+      description: '**Required ACL:** `confd.lines.{line_id}.endpoints.custom.{custom_id}.update`'
+      tags:
+      - lines
+      - endpoints
+      - custom
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/customid'
+      responses:
+        '204':
+          description: Line and Custom endpoint associated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: dissociate_line_endpoint_custom
+      summary: Dissociate line and Custom endpoint
+      description: '**Required ACL:** `confd.lines.{line_id}.endpoints.custom.{custom_id}.delete`'
+      tags:
+      - lines
+      - endpoints
+      - custom
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/customid'
+      responses:
+        '204':
+          description: Line and Custom endpoint dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+  /lines/{line_id}/endpoints/sccp/{sccp_id}:
+    put:
+      operationId: associate_line_endpoint_sccp
+      summary: Associate line and SCCP endpoint
+      description: '**Required ACL:** `confd.lines.{line_id}.endpoints.sccp.{sccp_id}.update`'
+      tags:
+      - lines
+      - endpoints
+      - sccp
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/sccpid'
+      responses:
+        '204':
+          description: Line and SCCP endpoint associated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: dissociate_line_endpoint_sccp
+      summary: Dissociate line and SCCP endpoint
+      description: '**Required ACL:** `confd.lines.{line_id}.endpoints.sccp.{sccp_id}.delete`'
+      tags:
+      - lines
+      - endpoints
+      - sccp
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/sccpid'
+      responses:
+        '204':
+          description: Line and SCCP endpoint dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+  /lines/{line_id}/endpoints/sip/{sip_uuid}:
+    put:
+      operationId: associate_line_endpoint_sip
+      summary: Associate line and SIP endpoint
+      description: '**Required ACL:** `confd.lines.{line_id}.endpoints.sip.{sip_uuid}.update`'
+      tags:
+      - lines
+      - endpoints
+      - sip
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/sipuuid'
+      responses:
+        '204':
+          description: Line and SIP endpoint associated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    delete:
+      operationId: dissociate_line_endpoint_sip
+      summary: Dissociate line and SIP endpoint
+      description: '**Required ACL:** `confd.lines.{line_id}.endpoints.sip.{sip_uuid}.delete`'
+      tags:
+      - lines
+      - endpoints
+      - sip
+      parameters:
+      - $ref: '#/parameters/lineid'
+      - $ref: '#/parameters/sipuuid'
+      responses:
+        '204':
+          description: Line and SIP endpoint dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'

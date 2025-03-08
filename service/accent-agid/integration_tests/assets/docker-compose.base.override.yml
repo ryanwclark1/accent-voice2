@@ -1,0 +1,12 @@
+services:
+  sync:
+    depends_on:
+      - agid
+      - auth
+      - calld
+      - confd
+      - agentd
+      - dird
+      - postgres
+    environment:
+      TARGETS: "agid:4573 auth:9497 confd:9486 agentd:9493 calld:9500 dird:9489 postgres:5432"

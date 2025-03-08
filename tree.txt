@@ -1,0 +1,450 @@
+/accent-voice/
+├── /accent-voice/deploy/deploy/
+│   ├── /accent-voice/deploy/asterisk/asterisk/
+│   ├── /accent-voice/deploy/asterisk-configs-examples/asterisk-configs-examples/
+│   ├── /accent-voice/deploy/bin/bin/
+│   ├── /accent-voice/deploy/certs/certs/
+│   ├── /accent-voice/deploy/etc/etc/
+│   │   ├── /accent-voice/deploy/etc/alertmanager/alertmanager/
+│   │   ├── /accent-voice/deploy/etc/grafana/grafana/
+│   │   ├── /accent-voice/deploy/etc/loki/loki/
+│   │   ├── /accent-voice/deploy/etc/nginx/nginx/
+│   │   ├── /accent-voice/deploy/etc/pjsip.d/pjsip.d/
+│   │   ├── /accent-voice/deploy/etc/prometheus/prometheus/
+│   │   ├── /accent-voice/deploy/etc/promtail/promtail/
+│   │   └── /accent-voice/deploy/etc/rules/rules/
+│   ├── /accent-voice/deploy/init-db/init-db/
+│   ├── /accent-voice/deploy/letsencrypt/letsencrypt/
+│   └── /accent-voice/deploy/mock/mock/
+├── /accent-voice/docs/docs/
+├── /accent-voice/js/js/
+│   ├── /accent-voice/js/library/library/
+│   │   └── /accent-voice/js/library/accent-js-sdk/accent-js-sdk/
+│   └── /accent-voice/js/service/service/
+│       └── /accent-voice/js/service/008/008/
+├── /accent-voice/library/library/
+│   ├── /accent-voice/library/accent-agentd-client/accent-agentd-client/
+│   │   └── /accent-voice/library/accent-agentd-client/accent_agentd_client/accent_agentd_client/
+│   ├── /accent-voice/library/accent-amid-client/accent-amid-client/
+│   │   └── /accent-voice/library/accent-amid-client/accent_amid_client/accent_amid_client/
+│   ├── /accent-voice/library/accent-applicationd-client/accent-applicationd-client/
+│   │   ├── /accent-voice/library/accent-applicationd-client/accent_applicationd_client/accent_applicationd_client/
+│   │   ├── /accent-voice/library/accent-applicationd-client/docs/docs/
+│   │   └── /accent-voice/library/accent-applicationd-client/test/test/
+│   ├── /accent-voice/library/accent-asterisk-config/accent-asterisk-config/
+│   │   ├── /accent-voice/library/accent-asterisk-config/etc/etc/
+│   │   └── /accent-voice/library/accent-asterisk-config/service/service/
+│   ├── /accent-voice/library/accent-asterisk-doc-extractor/accent-asterisk-doc-extractor/
+│   │   └── /accent-voice/library/accent-asterisk-doc-extractor/accent_asterisk_doc_extractor/accent_asterisk_doc_extractor/
+│   ├── /accent-voice/library/accent-asyncio-ari-client/accent-asyncio-ari-client/
+│   │   ├── /accent-voice/library/accent-asyncio-ari-client/accent_appgateway_client/accent_appgateway_client/
+│   │   ├── /accent-voice/library/accent-asyncio-ari-client/docs/docs/
+│   │   └── /accent-voice/library/accent-asyncio-ari-client/test/test/
+│   ├── /accent-voice/library/accent-auth-client/accent-auth-client/
+│   │   └── /accent-voice/library/accent-auth-client/accent_auth_client/accent_auth_client/
+│   ├── /accent-voice/library/accent-auth-keys/accent-auth-keys/
+│   │   ├── /accent-voice/library/accent-auth-keys/accent_auth_keys/accent_auth_keys/
+│   │   ├── /accent-voice/library/accent-auth-keys/etc/etc/
+│   │   └── /accent-voice/library/accent-auth-keys/integration_tests/integration_tests/
+│   ├── /accent-voice/library/accent-bus/accent-bus/
+│   │   ├── /accent-voice/library/accent-bus/accent_bus/accent_bus/
+│   │   ├── /accent-voice/library/accent-bus/contribs/contribs/
+│   │   └── /accent-voice/library/accent-bus/integration_tests/integration_tests/
+│   ├── /accent-voice/library/accent-call-logd-client/accent-call-logd-client/
+│   │   └── /accent-voice/library/accent-call-logd-client/accent_call_logd_client/accent_call_logd_client/
+│   ├── /accent-voice/library/accent-calld-client/accent-calld-client/
+│   │   └── /accent-voice/library/accent-calld-client/accent_calld_client/accent_calld_client/
+│   ├── /accent-voice/library/accent-chatd-client/accent-chatd-client/
+│   │   └── /accent-voice/library/accent-chatd-client/accent_chatd_client/accent_chatd_client/
+│   ├── /accent-voice/library/accent-confd-client/accent-confd-client/
+│   │   └── /accent-voice/library/accent-confd-client/accent_confd_client/accent_confd_client/
+│   ├── /accent-voice/library/accent-confgend-client/accent-confgend-client/
+│   │   ├── /accent-voice/library/accent-confgend-client/accent_confgend_client/accent_confgend_client/
+│   │   └── /accent-voice/library/accent-confgend-client/etc/etc/
+│   ├── /accent-voice/library/accent-config/accent-config/
+│   │   ├── /accent-voice/library/accent-config/dialplan/dialplan/
+│   │   ├── /accent-voice/library/accent-config/etc/etc/
+│   │   ├── /accent-voice/library/accent-config/odbc/odbc/
+│   │   ├── /accent-voice/library/accent-config/sbin/sbin/
+│   │   ├── /accent-voice/library/accent-config/templates/templates/
+│   │   └── /accent-voice/library/accent-config/tests/tests/
+│   ├── /accent-voice/library/accent-dao/accent-dao/
+│   │   ├── /accent-voice/library/accent-dao/accent_dao/accent_dao/
+│   │   ├── /accent-voice/library/accent-dao/contribs/contribs/
+│   │   └── /accent-voice/library/accent-dao/etc/etc/
+│   ├── /accent-voice/library/accent-deployd-client/accent-deployd-client/
+│   │   └── /accent-voice/library/accent-deployd-client/accent_deployd_client/accent_deployd_client/
+│   ├── /accent-voice/library/accent-dird-client/accent-dird-client/
+│   │   └── /accent-voice/library/accent-dird-client/accent_dird_client/accent_dird_client/
+│   ├── /accent-voice/library/accent-documentation/accent-documentation/
+│   │   ├── /accent-voice/library/accent-documentation/content/content/
+│   │   └── /accent-voice/library/accent-documentation/scripts/scripts/
+│   ├── /accent-voice/library/accent-fetchfw/accent-fetchfw/
+│   │   ├── /accent-voice/library/accent-fetchfw/accent_fetchfw/accent_fetchfw/
+│   │   └── /accent-voice/library/accent-fetchfw/resources/resources/
+│   ├── /accent-voice/library/accent-lib-python/accent-lib-python/
+│   │   ├── /accent-voice/library/accent-lib-python/accent/accent/
+│   │   └── /accent-voice/library/accent-lib-python/integration_tests/integration_tests/
+│   ├── /accent-voice/library/accent-lib-rest-client/accent-lib-rest-client/
+│   │   └── /accent-voice/library/accent-lib-rest-client/accent_lib_rest_client/accent_lib_rest_client/
+│   ├── /accent-voice/library/accent-market-client/accent-market-client/
+│   │   └── /accent-voice/library/accent-market-client/accent_market_client/accent_market_client/
+│   ├── /accent-voice/library/accent-plugind-client/accent-plugind-client/
+│   │   └── /accent-voice/library/accent-plugind-client/accent_plugind_client/accent_plugind_client/
+│   ├── /accent-voice/library/accent-provd-client/accent-provd-client/
+│   │   └── /accent-voice/library/accent-provd-client/accent_provd_client/accent_provd_client/
+│   ├── /accent-voice/library/accent-setupd-client/accent-setupd-client/
+│   │   └── /accent-voice/library/accent-setupd-client/accent_setupd_client/accent_setupd_client/
+│   ├── /accent-voice/library/accent-test-helpers/accent-test-helpers/
+│   │   ├── /accent-voice/library/accent-test-helpers/accent_test_helpers/accent_test_helpers/
+│   │   └── /accent-voice/library/accent-test-helpers/contribs/contribs/
+│   ├── /accent-voice/library/accent-uuid/accent-uuid/
+│   │   ├── /accent-voice/library/accent-uuid/accent_uuid/accent_uuid/
+│   │   └── /accent-voice/library/accent-uuid/bin/bin/
+│   ├── /accent-voice/library/accent-webhookd-client/accent-webhookd-client/
+│   │   └── /accent-voice/library/accent-webhookd-client/accent_webhookd_client/accent_webhookd_client/
+│   ├── /accent-voice/library/accent-websocketd-client/accent-websocketd-client/
+│   │   └── /accent-voice/library/accent-websocketd-client/accent_websocketd_client/accent_websocketd_client/
+│   ├── /accent-voice/library/ari-py/ari-py/
+│   │   ├── /accent-voice/library/ari-py/ari/ari/
+│   │   ├── /accent-voice/library/ari-py/ari_test/ari_test/
+│   │   ├── /accent-voice/library/ari-py/examples/examples/
+│   │   └── /accent-voice/library/ari-py/sample-api/sample-api/
+│   └── /accent-voice/library/swagger-py/swagger-py/
+│       ├── /accent-voice/library/swagger-py/doc/doc/
+│       ├── /accent-voice/library/swagger-py/swaggerpy/swaggerpy/
+│       ├── /accent-voice/library/swagger-py/swaggerpy_test/swaggerpy_test/
+│       └── /accent-voice/library/swagger-py/test-data/test-data/
+├── /accent-voice/notes/notes/
+├── /accent-voice/provisioning/provisioning/
+│   ├── /accent-voice/provisioning/stable/stable/
+│   │   └── /accent-voice/provisioning/stable/grandstream/grandstream/
+│   └── /accent-voice/provisioning/testing/testing/
+├── /accent-voice/scripts/scripts/
+│   └── /accent-voice/scripts/conf_files/conf_files/
+├── /accent-voice/service/service/
+│   ├── /accent-voice/service/accent-agentd/accent-agentd/
+│   │   ├── /accent-voice/service/accent-agentd/accent_agentd/accent_agentd/
+│   │   ├── /accent-voice/service/accent-agentd/etc/etc/
+│   │   └── /accent-voice/service/accent-agentd/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-agentd-cli/accent-agentd-cli/
+│   │   ├── /accent-voice/service/accent-agentd-cli/accent_agentd_cli/accent_agentd_cli/
+│   │   ├── /accent-voice/service/accent-agentd-cli/bin/bin/
+│   │   └── /accent-voice/service/accent-agentd-cli/etc/etc/
+│   ├── /accent-voice/service/accent-agid/accent-agid/
+│   │   ├── /accent-voice/service/accent-agid/accent_agid/accent_agid/
+│   │   ├── /accent-voice/service/accent-agid/bin/bin/
+│   │   ├── /accent-voice/service/accent-agid/etc/etc/
+│   │   ├── /accent-voice/service/accent-agid/examples/examples/
+│   │   └── /accent-voice/service/accent-agid/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-amid/accent-amid/
+│   │   ├── /accent-voice/service/accent-amid/accent_amid/accent_amid/
+│   │   ├── /accent-voice/service/accent-amid/bin/bin/
+│   │   ├── /accent-voice/service/accent-amid/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-amid/etc/etc/
+│   │   └── /accent-voice/service/accent-amid/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-asterisk/accent-asterisk/
+│   │   ├── /accent-voice/service/accent-asterisk/addons/addons/
+│   │   ├── /accent-voice/service/accent-asterisk/agi/agi/
+│   │   ├── /accent-voice/service/accent-asterisk/apps/apps/
+│   │   ├── /accent-voice/service/accent-asterisk/autoconf/autoconf/
+│   │   ├── /accent-voice/service/accent-asterisk/bridges/bridges/
+│   │   ├── /accent-voice/service/accent-asterisk/build_tools/build_tools/
+│   │   ├── /accent-voice/service/accent-asterisk/cdr/cdr/
+│   │   ├── /accent-voice/service/accent-asterisk/cel/cel/
+│   │   ├── /accent-voice/service/accent-asterisk/ChangeLogs/ChangeLogs/
+│   │   ├── /accent-voice/service/accent-asterisk/channels/channels/
+│   │   ├── /accent-voice/service/accent-asterisk/codecs/codecs/
+│   │   ├── /accent-voice/service/accent-asterisk/configs/configs/
+│   │   ├── /accent-voice/service/accent-asterisk/contrib/contrib/
+│   │   ├── /accent-voice/service/accent-asterisk/doc/doc/
+│   │   ├── /accent-voice/service/accent-asterisk/formats/formats/
+│   │   ├── /accent-voice/service/accent-asterisk/funcs/funcs/
+│   │   ├── /accent-voice/service/accent-asterisk/images/images/
+│   │   ├── /accent-voice/service/accent-asterisk/include/include/
+│   │   ├── /accent-voice/service/accent-asterisk/main/main/
+│   │   ├── /accent-voice/service/accent-asterisk/menuselect/menuselect/
+│   │   ├── /accent-voice/service/accent-asterisk/pbx/pbx/
+│   │   ├── /accent-voice/service/accent-asterisk/phoneprov/phoneprov/
+│   │   ├── /accent-voice/service/accent-asterisk/res/res/
+│   │   ├── /accent-voice/service/accent-asterisk/rest-api/rest-api/
+│   │   ├── /accent-voice/service/accent-asterisk/rest-api-templates/rest-api-templates/
+│   │   ├── /accent-voice/service/accent-asterisk/sounds/sounds/
+│   │   ├── /accent-voice/service/accent-asterisk/static-http/static-http/
+│   │   ├── /accent-voice/service/accent-asterisk/tests/tests/
+│   │   ├── /accent-voice/service/accent-asterisk/third-party/third-party/
+│   │   └── /accent-voice/service/accent-asterisk/utils/utils/
+│   ├── /accent-voice/service/accent-auth/accent-auth/
+│   │   ├── /accent-voice/service/accent-auth/accent_auth/accent_auth/
+│   │   ├── /accent-voice/service/accent-auth/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-auth/etc/etc/
+│   │   ├── /accent-voice/service/accent-auth/integration_tests/integration_tests/
+│   │   └── /accent-voice/service/accent-auth/templates/templates/
+│   ├── /accent-voice/service/accent-auth-cli/accent-auth-cli/
+│   │   ├── /accent-voice/service/accent-auth-cli/accent_auth_cli/accent_auth_cli/
+│   │   └── /accent-voice/service/accent-auth-cli/etc/etc/
+│   ├── /accent-voice/service/accent-call-logd/accent-call-logd/
+│   │   ├── /accent-voice/service/accent-call-logd/accent_call_logd/accent_call_logd/
+│   │   ├── /accent-voice/service/accent-call-logd/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-call-logd/etc/etc/
+│   │   ├── /accent-voice/service/accent-call-logd/integration_tests/integration_tests/
+│   │   └── /accent-voice/service/accent-call-logd/templates/templates/
+│   ├── /accent-voice/service/accent-calld/accent-calld/
+│   │   ├── /accent-voice/service/accent-calld/accent_calld/accent_calld/
+│   │   ├── /accent-voice/service/accent-calld/bin/bin/
+│   │   ├── /accent-voice/service/accent-calld/etc/etc/
+│   │   └── /accent-voice/service/accent-calld/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-certs/accent-certs/
+│   │   ├── /accent-voice/service/accent-certs/bin/bin/
+│   │   └── /accent-voice/service/accent-certs/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-chatd/accent-chatd/
+│   │   ├── /accent-voice/service/accent-chatd/accent_chatd/accent_chatd/
+│   │   ├── /accent-voice/service/accent-chatd/alembic/alembic/
+│   │   ├── /accent-voice/service/accent-chatd/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-chatd/etc/etc/
+│   │   └── /accent-voice/service/accent-chatd/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-confd/accent-confd/
+│   │   ├── /accent-voice/service/accent-confd/accent_confd/accent_confd/
+│   │   ├── /accent-voice/service/accent-confd/etc/etc/
+│   │   └── /accent-voice/service/accent-confd/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-confd-cli/accent-confd-cli/
+│   │   ├── /accent-voice/service/accent-confd-cli/accent_confd_cli/accent_confd_cli/
+│   │   ├── /accent-voice/service/accent-confd-cli/contribs/contribs/
+│   │   └── /accent-voice/service/accent-confd-cli/etc/etc/
+│   ├── /accent-voice/service/accent-confgend/accent-confgend/
+│   │   ├── /accent-voice/service/accent-confgend/accent_confgend/accent_confgend/
+│   │   ├── /accent-voice/service/accent-confgend/bin/bin/
+│   │   ├── /accent-voice/service/accent-confgend/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-confgend/etc/etc/
+│   │   ├── /accent-voice/service/accent-confgend/integration_tests/integration_tests/
+│   │   └── /accent-voice/service/accent-confgend/tests/tests/
+│   ├── /accent-voice/service/accent-debug/accent-debug/
+│   │   ├── /accent-voice/service/accent-debug/accent_debug/accent_debug/
+│   │   ├── /accent-voice/service/accent-debug/bin/bin/
+│   │   └── /accent-voice/service/accent-debug/etc/etc/
+│   ├── /accent-voice/service/accent-dird/accent-dird/
+│   │   ├── /accent-voice/service/accent-dird/accent_dird/accent_dird/
+│   │   ├── /accent-voice/service/accent-dird/alembic/alembic/
+│   │   ├── /accent-voice/service/accent-dird/bin/bin/
+│   │   ├── /accent-voice/service/accent-dird/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-dird/etc/etc/
+│   │   ├── /accent-voice/service/accent-dird/integration_tests/integration_tests/
+│   │   └── /accent-voice/service/accent-dird/samples/samples/
+│   ├── /accent-voice/service/accent-export-import/accent-export-import/
+│   │   ├── /accent-voice/service/accent-export-import/accent_export_import/accent_export_import/
+│   │   └── /accent-voice/service/accent-export-import/contrib/contrib/
+│   ├── /accent-voice/service/accent-manage-db/accent-manage-db/
+│   │   ├── /accent-voice/service/accent-manage-db/accent_db/accent_db/
+│   │   ├── /accent-voice/service/accent-manage-db/alembic/alembic/
+│   │   ├── /accent-voice/service/accent-manage-db/bin/bin/
+│   │   ├── /accent-voice/service/accent-manage-db/contribs/contribs/
+│   │   └── /accent-voice/service/accent-manage-db/populate/populate/
+│   ├── /accent-voice/service/accent-nginx/accent-nginx/
+│   │   └── /accent-voice/service/accent-nginx/etc/etc/
+│   ├── /accent-voice/service/accent-phoned/accent-phoned/
+│   │   ├── /accent-voice/service/accent-phoned/accent_phoned/accent_phoned/
+│   │   ├── /accent-voice/service/accent-phoned/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-phoned/etc/etc/
+│   │   └── /accent-voice/service/accent-phoned/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-plugind/accent-plugind/
+│   │   ├── /accent-voice/service/accent-plugind/accent_plugind/accent_plugind/
+│   │   ├── /accent-voice/service/accent-plugind/bin/bin/
+│   │   ├── /accent-voice/service/accent-plugind/etc/etc/
+│   │   ├── /accent-voice/service/accent-plugind/integration_tests/integration_tests/
+│   │   └── /accent-voice/service/accent-plugind/templates/templates/
+│   ├── /accent-voice/service/accent-plugind-cli/accent-plugind-cli/
+│   │   └── /accent-voice/service/accent-plugind-cli/accent_plugind_cli/accent_plugind_cli/
+│   ├── /accent-voice/service/accent-prometheus-exporter-plugin/accent-prometheus-exporter-plugin/
+│   │   ├── /accent-voice/service/accent-prometheus-exporter-plugin/accent/accent/
+│   │   ├── /accent-voice/service/accent-prometheus-exporter-plugin/accent_prometheus_exporter/accent_prometheus_exporter/
+│   │   └── /accent-voice/service/accent-prometheus-exporter-plugin/etc/etc/
+│   ├── /accent-voice/service/accent-prov-server/accent-prov-server/
+│   │   ├── /accent-voice/service/accent-prov-server/etc/etc/
+│   │   └── /accent-voice/service/accent-prov-server/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-provd/accent-provd/
+│   │   ├── /accent-voice/service/accent-provd/accent_provd/accent_provd/
+│   │   ├── /accent-voice/service/accent-provd/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-provd/etc/etc/
+│   │   ├── /accent-voice/service/accent-provd/examples/examples/
+│   │   ├── /accent-voice/service/accent-provd/integration_tests/integration_tests/
+│   │   ├── /accent-voice/service/accent-provd/provd/provd/
+│   │   ├── /accent-voice/service/accent-provd/tftp-bench/tftp-bench/
+│   │   ├── /accent-voice/service/accent-provd/twisted/twisted/
+│   │   └── /accent-voice/service/accent-provd/usr/usr/
+│   ├── /accent-voice/service/accent-provd-cli/accent-provd-cli/
+│   │   ├── /accent-voice/service/accent-provd-cli/accent_provd_cli/accent_provd_cli/
+│   │   └── /accent-voice/service/accent-provd-cli/bin/bin/
+│   ├── /accent-voice/service/accent-provd-plugins/accent-provd-plugins/
+│   │   ├── /accent-voice/service/accent-provd-plugins/dhcp/dhcp/
+│   │   └── /accent-voice/service/accent-provd-plugins/plugins/plugins/
+│   ├── /accent-voice/service/accent-purge-db/accent-purge-db/
+│   │   ├── /accent-voice/service/accent-purge-db/accent_purge_db/accent_purge_db/
+│   │   ├── /accent-voice/service/accent-purge-db/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-purge-db/etc/etc/
+│   │   └── /accent-voice/service/accent-purge-db/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-res-amqp/accent-res-amqp/
+│   │   ├── /accent-voice/service/accent-res-amqp/amqp/amqp/
+│   │   ├── /accent-voice/service/accent-res-amqp/asterisk/asterisk/
+│   │   └── /accent-voice/service/accent-res-amqp/documentation/documentation/
+│   ├── /accent-voice/service/accent-res-stasis-amqp/accent-res-stasis-amqp/
+│   │   ├── /accent-voice/service/accent-res-stasis-amqp/asterisk/asterisk/
+│   │   ├── /accent-voice/service/accent-res-stasis-amqp/bin/bin/
+│   │   ├── /accent-voice/service/accent-res-stasis-amqp/documentation/documentation/
+│   │   ├── /accent-voice/service/accent-res-stasis-amqp/integration_tests/integration_tests/
+│   │   └── /accent-voice/service/accent-res-stasis-amqp/service/service/
+│   ├── /accent-voice/service/accent-rtpe-config/accent-rtpe-config/
+│   │   └── /accent-voice/service/accent-rtpe-config/scripts/scripts/
+│   ├── /accent-voice/service/accent-service/accent-service/
+│   │   ├── /accent-voice/service/accent-service/accent_service/accent_service/
+│   │   └── /accent-voice/service/accent-service/bin/bin/
+│   ├── /accent-voice/service/accent-setupd/accent-setupd/
+│   │   ├── /accent-voice/service/accent-setupd/accent_setupd/accent_setupd/
+│   │   ├── /accent-voice/service/accent-setupd/etc/etc/
+│   │   └── /accent-voice/service/accent-setupd/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-stat/accent-stat/
+│   │   ├── /accent-voice/service/accent-stat/accent_stat/accent_stat/
+│   │   └── /accent-voice/service/accent-stat/etc/etc/
+│   ├── /accent-voice/service/accent-ui/accent-ui/
+│   │   ├── /accent-voice/service/accent-ui/accent_ui/accent_ui/
+│   │   ├── /accent-voice/service/accent-ui/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-ui/etc/etc/
+│   │   ├── /accent-voice/service/accent-ui/integration_tests/integration_tests/
+│   │   ├── /accent-voice/service/accent-ui/node_modules/node_modules/
+│   │   ├── /accent-voice/service/accent-ui/plugins/plugins/
+│   │   └── /accent-voice/service/accent-ui/src/src/
+│   ├── /accent-voice/service/accent-ui2/accent-ui2/
+│   │   ├── /accent-voice/service/accent-ui2/backend/backend/
+│   │   ├── /accent-voice/service/accent-ui2/frontend/frontend/
+│   │   ├── /accent-voice/service/accent-ui2/hooks/hooks/
+│   │   ├── /accent-voice/service/accent-ui2/img/img/
+│   │   └── /accent-voice/service/accent-ui2/scripts/scripts/
+│   ├── /accent-voice/service/accent-user-ui/accent-user-ui/
+│   │   ├── /accent-voice/service/accent-user-ui/node_modules/node_modules/
+│   │   ├── /accent-voice/service/accent-user-ui/public/public/
+│   │   └── /accent-voice/service/accent-user-ui/src/src/
+│   ├── /accent-voice/service/accent-webhookd/accent-webhookd/
+│   │   ├── /accent-voice/service/accent-webhookd/accent_webhookd/accent_webhookd/
+│   │   ├── /accent-voice/service/accent-webhookd/alembic/alembic/
+│   │   ├── /accent-voice/service/accent-webhookd/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-webhookd/etc/etc/
+│   │   └── /accent-voice/service/accent-webhookd/integration_tests/integration_tests/
+│   ├── /accent-voice/service/accent-websocketd/accent-websocketd/
+│   │   ├── /accent-voice/service/accent-websocketd/accent_websocketd/accent_websocketd/
+│   │   ├── /accent-voice/service/accent-websocketd/contribs/contribs/
+│   │   ├── /accent-voice/service/accent-websocketd/etc/etc/
+│   │   └── /accent-voice/service/accent-websocketd/integration_tests/integration_tests/
+│   ├── /accent-voice/service/apiclient/apiclient/
+│   │   ├── /accent-voice/service/apiclient/cmd/cmd/
+│   │   └── /accent-voice/service/apiclient/internal/internal/
+│   └── /accent-voice/service/docker-flask/docker-flask/
+│       ├── /accent-voice/service/docker-flask/app/app/
+│       ├── /accent-voice/service/docker-flask/nginx/nginx/
+│       └── /accent-voice/service/docker-flask/supervisor/supervisor/
+├── /accent-voice/site/site/
+│   ├── /accent-voice/site/assets/assets/
+│   │   ├── /accent-voice/site/assets/images/images/
+│   │   ├── /accent-voice/site/assets/javascripts/javascripts/
+│   │   └── /accent-voice/site/assets/stylesheets/stylesheets/
+│   ├── /accent-voice/site/modules/modules/
+│   └── /accent-voice/site/pdf/pdf/
+├── /accent-voice/temp/temp/
+│   ├── /accent-voice/temp/accent-agentd-client/accent-agentd-client/
+│   │   └── /accent-voice/temp/accent-agentd-client/accent_agentd_client/accent_agentd_client/
+│   ├── /accent-voice/temp/accent-amid-client/accent-amid-client/
+│   │   └── /accent-voice/temp/accent-amid-client/accent_amid_client/accent_amid_client/
+│   ├── /accent-voice/temp/accent-applicationd-client/accent-applicationd-client/
+│   │   ├── /accent-voice/temp/accent-applicationd-client/accent_applicationd_client/accent_applicationd_client/
+│   │   ├── /accent-voice/temp/accent-applicationd-client/docs/docs/
+│   │   └── /accent-voice/temp/accent-applicationd-client/test/test/
+│   ├── /accent-voice/temp/accent-asterisk-config/accent-asterisk-config/
+│   │   ├── /accent-voice/temp/accent-asterisk-config/etc/etc/
+│   │   └── /accent-voice/temp/accent-asterisk-config/service/service/
+│   ├── /accent-voice/temp/accent-asyncio-ari-client/accent-asyncio-ari-client/
+│   │   ├── /accent-voice/temp/accent-asyncio-ari-client/accent_appgateway_client/accent_appgateway_client/
+│   │   ├── /accent-voice/temp/accent-asyncio-ari-client/docs/docs/
+│   │   └── /accent-voice/temp/accent-asyncio-ari-client/test/test/
+│   ├── /accent-voice/temp/accent-auth-client/accent-auth-client/
+│   │   └── /accent-voice/temp/accent-auth-client/accent_auth_client/accent_auth_client/
+│   ├── /accent-voice/temp/accent-call-logd/accent-call-logd/
+│   │   ├── /accent-voice/temp/accent-call-logd/accent_call_logd/accent_call_logd/
+│   │   ├── /accent-voice/temp/accent-call-logd/contribs/contribs/
+│   │   ├── /accent-voice/temp/accent-call-logd/etc/etc/
+│   │   ├── /accent-voice/temp/accent-call-logd/integration_tests/integration_tests/
+│   │   └── /accent-voice/temp/accent-call-logd/templates/templates/
+│   ├── /accent-voice/temp/accent-call-logd-client/accent-call-logd-client/
+│   │   └── /accent-voice/temp/accent-call-logd-client/accent_call_logd_client/accent_call_logd_client/
+│   ├── /accent-voice/temp/accent-calld-client/accent-calld-client/
+│   │   └── /accent-voice/temp/accent-calld-client/accent_calld_client/accent_calld_client/
+│   ├── /accent-voice/temp/accent-chatd-client/accent-chatd-client/
+│   │   └── /accent-voice/temp/accent-chatd-client/accent_chatd_client/accent_chatd_client/
+│   ├── /accent-voice/temp/accent-confd-client/accent-confd-client/
+│   │   └── /accent-voice/temp/accent-confd-client/accent_confd_client/accent_confd_client/
+│   ├── /accent-voice/temp/accent-confgend-client/accent-confgend-client/
+│   │   ├── /accent-voice/temp/accent-confgend-client/bin/bin/
+│   │   └── /accent-voice/temp/accent-confgend-client/etc/etc/
+│   ├── /accent-voice/temp/accent-dird-client/accent-dird-client/
+│   │   └── /accent-voice/temp/accent-dird-client/accent_dird_client/accent_dird_client/
+│   ├── /accent-voice/temp/accent-docker/accent-docker/
+│   │   ├── /accent-voice/temp/accent-docker/bin/bin/
+│   │   ├── /accent-voice/temp/accent-docker/certs/certs/
+│   │   ├── /accent-voice/temp/accent-docker/etc/etc/
+│   │   └── /accent-voice/temp/accent-docker/init-db/init-db/
+│   ├── /accent-voice/temp/accent-documentation/accent-documentation/
+│   │   ├── /accent-voice/temp/accent-documentation/content/content/
+│   │   ├── /accent-voice/temp/accent-documentation/design/design/
+│   │   ├── /accent-voice/temp/accent-documentation/scripts/scripts/
+│   │   ├── /accent-voice/temp/accent-documentation/src/src/
+│   │   ├── /accent-voice/temp/accent-documentation/static/static/
+│   │   ├── /accent-voice/temp/accent-documentation/tests/tests/
+│   │   └── /accent-voice/temp/accent-documentation/website/website/
+│   ├── /accent-voice/temp/accent-dxtora/accent-dxtora/
+│   │   ├── /accent-voice/temp/accent-dxtora/accent_dxtora/accent_dxtora/
+│   │   ├── /accent-voice/temp/accent-dxtora/contribs/contribs/
+│   │   └── /accent-voice/temp/accent-dxtora/etc/etc/
+│   ├── /accent-voice/temp/accent-dxtorc/accent-dxtorc/
+│   │   ├── /accent-voice/temp/accent-dxtorc/accent_dxtorc/accent_dxtorc/
+│   │   └── /accent-voice/temp/accent-dxtorc/doc/doc/
+│   ├── /accent-voice/temp/accent-lib-rest-client/accent-lib-rest-client/
+│   │   └── /accent-voice/temp/accent-lib-rest-client/accent_lib_rest_client/accent_lib_rest_client/
+│   ├── /accent-voice/temp/accent-market-client/accent-market-client/
+│   │   └── /accent-voice/temp/accent-market-client/accent_market_client/accent_market_client/
+│   ├── /accent-voice/temp/accent-plugind-client/accent-plugind-client/
+│   │   └── /accent-voice/temp/accent-plugind-client/accent_plugind_client/accent_plugind_client/
+│   ├── /accent-voice/temp/accent-provd-client/accent-provd-client/
+│   │   └── /accent-voice/temp/accent-provd-client/accent_provd_client/accent_provd_client/
+│   ├── /accent-voice/temp/accent-setupd-client/accent-setupd-client/
+│   │   └── /accent-voice/temp/accent-setupd-client/accent_setupd_client/accent_setupd_client/
+│   ├── /accent-voice/temp/accent-sysconfd-client/accent-sysconfd-client/
+│   │   └── /accent-voice/temp/accent-sysconfd-client/accent_sysconfd_client/accent_sysconfd_client/
+│   ├── /accent-voice/temp/accent-ui/accent-ui/
+│   │   ├── /accent-voice/temp/accent-ui/accent_ui/accent_ui/
+│   │   ├── /accent-voice/temp/accent-ui/contribs/contribs/
+│   │   ├── /accent-voice/temp/accent-ui/etc/etc/
+│   │   └── /accent-voice/temp/accent-ui/integration_tests/integration_tests/
+│   ├── /accent-voice/temp/accent-webhookd-client/accent-webhookd-client/
+│   │   └── /accent-voice/temp/accent-webhookd-client/accent_webhookd_client/accent_webhookd_client/
+│   └── /accent-voice/temp/accent-websocketd-client/accent-websocketd-client/
+│       └── /accent-voice/temp/accent-websocketd-client/accent_websocketd_client/accent_websocketd_client/
+└── /accent-voice/tools/tools/
+    ├── /accent-voice/tools/ami-tools/ami-tools/
+    ├── /accent-voice/tools/bus-tools/bus-tools/
+    ├── /accent-voice/tools/compare-db/compare-db/
+    ├── /accent-voice/tools/dev-tools/dev-tools/
+    ├── /accent-voice/tools/generate-calls/generate-calls/
+    ├── /accent-voice/tools/generate-users/generate-users/
+    ├── /accent-voice/tools/grease_monkey/grease_monkey/
+    ├── /accent-voice/tools/http-proxy/http-proxy/
+    ├── /accent-voice/tools/integration-tests/integration-tests/
+    ├── /accent-voice/tools/license-updater/license-updater/
+    ├── /accent-voice/tools/phone-provisioning/phone-provisioning/
+    ├── /accent-voice/tools/pjsip/pjsip/
+    ├── /accent-voice/tools/postgres/postgres/
+    ├── /accent-voice/tools/repo-check/repo-check/
+    │   ├── /accent-voice/tools/repo-check/bin/bin/
+    │   └── /accent-voice/tools/repo-check/repo_check/repo_check/
+    ├── /accent-voice/tools/setup2poetry/setup2poetry/
+    │   └── /accent-voice/tools/setup2poetry/setup2poetry/setup2poetry/
+    ├── /accent-voice/tools/switch-vlan/switch-vlan/
+    ├── /accent-voice/tools/visualplan/visualplan/
+    │   └── /accent-voice/tools/visualplan/src/src/
+    └── /accent-voice/tools/ws-tools/ws-tools/

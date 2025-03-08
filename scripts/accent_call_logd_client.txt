@@ -1,0 +1,516 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_call_logd_client.client import Client
+
+__all__ = [Client]
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+
+class Client(BaseClient):
+    namespace = 'accent_call_logd_client.commands'
+
+    def __init__(
+        self, host, port=443, prefix='/api/call-logd', version='1.0', **kwargs
+    ):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import HTTPCommand
+
+from .exceptions import CallLogdError, CallLogdServiceUnavailable, InvalidCallLogdError
+
+
+class CallLogdCommand(HTTPCommand):
+    @staticmethod
+    def raise_from_response(response):
+        if response.status_code == 503:
+            raise CallLogdServiceUnavailable(response)
+
+        try:
+            raise CallLogdError(response)
+        except InvalidCallLogdError:
+            HTTPCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: commands/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/agent_statistics.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class AgentStatisticsCommand(BaseCommand):
+    def get_by_id(self, agent_id, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('agents', agent_id, 'statistics')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(self, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('agents', 'statistics')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/cdr.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class CDRCommand(BaseCommand):
+    def get_by_id(self, cdr_id):
+        headers = self._get_headers()
+        url = self._client.url('cdr', cdr_id)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_by_id_csv(self, cdr_id):
+        headers = {'Accept': 'text/csv; charset=utf-8'}
+        url = self._client.url('cdr', cdr_id)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.text
+
+    def list(self, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('cdr')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_csv(self, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = {'Accept': 'text/csv; charset=utf-8'}
+        url = self._client.url('cdr')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.text
+
+    def list_for_user(self, user_uuid, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('users', user_uuid, 'cdr')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_for_user_csv(self, user_uuid, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = {'Accept': 'text/csv; charset=utf-8'}
+        url = self._client.url('users', user_uuid, 'cdr')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.text
+
+    def list_from_user(self, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', 'cdr')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_from_user_csv(self, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = {'Accept': 'text/csv; charset=utf-8'}
+        url = self._client.url('users', 'me', 'cdr')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.text
+
+    def delete_cdrs_recording_media(self, cdr_ids, **kwargs):
+        headers = self._get_headers(**kwargs)
+        url = self._client.url('cdr', 'recordings', 'media')
+        body = {'cdr_ids': cdr_ids}
+        r = self.session.delete(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+    def get_recording_media(self, cdr_id, recording_uuid, **kwargs):
+        headers = self._get_headers(**kwargs)
+        headers['Accept'] = '*/*'
+        url = self._client.url('cdr', cdr_id, 'recordings', recording_uuid, 'media')
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r
+
+    def get_recording_media_from_user(self, cdr_id, recording_uuid, **kwargs):
+        headers = self._get_headers(**kwargs)
+        headers['Accept'] = '*/*'
+        url = self._client.url(
+            'users', 'me', 'cdr', cdr_id, 'recordings', recording_uuid, 'media'
+        )
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r
+
+    def delete_recording_media(self, cdr_id, recording_uuid, **kwargs):
+        headers = self._get_headers(**kwargs)
+        url = self._client.url('cdr', cdr_id, 'recordings', recording_uuid, 'media')
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def export_recording_media(self, cdr_ids=None, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+        headers = self._get_headers(**params)
+        body = {}
+        if cdr_ids:
+            body['cdr_ids'] = cdr_ids
+        url = self._client.url('cdr', 'recordings', 'media', 'export')
+        r = self.session.post(url, json=body, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class ConfigCommand(BaseCommand):
+    def get(self):
+        headers = self._get_headers()
+        url = self._client.url('config')
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def patch(self, config_patch):
+        headers = self._get_headers()
+        url = self._client.url('config')
+        r = self.session.patch(url, headers=headers, json=config_patch)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/export.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class ExportCommand(BaseCommand):
+    def get(self, export_uuid, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url('exports', export_uuid)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def download(self, export_uuid, tenant_uuid=None):
+        headers = self._get_headers(write=True, tenant_uuid=tenant_uuid)
+        url = self._client.url('exports', export_uuid, 'download')
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r
+
+----------------------------------------
+
+File: commands/helpers/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/helpers/base.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_call_logd_client.command import CallLogdCommand
+
+
+class BaseCommand(CallLogdCommand):
+    _headers = {'Accept': 'application/json'}
+
+    def _get_headers(self, **kwargs):
+        headers = dict(self._headers)
+        # The requests session will use self.tenant_uuid by default
+        tenant_uuid = kwargs.pop('tenant_uuid', None)
+        if tenant_uuid:
+            headers['Accent-Tenant'] = tenant_uuid
+        return headers
+
+----------------------------------------
+
+File: commands/queue_statistics.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class QueueStatisticsCommand(BaseCommand):
+    def get_by_id(self, queue_id, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('queues', queue_id, 'statistics')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(self, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('queues', 'statistics')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_qos_by_id(self, queue_id, **params):
+        if 'from_' in params:
+            params['from'] = params.pop('from_')
+
+        headers = self._get_headers()
+        url = self._client.url('queues', queue_id, 'statistics', 'qos')
+        r = self.session.get(url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/retention.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class RetentionCommand(BaseCommand):
+    def get(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url('retention')
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def update(self, tenant_uuid=None, **body):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url('retention')
+        r = self.session.put(url, json=body, headers=headers)
+        self.raise_from_response(r)
+
+----------------------------------------
+
+File: commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .helpers.base import BaseCommand
+
+
+class StatusCommand(BaseCommand):
+    def get(self):
+        headers = self._get_headers()
+        url = self._client.url('status')
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class CallLogdError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidCallLogdError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+        except KeyError:
+            raise InvalidCallLogdError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class CallLogdServiceUnavailable(CallLogdError):
+    pass
+
+
+class InvalidCallLogdError(Exception):
+    pass
+
+----------------------------------------
+
+File: tests/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: tests/test_command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from unittest import TestCase
+from unittest.mock import Mock, patch
+
+from hamcrest import assert_that, calling, raises
+
+from ..command import CallLogdCommand
+from ..exceptions import CallLogdError, CallLogdServiceUnavailable
+
+SOME_ERROR_BODY = {
+    'message': 'some message',
+    'error_id': 'some-error-id',
+    'details': {},
+    'timestamp': 'some-date',
+}
+
+
+class TestCallLogdCommand(TestCase):
+    @patch('accent_call_logd_client.command.HTTPCommand.raise_from_response')
+    def test_raise_from_response_no_error(self, parent_raise):
+        response = Mock(status_code=200)
+        response.json.return_value = {}
+
+        CallLogdCommand.raise_from_response(response)
+
+        parent_raise.assert_called_once_with(response)
+
+    def test_raise_from_response_503(self):
+        response = Mock(status_code=503)
+        response.json.return_value = SOME_ERROR_BODY
+
+        assert_that(
+            calling(CallLogdCommand.raise_from_response).with_args(response),
+            raises(CallLogdServiceUnavailable),
+        )
+
+    def test_raise_from_response_default_error(self):
+        response = Mock(status_code=999)
+        response.json.return_value = SOME_ERROR_BODY
+
+        assert_that(
+            calling(CallLogdCommand.raise_from_response).with_args(response),
+            raises(CallLogdError),
+        )
+
+----------------------------------------
+
+File: tests/test_exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from unittest import TestCase
+from unittest.mock import Mock
+
+from hamcrest import assert_that, calling, equal_to, raises
+
+from ..exceptions import CallLogdError, InvalidCallLogdError
+
+
+class TestCallLogdError(TestCase):
+    def test_when_response_has_no_json_then_raise_invalid(self):
+        response = Mock()
+        response.json.side_effect = ValueError
+
+        assert_that(
+            calling(CallLogdError).with_args(response), raises(InvalidCallLogdError)
+        )
+
+    def test_when_response_is_missing_keys_then_raise_invalid(self):
+        response = Mock()
+        response.json.return_value = {}
+
+        assert_that(
+            calling(CallLogdError).with_args(response), raises(InvalidCallLogdError)
+        )
+
+    def test_when_response_is_valid_then_return(self):
+        response = Mock()
+        response.json.return_value = {
+            'message': 'message',
+            'error_id': 'error_id',
+            'details': 'details',
+            'timestamp': 'timestamp',
+        }
+
+        error = CallLogdError(response)
+
+        assert_that(error.response, equal_to(response))
+
+----------------------------------------
+

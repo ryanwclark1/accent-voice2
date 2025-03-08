@@ -1,0 +1,16 @@
+FROM accentcommunications/accent-auth-cli
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+COPY . /usr/src/accent-auth-keys
+
+WORKDIR /usr/src/accent-auth-keys
+RUN python3 -m pip install -e .
+
+RUN true \
+    && mkdir -p /etc/accent-auth-keys/conf.d \
+    && mkdir -p /var/lib/accent-auth-keys \
+    && ln -s /usr/local/bin/accent-auth-cli /usr/bin/accent-auth-cli \
+    && adduser --quiet --system my-custom-user
+
+ENTRYPOINT ["./integration_tests/entrypoint.sh"]

@@ -1,0 +1,5 @@
+https://github.com/ryanwclark1/accent-test-helpers/archive/master.zip
+kombu==5.0.2
+pyhamcrest
+pytest
+python-consul==1.1.0

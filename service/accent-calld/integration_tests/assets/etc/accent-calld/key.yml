@@ -1,0 +1,4 @@
+# *-service usernames will be rejected by accent-auth-mock
+# until we setup a valid token for those credentials
+service_id: accent-calld-service
+service_key: opensesame

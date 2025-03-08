@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<FanvilIPPhoneInputScreen>
+ <Title>{{ gettext('Accent Search') }}</Title>
+ <Prompt>{{ gettext('Name or number') }}</Prompt>
+ <URL>{{ base_url|e }}?accent_user_uuid={{ user_uuid|e }}</URL>
+ <InputField>
+  <Prompt>{{ gettext('Name or number') }}</Prompt>
+  <Parameter>term</Parameter>
+  <Default></Default>
+ </InputField>
+</FanvilIPPhoneInputScreen>

@@ -1,0 +1,6 @@
+services:
+  sync:
+    depends_on:
+      - postgres
+    environment:
+      TARGETS: "postgres:5432"

@@ -1,0 +1,17 @@
+version: '3.7'
+services:
+  sync:
+    depends_on:
+      - confd
+      - nestbox
+      - nestbox-auth
+      - nestbox-deployd
+      - setupd
+      - sysconfd
+      - webhookd
+    environment:
+      TARGETS: webhookd:9300 confd:9486 setupd:9302 nestbox:443 nestbox-auth:9497 nestbox-deployd:9800 sysconfd:8668
+
+  setupd:
+    volumes:
+      - ./etc/accent-setupd/conf.d/short-self-stop.yml:/etc/accent-setupd/conf.d/short-self-stop.yml:ro

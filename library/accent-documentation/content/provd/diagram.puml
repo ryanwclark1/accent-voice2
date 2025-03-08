@@ -1,0 +1,48 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+hide stereotype
+
+Person(phone, "Desktop Phone")
+Person(consumer, "API consumer")
+
+System_Boundary(provd_system, "Provisioning") {
+    Container(provd_app, "provd", "Python", "Provisioning service")
+    Container(dxtorc, "dxtorc", "Python", "DHCP info transfer client")
+    Container(dxtora, "dxtora", "Python", "DHCP info transfer daemon")
+    System(dhcp_server, "DHCP Server")
+    Container(asterisk, "Asterisk", "C", "Media server")
+    Container(confd, "accent-confd", "Python", "Configuration service") [["../documentation/overview/configuration.html"]]
+    Container(agid, "accent-agid", "Python", "AGI service")
+    Container(amid, "accent-amid", "Python", "AMI proxy service") [["../documentation/overview/amid.html"]]
+    ContainerDb(filesystem, "File System", "/var/lib/accent-provd", "JSON database and provisioning plugins")
+}
+Container(auth, "accent-auth", "Python", "Authentication service") [["../documentation/overview/authentication.html"]]
+System_Ext(provd_plugins, "Provd device plugins repository")
+
+' Relationships
+Rel_R(phone, dhcp_server, " ", "DHCP")
+Rel_R(phone, provd_app, " ", "HTTP/TFTP")
+Rel_R(phone, asterisk, " ", "SIP/SCCP")
+
+Rel(agid, asterisk, " ", "AGI")
+Rel_U(agid, confd, " ", "REST")
+
+Rel_D(amid, asterisk, " ", "HTTP")
+Rel(provd_app, amid, " ", "REST")
+
+Rel(dhcp_server, dxtorc, " ", "subprocess")
+Rel_R(dxtorc, dxtora, " ", "UNIX socket")
+Rel(dxtora, provd_app, " ", "REST")
+
+Rel_L(confd, provd_app, " ", "REST")
+
+Rel(provd_app, filesystem, " ")
+Rel(provd_app, auth, " ", "REST")
+
+Rel(consumer, confd, " ", "REST")
+
+Rel(provd_app, provd_plugins, " ", "HTTP")
+
+
+@enduml

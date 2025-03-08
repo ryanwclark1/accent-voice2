@@ -1,0 +1,26 @@
+type: accent
+name: accent-{{ uuid }}
+searched_columns:
+  - firstname
+  - lastname
+first_matched_columns:
+  - exten
+tenant_uuid: {{ tenant_uuid }}
+auth:
+  host: {{ hostname }}
+  port: 9497
+  username: {{ service_id }}
+  password: {{ service_key }}
+  verify_certificate: false
+confd:
+  host: {{ hostname }}
+  port: {{ port }}
+  version: "1.1"
+  https: true
+  verify_certificate: false
+format_columns:
+    name: "{firstname} {lastname}"
+    phone: "{exten}"
+    number: "{exten}"
+    reverse: "{firstname} {lastname}"
+    voicemail: "{voicemail_number}"

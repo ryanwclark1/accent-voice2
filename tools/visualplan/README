@@ -1,0 +1,32 @@
+A tool to visualize which part of a dialplan is executed and which is not.
+
+
+Prerequisites
+=============
+
+* python 3
+
+These are also needed to run the unit tests:
+
+* mock (http://www.voidspace.org.uk/python/mock/)
+
+
+Configuration
+=============
+
+On your asterisk, in the :file:`/etc/asterisk/logger.conf` file, in the
+``[logfiles]`` section, add::
+
+   visualplan.log => verbose
+
+Then reload the ``logger`` asterisk module::
+
+   asterisk -rx "logger reload"
+
+
+Running
+=======
+
+Example:
+
+   ./visualplan visualplan.log /usr/share/*accent*-config/dialplan/*

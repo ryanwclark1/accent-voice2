@@ -1,0 +1,17 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+hide stereotype
+
+System_Boundary(websocketd_platform, "Websocketd application"){
+    Container(websocketd, "accent-websocketd", "Python", "Websocketd service")
+    Container(bus, "RabbitMQ", "Erlang", "Messaging Bus")
+    Container(auth, "accent-auth", "Python", "Authentication service") [["../documentation/overview/authentication.html"]]
+}
+
+actor User
+
+Rel_R(User, websocketd, "Receives events", "REST")
+Rel_U(websocketd, bus, "Receives Accent platform events", "AMQP")
+Rel_R(websocketd, auth, "Authenticates", "REST")
+@enduml

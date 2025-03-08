@@ -1,0 +1,9 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: /etc/accent-dao/conf.d/
+
+# Database connection settings.
+db_uri: postgresql://asterisk:password123@localhost/asterisk?application_name=accent-dao

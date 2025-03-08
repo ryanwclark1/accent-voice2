@@ -1,0 +1,48 @@
+###############################################
+# Confd Builder Image
+###############################################
+FROM accentcommunications/accent-confd:latest AS confd-builder-base
+
+RUN true \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        gcc \
+        libc6-dev \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSL https://install.python-poetry.org | python3 -
+
+WORKDIR $PYSETUP_PATH
+
+COPY ../library ../../library
+COPY ../service ../../service
+
+RUN true \
+    && poetry add alembic@^1.14.0 \
+    && poetry add ../../service/accent-manage-db/ \
+    && poetry add ../../library/accent-uuid/ \
+    && poetry add ../../library/accent-asterisk-doc-extractor/ \
+    && poetry add ../../library/accent-auth-keys/ \
+    && poetry install --with main \
+    && rm -rf ../../library \
+    && rm -rf ../../service
+
+###############################################
+# Confd Production Image
+###############################################
+FROM accentcommunications/accent-confd:latest AS confd-production
+COPY --from=confd-builder-base $PYSETUP_PATH $PYSETUP_PATH
+
+COPY ./service/accent-manage-db /usr/share/accent-manage-db
+
+RUN true \
+    && apt-get update -qq  \
+    && apt-get install -y --no-install-recommends \
+        netcat-openbsd \
+        postgresql-client \
+    && adduser --quiet --system --group --shell /bin/bash postgres \
+    && mkdir -p /var/lib/accent-confd \
+    && mkdir -p /usr/lib/accent-manage-db \
+    && ln -s $VENV_PATH/bin/pg-populate-db /usr/lib/accent-manage-db/pg-populate-db \
+    && rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,36 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
+
+  myservice:
+    image: myservice
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+
+  consul:
+    image: consul:1.8.7
+    ports:
+      - "8500"
+    command: "agent -server -client 0.0.0.0 -bootstrap-expect=1"
+
+  thread-exception:
+    image: thread-exception
+    volumes:
+      - ../..:/usr/local/src/accent-lib-python:ro
+
+  wsgi-patch:
+    image: wsgi-patch
+    volumes:
+      - ../..:/usr/local/src/accent-lib-python:ro
+    ports:
+      - "8080"
+    restart: "no"
+    ulimits:
+      nofile:
+        soft: 50
+        hard: 55

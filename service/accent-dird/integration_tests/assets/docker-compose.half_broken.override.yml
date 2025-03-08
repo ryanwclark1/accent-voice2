@@ -1,0 +1,13 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - dird
+      - db
+    environment:
+      TARGETS: "dird:9489 auth:9497 db:5432"
+  dird:
+    volumes:
+      - "./etc/accent-dird/conf.d/asset.half_broken.yml:/etc/accent-dird/conf.d/20-broken-plugins.yml"
+      - "./tmp/data/asset.half_broken.test.csv:/tmp/data/test.csv"

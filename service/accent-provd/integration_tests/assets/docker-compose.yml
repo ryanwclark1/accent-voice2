@@ -1,0 +1,42 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - "9497"
+
+  rabbitmq:
+    image: rabbitmq
+    container_name: rabbitmq
+    ports:
+      - "5672"
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  provd:
+    image: accent-provd-tests
+    volumes:
+      - "../..:/usr/src/accent-provd/"
+      - "./etc/accent-provd/config.yml:/etc/accent-provd/config.yml"
+      - "./keys/accent-provd-key.yml:/var/lib/accent-auth-keys/accent-provd-key.yml"
+      - "./jsondb/configs/base:/var/lib/accent-provd/jsondb/configs/base"
+      - "./jsondb/configs/default:/var/lib/accent-provd/jsondb/configs/default"
+      - "./jsondb/configs/defaultconfigdevice:/var/lib/accent-provd/jsondb/configs/defaultconfigdevice"
+      - "./jsondb/configs/autoprov:/var/lib/accent-provd/jsondb/configs/autoprov"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+    ports:
+      - "8666"
+      - "8667"
+      - "69/udp"
+
+  pluginserver:
+    image: accent-provd-plugin-server
+    volumes:
+      - "./plugins/pkgs:/var/www"
+    ports:
+      - "8080"

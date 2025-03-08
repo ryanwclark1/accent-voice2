@@ -1,0 +1,11 @@
+FROM accentcommunications/accent-agid
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+COPY integration_tests/docker/mock_cmd.sh /usr/bin/tiff2pdf
+COPY integration_tests/docker/mock_cmd.sh /usr/bin/mutt
+
+COPY . /usr/src/accent-agid
+
+WORKDIR /usr/src/accent-agid
+RUN python3 -m pip install -e .

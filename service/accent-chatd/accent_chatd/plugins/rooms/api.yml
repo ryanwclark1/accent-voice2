@@ -1,0 +1,231 @@
+paths:
+  /users/me/rooms:
+    post:
+      operationId: create_room
+      summary: Create room
+      description: |
+        **Required ACL:** `chatd.users.me.rooms.create`
+
+        **Warning**: **>=22.16**: If a room with the same participants exists,
+        it will be returned instead of creating new one. In this case, no other
+        parameter will be taken into account and the return code will be 201.
+        This behaviour will disappear in the future and a 409 error will be
+        raised.
+      tags:
+        - rooms
+      parameters:
+        - name: body
+          in: body
+          description: room to create
+          required: true
+          schema:
+            $ref: "#/definitions/Room"
+      responses:
+        "201":
+          description: Room created
+          schema:
+            $ref: "#/definitions/Room"
+        "400":
+          $ref: "#/responses/InvalidRequest"
+    get:
+      operationId: get_room
+      summary: Get room
+      description: "**Required ACL:** `chatd.users.me.rooms.read`"
+      tags:
+        - rooms
+      parameters:
+        - $ref: "#/parameters/user_uuid_query"
+      responses:
+        "200":
+          description: Room
+          schema:
+            $ref: "#/definitions/Rooms"
+        "404":
+          $ref: "#/responses/NotFoundError"
+  /users/me/rooms/messages:
+    get:
+      operationId: list_rooms_messages
+      summary: List rooms messages
+      description: "**Required ACL:** `chatd.users.me.rooms.messages.read`"
+      tags:
+        - rooms
+        - messages
+      parameters:
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search_distinct"
+        - $ref: "#/parameters/distinct"
+      responses:
+        "200":
+          description: Messages
+          schema:
+            $ref: "#/definitions/Messages"
+        "400":
+          $ref: "#/responses/InvalidRequest"
+  /users/me/rooms/{room_uuid}/messages:
+    post:
+      operationId: create_room_message
+      summary: Create room messages
+      description: "**Required ACL:** `chatd.users.me.rooms.{room_uuid}.messages.create`"
+      tags:
+        - rooms
+        - messages
+      parameters:
+        - $ref: "#/parameters/room_uuid"
+        - name: body
+          in: body
+          description: message to create
+          required: true
+          schema:
+            $ref: "#/definitions/UserMessagePOST"
+      responses:
+        "201":
+          description: Message created
+          schema:
+            $ref: "#/definitions/Message"
+        "400":
+          $ref: "#/responses/InvalidRequest"
+        "404":
+          $ref: "#/responses/NotFoundError"
+    get:
+      operationId: list_room_message
+      summary: List room messages
+      description: "**Required ACL:** `chatd.users.me.rooms.{room_uuid}.messages.read`"
+      tags:
+        - rooms
+        - messages
+      parameters:
+        - $ref: "#/parameters/room_uuid"
+        - $ref: "#/parameters/from_date"
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search"
+      responses:
+        "200":
+          description: Messages
+          schema:
+            $ref: "#/definitions/Messages"
+        "400":
+          $ref: "#/responses/InvalidRequest"
+        "404":
+          $ref: "#/responses/NotFoundError"
+
+parameters:
+  room_uuid:
+    name: room_uuid
+    in: path
+    type: string
+    description: The UUID of the room
+    required: true
+  from_date:
+    name: from_date
+    in: query
+    type: string
+    format: date-time
+    description: "The date and time from which to retrieve messages.
+      Example: 2019-06-12T10:00:00.000+00:00"
+
+definitions:
+  Room:
+    title: Room
+    allOf:
+      - $ref: "#/definitions/RoomRelationBase"
+      - properties:
+          name:
+            type: string
+            description: The name of the room
+          users:
+            type: array
+            maxItems: 100
+            items:
+              $ref: "#/definitions/RoomUser"
+        required:
+          - users
+
+  RoomRelationBase:
+    properties:
+      uuid:
+        type: string
+        description: The UUID of the room
+        readOnly: true
+
+  RoomUser:
+    properties:
+      uuid:
+        type: string
+      tenant_uuid:
+        type: string
+        description: The tenant of the user_uuid. Default to the same tenant as the token owner
+      accent_uuid:
+        type: string
+        description: The accent of the tenant_uuid. Default to the same accent as the token owner
+    required:
+      - uuid
+
+  Rooms:
+    title: Rooms
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/Room"
+      filtered:
+        type: integer
+      total:
+        type: integer
+
+  UserMessagePOST:
+    properties:
+      content:
+        type: string
+        description: The content of the message
+      alias:
+        type: string
+        description: Alias/nickname of the sender
+    required:
+      - content
+      - alias
+
+  Message:
+    properties:
+      uuid:
+        type: string
+        description: The UUID of the message
+        readOnly: true
+      content:
+        type: string
+        description: The content of the message
+      alias:
+        type: string
+        description: Alias/nickname of the sender
+      user_uuid:
+        type: string
+        description: user uuid of the sender
+      tenant_uuid:
+        type: string
+        description: tenant uuid of the sender
+      accent_uuid:
+        type: string
+        description: accent uuid of the sender
+      created_at:
+        type: string
+        description: The date of the message's creation
+        readOnly: true
+      room:
+        $ref: "#/definitions/RoomRelationBase"
+
+  Messages:
+    title: UserItems
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/Message"
+      filtered:
+        type: integer
+      total:
+        type: integer

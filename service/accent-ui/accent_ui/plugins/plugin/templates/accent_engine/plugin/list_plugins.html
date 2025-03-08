@@ -1,0 +1,57 @@
+{% macro _render_plugin(entry) %}
+<div class="col-md-4">
+  <div class="box box-solid box-primary">
+    <div class="box-header with-border">
+      <i class="fa fa-cubes"></i>
+      <h3 class="box-title">{{ entry.name }} v{{ entry.installed_version or (entry.versions[0]['version'] if
+        entry.versions) }}</h3>
+      <div class="pull-right box-tools">
+        {% if entry.installed_version %}
+        {{ _render_remove_button(entry.namespace, entry.name) }}
+        {% set version = entry.versions|selectattr('upgradable')|first %}
+        {{ _render_upgrade_button(entry.namespace, entry.name, version.version) if version}}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="box-body">
+      <dl>
+        <dt><i class="fa fa-book"></i> Description</dt>
+        <dd>{{ entry.display_name }}</dd>
+        <br>
+        <dt><i class="fa fa-user"></i> Author</dt>
+        <dd>{{ entry.author }}</dd>
+        <br>
+        <dt><i class="fa fa-tags"></i> Tags</dt>
+        <dd>{% for tag in entry.tags %} <span class="label label-default">{{ tag }}</span> {% endfor %}</dd>
+      </dl>
+      <span class="pull-right"><a href="{{ entry.homepage or '#' }}">Details</a> <i
+          class="fa fa-arrow-right"></i></span>
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro _render_remove_button(namespace, name) %}
+<button type="button"
+  class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-default btn-sm btn-remove-plugin"
+  style="z-index:1;position:relative;" data-namespace="{{ namespace }}" data-name="{{ name }}"
+  data-remove-url="{{ url_for('accent_engine.plugin.PluginView:remove_plugin') }}">
+  <i class="fa fa-trash"></i>
+</button>
+{% endmacro %}
+
+{% macro _render_upgrade_button(namespace, name, version) %}
+<button type="button"
+  class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm btn-warning btn-sm btn-upgrade-plugin"
+  style="z-index:1;position:relative;" data-namespace="{{ namespace }}" data-name="{{ name }}"
+  data-version="{{ version }}" data-upgrade-url="{{ url_for('accent_engine.plugin.PluginView:install_plugin') }}">
+  <i class="fa fa-download"></i>
+</button>
+{% endmacro %}
+
+<div class="flex flex-wrap -mx-2">
+  {% for entry in market %}
+  {{ _render_plugin(entry) }}
+  {% endfor %}
+</div>

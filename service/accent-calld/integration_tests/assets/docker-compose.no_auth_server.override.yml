@@ -1,0 +1,8 @@
+services:
+  sync:
+    depends_on:
+      - ari
+      - calld
+      - rabbitmq
+    environment:
+      TARGETS: "ari:5039 rabbitmq:5672 calld:9500"

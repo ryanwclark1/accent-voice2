@@ -1,0 +1,75 @@
+paths:
+  /users/{user_id}/lines/{line_id}:
+    delete:
+      operationId: dissociate_user_line
+      summary: Dissociate user and line
+      description: '**Required ACL:** `confd.users.{user_id}.lines.{line_id}.delete`
+
+
+        Any devices that are attached the line must be removed before dissociating
+        a user from its line. A device can be dissociated be resetting it to autoprov
+        mode.'
+      tags:
+      - users
+      - lines
+      parameters:
+      - $ref: '#/parameters/useriduuid'
+      - $ref: '#/parameters/lineid'
+      responses:
+        '204':
+          description: User and Line dissociated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+    put:
+      operationId: associate_user_line
+      summary: Associate user and line
+      description: '**Required ACL:** `confd.users.{user_id}.lines.{line_id}.update`'
+      tags:
+      - users
+      - lines
+      parameters:
+      - $ref: '#/parameters/useriduuid'
+      - $ref: '#/parameters/lineid'
+      responses:
+        '204':
+          description: User and Line associated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+  /users/{user_id}/lines:
+    put:
+      operationId: associate_user_lines
+      summary: Associate user and lines
+      description: '**Required ACL:** `confd.users.{user_id}.lines.update`'
+      tags:
+      - users
+      - lines
+      parameters:
+      - $ref: '#/parameters/useriduuid'
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/LinesID'
+      responses:
+        '204':
+          description: User and Lines associated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+
+definitions:
+  LineID:
+    properties:
+      id:
+        type: integer
+  LinesID:
+    properties:
+      lines:
+        items:
+          $ref: '#/definitions/LineID'
+        type: array

@@ -1,0 +1,1331 @@
+File: accent_auth_client/__init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_auth_client.client import AuthClient as Client
+
+__all__ = ['Client']
+
+----------------------------------------
+
+File: accent_auth_client/commands/__init__.py
+Please review for update
+
+from .admin import AdminCommand
+from .backends import BackendsCommand
+from .config import ConfigCommand
+from .emails import EmailsCommand
+from .external import ExternalAuthCommand
+from .groups import GroupsCommand
+from .idp import IDPCommand
+from .ldap_config import LDAPBackendConfigCommand
+from .policies import PoliciesCommand
+from .refresh_tokens import RefreshTokenCommand
+from .saml import SAMLCommand
+from .saml_config import SAMLConfigCommand
+from .sessions import SessionsCommand
+from .status import StatusCommand
+from .tenants import TenantsCommand
+from .token import TokenCommand
+from .users import UsersCommand
+
+__all__ = [
+    'AdminCommand',
+    'BackendsCommand',
+    'ConfigCommand',
+    'EmailsCommand',
+    'ExternalAuthCommand',
+    'GroupsCommand',
+    'IDPCommand',
+    'LDAPBackendConfigCommand',
+    'PoliciesCommand',
+    'RefreshTokenCommand',
+    'SAMLCommand',
+    'SAMLConfigCommand',
+    'SessionsCommand',
+    'StatusCommand',
+    'TenantsCommand',
+    'TokenCommand',
+    'UsersCommand',
+]
+
+----------------------------------------
+
+File: accent_auth_client/commands/admin.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class AdminCommand(RESTCommand):
+    resource = 'admin'
+
+    def update_user_emails(self, user_uuid: str, emails: list[JSON]) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/users/{user_uuid}/emails'
+        body = {'emails': emails}
+        r = self.session.put(url, headers=headers, json=body)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_auth_client/commands/backends.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class BackendsCommand(RESTCommand):
+    resource = 'backends'
+
+    def list(self) -> JSON:
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()['data']
+
+----------------------------------------
+
+File: accent_auth_client/commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class ConfigCommand(RESTCommand):
+    resource = 'config'
+
+    def get(self) -> JSON:
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def patch(self, config_patch: dict[str, JSON]) -> JSON:
+        headers = self._get_headers()
+        r = self.session.patch(self.base_url, headers=headers, json=config_patch)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: accent_auth_client/commands/emails.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+
+class EmailsCommand(RESTCommand):
+    resource = 'emails'
+
+    def confirm(self, email_uuid: str) -> None:
+        headers = self._get_headers()
+        url = '/'.join([self.base_url, email_uuid, 'confirm'])
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_auth_client/commands/external.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class ExternalAuthCommand(RESTCommand):
+    resource = 'users'
+
+    def create(self, auth_type: str, user_uuid: str, data: dict[str, JSON]) -> JSON:
+        headers = self._get_headers()
+        url = self._build_url(auth_type, user_uuid)
+        r = self.session.post(url, headers=headers, json=data)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def create_config(
+        self, auth_type: str, data: dict[str, JSON], tenant_uuid: str | None = None
+    ) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._build_config_url(auth_type)
+        r = self.session.post(url, headers=headers, json=data)
+        if r.status_code != 201:
+            self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, auth_type: str, user_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._build_url(auth_type, user_uuid)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete_config(self, auth_type: str, tenant_uuid: str | None = None) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._build_config_url(auth_type)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def get(
+        self, auth_type: str, user_uuid: str, tenant_uuid: str | None = None
+    ) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._build_url(auth_type, user_uuid)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_config(self, auth_type: str, tenant_uuid: str | None = None) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._build_config_url(auth_type)
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def list_(self, user_uuid: str, **kwargs: Any) -> JSON:
+        headers = self._get_headers()
+        url = '/'.join([self.base_url, user_uuid, 'external'])
+        r = self.session.get(url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def list_connected_users(self, auth_type: str, **kwargs: Any) -> JSON:
+        headers = self._get_headers()
+        url = '/'.join([self._client.url('external'), auth_type, 'users'])
+        r = self.session.get(url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def update(self, auth_type: str, user_uuid: str, data: dict[str, JSON]) -> JSON:
+        headers = self._get_headers()
+        url = self._build_url(auth_type, user_uuid)
+        r = self.session.put(url, headers=headers, json=data)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def update_config(
+        self, auth_type: str, data: dict[str, JSON], tenant_uuid: str | None = None
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._build_config_url(auth_type)
+        r = self.session.put(url, headers=headers, json=data)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def _build_url(self, auth_type: str, user_uuid: str) -> str:
+        return '/'.join([self.base_url, user_uuid, 'external', auth_type])
+
+    def _build_config_url(self, auth_type: str) -> str:
+        return '/'.join([self._client.url('external'), auth_type, 'config'])
+
+----------------------------------------
+
+File: accent_auth_client/commands/groups.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class GroupsCommand(RESTCommand):
+    resource = 'groups'
+
+    def add_policy(
+        self, group_uuid: str, policy_uuid: str, tenant_uuid: str | None = None
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._relation_url('policies', group_uuid, policy_uuid)
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def add_user(self, group_uuid: str, user_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._relation_url('users', group_uuid, user_uuid)
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete(self, group_uuid: str) -> None:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{group_uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(self, group_uuid: str, **params: Any) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{group_uuid}'
+        r = self.session.put(url, headers=headers, json=params)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get(self, group_uuid: str) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{group_uuid}'
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_policies(
+        self, group_uuid: str, tenant_uuid: str | None = None, **kwargs: Any
+    ) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{group_uuid}/policies'
+
+        r = self.session.get(url, headers=headers, params=kwargs)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_users(self, group_uuid: str, **kwargs: Any) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{group_uuid}/users'
+
+        r = self.session.get(url, headers=headers, params=kwargs)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        r = self.session.get(self.base_url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def new(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        r = self.session.post(self.base_url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def remove_policy(
+        self, group_uuid: str, policy_uuid: str, tenant_uuid: str | None = None
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._relation_url('policies', group_uuid, policy_uuid)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def remove_user(self, group_uuid: str, user_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._relation_url('users', group_uuid, user_uuid)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def _relation_url(self, resource: str, group_uuid: str, resource_uuid: str) -> str:
+        return '/'.join([self.base_url, group_uuid, resource, resource_uuid])
+
+----------------------------------------
+
+File: accent_auth_client/commands/idp.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class IDPCommand(RESTCommand):
+    resource = 'idp'
+    _ro_headers = {'Accept': 'application/json'}
+
+    def list(self) -> JSON:
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def add_user(self, idp_type: str, user_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._relation_url('users', idp_type, user_uuid)
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def add_users(self, idp_type: str, users: JSON) -> None:
+        headers = self._get_headers()
+        url = self._relation_url('users', idp_type)
+        r = self.session.put(url, headers=headers, json={'users': users})
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def remove_user(self, idp_type: str, user_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._relation_url('users', idp_type, user_uuid)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def _relation_url(
+        self,
+        resource: str,
+        idp_type: str,
+        resource_uuid: str | None = None,
+    ) -> str:
+        if resource_uuid:
+            return '/'.join([self.base_url, idp_type, resource, resource_uuid])
+        else:
+            return '/'.join([self.base_url, idp_type, resource])
+
+----------------------------------------
+
+File: accent_auth_client/commands/ldap_config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class LDAPBackendConfigCommand(RESTCommand):
+    resource = 'backends'
+
+    def get(self, tenant_uuid: str | None = None) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/ldap'
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def update(
+        self, ldap_config: dict[str, JSON], tenant_uuid: str | None = None
+    ) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/ldap'
+        r = self.session.put(url, headers=headers, json=ldap_config)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def delete(self, tenant_uuid: str | None = None) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/ldap'
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_auth_client/commands/policies.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+from urllib.parse import quote
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class PoliciesCommand(RESTCommand):
+    resource = 'policies'
+
+    def add_access(self, policy_uuid: str, access: str) -> None:
+        headers = self._get_headers()
+        access = quote(access)
+        url = f'{self.base_url}/{policy_uuid}/acl/{access}'
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete(self, policy_uuid: str) -> None:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{policy_uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(self, policy_uuid: str, name: str, **kwargs: Any) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{policy_uuid}'
+        kwargs['name'] = name
+        r = self.session.put(url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def get(self, policy_uuid: str) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{policy_uuid}'
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def list(self, tenant_uuid: str | None = None, **kwargs: Any) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def new(self, name: str, tenant_uuid: str | None = None, **kwargs: Any) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        kwargs['name'] = name
+        r = self.session.post(self.base_url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def remove_access(self, policy_uuid: str, access: str) -> None:
+        headers = self._get_headers()
+        access = quote(access)
+        url = f'{self.base_url}/{policy_uuid}/acl/{access}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_auth_client/commands/refresh_tokens.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class RefreshTokenCommand(RESTCommand):
+    resource = 'tokens'
+
+    def list(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        r = self.session.get(self.base_url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_auth_client/commands/saml.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import ACSRedirectLocation, LogoutRedirectLocation, SSOResponseDict
+
+
+class SAMLCommand(RESTCommand):
+    resource = 'saml'
+
+    def sso(self, domain: str, redirect_url: str) -> SSOResponseDict:
+        data = {}
+        data['redirect_url'] = redirect_url
+        data['domain'] = domain
+        headers = self._get_headers()
+        url = f'{self.base_url}/sso'
+        r = self.session.post(url, headers=headers, json=data)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def acs(self, saml_response: str, relay_state: str) -> ACSRedirectLocation:
+        data = {}
+        data['RelayState'] = relay_state
+        data['SAMLResponse'] = saml_response
+        headers = self._get_headers()
+        url = f'{self.base_url}/acs'
+        r = self.session.post(url, headers=headers, data=data, allow_redirects=False)
+        if r.status_code != 302:
+            self.raise_from_response(r)
+        return r.headers['Location']
+
+    def logout(self) -> LogoutRedirectLocation:
+        headers = self._get_headers()
+        url = f'{self.base_url}/logout'
+        r = self.session.get(url, headers=headers, allow_redirects=False)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()['Location']
+
+----------------------------------------
+
+File: accent_auth_client/commands/saml_config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class SAMLConfigCommand(RESTCommand):
+    resource = 'backends'
+
+    def get(self, tenant_uuid: str | None = None) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/saml'
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def create(
+        self, tenant_uuid: str | None = None, **saml_config: dict[str, Any]
+    ) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/saml'
+        r = self.session.post(url, headers=headers, **saml_config)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def update(
+        self, tenant_uuid: str | None = None, **saml_config: dict[str, Any]
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/saml'
+        r = self.session.put(url, headers=headers, **saml_config)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+    def delete(self, tenant_uuid: str | None = None) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/saml'
+        r = self.session.delete(url, headers=headers)
+
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def get_acs_template(self) -> JSON:
+        url = f'{self.base_url}/saml/acs_url_template'
+        r = self.session.get(url)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def get_metadata(self, tenant_uuid: str) -> Any:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/saml/metadata'
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.content
+
+----------------------------------------
+
+File: accent_auth_client/commands/sessions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class SessionsCommand(RESTCommand):
+    resource = 'sessions'
+
+    def list(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        r = self.session.get(self.base_url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, session_uuid: str, tenant_uuid: str | None = None) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{session_uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_auth_client/commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from accent_lib_rest_client import RESTCommand
+
+
+class StatusCommand(RESTCommand):
+    resource = 'status'
+
+    def check(self) -> None:
+        headers = self._get_headers()
+        r = self.session.head(self.base_url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+----------------------------------------
+
+File: accent_auth_client/commands/tenants.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class TenantsCommand(RESTCommand):
+    resource = 'tenants'
+    _ro_headers = {'Accept': 'application/json'}
+    _rw_headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+    def add_policy(self, tenant_uuid: str, policy_uuid: str) -> None:
+        headers = self._get_headers()
+        url = '/'.join([self.base_url, tenant_uuid, 'policies', policy_uuid])
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete(self, uuid: str, tenant_uuid: str | None = None) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(self, tenant_uuid: str, **kwargs: Any) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{tenant_uuid}'
+        r = self.session.put(url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def get(self, tenant_uuid: str) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{tenant_uuid}'
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def list(self, tenant_uuid: str | None = None, **kwargs: Any) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def new(self, **kwargs: Any) -> JSON:
+        parent_uuid = kwargs.pop('parent_uuid', None)
+        headers = self._get_headers(tenant_uuid=parent_uuid)
+        r = self.session.post(self.base_url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def remove_policy(self, tenant_uuid: str, policy_uuid: str) -> None:
+        headers = self._get_headers()
+        url = '/'.join([self.base_url, tenant_uuid, 'policies', policy_uuid])
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def get_domains(self, tenant_uuid: str) -> JSON:
+        url = f'{self.base_url}/{tenant_uuid}/domains'
+        r = self.session.get(url)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_auth_client/commands/token.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+import requests
+import requests.auth
+from accent_lib_rest_client import RESTCommand
+
+from ..exceptions import InvalidTokenException, MissingPermissionsTokenException
+from ..types import JSON, TokenDict
+
+
+class TokenCommand(RESTCommand):
+    resource = 'token'
+    _user_agent = 'Accent Python auth client'
+
+    def new(
+        self,
+        backend: str | None = None,
+        expiration: int | None = None,
+        session_type: str | None = None,
+        user_agent: str | None = None,
+        access_type: str | None = None,
+        client_id: str | None = None,
+        refresh_token: str | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        tenant_id: str | None = None,
+        domain_name: str | None = None,
+    ) -> TokenDict:
+        data: dict[str, Any] = {}
+        if backend:
+            data['backend'] = backend
+        if expiration:
+            data['expiration'] = expiration
+        if client_id:
+            data['client_id'] = client_id
+        if refresh_token:
+            data['refresh_token'] = refresh_token
+        if access_type:
+            data['access_type'] = access_type
+        if tenant_id:
+            data['tenant_id'] = tenant_id
+        if domain_name:
+            data['domain_name'] = domain_name
+
+        headers = self._get_headers()
+        headers['User-Agent'] = self._user_agent
+        if session_type:
+            headers['Accent-Session-Type'] = session_type
+        if user_agent:
+            headers['User-Agent'] = user_agent
+
+        auth = self.session.auth
+        if username and password:
+            auth = requests.auth.HTTPBasicAuth(
+                username.encode('utf-8'), password.encode('utf-8')
+            )
+        r = self.session.post(self.base_url, headers=headers, json=data, auth=auth)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()['data']
+
+    def delete(
+        self, user_uuid: str, client_id: str, tenant_uuid: str | None = None
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = self._client.url('users', user_uuid, 'tokens', client_id)
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def revoke(self, token: str) -> None:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{token}'
+        self.session.delete(url, headers=headers)
+
+    def check(
+        self, token: str, required_acl: str | None = None, tenant: str | None = None
+    ) -> bool:
+        params = {}
+        if required_acl:
+            params['scope'] = required_acl
+        if tenant:
+            params['tenant'] = tenant
+
+        headers = self._get_headers()
+        url = f'{self.base_url}/{token}'
+        r = self.session.head(url, headers=headers, params=params)
+        if r.status_code == 204:
+            return True
+        elif r.status_code == 404:
+            raise InvalidTokenException()
+        elif r.status_code == 403:
+            raise MissingPermissionsTokenException()
+        else:
+            self.raise_from_response(r)
+            return False
+
+    def is_valid(
+        self, token: str, required_acl: str | None = None, tenant: str | None = None
+    ) -> bool:
+        params = {}
+        if required_acl:
+            params['scope'] = required_acl
+        if tenant:
+            params['tenant'] = tenant
+
+        headers = self._get_headers()
+        url = f'{self.base_url}/{token}'
+        r = self.session.head(url, headers=headers, params=params)
+        if r.status_code in (204, 403, 404):
+            return r.status_code == 204
+        else:
+            self.raise_from_response(r)
+            return False
+
+    def check_scopes(
+        self, token: str, scopes: list[str], tenant: str | None = None
+    ) -> JSON:
+        data: dict[str, Any] = {'scopes': scopes}
+        if tenant:
+            data['tenant_uuid'] = tenant
+
+        headers = self._get_headers()
+        headers['User-Agent'] = self._user_agent
+        url = f'{self.base_url}/{token}/scopes/check'
+        r = self.session.post(url, headers=headers, json=data)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def get(
+        self, token: str, required_acl: str | None = None, tenant: str | None = None
+    ) -> TokenDict:
+        params = {}
+        if required_acl:
+            params['scope'] = required_acl
+        if tenant:
+            params['tenant'] = tenant
+
+        headers = self._get_headers()
+        url = f'{self.base_url}/{token}'
+        r = self.session.get(url, headers=headers, params=params)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()['data']
+
+    def list(self, user_uuid: str | None = None, **kwargs: Any) -> list[TokenDict]:
+        if user_uuid is None:
+            raise TypeError('user_uuid cannot be None')
+
+        headers = self._get_headers(**kwargs)
+        url = self._client.url('users', user_uuid, 'tokens')
+        r = self.session.get(url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_auth_client/commands/users.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+import builtins
+from typing import Any
+
+from accent_lib_rest_client import RESTCommand
+
+from ..types import JSON
+
+
+class UsersCommand(RESTCommand):
+    resource = 'users'
+    _ro_headers = {'Accept': 'application/json'}
+    _rw_headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+    def add_policy(
+        self, user_uuid: str, policy_uuid: str, tenant_uuid: str | None = None
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}/policies/{policy_uuid}'
+        r = self.session.put(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def change_password(self, user_uuid: str, **kwargs: Any) -> None:
+        headers = self._get_headers()
+        url = '/'.join([self.base_url, user_uuid, 'password'])
+        r = self.session.put(url, headers=headers, json=kwargs)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def delete(self, user_uuid: str, tenant_uuid: str | None = None) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def edit(self, user_uuid: str, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        url = f'{self.base_url}/{user_uuid}'
+        r = self.session.put(url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def get(self, user_uuid: str, tenant_uuid: str | None = None) -> JSON:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}'
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def get_groups(self, user_uuid: str, **kwargs: Any) -> JSON:
+        return self._get_relation('groups', user_uuid, **kwargs)
+
+    def get_policies(self, user_uuid: str, **kwargs: Any) -> JSON:
+        return self._get_relation('policies', user_uuid, **kwargs)
+
+    def get_sessions(self, user_uuid: str, **kwargs: Any) -> JSON:
+        return self._get_relation('sessions', user_uuid, **kwargs)
+
+    def list(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        r = self.session.get(self.base_url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def new(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers(**kwargs)
+        r = self.session.post(self.base_url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def register(self, **kwargs: Any) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/register'
+        r = self.session.post(url, headers=headers, json=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def remove_policy(
+        self, user_uuid: str, policy_uuid: str, tenant_uuid: str | None = None
+    ) -> None:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}/policies/{policy_uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def remove_session(self, user_uuid: str, session_uuid: str) -> None:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{user_uuid}/sessions/{session_uuid}'
+        r = self.session.delete(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def request_confirmation_email(self, user_uuid: str, email_uuid: str) -> None:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{user_uuid}/emails/{email_uuid}/confirm'
+        r = self.session.get(url, headers=headers)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def reset_password(self, **kwargs: Any) -> None:
+        headers = self._get_headers()
+        url = f'{self.base_url}/password/reset'
+        r = self.session.get(url, headers=headers, params=kwargs)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def set_password(
+        self, user_uuid: str, password: str, token: str | None = None
+    ) -> None:
+        url = f'{self.base_url}/password/reset'
+        query_string = {'user_uuid': user_uuid}
+        body = {'password': password}
+        headers = self._get_headers()
+        if token:
+            headers['X-Auth-Token'] = token
+
+        r = self.session.post(url, headers=headers, params=query_string, json=body)
+        if r.status_code != 204:
+            self.raise_from_response(r)
+
+    def update_emails(self, user_uuid: str, emails: builtins.list[str]) -> JSON:
+        headers = self._get_headers()
+        url = f'{self.base_url}/{user_uuid}/emails'
+        body = {'emails': emails}
+        r = self.session.put(url, headers=headers, json=body)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+    def _get_relation(
+        self,
+        resource: str,
+        user_uuid: str,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        url = f'{self.base_url}/{user_uuid}/{resource}'
+        r = self.session.get(url, headers=headers, params=kwargs)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: accent_auth_client/exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+
+class InvalidTokenException(BaseException):
+    pass
+
+
+class MissingPermissionsTokenException(BaseException):
+    pass
+
+----------------------------------------
+
+File: accent_auth_client/client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Any
+
+import requests
+import requests.auth
+from accent_lib_rest_client.client import BaseClient
+
+from accent_auth_client.commands import (
+    AdminCommand,
+    BackendsCommand,
+    ConfigCommand,
+    EmailsCommand,
+    ExternalAuthCommand,
+    GroupsCommand,
+    LDAPBackendConfigCommand,
+    PoliciesCommand,
+    RefreshTokenCommand,
+    SAMLCommand,
+    SAMLConfigCommand,
+    SessionsCommand,
+    StatusCommand,
+    TenantsCommand,
+    TokenCommand,
+    UsersCommand,
+)
+
+
+class AuthClient(BaseClient):
+    namespace = 'accent_auth_client.commands'
+
+    admin: AdminCommand
+    backends: BackendsCommand
+    config: ConfigCommand
+    emails: EmailsCommand
+    external: ExternalAuthCommand
+    groups: GroupsCommand
+    ldap_config: LDAPBackendConfigCommand
+    policies: PoliciesCommand
+    refresh_tokens: RefreshTokenCommand
+    saml: SAMLCommand
+    saml_config: SAMLConfigCommand
+    sessions: SessionsCommand
+    status: StatusCommand
+    tenants: TenantsCommand
+    token: TokenCommand
+    users: UsersCommand
+
+    def __init__(
+        self,
+        host: str,
+        port: int = 443,
+        prefix: str | None = '/api/auth',
+        version: str = '0.1',
+        username: str | None = None,
+        password: str | None = None,
+        **kwargs: Any,
+    ):
+        kwargs.pop('key_file', None)
+        kwargs.pop('master_tenant_uuid', None)
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+        self.username = username
+        self.password = password
+
+    def session(self) -> requests.Session:
+        session = super().session()
+        if self.username and self.password:
+            session.auth = requests.auth.HTTPBasicAuth(
+                self.username.encode("utf-8"), self.password.encode("utf-8")
+            )
+        return session
+
+----------------------------------------
+
+File: accent_auth_client/types.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TypedDict, Union
+
+try:
+    from typing import TypeAlias  # Python 3.10 and newer
+except ImportError:
+    from typing_extensions import TypeAlias  # Python 3.9 and older
+
+class TokenMetadataDict(TypedDict):
+    uuid: str
+    tenant_uuid: str
+    auth_id: str
+    pbx_user_uuid: str
+    accent_uuid: str
+
+
+class TokenMetadataStackDict(TokenMetadataDict, total=False):
+    purpose: str
+    admin: str
+
+
+class TokenDict(TypedDict):
+    token: str
+    session_uuid: str
+    metadata: TokenMetadataDict
+    acl: list[str]
+    auth_id: str
+    accent_uuid: str
+    expires_at: str
+    utc_expires_at: str
+    issued_at: str
+    utc_issued_at: str
+    user_agent: str
+    remote_addr: str
+
+
+class SSOResponseDict(TypedDict):
+    location: str
+    saml_session_id: str
+
+
+ACSRedirectLocation: TypeAlias = str
+LogoutRedirectLocation: TypeAlias = str
+
+JSON: TypeAlias = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+
+----------------------------------------
+

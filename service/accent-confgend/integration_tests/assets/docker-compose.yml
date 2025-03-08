@@ -1,0 +1,20 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  confgend:
+    image: accentcommunications/accent-confgend-tests
+    ports:
+      - 8669
+    volumes:
+      - "../..:/usr/local/src/accent-confgend"
+      - "./etc/accent-confgend/conf.d/50-default.yml:/etc/accent-confgend/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-dao/accent_dao:/opt/venv/lib/python3.9/site-packages/accent_dao"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+
+  postgres:
+    image: accentcommunications/accent-confd-db-test:local
+    ports:
+      - "5432"

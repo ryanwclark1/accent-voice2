@@ -1,0 +1,20 @@
+services:
+  sync:
+    depends_on:
+      - auth
+      - postgres
+      - provd
+      - rabbitmq
+      - sysconfd
+      - confd
+    environment:
+      TARGETS: "postgres:5432,rabbitmq:5672,provd:8666,sysconfd:8668,auth:9497,confd:9486"
+
+  postgres:
+    image: accentcommunications/accent-confd-db
+
+  confd:
+    volumes:
+      - "./etc/timezone:/etc/timezone"
+      - "./etc/accent-confd/conf.d/wizard.yml:/etc/accent-confd/conf.d/wizard.yml"
+    domainname: example.com

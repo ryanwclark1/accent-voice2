@@ -1,0 +1,50 @@
+#!/bin/sh
+# Copyright 2023 Accent Communications
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+usage() {
+    cat <<-EOF
+	usage: $(basename $0) action
+	    action: start or stop to enable/disable slave services
+	EOF
+}
+
+start_dhcp() {
+    # apply replicated configuration
+    accent-create-config
+    accent-update-config
+
+    # fetch updated phone MAC prefixes
+    dhcpd-update -dr
+
+    service isc-dhcp-server start
+    update-rc.d isc-dhcp-server defaults
+}
+
+stop_dhcp() {
+    update-rc.d isc-dhcp-server remove
+    service isc-dhcp-server stop
+}
+
+enable_service() {
+    accent-service status all >/dev/null && exit 0
+    start_dhcp
+    accent-confgen asterisk/pjsip.conf --invalidate
+    accent-service enable
+    accent-service start
+    accent-agentd-cli -c 'relog all --timeout 60'
+}
+
+disable_service() {
+    accent-service stop accent
+    accent-service disable
+    stop_dhcp
+    accent-service start
+}
+
+case $1 in
+    start) enable_service;;
+    stop)  disable_service;;
+    *) usage;;
+esac

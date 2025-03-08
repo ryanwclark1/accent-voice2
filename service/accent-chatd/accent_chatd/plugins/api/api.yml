@@ -1,0 +1,155 @@
+swagger: "2.0"
+info:
+  title: accent-chatd
+  description: "Control your message and presence from a REST API"
+  version: 1.0.0
+  contact:
+    name: Accent Dev Team
+    url: https://accentvoice.io/
+    email: help@accentvoice.io
+  x-logo:
+    url: "https://accentvoice.io/images/logo-black.svg"
+    backgroundColor: "#FAFAFA"
+    altText: "Accent Logo"
+schemes:
+  - http
+basePath: /1.0
+consumes:
+  - application/json
+produces:
+  - application/json
+x-accent-port: 9304
+x-accent-name: chatd
+securityDefinitions:
+  accent_auth_token:
+    type: apiKey
+    name: X-Auth-Token
+    in: header
+security:
+  - accent_auth_token: []
+
+responses:
+  AnotherServiceUnavailable:
+    description: Another service is unavailable (e.g. accent-auth, accent-confd, ...)
+    schema:
+      $ref: "#/definitions/Error"
+  NotFoundError:
+    description: The resource requested was not found on the server
+    schema:
+      $ref: "#/definitions/APIError"
+  InvalidRequest:
+    description: Invalid request
+    schema:
+      $ref: "#/definitions/APIError"
+  ResourceUpdated:
+    description: Resource was updated successfully
+
+definitions:
+  APIError:
+    type: object
+    allOf:
+      - $ref: "#/definitions/Error"
+      - properties:
+          resource:
+            description: Resource name of the error
+            type: string
+  Error:
+    title: Error
+    description: Error message for the client
+    properties:
+      message:
+        description: Human readable explanation of the error
+        type: string
+      error_id:
+        description:
+          Identifier of the type of error. It is more precise than the
+          HTTP status code.
+        type: string
+      details:
+        description:
+          Additional information about the error. The keys are specific
+          to each error.
+        type: object
+      timestamp:
+        description: Time when the error occured
+        type: number
+        format: timestamp
+
+parameters:
+  recurse:
+    name: recurse
+    in: query
+    type: boolean
+    description: Should the query include sub-tenants
+    default: false
+    required: false
+  tenant_uuid:
+    name: Accent-Tenant
+    type: string
+    in: header
+    description: "The tenant's UUID, defining the ownership of a given resource."
+    required: false
+  user_uuid:
+    name: user_uuid
+    in: path
+    type: string
+    description: The UUID of the user
+    required: true
+  order:
+    required: false
+    name: order
+    in: query
+    type: string
+    description: Name of the field to use for sorting the list of items returned.
+  limit:
+    required: false
+    name: limit
+    in: query
+    type: integer
+    description: Maximum number of items to return in the list
+  distinct:
+    required: false
+    name: distinct
+    in: query
+    type: string
+    enum:
+      - room_uuid
+    description: "Distinct list results by field. Always picks the latest entry.
+      Required if `search` is not specified."
+  direction:
+    required: false
+    name: direction
+    in: query
+    type: string
+    enum:
+      - asc
+      - desc
+    description: Sort list of items in 'asc' (ascending) or 'desc' (descending) order
+  search:
+    required: false
+    name: search
+    in: query
+    type: string
+    description:
+      "Search term for filtering a list of items. Only items with a field containing the search term will be returned.
+      Required if `distinct` is not specified."
+  search_distinct:
+    required: false
+    name: search
+    in: query
+    type: string
+    description: Search term for filtering a list of items. Only items with a field containing the search term will be returned.
+  offset:
+    required: false
+    name: offset
+    in: query
+    type: integer
+    description: Number of items to skip over in the list. Useful for pagination.
+  user_uuid_query:
+    required: false
+    name: user_uuid
+    in: query
+    type: array
+    items:
+      type: string
+    description: Filter by user_uuid. Many uuid can be specified. A logical AND is used for filtering. Each uuid MUST be separated by a comma (,).

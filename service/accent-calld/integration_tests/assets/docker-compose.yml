@@ -1,0 +1,69 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
+
+  amid:
+    image: accentcommunications/flask
+    ports:
+      - 9491
+    volumes:
+      - ./amid_data:/usr/local/share/accent-amid:ro
+    environment:
+      ACCENT_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
+    command: python3 /usr/local/share/accent-amid/mock-accent-amid.py 9491
+
+  ari:
+    image: ari-mock
+    ports:
+      - 5039
+    volumes:
+      - ./ari_data:/usr/local/share/ari:ro
+      - ./ssl/ari:/usr/local/share/ari-ssl:ro
+    environment:
+      PYTHONPATH: /usr/local/share/ari
+    command: python3 -m gunicorn -b 0.0.0.0:5039 -k flask_sockets.worker mock_ari:app
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - 9497
+
+  confd:
+    image: accentcommunications/accent-confd-mock
+    ports:
+      - 9486
+
+  phoned:
+    image: accentcommunications/flask
+    ports:
+      - 9498
+    volumes:
+      - ./phoned_data:/usr/local/share/accent-phoned:ro
+    command: python3 /usr/local/share/accent-phoned/mock-accent-phoned.py 9498
+
+  calld:
+    image: accent-calld-test
+    volumes:
+      - ../..:/usr/src/accent-calld:ro
+      - ./ssl:/usr/local/share/ssl:ro
+      - ./etc/accent-calld/key.yml:/etc/accent-calld/key.yml:ro
+      - ./etc/accent-calld/conf.d/50-base.yml:/etc/accent-calld/conf.d/50-base.yml:ro
+      # - "${LOCAL_GIT_REPOS}/accent-amid-client/accent_amid_client:/opt/venv/lib/python3.9/site-packages/accent_amid_client:ro"
+      # - "${LOCAL_GIT_REPOS}/accent-confd-client/accent_confd_client:/opt/venv/lib/python3.9/site-packages/accent_confd_client:ro"
+      # - "${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus:ro"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent:ro"
+      # - "${LOCAL_GIT_REPOS}/ari-py/ari:/opt/venv/lib/python3.9/site-packages/ari:ro"
+    ports:
+      - 9500
+    environment:
+      ACCENT_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - 5672
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq

@@ -1,0 +1,217 @@
+paths:
+  /wizard:
+    get:
+      operationId: get_wizard_status
+      summary: Get wizard status
+      description: "**Required ACL:** none"
+      tags:
+        - wizard
+      responses:
+        "200":
+          description: Wizard status
+          schema:
+            $ref: "#/definitions/WizardConfigured"
+    post:
+      operationId: pass_wizard
+      summary: Pass the wizard
+      description: "**Required ACL:** none
+
+
+        This API can only be used before wizard configuration."
+      tags:
+        - wizard
+      parameters:
+        - name: body
+          in: body
+          description: Wizard parameters to configure
+          required: true
+          schema:
+            $ref: "#/definitions/Wizard"
+      responses:
+        "201":
+          description: Wizard passed
+          schema:
+            $ref: "#/definitions/Wizard"
+        "400":
+          $ref: "#/responses/CreateError"
+        "403":
+          $ref: "#/responses/AlreadyConfiguredError"
+  /wizard/discover:
+    get:
+      operationId: get_wizard_discover
+      summary: Get wizard discover
+      description: "**Required ACL:** none
+
+
+        This API can only be used before wizard configuration."
+      tags:
+        - wizard
+      responses:
+        "200":
+          description: Wizard discover
+          schema:
+            $ref: "#/definitions/WizardDiscover"
+        "403":
+          $ref: "#/responses/AlreadyConfiguredError"
+
+definitions:
+  Wizard:
+    title: Wizard
+    properties:
+      admin_password:
+        type: string
+        description: Accent administrator ``root`` password
+      license:
+        type: boolean
+        description: "Accept/decline the GPLv3: http://www.gnu.org/licenses/gpl-3.0.en.html"
+      timezone:
+        type: string
+        description:
+          "System timezone. Example: America/Montreal. For the complete
+          list of supported timezones, see ``/usr/share/zoneinfo/``"
+      language:
+        type: string
+        default: en_US
+        enum:
+          - de_DE
+          - en_US
+          - es_ES
+          - fr_FR
+          - fr_CA
+          - it_IT
+          - nl_NL
+        description: The language in which the Accent will play sounds
+      network:
+        $ref: "#/definitions/WizardNetwork"
+      steps:
+        $ref: "#/definitions/WizardSteps"
+    required:
+      - admin_password
+      - license
+      - timezone
+      - network
+  WizardConfigured:
+    title: WizardConfigured
+    properties:
+      configured:
+        type: boolean
+        description: Whether Accent has already been configured or not
+      configurable:
+        type: boolean
+        description: Whether all services which the wizard depends on are started or not
+      configurable_status:
+        type: object
+        description: A mapping of all dependencies and there statuses
+  WizardDiscover:
+    title: WizardDiscover
+    properties:
+      hostname:
+        type: string
+        description: System hostname
+      domain:
+        type: string
+        description: System domain name
+      timezone:
+        type: string
+        description: System timezone from file ``/etc/timezone``
+      nameservers:
+        type: array
+        maxItems: 3
+        items:
+          type: string
+        description: Nameservers from file ``/etc/resolv.conf``
+      interfaces:
+        type: array
+        items:
+          $ref: "#/definitions/WizardDiscoverInterface"
+      gateways:
+        type: array
+        items:
+          $ref: "#/definitions/WizardDiscoverGateway"
+  WizardDiscoverInterface:
+    title: WizardDiscoverInterface
+    properties:
+      interface:
+        type: string
+        description: Interface name (e.g. eth0)
+      ip_address:
+        type: string
+        description: IPv4 address of the interface
+      netmask:
+        type: string
+        description: Netmask of the IP address
+  WizardDiscoverGateway:
+    title: WizardDiscoverGateway
+    properties:
+      interface:
+        type: string
+        description: Interface name (e.g. eth0)
+      gateway:
+        type: string
+        description: Gateway IPv4 address
+  WizardNetwork:
+    title: WizardNetwork
+    properties:
+      hostname:
+        type: string
+        description: System hostname
+      domain:
+        type: string
+        description: Domain name
+      interface:
+        type: string
+        description: Interface name (e.g. eth0)
+      ip_address:
+        type: string
+        description: IPv4 address of the VoIP interface (connected to phones)
+      netmask:
+        type: string
+        description: Netmask of the IP address (e.g. 255.255.0.0)
+      gateway:
+        type: string
+        description: Gateway IPv4 address
+      nameservers:
+        type: array
+        items:
+          type: string
+        maxItems: 3
+        description: List of IPv4 addresses. Nameservers are used in resolv.conf.
+    required:
+      - hostname
+      - domain
+      - ip_address
+      - interface
+      - netmask
+      - gateway
+      - nameservers
+  WizardSteps:
+    title: WizardSteps
+    properties:
+      database:
+        type: boolean
+        default: true
+        description: Initialize Accent database?
+      manage_services:
+        type: boolean
+        default: true
+        description: Enable/start Accent services?
+      manage_hosts_file:
+        type: boolean
+        default: true
+        description: Modify /etc/hosts?
+      manage_resolv_file:
+        type: boolean
+        default: true
+        description: Modify /etc/resolv.conf?
+      commonconf:
+        type: boolean
+        default: true
+        description: Generate /etc/accent/common.conf
+      provisioning:
+        type: boolean
+        default: true
+        description: Initialize accent-provd database?
+      admin:
+        type: boolean
+        default: true
+        description: Create admin in accent-auth?

@@ -1,0 +1,17 @@
+FROM accentcommunications/accent-base-db
+LABEL maintainer="Accent Maintainers <help@accentservices.com>"
+
+COPY . /usr/src/accent-call-logd
+WORKDIR /usr/src/accent-call-logd
+ENV ALEMBIC_DB_URI=postgresql://accent-call-logd:secret@localhost/accent-call-logd
+
+RUN true \
+    && python3 setup.py install \
+    && pg_start \
+    && su postgres -c "psql -c \"CREATE ROLE \\"'"'"accent-call-logd\\"'"'" LOGIN PASSWORD 'secret';\"" \
+    && su postgres -c "psql -c 'CREATE DATABASE \"accent-call-logd\" WITH OWNER \"accent-call-logd\";'" \
+    && su postgres -c "psql \"accent-call-logd\" -c 'CREATE EXTENSION \"uuid-ossp\";'" \
+    && (cd /usr/src/accent-call-logd && python3 -m alembic.config -c accent_call_logd/database/alembic.ini upgrade head) \
+    && pg_stop \
+    && true
+USER postgres

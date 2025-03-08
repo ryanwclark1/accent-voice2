@@ -1,0 +1,4 @@
+services:
+  bus:
+    environment:
+      - EXCHANGE_TYPE=topic

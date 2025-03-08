@@ -1,0 +1,29 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+hide stereotype
+
+System_Boundary(confd_platform, "Configuration application"){
+
+    Container(confd, "accent-confd", "Python", "Configuration service")
+
+    Container(db, "Postgresql", "C", "Database")
+    Container(bus, "RabbitMQ", "Erlang", "Messaging Bus")
+
+    Container(provd, "accent-provd", "Python", "Provisionning service") [["../documentation/overview/provisioning.html"]]
+    Container(sysconfd, "accent-sysconfd", "Python", "Operating system configuration service")
+    Container(auth, "accent-auth", "Python", "Authentication service") [["../documentation/overview/authentication.html"]]
+}
+
+actor User
+
+Rel_R(User, confd, "uses", "REST")
+
+Rel_U(confd, db, " ", "SQL")
+Rel_U(confd, bus, "Recevied Accent platform events", "AMQP")
+
+Rel_R(confd, auth, "Authenticates", "REST")
+Rel_D(confd, provd, "Configures devices", "REST")
+Rel_D(confd, sysconfd, "Runs Operating System commands", "REST")
+
+@enduml

@@ -1,0 +1,47 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  amid:
+    image: accent-amid-tests
+    ports:
+      - 9491
+    environment:
+      ACCENT_UUID: "00000000-0000-4000-8000-0000000AA450"
+    volumes:
+      - "../..:/usr/src/accent-amid"
+      - "./etc/accent-amid/conf.d/50-default.yml:/etc/accent-amid/conf.d/50-default.yml"
+      # - "${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+
+  asterisk-ajam:
+    image: accentcommunications/flask
+    ports:
+      - 5039
+    volumes:
+      - "./asterisk-ajam:/usr/local/share/asterisk-ajam"
+    command: "python3 /usr/local/share/asterisk-ajam/mock-asterisk-ajam.py 5039"
+
+  asterisk-ami:
+    image: accentcommunications/flask
+    ports:
+      - 5038
+      - 8123
+    volumes:
+      - "./asterisk-ami:/usr/local/share/asterisk-ami"
+    command: "python3 /usr/local/share/asterisk-ami/mock-asterisk-ami.py --http_port 8123 --ami_port 5038"
+
+  auth:
+    image: "accentcommunications/accent-auth-mock"
+    ports:
+      - 9497
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - 5672
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq

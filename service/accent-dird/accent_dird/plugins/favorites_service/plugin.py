@@ -1,0 +1,164 @@
+# Copyright 2023 Accent Communications
+
+import logging
+from collections import defaultdict, namedtuple
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+
+from accent_bus.resources.directory.event import FavoriteAddedEvent, FavoriteDeletedEvent
+
+from accent_dird import BaseServicePlugin, database, exception, helpers
+from accent_dird.database.helpers import Session
+
+logger = logging.getLogger(__name__)
+
+
+class _NoSuchProfileException(ValueError):
+    msg_tpl = 'No such profile in favorite service configuration: {}'
+
+    def __init__(self, profile):
+        msg = self.msg_tpl.format(profile)
+        super().__init__(msg)
+
+
+class _NoSuchSourceException(ValueError):
+    msg_tpl = 'No such source: {}'
+
+    def __init__(self, source):
+        msg = self.msg_tpl.format(source)
+        super().__init__(msg)
+
+
+class FavoritesServicePlugin(BaseServicePlugin):
+    def __init__(self):
+        self._service = None
+
+    def load(self, args):
+        try:
+            config = args['config']
+            source_manager = args['source_manager']
+            bus = args['bus']
+            controller = args['controller']
+        except KeyError:
+            msg = '{} should be loaded with "config", "source_manager" and "bus" but received: {}'.format(
+                self.__class__.__name__, ','.join(args.keys())
+            )
+            raise ValueError(msg)
+
+        crud = database.FavoriteCRUD(Session)
+
+        self._service = _FavoritesService(config, source_manager, controller, crud, bus)
+        return self._service
+
+    def unload(self):
+        if self._service:
+            self._service.stop()
+            self._service = None
+
+
+class _FavoritesService(helpers.BaseService):
+    NoSuchFavoriteException = exception.NoSuchFavorite
+    NoSuchProfileException = _NoSuchProfileException
+    NoSuchSourceException = _NoSuchSourceException
+    DuplicatedFavoriteException = exception.DuplicatedFavoriteException
+    _service_name = 'favorites'
+
+    def __init__(self, config, source_manager, controller, crud, bus):
+        super().__init__(config, source_manager, crud, bus)
+        self._executor = ThreadPoolExecutor(max_workers=10)
+        self._crud = crud
+        self._bus = bus
+        self._accent_uuid = config.get('uuid')
+        self._source_manager = source_manager
+        self._controller = controller
+        if not self._accent_uuid:
+            logger.info('loaded without a UUID: published events will be incomplete')
+
+    def _available_sources(self, tenant_uuid):
+        source_service = self._controller.services['source']
+        sources = source_service.list_(None, [tenant_uuid])
+        return sources
+
+    def stop(self):
+        self._executor.shutdown()
+
+    def _async_list(self, source, contact_ids, args):
+        raise_stopper = helpers.RaiseStopper(return_on_raise=[])
+        future = self._executor.submit(raise_stopper.execute, source.list, contact_ids, args)
+        future.name = source.name
+        return future
+
+    def favorites(self, profile_config, user_uuid, token=None):
+        favorites_config = profile_config.get('services', {}).get('favorites', {})
+        if not favorites_config:
+            raise self.NoSuchProfileException(profile_config['name'])
+
+        args = {
+            'token_infos': {'accent_user_uuid': user_uuid},  # To avoid breaking old plugins
+            'token': token,
+            'accent_user_uuid': user_uuid,  # To avoid breaking old plugins
+            'user_uuid': user_uuid,
+        }
+        futures = []
+        favorite_map = self.favorite_ids(profile_config, user_uuid).by_uuid
+        for source_uuid, ids in favorite_map.items():
+            source = self._source_manager.get(source_uuid)
+            futures.append(self._async_list(source, ids, args))
+
+        params = {'return_when': ALL_COMPLETED}
+        if 'lookup_timeout' in self._config:
+            params['timeout'] = self._config['lookup_timeout']
+
+        done, _ = wait(futures, **params)
+        results = []
+        for future in done:
+            for result in future.result():
+                results.append(result)
+        return results
+
+    def favorite_ids(self, profile_config, user_uuid):
+        favorites = self._crud.get(user_uuid)
+        favorite_config = profile_config.get('services', {}).get('favorites', {})
+        enabled_sources = {source['name']: source for source in favorite_config.get('sources', [])}
+
+        by_uuid = defaultdict(list)
+        by_name = defaultdict(list)
+        for name, id_ in favorites:
+            source = enabled_sources.get(name)
+            if not source:
+                continue
+            by_uuid[source['uuid']].append(id_)
+            by_name[source['name']].append(id_)
+
+        FavoriteList = namedtuple('FavoriteList', ['by_uuid', 'by_name'])
+        return FavoriteList(by_uuid, by_name)
+
+    def new_favorite(self, tenant_uuid, source_name, contact_id, user_uuid):
+        sources = self._available_sources(tenant_uuid)
+        matching_source = None
+        for source in sources:
+            if source['name'] == source_name:
+                matching_source = source
+                break
+
+        if not matching_source:
+            raise self.NoSuchSourceException(source_name)
+
+        backend = source['backend']
+        self._crud.create(user_uuid, backend, source_name, contact_id)
+        event = FavoriteAddedEvent(source_name, contact_id, self._accent_uuid, tenant_uuid, user_uuid)
+        self._bus.publish(event)
+
+    def remove_favorite(self, tenant_uuid, source_name, contact_id, user_uuid):
+        sources = self._available_sources(tenant_uuid)
+        matching_source = None
+        for source in sources:
+            if source['name'] == source_name:
+                matching_source = source
+                break
+
+        if not matching_source:
+            raise self.NoSuchSourceException(source_name)
+
+        self._crud.delete(user_uuid, source_name, contact_id)
+        event = FavoriteDeletedEvent(source_name, contact_id, self._accent_uuid, tenant_uuid, user_uuid)
+        self._bus.publish(event)

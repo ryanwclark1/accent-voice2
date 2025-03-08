@@ -1,0 +1,285 @@
+paths:
+  /tenants:
+    get:
+      tags:
+        - tenants
+      security:
+        - accent_auth_token: []
+      description: |
+        **Required ACL**: `auth.tenants.read`
+
+        Tenants can be filtered by domain name using the `domain_name` query string to do an exact match on one of its domain names or using the `search` query string for a fuzzy match.
+      summary: "Retrieves the list of tenants"
+      parameters:
+        - $ref: "#/parameters/order"
+        - $ref: "#/parameters/direction"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/search"
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "200":
+          description: "The list of tenant"
+          schema:
+            $ref: "#/definitions/TenantList"
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Creates a new tenant
+      description: "**Required ACL:** `auth.tenants.create`"
+      operationId: createTenant
+      tags:
+        - tenants
+      security:
+        - accent_auth_token: []
+      parameters:
+        - name: body
+          in: body
+          description: The tenant creation parameters
+          required: false
+          schema:
+            $ref: "#/definitions/TenantCreate"
+        - $ref: "#/parameters/tenantuuid"
+      responses:
+        "200":
+          description: The new tenant
+          schema:
+            $ref: "#/definitions/TenantPostResponse"
+        "400":
+          description: Invalid body
+          schema:
+            $ref: "#/definitions/APIError"
+  /tenants/{tenant_uuid}:
+    delete:
+      operationId: delete_tenant
+      tags:
+        - tenants
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.tenants.{tenant_uuid}.delete`"
+      parameters:
+        - $ref: "#/parameters/tenant_uuid"
+      summary: Delete a tenant
+      responses:
+        "204":
+          description: The tenant has been removed
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Tenant not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      tags:
+        - tenants
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.tenants.{tenant_uuid}.read`"
+      parameters:
+        - $ref: "#/parameters/tenant_uuid"
+      summary: Retrieves the details of a tenant
+      responses:
+        "200":
+          description: "The tenant's data"
+          schema:
+            $ref: "#/definitions/TenantResult"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Tenant not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Modify a tenant
+      description: "**Required ACL:** `auth.tenants.{tenant_uuid}.edit`"
+      operationId: updateTenant
+      tags:
+        - tenants
+      security:
+        - accent_auth_token: []
+      parameters:
+        - $ref: "#/parameters/tenant_uuid"
+        - name: body
+          in: body
+          description: The tenant parameters
+          required: true
+          schema:
+            $ref: "#/definitions/TenantEdit"
+      responses:
+        "200":
+          description: The new tenant
+          schema:
+            $ref: "#/definitions/TenantPostResponse"
+        "400":
+          description: Invalid body
+          schema:
+            $ref: "#/definitions/APIError"
+        "404":
+          description: Tenant not found
+          schema:
+            $ref: "#/definitions/Error"
+  /tenants/{tenant_uuid}/domains:
+    get:
+      tags:
+        - tenants
+      security:
+        - accent_auth_token: []
+      description: "**Required ACL**: `auth.tenants.{tenant_uuid}.domains.read`"
+      parameters:
+        - $ref: "#/parameters/tenant_uuid"
+      summary: Retrieves the domains names with uuids of a tenant
+      responses:
+        "200":
+          description: "The tenant's domains data"
+          schema:
+            $ref: "#/definitions/TenantDomainsList"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: Tenant not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: System related error
+          schema:
+            $ref: "#/definitions/Error"
+
+parameters:
+  tenant_uuid:
+    name: tenant_uuid
+    in: path
+    type: string
+    description: The UUID of the tenant
+    required: true
+definitions:
+  TenantPostResponse:
+    type: object
+    properties:
+      name:
+        type: string
+      uuid:
+        type: string
+      parent_uuid:
+        type: string
+  TenantList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of tenants
+      filtered:
+        type: integer
+        description: The number of tenants matching the searched term
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/TenantResult"
+        description: A paginated list of tenants
+  TenantBase:
+    type: object
+    properties:
+      name:
+        type: string
+        description: "The tenant's name"
+      contact:
+        type: string
+        description: "The contact user's UUID"
+      phone:
+        type: string
+        description: "The tenant's contact phone number"
+      domain_names:
+        type: array
+        description: "A list containing human readeable unique domain names, associated with a specific tenant"
+        uniqueItems: true
+        items:
+          type: string
+      address:
+        $ref: "#/definitions/TenantAddress"
+      default_authentication_method:
+        type: string
+        description: |
+          The `default_authentication_method` defines the authentication method that
+          is going to be used for users using the `authentication_method` `default`.
+        default: native
+        enum:
+          - native
+          - saml
+          - ldap
+  TenantResult:
+    type: object
+    allOf:
+      - $ref: "#/definitions/TenantBase"
+      - properties:
+          uuid:
+            type: string
+          slug:
+            type: string
+            description: "A unique, human readeable identifier for this tenant"
+  TenantCreate:
+    type: object
+    allOf:
+      - $ref: "#/definitions/TenantBase"
+      - properties:
+          uuid:
+            type: string
+            description: "The tenant's UUID"
+          slug:
+            type: string
+            description: "A unique, human readeable identifier for this tenant. This field cannot be modified and will be auto-generated if missing."
+  TenantEdit:
+    type: object
+    allOf:
+      - $ref: "#/definitions/TenantBase"
+  TenantAddress:
+    type: object
+    properties:
+      line_1:
+        type: string
+        description: The first line of the address
+      line_2:
+        type: string
+        description: The second line of the address
+      city:
+        type: string
+      state:
+        type: string
+      country:
+        type: string
+      zip_code:
+        type: string
+  TenantDomainsList:
+    type: object
+    properties:
+      total:
+        type: integer
+        description: The number of domains
+      items:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            uuid:
+              type: string
+        description: A non-paginated list of domains

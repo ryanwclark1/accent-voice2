@@ -1,0 +1,30 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - dird
+      - america
+      - europe
+      - asia
+      - db
+    environment:
+      TARGETS: "dird:9489 america:9486 europe:9486 asia:9486 auth:9497 db:5432"
+  dird:
+    volumes:
+      - "./etc/accent-dird/conf.d/20-bus-disabled.yml:/etc/accent-dird/conf.d/20-bus-disabled.yml"
+  america:
+    image: python:3.9-slim-bullseye
+    volumes:
+      - "./confd_data/asset.accent_users_two_working_one_404:/tmp"
+    command: "/tmp/run_confd america"
+  europe:
+    image: python:3.9-slim-bullseye
+    volumes:
+      - "./confd_data/asset.accent_users_two_working_one_404:/tmp"
+    command: "/tmp/run_confd europe"
+  asia:
+    image: python:3.9-slim-bullseye
+    volumes:
+      - "./confd_data/asset.accent_users_two_working_one_404:/tmp"
+    command: "/tmp/run_confd asia"

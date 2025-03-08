@@ -1,0 +1,19 @@
+paths:
+  /graphql:
+    get:
+      operationId: graphiql
+      summary: Show GraphiQL test interface for GraphQL in a browser. This is not a REST endpoint.
+      tags:
+        - work_in_progress
+      responses:
+        '200':
+          description: the web page for GraphiQL
+    post:
+      operationId: graphql_query
+      summary: Execute a GraphQL query. This is a GraphQL endpoint, not a REST endpoint.
+      description: '**Required ACL:** `dird.graphql.{root_field_name}`, e.g. `dird.graphql.hello`'
+      tags:
+        - work_in_progress
+      responses:
+        '200':
+          description: the response for the GraphQL query

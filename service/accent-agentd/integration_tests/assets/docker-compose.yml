@@ -1,0 +1,42 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: '${INTEGRATION_TEST_TIMEOUT}'
+
+  agentd:
+    image: accent-agentd-test
+    environment:
+      ACCENT_UUID: 00000000-0000-0000-0000-0000000c4a7d
+    volumes:
+      - ../..:/usr/src/accent-agentd:ro
+      - ./etc/accent-agentd/conf.d/50-default.yml:/etc/accent-agentd/conf.d/50-default.yml:ro
+      # - '${LOCAL_GIT_REPOS}/accent-auth-client/accent_auth_client:/opt/venv/lib/python3.9/site-packages/accent_auth_client'
+      # - '${LOCAL_GIT_REPOS}/accent-bus/accent_bus:/opt/venv/lib/python3.9/site-packages/accent_bus'
+      # - '${LOCAL_GIT_REPOS}/accent-dao/accent_dao:/opt/venv/lib/python3.9/site-packages/accent_dao'
+      # - '${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent'
+    ports:
+      - '9493'
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - '9497'
+
+  amid:
+    image: accentcommunications/accent-amid-mock
+    ports:
+      - '9491'
+
+  postgres:
+    image: accentcommunications/accent-confd-db-test
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672'
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq

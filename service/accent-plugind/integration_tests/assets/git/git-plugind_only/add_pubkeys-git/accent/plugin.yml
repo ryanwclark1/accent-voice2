@@ -1,0 +1,5 @@
+namespace: plugindtests
+name: accent-pubkeys
+version: 0.0.1
+debian_depends:
+  - accent-dev-ssh-pubkeys

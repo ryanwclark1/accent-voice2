@@ -1,0 +1,14 @@
+FROM accentcommunications/accent-base-db
+
+COPY . /usr/src/accent-chatd
+WORKDIR /usr/src/accent-chatd
+ENV ALEMBIC_DB_URI=postgresql://accent-chatd:password123@localhost/accent-chatd
+
+RUN true \
+    && python3 setup.py install \
+    && pg_start \
+    && accent-chatd-init-db --user postgres --pg_db_uri postgresql:///postgres --chatd_db_uri postgresql:///accent-chatd --db accent-chatd --owner accent-chatd --password password123 \
+    && (cd /usr/src/accent-chatd && python3 -m alembic.config -c alembic.ini upgrade head) \
+    && pg_stop \
+    && true
+USER postgres

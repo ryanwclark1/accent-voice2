@@ -1,0 +1,98 @@
+[tool.poetry]
+name = "accent-setupd"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Clark <ryanc@accentservices.com>"]
+packages = [
+    {include = "accent_setupd"}
+]
+include = [
+    "accent_setupd/plugins/*/api.yml",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+cheroot = "^8.5.2"
+flask = "^1.1.2"
+Flask-Cors = "^3.0.10"
+Flask-RESTful = "^0.3.8"
+itsdangerous = "^1.1.0"
+Jinja2 = "^2.11.3"
+kombu = "^5.0.2"
+markupsafe = "^1.1.1"
+marshmallow = "^3.10.0"
+python-consul = "^1.1.0"
+PyYAML = "^5.3.1"
+stevedore = "^4.0.2"
+werkzeug = "^1.0.1"
+accent-deployd-client = {path = "../../library/accent-deployd-client"}
+accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
+accent-auth-client = {path = "../../library/accent-auth-client"}
+accent-confd-client = {path = "../../library/accent-confd-client"}
+accent-bus = {path = "../../library/accent-bus"}
+accent = {path = "../../library/accent-lib-python"}
+
+
+[tool.poetry.group.dev.dependencies]
+commitizen = "^3.10.0"
+dunamai = "^1.18.1"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["UPDATE"]
+
+[tool.poetry.plugins."console_scripts"]
+accent-setupd = "accent_setupd.main:main"
+
+[tool.poetry.plugins."accent_setupd.plugins"]
+api = "accent_setupd.plugins.api.plugin:Plugin"
+config = "accent_setupd.plugins.config.plugin:Plugin"
+setup = "accent_setupd.plugins.setup.plugin:Plugin"
+status = "accent_setupd.plugins.status.plugin:Plugin"
+

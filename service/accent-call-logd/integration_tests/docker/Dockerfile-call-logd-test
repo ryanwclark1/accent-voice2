@@ -1,0 +1,8 @@
+FROM accentcommunications/accent-call-logd
+
+COPY . /usr/src/accent-call-logd
+WORKDIR /usr/src/accent-call-logd
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+RUN python setup.py develop

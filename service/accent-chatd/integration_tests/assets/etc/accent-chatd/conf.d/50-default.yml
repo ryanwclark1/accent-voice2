@@ -1,0 +1,17 @@
+debug: true
+rest_api:
+  listen: 0.0.0.0
+db_uri: postgresql://accent-chatd:password123@postgres/accent-chatd
+auth:
+  host: auth
+  username: chatd-service
+  password: chatd-password
+amid:
+  host: amid
+bus:
+  host: rabbitmq
+confd:
+  host: confd
+
+initialization:
+  enabled: False

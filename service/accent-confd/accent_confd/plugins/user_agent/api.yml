@@ -1,0 +1,38 @@
+paths:
+  /users/{user_id}/agents:
+    delete:
+      operationId: dissociate_user_agent
+      summary: Dissociate user and agent
+      description: '**Required ACL:** `confd.users.{user_id}.agents.delete`'
+      tags:
+      - users
+      - agents
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/useriduuid'
+      responses:
+        '204':
+          description: The user and agent have been dissociated.
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+  /users/{user_id}/agents/{agent_id}:
+    put:
+      operationId: associate_user_agent
+      summary: Associate user and agent
+      description: '**Required ACL:** `confd.users.{user_id}.agents.{agent_id}.update`'
+      tags:
+      - users
+      - agents
+      parameters:
+      - $ref: '#/parameters/tenantuuid'
+      - $ref: '#/parameters/useriduuid'
+      - $ref: '#/parameters/agentid'
+      responses:
+        '204':
+          description: The user and agent have been associated.
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'

@@ -1,0 +1,146 @@
+[pkg_i10sv]
+description: Firmware for Fanvil i10SV
+description_fr: Micrologiciel pour Fanvil i10SV
+version: 2.12.44.6
+files: i10sv-fw
+install: fanvil-fw
+
+[pkg_i10s]
+description: Firmware for Fanvil i10S
+description_fr: Micrologiciel pour Fanvil i10S
+version: 2.12.44.6
+files: i10s-fw
+install: fanvil-fw
+
+[pkg_i10sd]
+description: Firmware for Fanvil i10SD
+description_fr: Micrologiciel pour Fanvil i10SD
+version: 2.12.44.6
+files: i10sd-fw
+install: fanvil-fw
+
+[pkg_i16s]
+description: Firmware for Fanvil i16S
+description_fr: Micrologiciel pour Fanvil i16S
+version: 2.12.44.6
+files: i16s-fw
+install: fanvil-fw
+
+[pkg_i16sv]
+description: Firmware for Fanvil i16SV
+description_fr: Micrologiciel pour Fanvil i16SV
+version: 2.12.44.6
+files: i16sv-fw
+install: fanvil-fw
+
+[pkg_i51W]
+description: Firmware for Fanvil i51W
+description_fr: Micrologiciel pour Fanvil i51W
+version: 2.12.44.10
+files: i51w-fw
+install: fanvil-fw
+
+[pkg_i52W]
+description: Firmware for Fanvil i52W
+description_fr: Micrologiciel pour Fanvil i52W
+version: 2.12.44.10
+files: i52w-fw
+install: fanvil-fw
+
+[pkg_i53W]
+description: Firmware for Fanvil i53W
+description_fr: Micrologiciel pour Fanvil i53W
+version: 2.12.44.25
+files: i53w-fw
+install: fanvil-fw
+
+[pkg_i61]
+description: Firmware for Fanvil i61
+description_fr: Micrologiciel pour Fanvil i61
+version: 2.12.44.8.4
+files: i61-fw
+install: fanvil-fw
+
+[pkg_i62]
+description: Firmware for Fanvil i62
+description_fr: Micrologiciel pour Fanvil i62
+version: 2.12.44.8.4
+files: i62-fw
+install: fanvil-fw
+
+[pkg_i63]
+description: Firmware for Fanvil i63
+description_fr: Micrologiciel pour Fanvil i63
+version: 2.12.44.8.4
+files: i63-fw
+install: fanvil-fw
+
+[pkg_i64]
+description: Firmware for Fanvil i64
+description_fr: Micrologiciel pour Fanvil i64
+version: 2.12.44.8.4
+files: i64-fw
+install: fanvil-fw
+
+[install_fanvil-fw]
+a-b: cp $FILE1 firmware/
+
+[file_i10sv-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I10SV-fanvil-3918-full-V0.2.2-2.12.44.6-1864-D0.29.0-T2023-09-08-12.26.54.z
+size: 16837568
+sha1sum: e797d5a64b0429be767a52c5c936743a46a04c44
+
+[file_i10s-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I10S-fanvil-3921-full-V0.2.2-2.12.44.6-1864-D0.29.0-T2023-09-08-12.12.40.z
+size: 16837648
+sha1sum: 1ff1d3f1849b5e694ee036440fb8fa20a734d1a7
+
+[file_i10sd-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I10SD-fanvil-3922-full-V0.2.2-2.12.44.6-1864-D0.29.0-T2023-09-08-12.20.09.z
+size: 16837608
+sha1sum: c4835be3e51192bc876cc27ac9792d7fe22783c5
+
+[file_i16s-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I16S-fanvil-3925-full-V0.2.2-2.12.44.6-1864-D0.29.0-T2023-09-08-12.32.55.z
+size: 16857720
+sha1sum: 643e99ae76a91ab7a9da4dce095811b254251538
+
+[file_i16sv-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I16SV-fanvil-3919-full-V0.2.2-2.12.44.6-1864-D0.29.0-T2023-09-08-12.39.00.z
+size: 16857676
+sha1sum: 5a04d53e5e51297777d935b65c2f85feaf6ba56d
+
+[file_i51w-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/i51w-fanvil-release-4900-2.12.44.10-krnvlT2023-10-16-16.58.43.z
+size: 26751880
+sha1sum: ecc8d59410f02cc3eb12a341300df827e92b92c4
+
+[file_i52w-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/i52w-fanvil-release-4902-2.12.44.10-krnvlT2023-10-16-17.11.35.z
+size: 27421216
+sha1sum: 24d042cdd2b76ae2fae6ab25d5952bae3a756438
+
+[file_i53w-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/i53w-fanvil-release-4908-2.12.44.25-krnvlT2024-07-12-19.44.05.z
+size: 27003588
+sha1sum: acf9f5b543692aa5b5fba284d1061915b1176679
+
+[file_i61-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I61-fanvil-3940-full-V0.2.2-2.12.44.8.4-1877-D0.29.0-T2024-01-31-11.28.20.z
+size: 18083116
+sha1sum: 1ad449147df3839e9a7cc5fa5729a434aa470226
+
+[file_i62-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I62-fanvil-3941-full-V0.2.2-2.12.44.8.4-1877-D0.29.0-T2024-01-31-11.35.41.z
+size: 18083128
+sha1sum: b77d1fc6d5d8ba1b6389df37b8270f004f2fa04a
+
+[file_i63-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I63-fanvil-3942-full-V0.2.2-2.12.44.8.4-1877-D0.29.0-T2024-01-31-11.45.30.z
+size: 18083076
+sha1sum: cc9ebc40e167e08637dc7982fa930b85da637afd
+
+[file_i64-fw]
+url: http://provd.accentvoice.io/firmwares/fanvil/I64-fanvil-3943-full-V0.2.2-2.12.44.8.4-1877-D0.29.0-T2024-01-31-11.52.44.z
+size: 18083344
+sha1sum: 1f9e2f541a8cd24752905f44bac3d927f2ec9a42

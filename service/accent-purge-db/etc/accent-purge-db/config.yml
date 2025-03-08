@@ -1,0 +1,31 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: "/etc/accent-purge-db/conf.d/"
+
+pid_file: "/run/accent-purge-db.pid"
+log_file: "/var/log/accent-purge-db.log"
+
+# Database connection settings
+db_uri: "postgresql://asterisk:password123@localhost/asterisk?application_name=accent-purge-db"
+
+# Change the log level to debug level.
+debug: False
+
+enabled_plugins:
+    purgers:
+        cel: true
+        queue-log: true
+        stat-agent: true
+        stat-call-on: true
+        stat-queue: true
+        stat-switchboard: true
+#    archives:
+#        - sample
+#
+
+days_to_keep: 365
+# days_to_keep_per_plugin:
+#     cel: 31

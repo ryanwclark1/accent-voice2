@@ -1,0 +1,6 @@
+[default]
+# Show only warnings & errors (no info messages)
+verbosity = "warning"
+
+# Exclude specific directories
+exclude = ["alembic/", "migrations/", "tests/"]

@@ -1,0 +1,32 @@
+###############################################
+# Provd Builder Image
+###############################################
+FROM accentcommunications/accent-provd:latest AS provd-builder-base
+
+RUN true \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        gcc \
+        libc6-dev \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sSL https://install.python-poetry.org | python3 -
+
+WORKDIR $PYSETUP_PATH
+
+COPY ./service/ ../../service
+COPY ./library/ ../../library
+
+RUN true \
+    && apt-get -q update \
+    && apt-get -yq install \
+        netcat-openbsd \
+    && poetry add ../../service/accent-confgend \
+    && poetry add ../../library/accent-confgend-client \
+    && poetry install \
+    && rm -rf ../../service \
+    && rm -rf ../../library \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="${PYSETUP_PATH}/.venv/bin:$PATH"

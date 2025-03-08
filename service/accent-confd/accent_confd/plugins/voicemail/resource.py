@@ -1,0 +1,56 @@
+# Copyright 2023 Accent Communications
+
+from flask import request, url_for
+
+from accent_confd.auth import required_acl
+from accent_confd.helpers.restful import ItemResource, ListResource
+
+from .schema import VoicemailSchema
+
+
+class VoicemailList(ListResource):
+    schema = VoicemailSchema
+    has_tenant_uuid = True
+
+    def __init__(self, service, middleware):
+        super().__init__(service)
+        self._middleware = middleware
+
+    def build_headers(self, voicemail):
+        return {'Location': url_for('voicemails', id=voicemail['id'], _external=True)}
+
+    @required_acl('confd.voicemails.create')
+    def post(self):
+        tenant_uuids = self._build_tenant_list({'recurse': True})
+        voicemail = self._middleware.create(request.get_json(), tenant_uuids)
+        return voicemail, 201, self.build_headers(voicemail)
+
+    @required_acl('confd.voicemails.read')
+    def get(self):
+        return super().get()
+
+
+class VoicemailItem(ItemResource):
+    schema = VoicemailSchema
+    has_tenant_uuid = True
+
+    def __init__(self, service, middleware):
+        super().__init__(service)
+        self._middleware = middleware
+
+    @required_acl('confd.voicemails.{id}.read')
+    def get(self, id):
+        tenant_uuids = self._build_tenant_list({'recurse': True})
+        return self._middleware.get(id, tenant_uuids)
+
+    @required_acl('confd.voicemails.{id}.update')
+    def put(self, id):
+        tenant_uuids = self._build_tenant_list({'recurse': True})
+        self._middleware.update(id, request.get_json(), tenant_uuids)
+        return '', 204
+
+    @required_acl('confd.voicemails.{id}.delete')
+    def delete(self, id):
+        tenant_uuids = self._build_tenant_list({'recurse': True})
+        self._middleware.delete(id, tenant_uuids)
+        return '', 204

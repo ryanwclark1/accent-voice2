@@ -1,0 +1,3 @@
+
+from repo_check.check_unmerged_branches import main
+main()

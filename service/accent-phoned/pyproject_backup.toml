@@ -1,0 +1,112 @@
+[tool.poetry]
+name = "accent-phoned"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Clark <ryanc@accentservices.com>"]
+packages = [
+    {include = "accent_phoned"}
+]
+include = [
+    "accent_phoned/plugins/*/templates/*.jinja",
+    "accent_phoned/translations/*"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+Babel = "^2.8.0"
+cheroot = "^8.5.2"
+CherryPy = "^18.6.1"
+flask = "^1.1.2"
+Flask-Babel = "^1.0.0"
+Flask-Cors = "^3.0.9"
+Flask-RESTful = "^0.3.8"
+itsdangerous = "^1.1.0"
+Jinja2 = "^2.11.3"
+jsonpatch = "^1.25"
+kombu = "^5.0.2"
+markupsafe = "^1.1.1"
+marshmallow = "^3.10.0"
+netaddr = "^0.7.19"
+PyYAML = "^5.3.1"
+requests = "^2.25.1"
+stevedore = "^4.0.2"
+werkzeug = "^1.0.1"
+accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
+accent-amid-client = {path = "../../library/accent-amid-client"}
+accent-auth-client = {path = "../../library/accent-auth-client"}
+accent-confd-client = {path = "../../library/accent-confd-client"}
+accent-dird-client = {path = "../../library/accent-dird-client"}
+accent = {path = "../../library/accent-lib-python"}
+
+[tool.poetry.group.dev.dependencies]
+commitizen = "^3.10.0"
+dunamai = "^1.18.1"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+deptry = "^0.6.4"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 99
+fix = true
+
+[tool.ruff.lint]
+select = [
+  "YTT",  # flake8-2020
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "A",  # flake8-builtins
+  "C4",  # flake8-comprehensions
+  "T10",  # flake8-debugger
+  "SIM",  # flake8-simplify
+  "I",  # isort
+  "C90",  # mccabe
+  "E",  # pycodestyle
+  "W",  # pycodestyle
+  "F", # pyflakes
+  "PGH",  # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF",  # ruff
+  "TRY",  # tryceratops
+]
+
+ignore = [
+  "E501",  # LineTooLong
+  "E731",  # DoNotAssignLambda
+  "E203",  # Whitespace before ':'
+  "W503",  # Line break before binary operator
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["UPDATE"]
+
+[tool.poetry.plugins."console_scripts"]
+accent-phoned = "accent_phoned.bin.daemon:main"
+
+[tool.poetry.plugins."accent_phoned.plugins"]
+api = "accent_phoned.plugins.api.plugin:Plugin"
+blf = "accent_phoned.plugins.blf.plugin:Plugin"
+aastra = "accent_phoned.plugins.aastra.plugin:Plugin"
+cisco = "accent_phoned.plugins.cisco.plugin:Plugin"
+config = "accent_phoned.plugins.config.plugin:Plugin"
+endpoint = "accent_phoned.plugins.endpoint.plugin:Plugin"
+fanvil = "accent_phoned.plugins.fanvil.plugin:Plugin"
+gigaset = "accent_phoned.plugins.gigaset.plugin:Plugin"
+htek = "accent_phoned.plugins.htek.plugin:Plugin"
+polycom = "accent_phoned.plugins.polycom.plugin:Plugin"
+snom = "accent_phoned.plugins.snom.plugin:Plugin"
+status = "accent_phoned.plugins.status.plugin:Plugin"
+thomson = "accent_phoned.plugins.thomson.plugin:Plugin"
+yealink = "accent_phoned.plugins.yealink.plugin:Plugin"

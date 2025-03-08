@@ -1,0 +1,147 @@
+; [pkg_PKGDEFNAME]
+; description: DESCRIPTION
+; description_LOCALE: LOCALIZED_DESCRIPTION (opt)
+; version: VERSION
+; depends: DEPEND (DEPEND)* (opt)
+; files: FILEDEFNAME (FILEDEFNAME)* (opt)
+; install: INSTDEFNAME (opt)
+
+[pkg_digium-hx8]
+description: Firmware for Digium HX8.
+version: 2.06
+files: digium-hx8fw
+install: digium-fw
+
+[pkg_digium-vpmoct032]
+description: Firmware for Digium VPMOCT032.
+version: 1.12.0
+files: digium-vpmoct032fw
+install: digium-fw
+
+[pkg_digium-oct6114-128]
+description: Firmware for Digium VPMOCT128M/VPM450M.
+version: 1.05.01
+files: digium-oct6114-128fw
+install: digium-fw
+
+[pkg_digium-oct6114-064]
+description: Firmware for Digium VPMOCT064M.
+version: 1.05.01
+files: digium-oct6114-064fw
+install: digium-fw
+
+[pkg_digium-oct6114-032]
+description: Firmware for echo canceller on Digium TE133/TE134.
+version: 1.05.01
+files: digium-oct6114-032fw
+install: digium-fw
+
+[pkg_digium-te133]
+description: Firmware for Digium TE133/TE131.
+version: 7a001e
+files: digium-te133fw
+install: digium-fw
+
+[pkg_digium-te134]
+description: Firmware for Digium TE134/TE132.
+version: 780017
+files: digium-te134fw
+install: digium-fw
+
+[pkg_digium-te435]
+description: Firmware for Digium TE435/TE235.
+version: 13001e
+files: digium-te435fw
+install: digium-fw
+
+[pkg_digium-te436]
+description: Firmware for Digium TE436/TE236.
+version: 10017
+files: digium-te436fw
+install: digium-fw
+
+[pkg_digium-tc400m]
+description: Firmware for Digium TC400M.
+version: MR6.12
+files: digium-tc400mfw
+install: digium-fw
+
+[pkg_digium-vpmadt032]
+description: Firmware for Digium VPMADT032.
+version: 1.07
+files: digium-vpmadt032fw
+install: digium-fw
+
+
+
+[pkg_sangoma-a101dm]
+description: Firmware for Sangoma AFT A101D.
+version: 37
+files: sangoma-a101dmfw
+install: sangoma-fw
+
+[pkg_sangoma-a102dm]
+description: Firmware for Sangoma AFT A102D.
+version: 37
+files: sangoma-a102dmfw
+install: sangoma-fw
+
+[pkg_sangoma-a104dm]
+description: Firmware for Sangoma AFT A104D.
+version: 43
+files: sangoma-a104dmfw
+install: sangoma-fw
+
+[pkg_sangoma-a108dm]
+description: Firmware for Sangoma AFT A108D.
+version: 43
+files: sangoma-a108dmfw
+install: sangoma-fw
+
+[pkg_sangoma-a200]
+description: Firmware for Sangoma AFT A200.
+version: 13
+files: sangoma-a200fw
+install: sangoma-fw
+
+[pkg_sangoma-a400]
+description: Firmware for Sangoma AFT A400.
+version: 11
+files: sangoma-a400fw
+install: sangoma-fw
+
+[pkg_sangoma-a500]
+description: Firmware for Sangoma AFT A500.
+version: 35
+files: sangoma-a500fw
+install: sangoma-fw
+
+[pkg_sangoma-b600]
+description: Firmware for Sangoma AFT B600.
+version: 02
+files: sangoma-b600fw
+install: sangoma-fw
+
+[pkg_sangoma-b601]
+description: Firmware for Sangoma AFT B601.
+version: 04
+files: sangoma-b601fw
+install: sangoma-fw
+
+[pkg_sangoma-b700]
+description: Firmware for Sangoma AFT B700.
+version: 35
+files: sangoma-b700fw
+install: sangoma-fw
+
+[pkg_sangoma-a14x]
+description: Firmware for Sangoma AFT A14X.
+version: 7
+files: sangoma-a14xfw
+install: sangoma-fw
+
+[pkg_sangoma-echocan]
+description: Echo canceller for all cards.
+version: 3.5.18
+files: sangoma-echocan
+install: sangoma-echocan

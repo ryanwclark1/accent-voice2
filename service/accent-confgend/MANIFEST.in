@@ -1,0 +1,1 @@
+recursive-include accent_confgend/templates *.jinja

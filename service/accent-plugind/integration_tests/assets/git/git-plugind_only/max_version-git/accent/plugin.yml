@@ -1,0 +1,4 @@
+namespace: plugindtests
+name: max-version
+version: 0.0.1
+max_accent_version: 17.05

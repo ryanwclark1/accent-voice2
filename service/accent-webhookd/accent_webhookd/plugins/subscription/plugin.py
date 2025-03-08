@@ -1,0 +1,63 @@
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from accent.pubsub import CallbackCollector
+
+from .bus import SubscriptionBusEventHandler
+from .http import (
+    SubscriptionLogsResource,
+    SubscriptionResource,
+    SubscriptionsResource,
+    UserSubscriptionResource,
+    UserSubscriptionsResource,
+)
+from .service import SubscriptionService
+
+if TYPE_CHECKING:
+    from ...types import PluginDependencyDict
+
+
+class Plugin:
+    def load(self, dependencies: PluginDependencyDict) -> None:
+        api = dependencies['api']
+        bus_consumer = dependencies['bus_consumer']
+        config = dependencies['config']
+        service_manager = dependencies['service_manager']
+        subscribe_to_next_token_change = dependencies['next_token_change_subscribe']
+
+        master_tenant_callback_collector = CallbackCollector()
+        subscribe_to_next_token_change(master_tenant_callback_collector.new_source())
+
+        service = SubscriptionService(config)
+
+        api.add_resource(
+            SubscriptionsResource, '/subscriptions', resource_class_args=[service]
+        )
+        api.add_resource(
+            SubscriptionResource,
+            '/subscriptions/<subscription_uuid>',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            UserSubscriptionsResource,
+            '/users/me/subscriptions',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            UserSubscriptionResource,
+            '/users/me/subscriptions/<subscription_uuid>',
+            resource_class_args=[service],
+        )
+        api.add_resource(
+            SubscriptionLogsResource,
+            '/subscriptions/<subscription_uuid>/logs',
+            resource_class_args=[service],
+        )
+
+        bus_handler = SubscriptionBusEventHandler(
+            bus_consumer, config, service_manager, service
+        )
+        master_tenant_callback_collector.subscribe(bus_handler.subscribe)

@@ -1,0 +1,34 @@
+# Copyright 2023 Accent Communications
+
+from hamcrest import (
+    assert_that,
+    none,
+    not_none,
+)
+
+from accent_dao.resources.func_key.tests.test_helpers import FuncKeyHelper
+from accent_dao.tests.test_dao import DAOTestCase
+
+from ..func_key_dest_agent import FuncKey
+
+
+class TestDelete(DAOTestCase, FuncKeyHelper):
+
+    def setUp(self):
+        super().setUp()
+        self.setup_funckeys()
+
+    def test_func_key_deleted(self):
+        user = self.add_user()
+        bsfilter = self.add_bsfilter()
+        bsfilter_member = self.add_filter_member(bsfilter.id, user.id, 'secretary')
+        func_key_dest_member = self.add_bsfilter_destination(bsfilter_member.id)
+
+        row = self.session.query(FuncKey).first()
+        assert_that(row, not_none())
+
+        self.session.delete(func_key_dest_member)
+        self.session.flush()
+
+        row = self.session.query(FuncKey).first()
+        assert_that(row, none())

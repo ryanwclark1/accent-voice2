@@ -1,0 +1,15 @@
+version: '3'
+services:
+  sync:
+    depends_on:
+      - auth
+      - confd
+    environment:
+      TARGETS: "confd:9486 auth:9497"
+  confd:
+    image: python:3.9-slim-bullseye
+    volumes:
+      - "./confd_data/asset.accent_users:/tmp"
+    ports:
+      - "9486"
+    command: /tmp/run_confd

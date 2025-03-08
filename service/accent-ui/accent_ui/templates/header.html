@@ -1,0 +1,30 @@
+{% set tenant_ns = namespace(name=None) %}
+
+<header class="main-header">
+  <a href="{{ current_user.get_user_index_url() }}" class="logo">
+    <span class="logo-lg">
+      <img class="logo-full-svg" src="{{ url_for('static', filename='img/accent-text-bird-reverse.svg') }}" />
+    </span>
+    <span class="logo-mini">
+      <img class="logo-bird-svg" src="{{ url_for('static', filename='img/accent-bird-reverse.svg') }}" />
+    </span>
+  </a>
+  <nav class="navbar navbar-static-top">
+    <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
+      <span class="sr-only">Toggle navigation</span>
+    </a>
+    <div class="navbar-custom-menu">
+      <ul class="nav navbar-nav">
+        <li class="current">
+          <div class="no-link">
+            <i class="fa fa-cog"></i> {{ current_user.get_displayname() }}{% if tenant_ns.name %} ({{ tenant_ns.name }})
+            {% endif %}
+          </div>
+        </li>
+        <li class="logout">
+          <a href="{{ url_for('logout.Logout:get') }}" class="fa fa-sign-out" id="logout"></a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</header>

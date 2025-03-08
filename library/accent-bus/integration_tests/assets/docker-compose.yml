@@ -1,0 +1,26 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    depends_on:
+      - rabbitmq
+      - bus
+    environment:
+      TARGETS: "rabbitmq:5672 bus:5000"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  bus:
+    image: local/bus-test
+    volumes:
+      - ../..:/usr/src/accent-bus
+    ports:
+      - "5000"
+    environment:
+      - FLASK_APP=bus_test
+      - EXCHANGE_NAME=bus-integration-tests

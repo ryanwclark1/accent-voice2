@@ -1,0 +1,108 @@
+# Copyright 2023 Accent Communications
+
+from hamcrest import assert_that, has_entries
+
+from ..helpers import scenarios as s
+from ..helpers.config import TOKEN_SUB_TENANT
+from . import confd
+
+
+def test_put_errors():
+    url = confd.asterisk.iax.callnumberlimits.put
+    error_checks(url)
+
+
+def error_checks(url):
+    s.check_bogus_field_returns_error(url, 'items', 123)
+    s.check_bogus_field_returns_error(url, 'items', None)
+    s.check_bogus_field_returns_error(url, 'items', {})
+    s.check_bogus_field_returns_error(url, 'items', 'string')
+    s.check_bogus_field_returns_error(url, 'items', ['string'])
+    s.check_bogus_field_returns_error(url, 'items', [{'key': 'value'}])
+
+    regex = r'items.*ip_address'
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'ip_address': 123}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'ip_address': True}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'ip_address': None}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'ip_address': {}}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'ip_address': []}], regex
+    )
+    regex = r'items.*netmask'
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'netmask': 123}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'netmask': True}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'netmask': None}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'netmask': {}}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'netmask': []}], regex
+    )
+    regex = r'items.*limit'
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'limit': 'string'}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'limit': None}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'limit': {}}], regex
+    )
+    s.check_bogus_field_returns_error_matching_regex(
+        url, 'items', [{'limit': []}], regex
+    )
+
+
+def test_get():
+    response = confd.asterisk.iax.callnumberlimits.get()
+    response.assert_ok()
+
+
+def test_edit_iax_callnumberlimits():
+    parameters = {
+        'items': [{'ip_address': '127.0.0.1', 'netmask': '255.255.255.255', 'limit': 5}]
+    }
+
+    response = confd.asterisk.iax.callnumberlimits.put(**parameters)
+    response.assert_updated()
+
+    response = confd.asterisk.iax.callnumberlimits.get()
+    assert_that(response.item, has_entries(parameters))
+
+
+def test_edit_iax_callnumberlimits_without_items():
+    parameters = {'items': []}
+    response = confd.asterisk.iax.callnumberlimits.put(**parameters)
+    response.assert_updated()
+
+    response = confd.asterisk.iax.callnumberlimits.get()
+    assert_that(response.item, has_entries(parameters))
+
+
+def test_restrict_only_master_tenant():
+    response = confd.asterisk.iax.callnumberlimits.get(token=TOKEN_SUB_TENANT)
+    response.assert_status(401)
+
+    response = confd.asterisk.iax.callnumberlimits.put(token=TOKEN_SUB_TENANT)
+    response.assert_status(401)
+
+
+def test_bus_event_when_edited():
+    url = confd.asterisk.iax.callnumberlimits
+    headers = {}
+
+    s.check_event('iax_callnumberlimits_edited', headers, url.put, {'items': []})

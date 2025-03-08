@@ -1,0 +1,27 @@
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client import HTTPCommand
+
+from accent_confd_client.util import url_join
+
+
+class WizardCommand(HTTPCommand):
+    resource = 'wizard'
+
+    def create(self, body, timeout=300):
+        url = url_join(self.resource)
+        response = self.session.post(url, body, timeout=timeout)
+        return response.json()
+
+    def get(self):
+        url = url_join(self.resource)
+        response = self.session.get(url)
+        return response.json()
+
+    def discover(self):
+        url = url_join(self.resource, "discover")
+        response = self.session.get(url)
+        return response.json()
+
+    def __call__(self):
+        return self.get()

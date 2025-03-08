@@ -1,0 +1,8 @@
+extra_config_files: '/etc/accent-auth-cli/conf.d'
+
+# Connection info to the authentication server
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false

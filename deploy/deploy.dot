@@ -1,0 +1,37 @@
+digraph "deploy" {
+        layout=dot;
+        "chatd" [style="filled" label=<<font point-size="15">chatd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-chatd:deploy</font>>];
+        "bootstrap" [style="filled" label=<<font point-size="15">bootstrap</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-bootstrap:deploy</font>>];
+        "alertmanager" [style="filled" label=<<font point-size="15">alertmanager</font><font point-size="10"><br/><br/><b>Ports:</b><br/>9093:9093 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>prom/alertmanager:latest</font>>];
+        "traefik" [style="filled" label=<<font point-size="15">traefik</font><font point-size="10"><br/><br/><b>Ports:</b><br/>80:80 (tcp, ingress)<br/>443:443 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>traefik:v2.10</font>>];
+        "node-exporter" [style="filled" label=<<font point-size="15">node-exporter</font><font point-size="10"><br/><br/><b>Image:</b><br/>prom/node-exporter:latest</font>>];
+        "rabbitmq" [style="filled" label=<<font point-size="15">rabbitmq</font><font point-size="10"><br/><br/><b>Image:</b><br/>rabbitmq:latest</font>>];
+        "ui" [style="filled" label=<<font point-size="15">ui</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-ui:latest</font>>];
+        "webhookd" [style="filled" label=<<font point-size="15">webhookd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-webhookd:deploy</font>>];
+        "prometheus" [style="filled" label=<<font point-size="15">prometheus</font><font point-size="10"><br/><br/><b>Ports:</b><br/>9090:9090 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>prom/prometheus:v2.49.0</font>>];
+        "statsd-exporter" [style="filled" label=<<font point-size="15">statsd-exporter</font><font point-size="10"><br/><br/><b>Ports:</b><br/>9102:9102 (tcp, ingress)<br/>8125:8125 (udp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>prom/statsd-exporter:latest</font>>];
+        "confd" [style="filled" label=<<font point-size="15">confd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-confd:deploy</font>>];
+        "dird" [style="filled" label=<<font point-size="15">dird</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-dird:deploy</font>>];
+        "postgres-exporter" [style="filled" label=<<font point-size="15">postgres-exporter</font><font point-size="10"><br/><br/><b>Ports:</b><br/>9187:9187 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>prometheuscommunity/postgres-exporter:latest</font>>];
+        "agid" [style="filled" label=<<font point-size="15">agid</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-agid:latest</font>>];
+        "phoned" [style="filled" label=<<font point-size="15">phoned</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-phoned:latest</font>>];
+        "minio" [style="filled" label=<<font point-size="15">minio</font><font point-size="10"><br/><br/><b>Ports:</b><br/>9000:9000 (tcp, ingress)<br/>9001:9001 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>minio/minio:latest</font>>];
+        "agentd" [style="filled" label=<<font point-size="15">agentd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-agentd:latest</font>>];
+        "init" [style="filled" label=<<font point-size="15">init</font><font point-size="10"><br/><br/><b>Image:</b><br/>grafana/loki:latest</font>>];
+        "confgend" [style="filled" label=<<font point-size="15">confgend</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-confgend:latest</font>>];
+        "amid" [style="filled" label=<<font point-size="15">amid</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-amid:latest</font>>];
+        "auth" [style="filled" label=<<font point-size="15">auth</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-auth:latest</font>>];
+        "grafana" [style="filled" label=<<font point-size="15">grafana</font><font point-size="10"><br/><br/><b>Ports:</b><br/>3000:3000 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>grafana/grafana-oss:latest</font>>];
+        "postgres" [style="filled" label=<<font point-size="15">postgres</font><font point-size="10"><br/><br/><b>Image:</b><br/>postgres:15</font>>];
+        "call-logd" [style="filled" label=<<font point-size="15">call-logd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-call-logd:latest</font>>];
+        "calld" [style="filled" label=<<font point-size="15">calld</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-calld:latest</font>>];
+        "provd" [style="filled" label=<<font point-size="15">provd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-provd:deploy</font>>];
+        "cadvisor" [style="filled" label=<<font point-size="15">cadvisor</font><font point-size="10"><br/><br/><b>Ports:</b><br/>8080:8080 (tcp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>gcr.io/cadvisor/cadvisor:v0.36.0</font>>];
+        "pgadmin" [style="filled" label=<<font point-size="15">pgadmin</font><font point-size="10"><br/><br/><b>Image:</b><br/>dpage/pgadmin4:latest</font>>];
+        "sysconfd" [style="filled" label=<<font point-size="15">sysconfd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-sysconfd-mock:deploy</font>>];
+        "websocketd" [style="filled" label=<<font point-size="15">websocketd</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-websocketd:deploy</font>>];
+        "asterisk" [style="filled" label=<<font point-size="15">asterisk</font><font point-size="10"><br/><br/><b>Ports:</b><br/>5060:5060 (tcp, ingress)<br/>5060:5060 (udp, ingress)<br/>5061:5061 (tcp, ingress)<br/>19980:19980 (udp, ingress)<br/>19981:19981 (udp, ingress)<br/>19982:19982 (udp, ingress)<br/>19983:19983 (udp, ingress)<br/>19984:19984 (udp, ingress)<br/>19985:19985 (udp, ingress)<br/>19986:19986 (udp, ingress)<br/>19987:19987 (udp, ingress)<br/>19988:19988 (udp, ingress)<br/>19989:19989 (udp, ingress)<br/>19990:19990 (udp, ingress)<br/>19991:19991 (udp, ingress)<br/>19992:19992 (udp, ingress)<br/>19993:19993 (udp, ingress)<br/>19994:19994 (udp, ingress)<br/>19995:19995 (udp, ingress)<br/>19996:19996 (udp, ingress)<br/>19997:19997 (udp, ingress)<br/>19998:19998 (udp, ingress)<br/>19999:19999 (udp, ingress)<br/>20000:20000 (udp, ingress)</font><font point-size="10"><br/><br/><b>Image:</b><br/>accentcommunications/accent-asterisk:deploy</font>>];
+
+        "postgres-exporter" -> "postgres";
+        "postgres-exporter" -> "prometheus";
+}

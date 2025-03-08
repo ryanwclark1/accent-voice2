@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-white">
+
+<head>
+  {% include 'head.html' %}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" />
+  <meta charset="UTF-8" />
+  <title>{% block title %}{{ _('Login') }}{% endblock %}</title>
+  {% block additional_css %}{% endblock %}
+</head>
+  </head>
+  </head>
+  {% from "macro.html" import build_breadcrumb,
+                            build_breadcrumbs,
+                            build_section_row,
+                            build_form_box,
+                            build_form_tabs_box,
+                            build_tabs_content,
+                            build_tab_content_item,
+                            build_tabs_navigation,
+                            add_tab_navigation_item,
+                            add_tab_navigation_header,
+                            add_delete_entry_button,
+                            build_add_row_entry_header,
+                            build_form,
+                            add_default_fields,
+                            build_table,
+                            build_table_headers,
+                            build_table_body,
+                            build_list_containers,
+                            build_list_table,
+                            build_list_table_headers,
+                            build_list_table_rows,
+                            build_hidden_add_containers %}
+  {% from "macro_tailwind.html" import build_breadcrumb_tailwind,
+                                      build_breadcrumbs_tailwind,
+                                      build_section_row_tailwind,
+                                      build_form_box_tailwind,
+                                      build_form_tabs_box_tailwind,
+                                      build_tabs_content_tailwind,
+                                      build_tab_content_item_tailwind,
+                                      build_tabs_navigation_tailwind,
+                                      add_tab_navigation_item_tailwind,
+                                      add_tab_navigation_header_tailwind,
+                                      add_delete_entry_button_tailwind  ,
+                                      build_add_row_entry_header_tailwind,
+                                      build_form_tailwind_tailwind,
+                                      add_default_fields_tailwind ,
+                                      build_table_tailwind,
+                                      build_table_headers_tailwind,
+                                      build_table_body_tailwind,
+                                      build_list_containers_tailwind,
+                                      build_list_table_tailwind,
+                                      build_list_table_headers_tailwind,
+                                      build_list_table_rows_tailwind,
+                                      build_hidden_add_containers_tailwind %}
+  {% from "macro_render_field.html" import render_field %}
+  {% if current_user.is_authenticated %}
+
+<body class="h-full">
+  <div class="wrapper flex flex-col min-h-screen">
+
+    <header class="sticky top-0 z-50 border-b border-gray-200 bg-white shadow">
+      {% include 'header.html' %}
+    </header>
+
+      <div>
+        <div class="lg:flex lg:space-x-4">
+          <aside class="hidden lg:block lg:w-1/5">
+            {% include 'sidebar-desktop.html' %}
+          </aside>
+          <div class="flex-1">
+            {% include 'flashed_messages.html' %}
+            {% include 'notifier.html' %}
+            <main class="flex-1">
+              <div role="main" class="py-4">
+                {% block content_header %}{% endblock %}
+                {% block content %}{% endblock %}
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+  {% include 'js.html' %}
+  {% block additional_js %}{% endblock %}
+</body>
+
+</html>

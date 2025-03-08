@@ -1,0 +1,9 @@
+FROM accentcommunications/accent-calld
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+ADD . /usr/src/accent-calld
+WORKDIR /usr/src/accent-calld
+
+RUN python3 -m pip install -e . coverage[toml]
+CMD ["coverage", "run", "--data-file", "/tmp/coverage", "/opt/venv/bin/accent-calld"]

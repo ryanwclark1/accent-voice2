@@ -1,0 +1,6 @@
+services:
+  sync:
+    depends_on:
+      - provd
+    environment:
+      TARGETS: "provd:8666"

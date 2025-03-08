@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+      exclude_types: [xml, sql, svg, html, jinja, dotenv]
+      exclude: ^.*\.(db|min.js|min.css|.css.map|min.css.map|iml|tpl|xml.tpl.btpl)$
+    - id: check-yaml
+    - id: check-added-large-files
+      args: [--maxkb=100]
+    - id: check-ast
+    - id: check-docstring-first
+    - id: check-symlinks
+    - id: detect-private-key
+    - id: check-toml
+    - id: check-json
+      exclude: ^.*(devcontainer.json|launch.json|recordings.json)$
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.1.0"
+    hooks:
+      - id: ruff
+        args: ["--config", "pyproject.toml", "--unsafe-fixes"]
+
+  - repo: https://github.com/psf/black
+    rev: "23.9.1"
+    hooks:
+      - id: black
+        args: ["--config", "pyproject.toml"]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
+    hooks:
+    -   id: pyupgrade

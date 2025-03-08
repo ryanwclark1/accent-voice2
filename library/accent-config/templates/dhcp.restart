@@ -1,0 +1,9 @@
+#!/bin/sh
+
+dhcpd-update -nri
+
+if [ "${ACCENT_DHCP_ACTIVE}" = "1" ]; then
+  invoke-rc.d isc-dhcp-server restart
+else
+  invoke-rc.d isc-dhcp-server stop
+fi

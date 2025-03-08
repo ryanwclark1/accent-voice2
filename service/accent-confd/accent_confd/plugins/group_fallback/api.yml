@@ -1,0 +1,54 @@
+paths:
+  /groups/{group_uuid}/fallbacks:
+    get:
+      operationId: get_group_fallback
+      summary: List all fallbacks for group
+      description: '**Required ACL:** `confd.groups.{group_uuid}.fallbacks.read`'
+      tags:
+      - groups
+      parameters:
+      - $ref: '#/parameters/groupuuid'
+      responses:
+        '200':
+          description: Fallbacks for group
+          schema:
+            $ref: '#/definitions/GroupFallbacks'
+    put:
+      operationId: update_group_fallback
+      summary: Update group's fallbacks
+      description: '**Required ACL:** `confd.groups.{group_uuid}.fallbacks.update`
+
+
+        **WARNING** This endpoint delete all fields that are not defined.'
+      tags:
+      - groups
+      parameters:
+      - $ref: '#/parameters/groupuuid'
+      - name: body
+        in: body
+        description: Fallbacks for group
+        schema:
+          $ref: '#/definitions/GroupFallbacks'
+      responses:
+        '204':
+          description: Group's fallbacks updated
+        '400':
+          $ref: '#/responses/GenericError'
+        '404':
+          $ref: '#/responses/NotFoundError'
+definitions:
+  GroupFallbacks:
+    properties:
+      noanswer_destination:
+        description: The destination to redirect the caller to when there are no answer
+        $ref: '#/definitions/DestinationType'
+      congestion_destination:
+        description: The destination to redirect the caller to when the group has exceeded max_calls
+        $ref: '#/definitions/DestinationType'
+    example:
+      noanswer_destination:
+        type: user
+        user_id: 1
+      congestion_destination:
+        type: user
+        user_id: 2

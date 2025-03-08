@@ -1,0 +1,59 @@
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  agid:
+    image: accentcommunications/accent-agid-tests
+    ports:
+      - "4573"
+    environment:
+      - PYTHONUNBUFFERED=TRUE
+    volumes:
+      - "../..:/usr/src/accent-agid"
+      - "./etc/accent-agid/conf.d/50-default.yml:/etc/accent-agid/conf.d/50-default.yml"
+      - "./etc/accent/asterisk/accent_in_callerid.conf:/etc/accent/asterisk/accent_in_callerid.conf"
+      - "./etc/accent/asterisk/accent_ring.conf:/etc/accent/asterisk/accent_ring.conf"
+      - "./etc/accent/asterisk/accent_fax.conf:/etc/accent/asterisk/accent_fax.conf"
+      - "./etc/accent/mail.txt:/etc/accent/mail.txt"
+      # - "${LOCAL_GIT_REPOS}/accent-dao/accent_dao:/opt/venv/lib/python3.9/site-packages/accent_dao"
+      # - "${LOCAL_GIT_REPOS}/accent-lib-python/accent:/opt/venv/lib/python3.9/site-packages/accent"
+
+  auth:
+    image: accentcommunications/accent-auth-mock
+    ports:
+      - '9497'
+
+  calld:
+    image: mockserver/mockserver
+    environment:
+      MOCKSERVER_SERVER_PORT: 9500
+    ports:
+      - "9500"
+
+  confd:
+    image: mockserver/mockserver
+    environment:
+      MOCKSERVER_SERVER_PORT: 9486
+    ports:
+      - "9486"
+
+  agentd:
+    image: mockserver/mockserver
+    environment:
+      MOCKSERVER_SERVER_PORT: 9493
+    ports:
+      - "9493"
+
+  dird:
+    image: mockserver/mockserver
+    environment:
+      MOCKSERVER_SERVER_PORT: 9489
+    ports:
+      - "9489"
+
+  postgres:
+    image: accentcommunications/accent-confd-db-test:local
+    ports:
+      - "5432"

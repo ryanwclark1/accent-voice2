@@ -1,0 +1,12 @@
+[run]
+branch = true
+source = ["src"]
+omit = ["tests/*", "alembic/*", "migrations/*"]
+
+[report]
+skip_empty = true
+show_missing = true
+fail_under = 90  # Fail if coverage drops below 90%
+
+[html]
+directory = "coverage_html_report"

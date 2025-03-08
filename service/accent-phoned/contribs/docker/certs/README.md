@@ -1,0 +1,24 @@
+How to generate certificates
+============================
+
+openssl req -x509 -sha256 -nodes -days 825 -newkey rsa:2048 -config openssl.cfg -keyout server.key -out server.crt
+
+<!-- Generate RSA private key (don't replace pass:x, it will be ignored):
+
+   openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
+
+Strip passphrase protection:
+
+   openssl rsa -passin pass:x -in server.pass.key -out server.key
+   rm server.pass.key
+
+Generate CSR for self-signing:
+
+   openssl req -new -key server.key -out server.csr
+
+Create self-signed certificate for 1 year:
+
+   openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+
+To extend the certificate validity period, generate another CSR, then use it to
+generate a new self-signed certificate. -->

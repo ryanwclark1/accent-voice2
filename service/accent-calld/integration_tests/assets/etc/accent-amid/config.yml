@@ -1,0 +1,31 @@
+rest_api:
+  listen: 0.0.0.0
+
+ami:
+  host: ari
+  username: accent_amid
+  password: opensesame
+
+ajam:
+  host: ari
+  verify_certificate: /usr/local/share/ssl/ari/server.crt
+  username: accent_amid
+  password: opensesame
+
+auth:
+  host: auth
+  # *-service usernames will be rejected by accent-auth-mock
+  # until we setup a valid token for those credentials
+  username: accent-amid-service
+  password: opensesame
+
+publish_ami_events: True
+
+bus:
+  host: rabbitmq
+  username: guest
+  password: guest
+  exchange_name: accent-headers
+  exchange_type: headers
+
+uuid: 08c56466-8f29-45c7-9856-92bf1ba89b92

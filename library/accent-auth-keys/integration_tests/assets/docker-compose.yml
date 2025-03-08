@@ -1,0 +1,37 @@
+version: '3.7'
+services:
+  sync:
+    image: accentcommunications/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"
+
+  auth-keys:
+    image: accent-auth-keys-test
+    environment:
+      ACCENT_AUTH_CLI_CONFIG: /root/.config/accent-auth-cli
+    volumes:
+      - "../..:/usr/src/accent-auth-keys"
+      - "./etc/accent-auth-keys/config.yml:/etc/accent-auth-keys/config.yml"
+      - "./etc/accent-auth-cli:/root/.config/accent-auth-cli"
+
+  auth:
+    image: accentcommunications/accent-auth
+    ports:
+      - "9497"
+    environment:
+      ACCENT_UUID: the-predefined-accent-uuid
+    volumes:
+      - "./etc/accent-auth/conf.d/config.yml:/etc/accent-auth/conf.d/config.yml"
+
+  postgres:
+    image: accentcommunications/accent-auth-db
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set -e
+
+timeout=${TIMEOUT:-30}
+
+uris=$(echo $TARGETS | sed -e 's/,/ /g' -e 's/\s+/\n/g' | uniq)
+
+if [ -z "$uris" ]; then
+  echo "No wait targets found. Exiting"
+  exit 0
+fi
+
+for uri in $uris
+do
+  host=$(echo $uri | cut -d: -f1)
+  port=$(echo $uri | cut -d: -f2)
+  [ -n "${host}" ]
+  [ -n "${port}" ]
+  echo -n "Waiting for ${uri}  ."
+  seconds=0
+  while [ "$seconds" -lt "$timeout" ] && ! nc -z -w1 $host $port
+  do
+    echo -n .
+    seconds=$((seconds+1))
+    sleep 1
+  done
+
+  if [ "$seconds" -lt "$timeout" ]; then
+    echo "  up!"
+  else
+    echo "  ERROR: unable to connect" >&2
+    exit 1
+  fi
+done
+echo "Everything is up"
+exit 0

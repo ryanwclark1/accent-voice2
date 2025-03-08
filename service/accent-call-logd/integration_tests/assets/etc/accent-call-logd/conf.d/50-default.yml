@@ -1,0 +1,27 @@
+debug: true
+rest_api:
+  listen: 0.0.0.0
+db_uri: postgresql://accent-call-logd:secret@postgres/accent-call-logd
+cel_db_uri: postgresql://asterisk:password123@cel-postgres/asterisk
+auth:
+  host: auth
+  username: accent-call-logd
+  password: opensesame
+  key_file: null
+  master_tenant_uuid: 4eb57648-b914-446b-a69f-58643ae08dd4
+bus:
+  host: rabbitmq
+celery:
+  broker: amqp://guest:guest@rabbitmq:5672
+  worker_min: 1
+  worker_max: 1
+confd:
+  host: confd
+exports:
+  directory: /tmp
+  service_id: export-service-id
+  service_key: export-service-key
+  key_file: null
+smtp:
+  host: smtp
+  starttls: false

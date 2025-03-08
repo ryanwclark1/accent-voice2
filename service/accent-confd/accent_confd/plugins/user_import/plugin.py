@@ -1,0 +1,186 @@
+# Copyright 2023 Accent Communications
+
+from collections import OrderedDict
+
+from accent_dao.resources.call_permission import dao as call_permission_dao
+from accent_dao.resources.endpoint_sccp import dao as sccp_dao
+from accent_dao.resources.endpoint_sip import dao as sip_dao
+from accent_dao.resources.extension import dao as extension_dao
+from accent_dao.resources.incall import dao as incall_dao
+from accent_dao.resources.line import dao as line_dao
+from accent_dao.resources.line_extension import dao as line_extension_dao
+from accent_dao.resources.user import dao as user_dao
+from accent_dao.resources.user_call_permission import dao as user_call_permission_dao
+from accent_dao.resources.user_line import dao as user_line_dao
+from accent_dao.resources.user_voicemail import dao as user_voicemail_dao
+from accent_dao.resources.voicemail import dao as voicemail_dao
+from accent_provd_client import Client as ProvdClient
+
+from accent_confd.database import user_export as user_export_dao
+from accent_confd.plugins.call_permission.service import (
+    build_service as build_call_permission_service,
+)
+from accent_confd.plugins.context.service import build_service as build_context_service
+from accent_confd.plugins.endpoint_sccp.service import build_service as build_sccp_service
+from accent_confd.plugins.endpoint_sip.service import (
+    build_endpoint_service as build_sip_service,
+)
+from accent_confd.plugins.extension.service import (
+    build_service as build_extension_service,
+)
+from accent_confd.plugins.incall.service import build_service as build_incall_service
+from accent_confd.plugins.incall_extension.service import (
+    build_service as build_incall_extension_service,
+)
+from accent_confd.plugins.line.service import build_service as build_line_service
+from accent_confd.plugins.line_endpoint.service import (
+    build_service_sccp as build_le_sccp_service,
+)
+from accent_confd.plugins.line_endpoint.service import (
+    build_service_sip as build_le_sip_service,
+)
+from accent_confd.plugins.line_extension.service import (
+    build_service as build_line_extension_service,
+)
+from accent_confd.plugins.tenant.service import (
+    build_service as build_tenant_service,
+)
+from accent_confd.plugins.user.service import build_service as build_user_service
+from accent_confd.plugins.user_call_permission.service import (
+    build_service as build_user_call_permission_service,
+)
+from accent_confd.plugins.user_line.service import build_service as build_ul_service
+from accent_confd.plugins.user_voicemail.service import build_service as build_uv_service
+from accent_confd.plugins.voicemail.service import (
+    build_service as build_voicemail_service,
+)
+
+from .accent_user_service import build_service as build_accent_user_service
+from .associators import (
+    AccentUserAssociator,
+    CallPermissionAssociator,
+    ExtensionAssociator,
+    IncallAssociator,
+    LineAssociator,
+    SccpAssociator,
+    SipAssociator,
+    VoicemailAssociator,
+)
+from .auth_client import auth_client, set_auth_client_config
+from .creators import (
+    AccentUserCreator,
+    CallPermissionCreator,
+    ContextCreator,
+    ExtensionCreator,
+    IncallCreator,
+    LineCreator,
+    SccpCreator,
+    SipCreator,
+    UserCreator,
+    VoicemailCreator,
+    WebRTCCreator,
+)
+from .entry import EntryAssociator, EntryCreator, EntryFinder, EntryUpdater
+from .resource import UserExportResource, UserImportResource
+from .service import ExportService, ImportService
+
+
+class Plugin:
+    def load(self, dependencies):
+        api = dependencies['api']
+        config = dependencies['config']
+        pjsip_doc = dependencies['pjsip_doc']
+        token_changed_subscribe = dependencies['token_changed_subscribe']
+        set_auth_client_config(config['auth'])
+
+        provd_client = ProvdClient(**config['provd'])
+        token_changed_subscribe(provd_client.set_token)
+
+        user_service = build_user_service(
+            provd_client,
+            paginated_user_strategy_threshold=config[
+                'paginated_user_strategy_threshold'
+            ],
+        )
+        accent_user_service = build_accent_user_service()
+        user_voicemail_service = build_uv_service()
+        voicemail_service = build_voicemail_service()
+        line_service = build_line_service(provd_client)
+        sip_service = build_sip_service(provd_client, pjsip_doc)
+        sccp_service = build_sccp_service()
+        line_sip_service = build_le_sip_service(provd_client)
+        line_sccp_service = build_le_sccp_service(provd_client)
+        extension_service = build_extension_service(provd_client)
+        user_line_service = build_ul_service()
+        line_extension_service = build_line_extension_service()
+        call_permission_service = build_call_permission_service()
+        user_call_permission_service = build_user_call_permission_service()
+        incall_service = build_incall_service()
+        incall_extension_service = build_incall_extension_service()
+        context_service = build_context_service()
+        tenant_service = build_tenant_service()
+
+        creators = {
+            'user': UserCreator(user_service),
+            'accent_user': AccentUserCreator(accent_user_service),
+            'line': LineCreator(line_service),
+            'voicemail': VoicemailCreator(voicemail_service),
+            'sip': SipCreator(sip_service, tenant_service),
+            'webrtc': WebRTCCreator(sip_service, tenant_service),
+            'sccp': SccpCreator(sccp_service),
+            'extension': ExtensionCreator(extension_service),
+            'extension_incall': ExtensionCreator(extension_service),
+            'incall': IncallCreator(incall_service),
+            'call_permissions': CallPermissionCreator(call_permission_service),
+            'context': ContextCreator(context_service),
+        }
+
+        entry_creator = EntryCreator(creators)
+
+        associators = OrderedDict(
+            [
+                ('accent_user', AccentUserAssociator(accent_user_service)),
+                ('voicemail', VoicemailAssociator(user_voicemail_service)),
+                ('sip', SipAssociator(line_sip_service)),
+                ('webrtc', SipAssociator(line_sip_service)),
+                ('sccp', SccpAssociator(line_sccp_service)),
+                ('line', LineAssociator(user_line_service)),
+                ('extension', ExtensionAssociator(line_extension_service)),
+                ('incall', IncallAssociator(incall_extension_service)),
+                (
+                    'call_permissions',
+                    CallPermissionAssociator(
+                        user_call_permission_service, call_permission_service
+                    ),
+                ),
+            ]
+        )
+
+        entry_associator = EntryAssociator(associators)
+
+        entry_finder = EntryFinder(
+            user_dao,
+            voicemail_dao,
+            user_voicemail_dao,
+            line_dao,
+            user_line_dao,
+            line_extension_dao,
+            sip_dao,
+            sccp_dao,
+            extension_dao,
+            incall_dao,
+            call_permission_dao,
+            user_call_permission_dao,
+        )
+
+        entry_updater = EntryUpdater(creators, associators, entry_finder)
+
+        import_service = ImportService(entry_creator, entry_associator, entry_updater)
+        api.add_resource(
+            UserImportResource, '/users/import', resource_class_args=(import_service,)
+        )
+
+        export_service = ExportService(user_export_dao, auth_client)
+        api.add_resource(
+            UserExportResource, '/users/export', resource_class_args=(export_service,)
+        )

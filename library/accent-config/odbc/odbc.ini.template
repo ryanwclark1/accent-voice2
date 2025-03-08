@@ -1,0 +1,6 @@
+[accent]
+Description         = Connection to the database used by ACCENT
+Driver              = PostgreSQL ANSI
+Trace               = No
+Database            = asterisk
+Servername          = 127.0.0.1

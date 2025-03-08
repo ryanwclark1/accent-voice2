@@ -1,0 +1,10 @@
+enabled_plugins:
+  backends:
+    unknown: true  # unknown backends should not prevent accent-dird from starting
+  services:
+    unknown: true  # unknown backends should not prevent accent-dird from starting
+  views:
+    unknown: true  # unknown backends should not prevent accent-dird from starting
+
+bus:
+  enabled: false

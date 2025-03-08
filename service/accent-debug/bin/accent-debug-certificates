@@ -1,0 +1,20 @@
+#!/bin/bash
+# Copyright 2023 Accent Communications
+
+domain="$1"
+logs_tarball="$2"
+if [ -z "${domain}" -o -z "${logs_tarball}" ] ; then
+    echo "Usage: $0 <domain.example.com> <output_tarball.tgz>"
+    exit 1
+fi
+
+rm -rf /tmp/accent-debug-certificates
+mkdir /tmp/accent-debug-certificates
+
+ls -l /etc/{accent,accent}-*/conf.d > /tmp/accent-debug-certificates/etc.log
+cp /etc/custom/custom-certificate.yml /tmp/accent-debug-certificates/cert-config.yml
+openssl s_client -showcerts -connect localhost:9497 </dev/null 2>/dev/null | sed -n '/^-----BEGIN CERT/,/^-----END CERT/p' >& /tmp/accent-debug-certificates/certs-served.pem
+cp /usr/share/accent-certs/server.crt /tmp/accent-debug-certificates/cert-file.pem
+curl "https://${domain}:9497/" >& /tmp/accent-debug-certificates/curl-accent-auth.log
+
+tar czf "${logs_tarball}" -C /tmp accent-debug-certificates

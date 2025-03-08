@@ -1,0 +1,97 @@
+# This file should not be modified as it may get changed by the maintainer.
+# Add extra configuration files to the extra_config_files directory to override
+# the settings in this file
+
+# Directory in which to place config overrides
+extra_config_files: /etc/accent-phoned/conf.d/
+
+# Change the log level to debug level.
+debug: false
+
+# Log file.
+log_filename: /var/log/accent-phoned.log
+
+# accent-auth (authentication daemon) connection settings.
+auth:
+  host: localhost
+  port: 9497
+  prefix: null
+  https: false
+  key_file: /var/lib/accent-auth-keys/accent-phoned-key.yml
+
+# accent-dird connection settings
+dird:
+  host: localhost
+  port: 9489
+  prefix: null
+  https: false
+
+# Event bus (AMQP) connection settings
+bus:
+  username: guest
+  password: guest
+  host: localhost
+  port: 5672
+  subscribe_exchange_name: accent-headers
+  subscribe_exchange_type: headers
+
+# accent-amid connection settings
+amid:
+  host: localhost
+  port: 9491
+  prefix: null
+  https: false
+
+# accent-confd connection settings
+confd:
+  host: localhost
+  port: 9486
+  prefix: null
+  https: false
+
+# REST API server
+rest_api:
+  http:
+    enabled: True
+    listen: 0.0.0.0
+    port: 9498
+
+  https:
+    enabled: True
+    listen: 0.0.0.0
+    port: 9499
+
+    certificate: /usr/share/accent-certs/server.crt
+    private_key: /usr/share/accent-certs/server.key
+
+  # Authorizing subnets
+  # authorized_subnets:
+  #   - '192.168.0.0/16'
+
+  # CORS configuration. See Flask-CORS documentation for other values.
+  cors:
+    # Enabled by default
+    enabled: True
+    # Allow JSON preflight requests
+    allow_headers: [Content-Type, X-Auth-Token, Accent-Tenant]
+
+  # Maximum of concurrent threads processing requests
+  # This setting applies to each listening port: by default, 10 threads are used
+  # for HTTP and 10 more threads are used for HTTPS.
+  # See the performance documentation for more details
+  # https://accentvoice.io/uc-doc/system/performance/
+  max_threads: 10
+
+enabled_plugins:
+  aastra: True
+  blf: True
+  api: True
+  cisco: True
+  fanvil: True
+  gigaset: True
+  htek: True
+  polycom: True
+  snom: True
+  status: True
+  thomson: True
+  yealink: True

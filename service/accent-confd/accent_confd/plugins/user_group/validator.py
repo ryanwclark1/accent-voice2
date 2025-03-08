@@ -1,0 +1,25 @@
+# Copyright 2023 Accent Communications
+
+from accent_dao.helpers import errors
+
+from accent_confd.helpers.validator import ValidationAssociation, ValidatorAssociation
+
+
+class UserGroupAssociationValidator(ValidatorAssociation):
+    def validate(self, user, groups):
+        # if there is no group to associate to the user, lines are not required
+        if groups:
+            self.validate_user_has_endpoint(user)
+        self.validate_no_duplicate_group(groups)
+
+    def validate_user_has_endpoint(self, user):
+        if not user.lines:
+            raise errors.missing_association('User', 'Line', user_uuid=user.uuid)
+
+    def validate_no_duplicate_group(self, groups):
+        if len(groups) != len(set(groups)):
+            raise errors.not_permitted('Cannot associate same group more than once')
+
+
+def build_validator():
+    return ValidationAssociation(association=[UserGroupAssociationValidator()])

@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  provserver:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8021:8021"
+    volumes:
+      - ./files:/files
+
+  # nginx:
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf
+  #     - ./files:/files

@@ -1,0 +1,17 @@
+debug: false
+rest_api:
+  listen: 0.0.0.0
+
+db_uri: postgresql://asterisk:password123@postgres/accent
+
+amid:
+  host: amid
+
+auth:
+  host: auth
+
+bus:
+  host: rabbitmq
+
+service_discovery:
+  enabled: false

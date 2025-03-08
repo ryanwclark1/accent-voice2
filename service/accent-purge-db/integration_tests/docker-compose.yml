@@ -1,0 +1,27 @@
+version: "3"
+services:
+  sync:
+    image: accentcommunications/wait
+    depends_on:
+      - db
+    environment:
+      TARGETS: "db:5432"
+      TIMEOUT: ${INTEGRATION_TEST_TIMEOUT}
+
+  db:
+    image: postgres:13
+    expose:
+     - "5432"
+    environment:
+     - POSTGRES_USER=asterisk
+     - POSTGRES_PASSWORD=secret
+     - POSTGRES_DB=asterisk
+    volumes:
+      - "./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql"
+
+  purgedb:
+    image: accent-purge-db-test
+    environment:
+      - ACCENT_TEST_DB_URL=postgresql://asterisk:password123@db/asterisk
+    volumes:
+      - "..:/usr/src/accent-purge-db"
