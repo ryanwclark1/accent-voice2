@@ -1,32 +1,54 @@
-[tool.poetry]
+[project]
 name = "accent-export-import"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryan@accentservices.com>"]
-packages = [
-    {include = "accent_export_import"}
+authors = [{ name = "Ryan Clark", email = "ryan@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+  "pyexcel-ods>=0.6.0,<0.7",
+  "cliff>=3.10.1,<4",
+  "accent-lib-rest-client",
+  "accent-auth-client",
+  "accent-confd-client",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-pyexcel-ods = "^0.6.0"
-cliff = "^3.10.1"
-accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
-accent-auth-client = {path = "../../library/accent-auth-client"}
-accent-confd-client = {path = "../../library/accent-confd-client"}
+[project.scripts]
+accent-generate-dump = "accent_export_import.main:dump"
+accent-import-dump = "accent_export_import.main:import_"
 
+[project.entry-points."accent_export_import.dump_commands"]
+list_resources = "accent_export_import.commands:ListResources"
+list_fields = "accent_export_import.commands:ListFields"
+add = "accent_export_import.commands:Add"
+new = "accent_export_import.commands:New"
 
-[tool.poetry.group.dev.dependencies]
-commitizen = "^3.10.0"
-dunamai = "^1.18.1"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.6.4"
-tox = "^3.25.1"
+[project.entry-points."accent_export_import.import_commands"]
+import = "accent_export_import.commands:Import"
+
+[dependency-groups]
+dev = [
+  "commitizen>=3.10.0,<4",
+  "dunamai>=1.18.1,<2",
+  "pytest>=7.2.0,<8",
+  "pytest-cov>=4.0.0,<5",
+  "deptry>=0.6.4,<0.7",
+  "tox>=3.25.1,<4",
+]
+
+[tool.uv.sources]
+accent-lib-rest-client = { workspace = true }
+accent-auth-client = { path = "../../library/accent-auth-client" }
+accent-confd-client = { path = "../../library/accent-confd-client" }
+
+[tool.hatch.build.targets.sdist]
+include = ["accent_export_import"]
+
+[tool.hatch.build.targets.wheel]
+include = ["accent_export_import"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"
@@ -35,29 +57,29 @@ fix = true
 
 [tool.ruff.lint]
 select = [
-  "YTT",  # flake8-2020
-  "S",  # flake8-bandit
-  "B",  # flake8-bugbear
-  "A",  # flake8-builtins
+  "YTT", # flake8-2020
+  "S",   # flake8-bandit
+  "B",   # flake8-bugbear
+  "A",   # flake8-builtins
   "C4",  # flake8-comprehensions
-  "T10",  # flake8-debugger
-  "SIM",  # flake8-simplify
-  "I",  # isort
-  "C90",  # mccabe
-  "E",  # pycodestyle
-  "W",  # pycodestyle
-  "F", # pyflakes
-  "PGH",  # pygrep-hooks
+  "T10", # flake8-debugger
+  "SIM", # flake8-simplify
+  "I",   # isort
+  "C90", # mccabe
+  "E",   # pycodestyle
+  "W",   # pycodestyle
+  "F",   # pyflakes
+  "PGH", # pygrep-hooks
   "UP",  # pyupgrade
-  "RUF",  # ruff
-  "TRY",  # tryceratops
+  "RUF", # ruff
+  "TRY", # tryceratops
 ]
 
 ignore = [
-  "E501",  # LineTooLong
-  "E731",  # DoNotAssignLambda
-  "E203",  # Whitespace before ':'
-  "W503",  # Line break before binary operator
+  "E501", # LineTooLong
+  "E731", # DoNotAssignLambda
+  "E203", # Whitespace before ':'
+  "W503", # Line break before binary operator
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -69,16 +91,3 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["UPDATE"]
-
-[tool.poetry.plugins."console_scripts"]
-accent-generate-dump = "accent_export_import.main:dump"
-accent-import-dump = "accent_export_import.main:import_"
-
-[tool.poetry.plugins."accent_export_import.dump_commands"]
-list_resources = "accent_export_import.commands:ListResources"
-list_fields = "accent_export_import.commands:ListFields"
-add = "accent_export_import.commands:Add"
-new = "accent_export_import.commands:New"
-
-[tool.poetry.plugins."accent_export_import.import_commands"]
-import = "accent_export_import.commands:Import"

@@ -1,34 +1,53 @@
-[tool.poetry]
+[project]
 name = "accent-purge-db"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryanc@accentservices.com>"]
-packages = [
-    {include = "accent_purge_db"}
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "psycopg2>=2.8.6,<3",
+    "PyYAML>=5.3.1,<6",
+    "SQLAlchemy>=1.3.0, <1.4.0",
+    "sqlalchemy-utils>=0.37.2,<0.38",
+    "stevedore>=4.0.2,<5",
+    "accent-dao",
+    "accent",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-psycopg2 = "^2.8.6"
-PyYAML = "^5.3.1"
-SQLAlchemy = ">=1.3.0, <1.4.0"
-sqlalchemy-utils = "^0.37.2"
-stevedore = "^4.0.2"
-accent-dao = {path = "../../library/accent-dao"}
-accent = {path = "../../library/accent-lib-python"}
+[project.scripts]
+accent-purge-db = "accent_purge_db.cli:main"
 
+[project.entry-points."accent_purge_db.purgers"]
+cel = "accent_purge_db.table_purger:CELPurger"
+queue-log = "accent_purge_db.table_purger:QueueLogPurger"
+stat-agent = "accent_purge_db.table_purger:StatAgentPeriodicPurger"
+stat-call-on = "accent_purge_db.table_purger:StatCallOnQueuePurger"
+stat-queue = "accent_purge_db.table_purger:StatQueuePeriodicPurger"
+stat-switchboard = "accent_purge_db.table_purger:StatSwitchboardPurger"
 
-[tool.poetry.group.dev.dependencies]
-commitizen = "^3.10.0"
-dunamai = "^1.18.1"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.6.4"
-tox = "^3.25.1"
+[dependency-groups]
+dev = [
+    "commitizen>=3.10.0,<4",
+    "dunamai>=1.18.1,<2",
+    "pytest>=7.2.0,<8",
+    "pytest-cov>=4.0.0,<5",
+    "deptry>=0.6.4,<0.7",
+    "tox>=3.25.1,<4",
+]
+
+[tool.uv.sources]
+accent-dao = { path = "../../library/accent-dao" }
+accent = { path = "../../library/accent-lib-python" }
+
+[tool.hatch.build.targets.sdist]
+include = ["accent_purge_db"]
+
+[tool.hatch.build.targets.wheel]
+include = ["accent_purge_db"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"
@@ -71,15 +90,3 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["UPDATE"]
-
-
-[tool.poetry.plugins."console_scripts"]
-accent-purge-db = "accent_purge_db.cli:main"
-
-[tool.poetry.plugins."accent_purge_db.purgers"]
-cel = "accent_purge_db.table_purger:CELPurger"
-queue-log = "accent_purge_db.table_purger:QueueLogPurger"
-stat-agent = "accent_purge_db.table_purger:StatAgentPeriodicPurger"
-stat-call-on = "accent_purge_db.table_purger:StatCallOnQueuePurger"
-stat-queue = "accent_purge_db.table_purger:StatQueuePeriodicPurger"
-stat-switchboard = "accent_purge_db.table_purger:StatSwitchboardPurger"

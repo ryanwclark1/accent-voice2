@@ -1,29 +1,41 @@
-[tool.poetry]
+[project]
 name = "accent-stat"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryanc@accentservices.com>"]
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+  "psycopg2>=2.8.6,<3",
+  "PyYAML>=5.3.1,<6",
+  "requests>=2.25.1,<3",
+  "SQLAlchemy>=1.3.0, <1.4.0",
+  "sqlalchemy-utils>=0.37.2,<0.38",
+  "stevedore>=4.0.2,<5",
+  "accent-lib-rest-client",
+  "accent-auth-client",
+  "accent-confd-client",
+  "accent-dao",
+  "accent",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-psycopg2 = "^2.8.6"
-PyYAML = "^5.3.1"
-requests = "^2.25.1"
-SQLAlchemy = ">=1.3.0, <1.4.0"
-sqlalchemy-utils = "^0.37.2"
-stevedore = "^4.0.2"
-accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
-accent-auth-client = {path = "../../library/accent-auth-client"}
-accent-confd-client = {path = "../../library/accent-confd-client"}
-accent-dao = {path = "../../library/accent-dao"}
-accent = {path = "../../library/accent-lib-python"}
+[project.scripts]
+accent-stat = "accent_stat.main:main'"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
+[project.entry-points]
+
+[dependency-groups]
+dev = ["pytest>=7.2.0,<8"]
+
+[tool.uv.sources]
+accent-lib-rest-client = { workspace = true }
+accent-auth-client = { path = "../../library/accent-auth-client" }
+accent-confd-client = { path = "../../library/accent-confd-client" }
+accent-dao = { path = "../../library/accent-dao" }
+accent = { path = "../../library/accent-lib-python" }
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"
@@ -32,29 +44,29 @@ fix = true
 
 [tool.ruff.lint]
 select = [
-  "YTT",  # flake8-2020
-  "S",  # flake8-bandit
-  "B",  # flake8-bugbear
-  "A",  # flake8-builtins
+  "YTT", # flake8-2020
+  "S",   # flake8-bandit
+  "B",   # flake8-bugbear
+  "A",   # flake8-builtins
   "C4",  # flake8-comprehensions
-  "T10",  # flake8-debugger
-  "SIM",  # flake8-simplify
-  "I",  # isort
-  "C90",  # mccabe
-  "E",  # pycodestyle
-  "W",  # pycodestyle
-  "F", # pyflakes
-  "PGH",  # pygrep-hooks
+  "T10", # flake8-debugger
+  "SIM", # flake8-simplify
+  "I",   # isort
+  "C90", # mccabe
+  "E",   # pycodestyle
+  "W",   # pycodestyle
+  "F",   # pyflakes
+  "PGH", # pygrep-hooks
   "UP",  # pyupgrade
-  "RUF",  # ruff
-  "TRY",  # tryceratops
+  "RUF", # ruff
+  "TRY", # tryceratops
 ]
 
 ignore = [
-  "E501",  # LineTooLong
-  "E731",  # DoNotAssignLambda
-  "E203",  # Whitespace before ':'
-  "W503",  # Line break before binary operator
+  "E501", # LineTooLong
+  "E731", # DoNotAssignLambda
+  "E203", # Whitespace before ':'
+  "W503", # Line break before binary operator
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -66,7 +78,3 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["accent_stat"]
-
-[tool.poetry.plugins."console_scripts"]
-accent-stat = "accent_stat.main:main'"
-

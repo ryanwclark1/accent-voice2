@@ -1,31 +1,47 @@
-[tool.poetry]
+[project]
 name = "accent-service"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryanc@accentservices.com>"]
-packages = [
-    {include = "accent_service"}
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "dbus-python>=1.2.16,<2",
+    "accent-manage-db",
 ]
+
+[project.scripts]
+accent-service-python = "accent_service.main:main"
+
+[project.entry-points]
+
+[dependency-groups]
+dev = [
+    "commitizen>=3.10.0,<4",
+    "dunamai>=1.18.1,<2",
+    "pytest>=7.2.0,<8",
+    "pytest-cov>=4.0.0,<5",
+    "deptry>=0.6.4,<0.7",
+    "tox>=3.25.1,<4",
+]
+
+[tool.uv.sources]
+accent-manage-db = { path = "../../service/accent-manage-db" }
+
+[tool.hatch.build.targets.sdist]
 include = [
+    "accent_service",
     "bin/*",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-dbus-python = "^1.2.16"
-accent-manage-db = {path = "../../service/accent-manage-db"}
-
-[tool.poetry.group.dev.dependencies]
-commitizen = "^3.10.0"
-dunamai = "^1.18.1"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.6.4"
-tox = "^3.25.1"
+[tool.hatch.build.targets.wheel]
+include = [
+    "accent_service",
+    "bin/*",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"
@@ -68,6 +84,3 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["UPDATE"]
-
-[tool.poetry.plugins."console_scripts"]
-accent-service-python = "accent_service.main:main"

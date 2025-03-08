@@ -1,14 +1,23 @@
 [project]
 name = "accent-lib-rest-client"
 version = "0.1.0"
-requires-python = ">=3.12.8"
+description = "Library for the Accent REST clients"
+authors = [{ name = "Ryan Clark", email = "ryanwclark@yahoo.com" }]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
 dependencies = [
     "httpx>=0.28.1",
     "pydantic>=2.10.6",
     "stevedore>=5.4.1",
 ]
 
+[project.scripts]
+example = "accent_lib_rest_client.example_cmd:ExampleCommand"
+
+[project.entry-points]
+
 [dependency-groups]
+dev = []
 test = [
     "coverage[toml]>=7.6.12",
     "fastapi>=0.115.11",
@@ -17,3 +26,19 @@ test = [
     "pytest-cov>=6.0.0",
     "pytest-recording>=0.13.2",
 ]
+
+[tool.uv]
+default-groups = [
+    "dev",
+    "test",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["accent_lib_rest_client"]
+
+[tool.hatch.build.targets.wheel]
+include = ["accent_lib_rest_client"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

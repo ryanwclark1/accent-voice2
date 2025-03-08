@@ -1,36 +1,59 @@
-[tool.poetry]
+[project]
 name = "accent-debug"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryanc@accentservices.com>"]
-packages = [
-    {include = "accent_debug"}
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "cliff>=3.10.1,<4",
+    "requests>=2.25.1,<3",
+    "accent-amid-client",
+    "accent-auth-client",
+    "accent-call-logd-client",
+    "accent-calld-client",
+    "accent-chatd-client",
+    "accent-dird-client",
+    "accent-webhookd-client",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-cliff = "^3.10.1"
-requests = "^2.25.1"
-accent-amid-client = {path = "../../library/accent-amid-client"}
-accent-auth-client = {path = "../../library/accent-auth-client"}
-accent-call-logd-client = {path = "../../library/accent-call-logd-client"}
-accent-calld-client = {path = "../../library/accent-calld-client"}
-accent-chatd-client = {path = "../../library/accent-chatd-client"}
-accent-dird-client = {path = "../../library/accent-dird-client"}
-accent-webhookd-client = {path = "../../library/accent-webhookd-client"}
+[project.scripts]
+accent-debug = "accent_debug.main:main"
 
+[project.entry-points."accent_debug.commands"]
+access = "accent_debug.access:AccessCommand"
+capture = "accent_debug.capture:CaptureCommand"
+collect = "accent_debug.collect:CollectCommand"
+public-ip = "accent_debug.public_ip:PublicIPCommand"
+http-request-duration = "accent_debug.http_request_duration:HTTPRequestDurationCommand"
 
-[tool.poetry.group.dev.dependencies]
-commitizen = "^3.10.0"
-dunamai = "^1.18.1"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.6.4"
-tox = "^3.25.1"
+[dependency-groups]
+dev = [
+    "commitizen>=3.10.0,<4",
+    "dunamai>=1.18.1,<2",
+    "pytest>=7.2.0,<8",
+    "pytest-cov>=4.0.0,<5",
+    "deptry>=0.6.4,<0.7",
+    "tox>=3.25.1,<4",
+]
+
+[tool.uv.sources]
+accent-amid-client = { path = "../../library/accent-amid-client" }
+accent-auth-client = { path = "../../library/accent-auth-client" }
+accent-call-logd-client = { path = "../../library/accent-call-logd-client" }
+accent-calld-client = { path = "../../library/accent-calld-client" }
+accent-chatd-client = { path = "../../library/accent-chatd-client" }
+accent-dird-client = { path = "../../library/accent-dird-client" }
+accent-webhookd-client = { path = "../../library/accent-webhookd-client" }
+
+[tool.hatch.build.targets.sdist]
+include = ["accent_debug"]
+
+[tool.hatch.build.targets.wheel]
+include = ["accent_debug"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"
@@ -73,13 +96,3 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["UPDATE"]
-
-[tool.poetry.plugins."console_scripts"]
-accent-debug = "accent_debug.main:main"
-
-[tool.poetry.plugins."accent_debug.commands"]
-access = "accent_debug.access:AccessCommand"
-capture = "accent_debug.capture:CaptureCommand"
-collect = "accent_debug.collect:CollectCommand"
-public-ip = "accent_debug.public_ip:PublicIPCommand"
-http-request-duration = "accent_debug.http_request_duration:HTTPRequestDurationCommand"

@@ -41,7 +41,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-accent-lib-rest-client = { path = "../../library/accent-lib-rest-client" }
+accent-lib-rest-client = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_dird_client"]

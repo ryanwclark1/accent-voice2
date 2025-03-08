@@ -1,60 +1,94 @@
-[tool.poetry]
+[project]
 name = "accent-call-logd"
 version = "0.1.0"
 description = ""
-authors = ["Ryan Clark <ryanc@accentservices.com>"]
-packages = [
-    {include = "accent_call_logd"}
+authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+  "alembic>=1.13.0,<2",
+  "celery>=5.0.0, <5.0.3",
+  "cheroot>=8.5.2,<9",
+  "flask>=1.1.2,<2",
+  "Flask-Cors>=3.0.9,<4",
+  "Flask-RESTful>=0.3.8,<0.4",
+  "itsdangerous>=1.1.0,<2",
+  "Jinja2>=2.11.3,<3",
+  "jsonpatch~=1.25",
+  "kombu>=5.0.2,<6",
+  "markupsafe>=1.1.1,<2",
+  "marshmallow>=3.10.0,<4",
+  "psycopg2>=2.8.6,<3",
+  "python-dateutil>=2.8.1,<3",
+  "pytz~=2023.3.post1",
+  "PyYAML>=5.3.1,<6",
+  "requests>=2.25.1,<3",
+  "setproctitle>=1.2.1,<2",
+  "SQLAlchemy>=1.3.0, <1.4.0",
+  "SQLAlchemy-Utils>=0.37.2,<0.38",
+  "stevedore>=4.0.2,<5",
+  "tenacity>=6.2.0,<7",
+  "werkzeug>=1.0.1,<2",
+  "accent-bus",
+  "accent-dao",
+  "accent-lib-rest-client",
+  "accent-auth-client",
+  "accent",
+  "accent-confd-client",
 ]
-include = [
-    "accent_call_logd/plugins/*/api.yml"
+
+[project.scripts]
+accent-call-logd = "accent_call_logd.main:main"
+accent-call-logd-init-db = "accent_call_logd.init_db:main"
+accent-call-logd-sync-db = "accent_call_logd.sync_db:main"
+accent-call-logd-upgrade-db = "accent_call_logd.main:upgrade_db"
+accent-call-logs = "accent_call_logd.main_sweep:main"
+
+[project.entry-points."accent_call_logd.celery_tasks"]
+recording_export = "accent_call_logd.plugins.cdr.celery_tasks:Plugin"
+
+[project.entry-points."accent_call_logd.plugins"]
+api = "accent_call_logd.plugins.api.plugin:Plugin"
+cdr = "accent_call_logd.plugins.cdr.plugin:Plugin"
+config = "accent_call_logd.plugins.config.plugin:Plugin"
+export = "accent_call_logd.plugins.export.plugin:Plugin"
+retention = "accent_call_logd.plugins.retention.plugin:Plugin"
+status = "accent_call_logd.plugins.status.plugin:Plugin"
+support_center = "accent_call_logd.plugins.support_center.plugin:Plugin"
+tenant = "accent_call_logd.plugins.tenant.plugin:Plugin"
+
+[project.entry-points."accent_purge_db.purgers"]
+call-logs = "accent_call_logd.purger:CallLogsPurger"
+exports = "accent_call_logd.purger:ExportsPurger"
+recordings = "accent_call_logd.purger:RecordingsPurger"
+
+[dependency-groups]
+dev = [
+  "commitizen>=3.10.0,<4",
+  "dunamai>=1.18.1,<2",
+  "pytest>=7.2.0,<8",
+  "pytest-cov>=4.0.0,<5",
+  "deptry>=0.6.4,<0.7",
+  "tox>=3.25.1,<4",
+  "ruff>=0.8.0,<0.9",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-alembic = "^1.13.0"
-celery = ">=5.0.0, <5.0.3"
-cheroot = "^8.5.2"
-flask = "^1.1.2"
-Flask-Cors = "^3.0.9"
-Flask-RESTful = "^0.3.8"
-itsdangerous = "^1.1.0"
-Jinja2 = "^2.11.3"
-jsonpatch = "^1.25"
-kombu = "^5.0.2"
-markupsafe = "^1.1.1"
-marshmallow = "^3.10.0"
-psycopg2 = "^2.8.6"
-python-dateutil = "^2.8.1"
-pytz = "^2023.3.post1"
-PyYAML = "^5.3.1"
-requests = "^2.25.1"
-setproctitle = "^1.2.1"
-SQLAlchemy = ">=1.3.0, <1.4.0"
-SQLAlchemy-Utils = "^0.37.2"
-stevedore = "^4.0.2"
-tenacity = "^6.2.0"
-werkzeug = "^1.0.1"
-accent-bus = {path = "../../library/accent-bus"}
-accent-dao = {path = "../../library/accent-dao"}
-accent-lib-rest-client = {path = "../../library/accent-lib-rest-client"}
-accent-auth-client = {path = "../../library/accent-auth-client"}
-accent = {path = "../../library/accent-lib-python"}
-accent-confd-client = {path = "../../library/accent-confd-client"}
+[tool.uv.sources]
+accent-bus = { path = "../../library/accent-bus" }
+accent-dao = { path = "../../library/accent-dao" }
+accent-lib-rest-client = { workspace = true }
+accent-auth-client = { path = "../../library/accent-auth-client" }
+accent = { path = "../../library/accent-lib-python" }
+accent-confd-client = { path = "../../library/accent-confd-client" }
 
+[tool.hatch.build.targets.sdist]
+include = ["accent_call_logd", "accent_call_logd/plugins/*/api.yml"]
 
-[tool.poetry.group.dev.dependencies]
-commitizen = "^3.10.0"
-dunamai = "^1.18.1"
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-deptry = "^0.6.4"
-tox = "^3.25.1"
-ruff = "^0.8.0"
+[tool.hatch.build.targets.wheel]
+include = ["accent_call_logd", "accent_call_logd/plugins/*/api.yml"]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"
@@ -63,29 +97,29 @@ fix = true
 
 [tool.ruff.lint]
 select = [
-  "YTT",  # flake8-2020
-  "S",  # flake8-bandit
-  "B",  # flake8-bugbear
-  "A",  # flake8-builtins
+  "YTT", # flake8-2020
+  "S",   # flake8-bandit
+  "B",   # flake8-bugbear
+  "A",   # flake8-builtins
   "C4",  # flake8-comprehensions
-  "T10",  # flake8-debugger
-  "SIM",  # flake8-simplify
-  "I",  # isort
-  "C90",  # mccabe
-  "E",  # pycodestyle
-  "W",  # pycodestyle
-  "F", # pyflakes
-  "PGH",  # pygrep-hooks
+  "T10", # flake8-debugger
+  "SIM", # flake8-simplify
+  "I",   # isort
+  "C90", # mccabe
+  "E",   # pycodestyle
+  "W",   # pycodestyle
+  "F",   # pyflakes
+  "PGH", # pygrep-hooks
   "UP",  # pyupgrade
-  "RUF",  # ruff
-  "TRY",  # tryceratops
+  "RUF", # ruff
+  "TRY", # tryceratops
 ]
 
 ignore = [
-  "E501",  # LineTooLong
-  "E731",  # DoNotAssignLambda
-  "E203",  # Whitespace before ':'
-  "W503",  # Line break before binary operator
+  "E501", # LineTooLong
+  "E731", # DoNotAssignLambda
+  "E203", # Whitespace before ':'
+  "W503", # Line break before binary operator
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -97,29 +131,3 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 source = ["UPDATE"]
-
-[tool.poetry.plugins."console_scripts"]
-accent-call-logd = "accent_call_logd.main:main"
-accent-call-logd-init-db = "accent_call_logd.init_db:main"
-accent-call-logd-sync-db = "accent_call_logd.sync_db:main"
-accent-call-logd-upgrade-db = "accent_call_logd.main:upgrade_db"
-accent-call-logs = "accent_call_logd.main_sweep:main"
-
-
-[tool.poetry.plugins."accent_call_logd.celery_tasks"]
-recording_export = "accent_call_logd.plugins.cdr.celery_tasks:Plugin"
-
-[tool.poetry.plugins."accent_call_logd.plugins"]
-api = "accent_call_logd.plugins.api.plugin:Plugin"
-cdr = "accent_call_logd.plugins.cdr.plugin:Plugin"
-config = "accent_call_logd.plugins.config.plugin:Plugin"
-export = "accent_call_logd.plugins.export.plugin:Plugin"
-retention = "accent_call_logd.plugins.retention.plugin:Plugin"
-status = "accent_call_logd.plugins.status.plugin:Plugin"
-support_center = "accent_call_logd.plugins.support_center.plugin:Plugin"
-tenant = "accent_call_logd.plugins.tenant.plugin:Plugin"
-
-[tool.poetry.plugins."accent_purge_db.purgers"]
-call-logs = "accent_call_logd.purger:CallLogsPurger"
-exports = "accent_call_logd.purger:ExportsPurger"
-recordings = "accent_call_logd.purger:RecordingsPurger"
