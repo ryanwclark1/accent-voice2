@@ -1,6 +1,4 @@
-# Copyright 2024 Accent Communications
-
-from __future__ import annotations
+# Copyright 2025 Accent Communications
 
 import logging
 import os
@@ -10,10 +8,14 @@ from uuid import UUID
 
 import httpx
 from stevedore import extension
-from urllib3 import disable_warnings
 
-from .models import ClientConfig, RequestParameters, TenantConfig, TokenConfig, URLConfig
-
+from .models import (
+    ClientConfig,
+    RequestParameters,
+    TenantConfig,
+    TokenConfig,
+    URLConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ class BaseClient:
             host=self.config.host,
             port=self.config.port,
             prefix=self.config.prefix,
-            version=self.config.version
+            version=self.config.version,
         )
 
         # Initialize tenant and token configurations
@@ -109,7 +111,17 @@ class BaseClient:
         self._token = token
 
     def session(self, parameters: RequestParameters | None = None) -> httpx.Client:
-        """Create an HTTP client session with the current configuration."""
+        """Create an HTTP client session with the current configuration.
+
+        Args:
+        ----
+            parameters (RequestParameters, optional): Additional request parameters. Defaults to None.
+
+        Returns:
+        -------
+            httpx.Client: Configured HTTPX client instance.
+
+        """
         headers = {"Connection": "close"}
 
         if self._token_config and self._token_config.token:
@@ -122,14 +134,11 @@ class BaseClient:
             headers["User-agent"] = self._user_agent
 
         verify = self._verify_certificate if self._https else False
-        if not verify:
-            disable_warnings()
+        # if not verify:  # No longer needed - HTTPX handles this directly
+        #     disable_warnings()
 
         return httpx.Client(
-            timeout=self._timeout,
-            headers=headers,
-            verify=verify,
-            follow_redirects=True
+            timeout=self._timeout, headers=headers, verify=verify, follow_redirects=True
         )
 
     def url(self, *fragments: str) -> str:
@@ -140,10 +149,14 @@ class BaseClient:
         """Check if the server is reachable."""
         try:
             with self.session() as client:
-                client.head(self.url())
+                response = client.head(self.url())  # Use response
+                response.raise_for_status()  # Raise for status
             return True
         except httpx.HTTPStatusError:
-            return True
+            return True  # Server is reachable
         except httpx.RequestError as e:
             logger.debug("Server unreachable: %s", e)
             return False
+
+    def _load_plugins(self):
+        """Placeholder to demonstrate intended method"""

@@ -5,7 +5,11 @@ description = "Library for the Accent REST clients"
 authors = [{ name = "Ryan Clark", email = "ryanwclark@yahoo.com" }]
 requires-python = ">=3.9"
 readme = "README.md"
-dependencies = ["httpx>=0.28.1", "pydantic>=2.10.6", "stevedore>=5.4.1"]
+dependencies = [
+    "httpx>=0.28.1",
+    "pydantic>=2.10.6",
+    "stevedore>=5.4.1",
+]
 
 [project.scripts]
 example = "accent_lib_rest_client.example_cmd:ExampleCommand"

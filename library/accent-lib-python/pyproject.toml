@@ -20,6 +20,7 @@ dependencies = [
   "accent-lib-rest-client",
   "accent-bus",
   "accent-auth-client",
+  "pydantic>=2.10.6",
 ]
 
 [dependency-groups]
