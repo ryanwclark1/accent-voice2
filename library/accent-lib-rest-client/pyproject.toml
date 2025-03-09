@@ -17,7 +17,16 @@ example = "accent_lib_rest_client.example_cmd:ExampleCommand"
 [project.entry-points]
 
 [dependency-groups]
-dev = []
+dev = [
+    "bandit>=1.8.3",
+    "deptry>=0.23.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+    "refurb>=2.0.0",
+    "ruff>=0.9.10",
+    "tox>=4.24.2",
+]
 test = [
     "coverage[toml]>=7.6.12",
     "fastapi>=0.115.11",
@@ -25,6 +34,7 @@ test = [
     "pytest-asyncio>=0.25.3",
     "pytest-cov>=6.0.0",
     "pytest-recording>=0.13.2",
+    "respx>=0.22.0",
 ]
 
 [tool.uv]

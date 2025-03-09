@@ -1,6 +1,4 @@
-# Copyright 2024 Accent Communications
-
-from __future__ import annotations
+# Copyright 2025 Accent Communications
 
 from abc import ABCMeta, abstractmethod
 from typing import Any, ClassVar, TypeVar, cast

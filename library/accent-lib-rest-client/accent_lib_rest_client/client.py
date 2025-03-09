@@ -1,4 +1,4 @@
-# Copyright 2025 Accent Communications
+# Copyright 2024 Accent Communications
 
 import logging
 import os
@@ -114,13 +114,10 @@ class BaseClient:
         """Create an HTTP client session with the current configuration.
 
         Args:
-        ----
             parameters (RequestParameters, optional): Additional request parameters. Defaults to None.
 
         Returns:
-        -------
             httpx.Client: Configured HTTPX client instance.
-
         """
         headers = {"Connection": "close"}
 

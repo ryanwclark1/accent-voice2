@@ -100,7 +100,6 @@ class ClientConfig(URLConfig):
 
 
 class TenantConfig(BaseModel):
-
     """Configuration for tenant management."""
 
     tenant_uuid: UUID4 | None = None
