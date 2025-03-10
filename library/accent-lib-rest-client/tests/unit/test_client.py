@@ -3,7 +3,7 @@
 """Unit tests for the BaseClient class."""
 
 import os
-from unittest.mock import patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import httpx
 import pytest
@@ -111,13 +111,27 @@ class TestBaseClient:
 
     def test_session_deprecated(self, mocker: MockerFixture) -> None:
         """Test that session() method is deprecated but works."""
+        # Reset mock history before our test
+        mocker.stopall()
         mock_logger = mocker.patch("accent_lib_rest_client.client.logger")
+
+        # Use a special mock configuration that ignores initialization warnings
+        def side_effect(msg, *args, **kwargs):
+            # Ignore the "No commands found" warning
+            if "No commands found" not in msg:
+                return Mock()
+
+        mock_logger.warning.side_effect = side_effect
 
         client = TestClientImpl(host="example.com")
         session = client.session()
 
         assert isinstance(session, httpx.Client)
-        mock_logger.warning.assert_called_once()
+
+        # Check that warning was called with the specific message we expect
+        mock_logger.warning.assert_any_call(
+            "Deprecated method 'session()'. Use 'sync_client' instead."
+        )
 
     def test_set_token(self) -> None:
         """Test setting a token after initialization."""
@@ -137,72 +151,116 @@ class TestBaseClient:
 
     def test_set_tenant_deprecated(self, mocker: MockerFixture) -> None:
         """Test that set_tenant() method is deprecated but works."""
+        # Reset mock history before our test
+        mocker.stopall()
         mock_logger = mocker.patch("accent_lib_rest_client.client.logger")
+
+        # Use a special mock configuration that ignores initialization warnings
+        def side_effect(msg, *args, **kwargs):
+            # Ignore the "No commands found" warning
+            if "No commands found" not in msg:
+                return Mock()
+
+        mock_logger.warning.side_effect = side_effect
 
         client = TestClientImpl(host="example.com")
         client.set_tenant("new-tenant")
 
         assert client.config.tenant_uuid == "new-tenant"
-        mock_logger.warning.assert_called_once()
+
+        # Check that warning was called with the specific message we expect
+        mock_logger.warning.assert_any_call(
+            "Deprecated method 'set_tenant()'. Set 'tenant_uuid' directly instead."
+        )
 
     def test_tenant_deprecated(self, mocker: MockerFixture) -> None:
         """Test that tenant() method is deprecated but works."""
+        # Reset mock history before our test
+        mocker.stopall()
         mock_logger = mocker.patch("accent_lib_rest_client.client.logger")
+
+        # Use a special mock configuration that ignores initialization warnings
+        def side_effect(msg, *args, **kwargs):
+            # Ignore the "No commands found" warning
+            if "No commands found" not in msg:
+                return Mock()
+
+        mock_logger.warning.side_effect = side_effect
 
         client = TestClientImpl(host="example.com", tenant_uuid="test-tenant")
         tenant = client.tenant()
 
         assert tenant == "test-tenant"
-        mock_logger.warning.assert_called_once()
+
+        # Check that warning was called with the specific message we expect
+        mock_logger.warning.assert_any_call(
+            "Deprecated method 'tenant()'. Access 'tenant_uuid' directly instead."
+        )
 
     def test_is_server_reachable(self) -> None:
         """Test checking if server is reachable."""
-        # Create client and set up mock responses directly
+        # Create client
         client = TestClientImpl(host="example.com")
 
+        # Create temp client and mock it inside the method without patching property
+        mock_client = Mock(spec=httpx.Client)
+
         # Test successful response
-        with patch.object(client, "sync_client") as mock_client:
-            mock_client.head.return_value = httpx.Response(200)
-            assert client.is_server_reachable() is True
+        mock_client.head.return_value = httpx.Response(200)
+        client._sync_client = mock_client
+        assert client.is_server_reachable() is True
+        client._sync_client = None
 
         # Test HTTP error (server is still reachable)
-        with patch.object(client, "sync_client") as mock_client:
-            mock_client.head.side_effect = httpx.HTTPStatusError(
-                "HTTP Error",
-                request=httpx.Request("HEAD", "https://example.com"),
-                response=httpx.Response(500),
-            )
-            assert client.is_server_reachable() is True
+        mock_client = Mock(spec=httpx.Client)
+        mock_client.head.side_effect = httpx.HTTPStatusError(
+            "HTTP Error",
+            request=httpx.Request("HEAD", "https://example.com"),
+            response=httpx.Response(500),
+        )
+        client._sync_client = mock_client
+        assert client.is_server_reachable() is True
+        client._sync_client = None
 
         # Test connection error (server is not reachable)
-        with patch.object(client, "sync_client") as mock_client:
-            mock_client.head.side_effect = httpx.ConnectError("Failed to connect")
-            assert client.is_server_reachable() is False
+        mock_client = Mock(spec=httpx.Client)
+        mock_client.head.side_effect = httpx.ConnectError("Failed to connect")
+        client._sync_client = mock_client
+        assert client.is_server_reachable() is False
+        client._sync_client = None
 
     @pytest.mark.asyncio
     async def test_is_server_reachable_async(self) -> None:
         """Test checking if server is reachable asynchronously."""
-        # Create client and set up mock responses directly
+        # Create client
         client = TestClientImpl(host="example.com")
 
+        # Create temp client and mock it directly
+        mock_client = Mock(spec=httpx.AsyncClient)
+
         # Test successful response
-        with patch.object(client, "async_client") as mock_client:
-            mock_client.head.return_value = httpx.Response(200)
-            assert await client.is_server_reachable_async() is True
+        mock_client.head.return_value = httpx.Response(200)
+        client._async_client = mock_client
+        assert await client.is_server_reachable_async() is True
+        client._async_client = None
 
         # Test HTTP error (server is still reachable)
-        with patch.object(client, "async_client") as mock_client:
-            mock_client.head.side_effect = httpx.HTTPStatusError(
-                "HTTP Error",
-                request=httpx.Request("HEAD", "https://example.com"),
-                response=httpx.Response(500),
-            )
-            assert await client.is_server_reachable_async() is True
+        mock_client = Mock(spec=httpx.AsyncClient)
+        mock_client.head.side_effect = httpx.HTTPStatusError(
+            "HTTP Error",
+            request=httpx.Request("HEAD", "https://example.com"),
+            response=httpx.Response(500),
+        )
+        client._async_client = mock_client
+        assert await client.is_server_reachable_async() is True
+        client._async_client = None
 
         # Test connection error (server is not reachable)
-        with patch.object(client, "async_client") as mock_client:
-            mock_client.head.side_effect = httpx.ConnectError("Failed to connect")
-            assert await client.is_server_reachable_async() is False
+        mock_client = Mock(spec=httpx.AsyncClient)
+        mock_client.head.side_effect = httpx.ConnectError("Failed to connect")
+        client._async_client = mock_client
+        assert await client.is_server_reachable_async() is False
+        client._async_client = None
 
     def test_user_agent_from_argv(self) -> None:
         """Test that user_agent defaults to the program name."""

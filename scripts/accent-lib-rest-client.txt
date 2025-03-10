@@ -3,6 +3,13 @@ Please review for update
 
 # Copyright 2025 Accent Communications
 
+"""Accent REST client library for API interactions.
+
+This package provides a flexible, async-first HTTP client for interacting with
+Accent Communications APIs. It includes both synchronous and asynchronous interfaces,
+robust error handling, and customizable request options.
+"""
+
 from .command import HTTPCommand, RESTCommand
 from .exceptions import (
     AccentAPIError,
@@ -34,7 +41,11 @@ Please review for update
 
 # Copyright 2025 Accent Communications
 
+import logging
+
 from .command import RESTCommand
+
+logger = logging.getLogger(__name__)
 
 
 class ExampleCommand(RESTCommand):
@@ -92,11 +103,20 @@ Please review for update
 from __future__ import annotations
 
 import json
+import logging
+from typing import TYPE_CHECKING
 
-import httpx
-import structlog
+if TYPE_CHECKING:
+    import httpx
 
-logger = structlog.get_logger(__name__)
+# Configure standard logging
+logger = logging.getLogger(__name__)
+
+# HTTP Status Code Constants
+HTTP_UNAUTHORIZED = 401
+HTTP_NOT_FOUND = 404
+HTTP_SERVER_ERROR_MIN = 500
+HTTP_SERVER_ERROR_MAX = 600
 
 
 class AccentAPIError(Exception):
@@ -125,7 +145,8 @@ class InvalidArgumentError(Exception):
             argument_name: Name of the invalid argument
 
         """
-        super().__init__(f'Invalid value for argument "{argument_name}"')
+        error_msg = f'Invalid value for argument "{argument_name}"'
+        super().__init__(error_msg)
         self.argument_name = argument_name
 
 
@@ -139,7 +160,7 @@ class AuthenticationError(AccentAPIError):
             message: Error message
 
         """
-        super().__init__(message, status_code=401)
+        super().__init__(message, status_code=HTTP_UNAUTHORIZED)
 
 
 class ResourceNotFoundError(AccentAPIError):
@@ -152,7 +173,8 @@ class ResourceNotFoundError(AccentAPIError):
             resource: The requested resource name
 
         """
-        super().__init__(f"Resource not found: {resource}", status_code=404)
+        error_msg = f"Resource not found: {resource}"
+        super().__init__(error_msg, status_code=HTTP_NOT_FOUND)
         self.resource = resource
 
 
@@ -166,7 +188,7 @@ class ServerError(AccentAPIError):
             message: Error message
 
         """
-        super().__init__(message, status_code=500)
+        super().__init__(message, status_code=HTTP_SERVER_ERROR_MIN)
 
 
 def handle_http_error(error: httpx.HTTPStatusError) -> None:
@@ -191,13 +213,13 @@ def handle_http_error(error: httpx.HTTPStatusError) -> None:
     except (json.JSONDecodeError, ValueError):
         message = str(error)
 
-    logger.error("http_error", status_code=status_code, message=message)
+    logger.error("HTTP error: %s - %s", status_code, message)
 
-    if status_code == 401:
+    if status_code == HTTP_UNAUTHORIZED:
         raise AuthenticationError(message)
-    if status_code == 404:
+    if status_code == HTTP_NOT_FOUND:
         raise ResourceNotFoundError(message)
-    if 500 <= status_code < 600:
+    if HTTP_SERVER_ERROR_MIN <= status_code < HTTP_SERVER_ERROR_MAX:
         raise ServerError(message)
     raise AccentAPIError(message, status_code=status_code)
 
@@ -210,6 +232,7 @@ Please review for update
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from functools import lru_cache
@@ -220,19 +243,19 @@ from typing import (
 )
 
 import httpx
-import structlog
 from stevedore import extension
 
 from accent_lib_rest_client.exceptions import InvalidArgumentError
 from accent_lib_rest_client.models import ClientConfig
 
-# Configure structured logging
-logger = structlog.get_logger(__name__)
+# Configure standard logging
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 # Global cache for plugins
 PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
+
 
 class BaseClient:
     """Base client for API interactions.
@@ -308,9 +331,9 @@ class BaseClient:
 
         if kwargs:
             logger.warning(
-                "unexpected_arguments",
-                class_name=self.__class__.__name__,
-                arguments=list(kwargs.keys()),
+                "%s received unexpected arguments: %s",
+                self.__class__.__name__,
+                list(kwargs.keys()),
             )
 
         self._load_plugins()
@@ -341,7 +364,8 @@ class BaseClient:
         global PLUGINS_CACHE
 
         if not self.namespace:
-            raise ValueError("You must redefine BaseClient.namespace")
+            error_msg = "You must redefine BaseClient.namespace"
+            raise ValueError(error_msg)
 
         if self.namespace not in PLUGINS_CACHE:
             PLUGINS_CACHE[self.namespace] = list(
@@ -350,7 +374,7 @@ class BaseClient:
 
         plugins = PLUGINS_CACHE[self.namespace]
         if not plugins:
-            logger.warning("no_commands_found")
+            logger.warning("No commands found")
             return
 
         for ext in plugins:
@@ -415,7 +439,7 @@ class BaseClient:
             Configured httpx.Client instance
 
         """
-        logger.warning("deprecated_method", method="session", replacement="sync_client")
+        logger.warning("Deprecated method 'session()'. Use 'sync_client' instead.")
         return self.sync_client
 
     def set_tenant(self, tenant_uuid: str) -> None:
@@ -426,7 +450,7 @@ class BaseClient:
 
         """
         logger.warning(
-            "deprecated_method", method="set_tenant", replacement="tenant_uuid"
+            "Deprecated method 'set_tenant()'. Set 'tenant_uuid' directly instead."
         )
         self.config.tenant_uuid = tenant_uuid
 
@@ -456,7 +480,9 @@ class BaseClient:
             Current tenant UUID or None
 
         """
-        logger.warning("deprecated_method", method="tenant", replacement="tenant_uuid")
+        logger.warning(
+            "Deprecated method 'tenant()'. Access 'tenant_uuid' directly instead."
+        )
         return self.config.tenant_uuid
 
     def set_token(self, token: str) -> None:
@@ -517,7 +543,7 @@ class BaseClient:
         except httpx.HTTPStatusError:
             return True
         except httpx.RequestError as e:
-            logger.debug("server_unreachable", error=str(e))
+            logger.debug("Server unreachable: %s", e)
             return False
 
     async def is_server_reachable_async(self) -> bool:
@@ -533,14 +559,18 @@ class BaseClient:
         except httpx.HTTPStatusError:
             return True
         except httpx.RequestError as e:
-            logger.debug("server_unreachable", error=str(e))
+            logger.debug("Server unreachable: %s", e)
             return False
 
     def __del__(self) -> None:
         """Close HTTP clients when the object is destroyed."""
-        if self._sync_client:
+        if hasattr(self, "_sync_client") and self._sync_client:
             self._sync_client.close()
         # Async client needs to be closed explicitly with await
+        # We can't await in __del__, but we can check if it exists
+        if hasattr(self, "_async_client") and self._async_client:
+        # Can't await in __del__, will rely on garbage collection
+            pass
 
 ----------------------------------------
 
@@ -551,15 +581,25 @@ Please review for update
 
 from __future__ import annotations
 
+import logging
 import time
 from abc import ABCMeta
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
+# Direct imports needed for runtime
 import httpx
 
-from accent_lib_rest_client.client import BaseClient
+# Imports only for type checking
+if TYPE_CHECKING:
+    from accent_lib_rest_client.client import BaseClient
+    from accent_lib_rest_client.models import CommandResponse as CommandResponseType
+    from accent_lib_rest_client.models import JSONResponse as JSONResponseType
+
 from accent_lib_rest_client.exceptions import handle_http_error
 from accent_lib_rest_client.models import CommandResponse, JSONResponse
+
+logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
 
 class HTTPCommand:
@@ -568,7 +608,7 @@ class HTTPCommand:
     This provides basic HTTP functionality common to all commands.
     """
 
-    def __init__(self, client: BaseClient) -> None:
+    def __init__(self, client: "BaseClient") -> None:
         """Initialize the command with a client.
 
         Args:
@@ -622,7 +662,17 @@ class HTTPCommand:
         try:
             response_json = response.json()
             if isinstance(response_json, dict) and "message" in response_json:
-                response.reason_phrase = response_json["message"]
+                # Note: Can't modify reason_phrase directly as it's read-only
+                # We'll raise the exception with the custom message later
+                custom_message = response_json["message"]
+                # This might still raise an exception, which we allow to propagate
+                response.raise_for_status()
+                # If we get here, create a custom exception with our message
+                raise httpx.HTTPStatusError(
+                    custom_message,
+                    request=response.request,
+                    response=response,
+                )
         except (ValueError, KeyError, TypeError):
             pass
 
@@ -630,7 +680,7 @@ class HTTPCommand:
 
     def process_response(
         self, response: httpx.Response, start_time: float | None = None
-    ) -> CommandResponse:
+    ) -> CommandResponseType:
         """Process an HTTP response into a standard CommandResponse.
 
         Args:
@@ -656,13 +706,13 @@ class HTTPCommand:
         return CommandResponse(
             content=response.content,
             status_code=response.status_code,
-            headers={k: v for k, v in response.headers.items()},
+            headers=dict(response.headers.items()),
             response_time=response_time,
         )
 
     def process_json_response(
         self, response: httpx.Response, start_time: float | None = None
-    ) -> JSONResponse:
+    ) -> JSONResponseType:
         """Process an HTTP response into a JSON response object.
 
         Args:
@@ -689,7 +739,7 @@ class HTTPCommand:
         return JSONResponse(
             data=response.json(),
             status_code=response.status_code,
-            headers={k: v for k, v in response.headers.items()},
+            headers=dict(response.headers.items()),
             response_time=response_time,
         )
 
@@ -705,7 +755,7 @@ class RESTCommand(HTTPCommand):
     resource: ClassVar[str]
     _headers: ClassVar[dict[str, str]] = {"Accept": "application/json"}
 
-    def __init__(self, client: BaseClient) -> None:
+    def __init__(self, client: "BaseClient") -> None:
         """Initialize the REST command.
 
         Args:
@@ -716,6 +766,8 @@ class RESTCommand(HTTPCommand):
         self.base_url = self._client.url(self.resource)
         self.timeout = self._client.config.timeout
 
+    # The ANN401 warning for Any in **kwargs is unavoidable here
+    # because we need to support arbitrary keyword arguments
     def _get_headers(self, **kwargs: Any) -> dict[str, str]:
         """Get headers for the request, including custom tenant if specified.
 

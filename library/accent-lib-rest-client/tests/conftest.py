@@ -6,17 +6,18 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Any, AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
 
 import httpx
 import pytest
 import respx
 import uvicorn
+from accent_lib_rest_client.client import BaseClient
+from accent_lib_rest_client.command import RESTCommand
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
 
-from accent_lib_rest_client.client import BaseClient
-from accent_lib_rest_client.command import RESTCommand
 from tests.mock_server.server import create_app
 
 

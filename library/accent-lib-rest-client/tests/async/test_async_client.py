@@ -3,7 +3,8 @@
 """Async tests for accent-lib-rest-client."""
 
 import asyncio
-from typing import Any, AsyncGenerator, Dict
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import httpx
 import pytest
@@ -24,13 +25,13 @@ class AsyncTestCommandImpl(RESTCommand):
 
     resource = "test"
 
-    async def get_data(self) -> Dict[str, Any]:
+    async def get_data(self) -> dict[str, Any]:
         """Get test data asynchronously."""
         response = await self.async_client.get(f"{self.base_url}/data")
         response.raise_for_status()
         return response.json()
 
-    async def create_item(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_item(self, data: dict[str, Any]) -> dict[str, Any]:
         """Create a new item asynchronously."""
         response = await self.async_client.post(f"{self.base_url}/create", json=data)
         response.raise_for_status()

@@ -16,6 +16,11 @@ from accent_lib_rest_client.exceptions import (
     handle_http_error,
 )
 
+HTTP_UNAUTHORIZED = 401
+HTTP_NOT_FOUND = 404
+HTTP_FORBIDDEN = 403
+HTTP_BAD_REQUEST = 400
+HTTP_SERVER_ERROR = 500
 
 class TestExceptions:
     """Test cases for custom exceptions."""
