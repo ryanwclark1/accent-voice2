@@ -7,21 +7,20 @@ readme = "README.md"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 dependencies = []
 
+[tool.uv]
+default-groups = ["dev", "test", "docs"]
+
 [dependency-groups]
 dev = [
     "bandit>=1.7.5",
     "deptry>=0.12.0",
     "djlint>=1.30.0",
     "mypy>=1.8.0",
-    "pytest-cov>=4.0.0",
-    "pytest>=7.2.0",
     "refurb>=0.4.0",
     "ruff>=0.9.10",
     "tox>=4.0.0",
     "poethepoet>=0.33.0",
-    "httpx>=0.28.1",
-    "pydantic>=2.10.6",
-    "validators>=0.34.0",
+
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -29,7 +28,17 @@ docs = [
     "mkdocstrings[python]>=0.28.2",
 ]
 test = [
+    "coverage[toml]>=7.6.12",
+    "fastapi>=0.115.11",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.25.3",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-recording>=0.13.2",
+    "respx>=0.22.0",
     "httpx>=0.28.1",
+    "pydantic>=2.10.6",
+    "validators>=0.34.0",
 ]
 
 [tool.uv.workspace]

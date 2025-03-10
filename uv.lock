@@ -2159,16 +2159,11 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "djlint" },
-    { name = "httpx" },
     { name = "mypy" },
     { name = "poethepoet" },
-    { name = "pydantic" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
-    { name = "validators" },
 ]
 docs = [
     { name = "mkdocs" },
@@ -2176,7 +2171,17 @@ docs = [
     { name = "mkdocstrings", extra = ["python"] },
 ]
 test = [
+    { name = "coverage" },
+    { name = "fastapi" },
     { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "validators" },
 ]
 
 [package.metadata]
@@ -2186,23 +2191,30 @@ dev = [
     { name = "bandit", specifier = ">=1.7.5" },
     { name = "deptry", specifier = ">=0.12.0" },
     { name = "djlint", specifier = ">=1.30.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "mypy", specifier = ">=1.8.0" },
     { name = "poethepoet", specifier = ">=0.33.0" },
-    { name = "pydantic", specifier = ">=2.10.6" },
-    { name = "pytest", specifier = ">=7.2.0" },
-    { name = "pytest-cov", specifier = ">=4.0.0" },
     { name = "refurb", specifier = ">=0.4.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.0.0" },
-    { name = "validators", specifier = ">=0.34.0" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.6.7" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.28.2" },
 ]
-test = [{ name = "httpx", specifier = ">=0.28.1" }]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "validators", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-webhookd"
