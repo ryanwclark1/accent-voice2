@@ -1,64 +1,86 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Pagings command module for the Configuration Daemon API."""
+
+import logging
+from typing import Any
 
 from accent_confd_client.crud import MultiTenantCommand
 from accent_confd_client.relations import (
-    QueueExtensionRelation,
-    QueueFallbackRelation,
-    QueueMemberAgentRelation,
-    QueueMemberUserRelation,
-    QueueScheduleRelation,
+    PagingCallerUserRelation,
+    PagingMemberUserRelation,
 )
-from accent_confd_client.util import extract_id
+
+# Configure standard logging
+logger = logging.getLogger(__name__)
 
 
-class QueueRelation:
-    def __init__(self, builder, queue_id):
-        self.queue_id = queue_id
-        self.queue_member_agent = QueueMemberAgentRelation(builder)
-        self.queue_member_user = QueueMemberUserRelation(builder)
-        self.queue_extension = QueueExtensionRelation(builder)
-        self.queue_fallback = QueueFallbackRelation(builder)
-        self.queue_schedule = QueueScheduleRelation(builder)
+class PagingRelation:
+    """Relations for pagings."""
 
-    @extract_id
-    def add_extension(self, extension_id):
-        return self.queue_extension.associate(self.queue_id, extension_id)
+    def __init__(self, builder: Any, paging_id: str) -> None:
+        """Initialize paging relations.
 
-    @extract_id
-    def remove_extension(self, extension_id):
-        return self.queue_extension.dissociate(self.queue_id, extension_id)
+        Args:
+            builder: Client instance
+            paging_id: Paging ID
 
-    def update_fallbacks(self, fallbacks):
-        self.queue_fallback.update_fallbacks(self.queue_id, fallbacks)
+        """
+        self.paging_id = paging_id
+        self.paging_user_callers = PagingCallerUserRelation(builder)
+        self.paging_user_members = PagingMemberUserRelation(builder)
 
-    def list_fallbacks(self):
-        return self.queue_fallback.list_fallbacks(self.queue_id)
+    def update_user_members(self, users: list[dict[str, Any]]) -> Any:
+        """Update user members for the paging.
 
-    @extract_id
-    def add_schedule(self, schedule_id):
-        return self.queue_schedule.associate(self.queue_id, schedule_id)
+        Args:
+            users: List of users
 
-    @extract_id
-    def remove_schedule(self, schedule_id):
-        return self.queue_schedule.dissociate(self.queue_id, schedule_id)
+        Returns:
+            API response
 
-    @extract_id
-    def add_agent_member(self, agent_id, **kwargs):
-        return self.queue_member_agent.associate(self.queue_id, agent_id, **kwargs)
+        """
+        return self.paging_user_members.associate(self.paging_id, users)
 
-    @extract_id
-    def remove_agent_member(self, agent_id):
-        return self.queue_member_agent.dissociate(self.queue_id, agent_id)
+    async def update_user_members_async(self, users: list[dict[str, Any]]) -> Any:
+        """Update user members for the paging asynchronously.
 
-    @extract_id
-    def add_user_member(self, user_uuid, **kwargs):
-        return self.queue_member_user.associate(self.queue_id, user_uuid, **kwargs)
+        Args:
+            users: List of users
 
-    @extract_id
-    def remove_user_member(self, user_uuid):
-        return self.queue_member_user.dissociate(self.queue_id, user_uuid)
+        Returns:
+            API response
+
+        """
+        return await self.paging_user_members.associate_async(self.paging_id, users)
+
+    def update_user_callers(self, users: list[dict[str, Any]]) -> Any:
+        """Update user callers for the paging.
+
+        Args:
+            users: List of users
+
+        Returns:
+            API response
+
+        """
+        return self.paging_user_callers.associate(self.paging_id, users)
+
+    async def update_user_callers_async(self, users: list[dict[str, Any]]) -> Any:
+        """Update user callers for the paging asynchronously.
+
+        Args:
+            users: List of users
+
+        Returns:
+            API response
+
+        """
+        return await self.paging_user_callers.associate_async(self.paging_id, users)
 
 
-class QueuesCommand(MultiTenantCommand):
-    resource = 'queues'
-    relation_cmd = QueueRelation
+class PagingsCommand(MultiTenantCommand):
+    """Command for managing pagings."""
+
+    resource = "pagings"
+    relation_cmd = PagingRelation
