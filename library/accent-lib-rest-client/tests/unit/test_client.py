@@ -12,17 +12,24 @@ from accent_lib_rest_client.exceptions import InvalidArgumentError
 from pytest_mock import MockerFixture
 
 
+# Test client implementation for unit testing
+class TestClientImpl(BaseClient):
+    """Test client implementation to avoid namespace issues."""
+
+    namespace = "test_client_namespace"
+
+
 class TestBaseClient:
     """Test cases for the BaseClient class."""
 
     def test_init_requires_host(self) -> None:
         """Test that initialization requires a host."""
         with pytest.raises(InvalidArgumentError):
-            BaseClient(host="")
+            TestClientImpl(host="")
 
     def test_init_sets_config(self) -> None:
         """Test that initialization sets the config properly."""
-        client = BaseClient(
+        client = TestClientImpl(
             host="example.com",
             port=8080,
             version="v1",
@@ -42,7 +49,7 @@ class TestBaseClient:
 
     def test_build_prefix(self) -> None:
         """Test prefix building logic."""
-        client = BaseClient(host="example.com")
+        client = TestClientImpl(host="example.com")
 
         assert client._build_prefix(None) == ""
         assert client._build_prefix("") == ""
@@ -52,27 +59,27 @@ class TestBaseClient:
     def test_url_building(self) -> None:
         """Test URL building with various parameters."""
         # Basic URL
-        client = BaseClient(host="example.com")
+        client = TestClientImpl(host="example.com")
         assert client.url() == "https://example.com"
 
         # With port
-        client = BaseClient(host="example.com", port=8080)
+        client = TestClientImpl(host="example.com", port=8080)
         assert client.url() == "https://example.com:8080"
 
         # With version
-        client = BaseClient(host="example.com", version="v1")
+        client = TestClientImpl(host="example.com", version="v1")
         assert client.url() == "https://example.com/v1"
 
         # With prefix
-        client = BaseClient(host="example.com", prefix="api")
+        client = TestClientImpl(host="example.com", prefix="api")
         assert client.url() == "https://example.com/api"
 
         # With HTTP instead of HTTPS
-        client = BaseClient(host="example.com", https=False)
+        client = TestClientImpl(host="example.com", https=False)
         assert client.url() == "http://example.com"
 
         # With all options and fragments
-        client = BaseClient(
+        client = TestClientImpl(
             host="example.com",
             port=8080,
             version="v1",
@@ -88,7 +95,7 @@ class TestBaseClient:
 
     def test_sync_client_creation(self) -> None:
         """Test synchronous client creation."""
-        client = BaseClient(
+        client = TestClientImpl(
             host="example.com",
             token="abc123",
             tenant_uuid="tenant1",
@@ -106,7 +113,7 @@ class TestBaseClient:
         """Test that session() method is deprecated but works."""
         mock_logger = mocker.patch("accent_lib_rest_client.client.logger")
 
-        client = BaseClient(host="example.com")
+        client = TestClientImpl(host="example.com")
         session = client.session()
 
         assert isinstance(session, httpx.Client)
@@ -114,7 +121,7 @@ class TestBaseClient:
 
     def test_set_token(self) -> None:
         """Test setting a token after initialization."""
-        client = BaseClient(host="example.com")
+        client = TestClientImpl(host="example.com")
 
         # Initially no token
         assert client.config.token is None
@@ -132,7 +139,7 @@ class TestBaseClient:
         """Test that set_tenant() method is deprecated but works."""
         mock_logger = mocker.patch("accent_lib_rest_client.client.logger")
 
-        client = BaseClient(host="example.com")
+        client = TestClientImpl(host="example.com")
         client.set_tenant("new-tenant")
 
         assert client.config.tenant_uuid == "new-tenant"
@@ -142,63 +149,65 @@ class TestBaseClient:
         """Test that tenant() method is deprecated but works."""
         mock_logger = mocker.patch("accent_lib_rest_client.client.logger")
 
-        client = BaseClient(host="example.com", tenant_uuid="test-tenant")
+        client = TestClientImpl(host="example.com", tenant_uuid="test-tenant")
         tenant = client.tenant()
 
         assert tenant == "test-tenant"
         mock_logger.warning.assert_called_once()
 
-    def test_is_server_reachable(self, respx_mock: pytest.FixtureRequest) -> None:
+    def test_is_server_reachable(self) -> None:
         """Test checking if server is reachable."""
-        # Mock successful response
-        respx_mock.head("https://example.com").respond(200)
+        # Create client and set up mock responses directly
+        client = TestClientImpl(host="example.com")
 
-        client = BaseClient(host="example.com")
-        assert client.is_server_reachable() is True
+        # Test successful response
+        with patch.object(client, "sync_client") as mock_client:
+            mock_client.head.return_value = httpx.Response(200)
+            assert client.is_server_reachable() is True
 
-        # Mock HTTP error (server is still reachable)
-        respx_mock.head("https://error.com").respond(500)
+        # Test HTTP error (server is still reachable)
+        with patch.object(client, "sync_client") as mock_client:
+            mock_client.head.side_effect = httpx.HTTPStatusError(
+                "HTTP Error",
+                request=httpx.Request("HEAD", "https://example.com"),
+                response=httpx.Response(500),
+            )
+            assert client.is_server_reachable() is True
 
-        client = BaseClient(host="error.com")
-        assert client.is_server_reachable() is True
-
-        # Mock connection error (server is not reachable)
-        respx_mock.head("https://unreachable.com").mock(
-            side_effect=httpx.ConnectError("Failed to connect")
-        )
-
-        client = BaseClient(host="unreachable.com")
-        assert client.is_server_reachable() is False
+        # Test connection error (server is not reachable)
+        with patch.object(client, "sync_client") as mock_client:
+            mock_client.head.side_effect = httpx.ConnectError("Failed to connect")
+            assert client.is_server_reachable() is False
 
     @pytest.mark.asyncio
-    async def test_is_server_reachable_async(
-        self, respx_mock: pytest.FixtureRequest
-    ) -> None:
+    async def test_is_server_reachable_async(self) -> None:
         """Test checking if server is reachable asynchronously."""
-        # Mock successful response
-        respx_mock.head("https://example.com").respond(200)
+        # Create client and set up mock responses directly
+        client = TestClientImpl(host="example.com")
 
-        client = BaseClient(host="example.com")
-        assert await client.is_server_reachable_async() is True
+        # Test successful response
+        with patch.object(client, "async_client") as mock_client:
+            mock_client.head.return_value = httpx.Response(200)
+            assert await client.is_server_reachable_async() is True
 
-        # Mock HTTP error (server is still reachable)
-        respx_mock.head("https://error.com").respond(500)
+        # Test HTTP error (server is still reachable)
+        with patch.object(client, "async_client") as mock_client:
+            mock_client.head.side_effect = httpx.HTTPStatusError(
+                "HTTP Error",
+                request=httpx.Request("HEAD", "https://example.com"),
+                response=httpx.Response(500),
+            )
+            assert await client.is_server_reachable_async() is True
 
-        client = BaseClient(host="error.com")
-        assert await client.is_server_reachable_async() is True
-
-        # Mock connection error (server is not reachable)
-        respx_mock.head("https://unreachable.com").mock(
-            side_effect=httpx.ConnectError("Failed to connect")
-        )
-
-        client = BaseClient(host="unreachable.com")
-        assert await client.is_server_reachable_async() is False
+        # Test connection error (server is not reachable)
+        with patch.object(client, "async_client") as mock_client:
+            mock_client.head.side_effect = httpx.ConnectError("Failed to connect")
+            assert await client.is_server_reachable_async() is False
 
     def test_user_agent_from_argv(self) -> None:
         """Test that user_agent defaults to the program name."""
         with patch.object(os, "path") as mock_path:
             mock_path.basename.return_value = "test-program"
 
-            client = BaseClient(host="example.com")
+            client = TestClientImpl(host="example.com")
             assert client.config.user_agent == "test-program"
