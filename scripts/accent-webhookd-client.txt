@@ -1,0 +1,359 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_webhookd_client.client import WebhookdClient as Client  # noqa
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from accent_lib_rest_client.client import BaseClient
+
+if TYPE_CHECKING:
+    from .commands.config import ConfigCommand
+    from .commands.mobile_notifications import MobileNotificationCommand
+    from .commands.status import StatusCommand
+    from .commands.subscriptions import SubscriptionsCommand
+
+
+class WebhookdClient(BaseClient):
+    namespace = 'accent_webhookd_client.commands'
+
+    config: ConfigCommand
+    mobile_notifications: MobileNotificationCommand
+    status: StatusCommand
+    subscriptions: SubscriptionsCommand
+
+    def __init__(
+        self,
+        host: str,
+        port: int = 443,
+        prefix: str = '/api/webhookd',
+        version: str = '1.0',
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from requests import Response
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import InvalidWebhookdError, WebhookdError, WebhookdServiceUnavailable
+
+
+class WebhookdCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response: Response) -> None:
+        if response.status_code == 503:
+            raise WebhookdServiceUnavailable(response)
+
+        try:
+            raise WebhookdError(response)
+        except InvalidWebhookdError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: commands/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from accent_webhookd_client.command import WebhookdCommand
+
+if TYPE_CHECKING:
+    from webhookd.types import WebhookdConfigDict
+
+
+class ConfigCommand(WebhookdCommand):
+    resource = 'config'
+
+    def get(self) -> WebhookdConfigDict:
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        response: WebhookdConfigDict = r.json()
+        return response
+
+    def patch(
+        self, config_patch: WebhookdConfigDict | dict[str, Any]
+    ) -> WebhookdConfigDict:
+        headers = self._get_headers()
+        r = self.session.patch(self.base_url, headers=headers, json=config_patch)
+        self.raise_from_response(r)
+        response: WebhookdConfigDict = r.json()
+        return response
+
+----------------------------------------
+
+File: commands/mobile_notifications.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from accent_webhookd_client.command import WebhookdCommand
+
+if TYPE_CHECKING:
+    from webhookd.plugins.mobile.schema import NotificationDict
+
+
+class MobileNotificationCommand(WebhookdCommand):
+    resource = 'mobile/notifications'
+
+    def send(self, notification: NotificationDict) -> None:
+        headers = self._get_headers()
+        r = self.session.post(
+            self.base_url,
+            json=notification,
+            headers=headers,
+        )
+        self.raise_from_response(r)
+
+----------------------------------------
+
+File: commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from accent_webhookd_client.command import WebhookdCommand
+
+if TYPE_CHECKING:
+    from webhookd.plugins.status.http import StatusResponse
+
+
+class StatusCommand(WebhookdCommand):
+    resource = 'status'
+
+    def get(self) -> StatusResponse:
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/subscriptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from accent_webhookd_client.command import WebhookdCommand
+
+if TYPE_CHECKING:
+    from webhookd.plugins.services.http import ServicesDict
+    from webhookd.plugins.subscription.http import (
+        SubscriptionDict,
+        SubscriptionListResponseDict,
+        SubscriptionLogListResponseDict,
+        UserSubscriptionDict,
+        UserSubscriptionListResponseDict,
+    )
+
+
+class SubscriptionsCommand(WebhookdCommand):
+    resource = 'subscriptions'
+
+    def _metadata_params(self, search_metadata: dict[str, Any]) -> list[str]:
+        return [f'{key}:{value}' for key, value in search_metadata.items()]
+
+    def create(self, subscription: SubscriptionDict) -> SubscriptionDict:
+        headers = self._get_headers()
+        r = self.session.post(self.base_url, json=subscription, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def create_as_user(
+        self, subscription: UserSubscriptionDict
+    ) -> UserSubscriptionDict:
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.post(url, json=subscription, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list(
+        self, search_metadata: dict[str, str] | None = None, recurse: bool = False
+    ) -> SubscriptionListResponseDict:
+        params: dict[str, Any] = {}
+        if search_metadata:
+            params['search_metadata'] = self._metadata_params(search_metadata)
+        if recurse:
+            params['recurse'] = True
+        headers = self._get_headers()
+        r = self.session.get(self.base_url, params=params, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def list_as_user(
+        self, search_metadata: dict[str, str] | None = None
+    ) -> UserSubscriptionListResponseDict:
+        params = {}
+        if search_metadata:
+            params['search_metadata'] = self._metadata_params(search_metadata)
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get(self, subscription_uuid: str) -> SubscriptionDict:
+        headers = self._get_headers()
+        url = self._client.url('subscriptions', subscription_uuid)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_as_user(self, subscription_uuid: str) -> UserSubscriptionDict:
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, subscription_uuid)
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def update(
+        self, subscription_uuid: str, subscription: SubscriptionDict
+    ) -> SubscriptionDict:
+        headers = self._get_headers()
+        url = self._client.url('subscriptions', subscription_uuid)
+        r = self.session.put(url, json=subscription, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def update_as_user(
+        self, subscription_uuid: str, subscription: UserSubscriptionDict
+    ) -> UserSubscriptionDict:
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, subscription_uuid)
+        r = self.session.put(url, json=subscription, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def delete(self, subscription_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._client.url('subscriptions', subscription_uuid)
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def delete_as_user(self, subscription_uuid: str) -> None:
+        headers = self._get_headers()
+        url = self._client.url('users', 'me', self.resource, subscription_uuid)
+        r = self.session.delete(url, headers=headers)
+        self.raise_from_response(r)
+
+    def list_services(self) -> ServicesDict:
+        headers = self._get_headers()
+        url = self._client.url('subscriptions', 'services')
+        r = self.session.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_logs(
+        self,
+        subscription_uuid: str,
+        direction: str | None = None,
+        order: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        from_date: str | None = None,
+    ) -> SubscriptionLogListResponseDict:
+        params: dict[str, str | int] = {}
+        if direction is not None:
+            params['direction'] = direction
+        if order is not None:
+            params['order'] = order
+        if limit is not None:
+            params['limit'] = limit
+        if offset is not None:
+            params['offset'] = offset
+        if from_date is not None:
+            params['from_date'] = from_date
+        headers = self._get_headers()
+        url = self._client.url(self.resource, subscription_uuid, 'logs')
+        r = self.session.get(url, headers=headers, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from requests import HTTPError, Response
+
+
+class WebhookdError(HTTPError):
+    def __init__(self, response: Response) -> None:
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidWebhookdError()
+
+        if not body:
+            raise InvalidWebhookdError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+        except KeyError:
+            raise InvalidWebhookdError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class WebhookdServiceUnavailable(WebhookdError):
+    pass
+
+
+class InvalidWebhookdError(Exception):
+    pass
+
+----------------------------------------
+

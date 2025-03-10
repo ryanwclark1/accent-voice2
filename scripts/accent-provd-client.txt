@@ -1,12 +1,29 @@
 File: __init__.py
 Please review for update
 
-# Copyright 2023 Accent Communications  (see AUTHORS file)
+# Copyright 2025 Accent Communications  (see AUTHORS file)
+
+"""Accent provisioning client library.
+
+This package provides a client for interacting with the Accent provisioning API,
+with both synchronous and asynchronous interfaces.
+"""
 
 from accent_provd_client.client import Client
+from accent_provd_client.exceptions import (
+    InvalidProvdError,
+    ProvdError,
+    ProvdServiceUnavailable,
+)
+from accent_provd_client.models import BaseOperation, OperationState
 
 __all__ = [
-    'Client',
+    "Client",
+    "InvalidProvdError",
+    "ProvdError",
+    "ProvdServiceUnavailable",
+    "BaseOperation",
+    "OperationState",
 ]
 
 ----------------------------------------
@@ -14,15 +31,47 @@ __all__ = [
 File: client.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Client for the Accent provisioning API."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from accent_lib_rest_client.client import BaseClient
 
+logger = logging.getLogger(__name__)
+
 
 class Client(BaseClient):
-    namespace = 'accent_provd_client.commands'
+    """Client for interacting with the provisioning API.
 
-    def __init__(self, host, port=443, prefix='/api/provd', version='0.2', **kwargs):
+    This class extends BaseClient to provide commands specific to
+    the provisioning service.
+    """
+
+    namespace = "accent_provd_client.commands"
+
+    def __init__(
+        self,
+        host: str,
+        port: int = 443,
+        prefix: str = "/api/provd",
+        version: str = "0.2",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the provisioning client.
+
+        Args:
+            host: Server hostname or IP
+            port: Server port
+            prefix: URL prefix
+            version: API version
+            **kwargs: Additional keyword arguments for BaseClient
+
+        """
         super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
 
 ----------------------------------------
@@ -30,57 +79,108 @@ class Client(BaseClient):
 File: command.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Base command classes for the provisioning client."""
+
+from __future__ import annotations
 
 import json
+import logging
+from typing import Any
 
-from requests.exceptions import HTTPError
+import httpx
 from accent_lib_rest_client.command import RESTCommand
 
-from .exceptions import ProvdError, ProvdServiceUnavailable
+from accent_provd_client.exceptions import ProvdError, ProvdServiceUnavailable
 
+logger = logging.getLogger(__name__)
 
 class ProvdCommand(RESTCommand):
+    """Base command for provisioning operations.
+
+    This class extends RESTCommand with provisioning-specific error handling
+    and parameter building.
+    """
+
     @staticmethod
-    def raise_from_response(response):
+    def raise_from_response(response: httpx.Response) -> None:
+        """Raise appropriate exceptions based on the response.
+
+        Args:
+            response: HTTP response
+
+        Raises:
+            ProvdServiceUnavailable: If the service is unavailable
+            ProvdError: For other HTTP errors
+
+        """
         if response.status_code == 503:
             raise ProvdServiceUnavailable(response)
 
         try:
             RESTCommand.raise_from_response(response)
-        except HTTPError as e:
-            raise ProvdError(e, response=response)
+        except httpx.HTTPStatusError as e:
+            raise ProvdError(str(e), response=e.response)
 
     @staticmethod
     def _build_list_params(
-        search=None,
-        fields=None,
-        offset=0,
-        limit=0,
-        order=None,
-        direction=None,
-        *args,
-        **kwargs,
-    ):
-        params = {}
-        if args:
-            params['q'] = json.dumps(args[0])
-        if search:
-            params['q'] = json.dumps(search)
+        search: dict[str, Any] | None = None,
+        fields: list[str] | None = None,
+        offset: int = 0,
+        limit: int = 0,
+        order: str | None = None,
+        direction: str | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Build parameters for list operations.
+
+        Args:
+            search: Search parameters
+            fields: Fields to include
+            offset: Result offset
+            limit: Result limit
+            order: Sort field
+            direction: Sort direction
+            *args: Positional arguments for backward compatibility
+            **kwargs: Additional parameters
+
+        Returns:
+            Dictionary of parameters
+
+        Raises:
+            ValueError: If direction is invalid
+
+        """
+        params: dict[str, Any] = {}
+
+        if args and args[0]:
+            params["q"] = json.dumps(args[0])
+        elif search:
+            params["q"] = json.dumps(search)
+
         if fields:
-            params['fields'] = ','.join(fields)
+            params["fields"] = ",".join(fields)
+
         if offset:
-            params['skip'] = offset
+            params["skip"] = offset
+
         if limit:
-            params['limit'] = limit
+            params["limit"] = limit
+
         if order and direction:
-            params['sort'] = order
-            valid_directions = ('asc', 'desc')
+            params["sort"] = order
+            valid_directions = ("asc", "desc")
+
             if direction not in valid_directions:
-                raise ValueError(f'Invalid direction {direction}')
-            params['sort_ord'] = direction.upper()
+                raise ValueError(f"Invalid direction {direction}")
+
+            params["sort_ord"] = direction.upper()
+
         if kwargs:
             params.update(kwargs)
+
         return params
 
 ----------------------------------------
@@ -88,126 +188,538 @@ class ProvdCommand(RESTCommand):
 File: commands/__init__.py
 Please review for update
 
+# Copyright 2025 Accent Communications
+
+"""Command modules for the provisioning client."""
+
+from accent_provd_client.commands.configs import ConfigsCommand
+from accent_provd_client.commands.devices import DevicesCommand
+from accent_provd_client.commands.params import ParamsCommand
+from accent_provd_client.commands.plugins import PluginsCommand
+from accent_provd_client.commands.status import StatusCommand
+
+__all__ = [
+    "ConfigsCommand",
+    "DevicesCommand",
+    "ParamsCommand",
+    "PluginsCommand",
+    "StatusCommand",
+]
 
 ----------------------------------------
 
 File: commands/configs.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Commands for configuration management."""
+
+from __future__ import annotations
 
 import base64
 import json
+import logging
+from typing import Any
 
 from accent_provd_client.command import ProvdCommand
 
+logger = logging.getLogger(__name__)
+
 
 class ConfigsCommand(ProvdCommand):
-    resource = 'cfg_mgr'
-    _headers = {'Content-Type': 'application/vnd.accent.provd+json'}
+    """Commands for configuration management.
 
-    def list_registrar(self, **params):
-        url = f'{self.base_url}/configs'
-        params.update(self._prepare_query({'X_type': 'registrar'}))
-        r = self.session.get(url, params=params)
+    Provides methods for managing device and registrar configurations.
+    """
+
+    resource = "cfg_mgr"
+    _headers = {"Content-Type": "application/vnd.accent.provd+json"}
+
+    async def list_registrar_async(self, **params: Any) -> dict[str, Any]:
+        """List registrar configurations asynchronously.
+
+        Args:
+            **params: Additional filtering parameters
+
+        Returns:
+            List of registrar configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        params.update(self._prepare_query({"X_type": "registrar"}))
+
+        r = await self.async_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def list_device(self, **params):
-        url = f'{self.base_url}/configs'
-        params.update(self._prepare_query({'X_type': 'device'}))
-        r = self.session.get(url, params=params)
+    def list_registrar(self, **params: Any) -> dict[str, Any]:
+        """List registrar configurations.
+
+        Args:
+            **params: Additional filtering parameters
+
+        Returns:
+            List of registrar configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        params.update(self._prepare_query({"X_type": "registrar"}))
+
+        r = self.sync_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def list(self, *args, **kwargs):
-        url = f'{self.base_url}/configs'
-        r = self.session.get(url, params=self._build_list_params(*args, **kwargs))
+    async def list_device_async(self, **params: Any) -> dict[str, Any]:
+        """List device configurations asynchronously.
+
+        Args:
+            **params: Additional filtering parameters
+
+        Returns:
+            List of device configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        params.update(self._prepare_query({"X_type": "device"}))
+
+        r = await self.async_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def get_all(self):
-        url = f'{self.base_url}/configs'
-        r = self.session.get(url)
+    def list_device(self, **params: Any) -> dict[str, Any]:
+        """List device configurations.
+
+        Args:
+            **params: Additional filtering parameters
+
+        Returns:
+            List of device configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        params.update(self._prepare_query({"X_type": "device"}))
+
+        r = self.sync_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def get(self, id_):
-        url = f'{self.base_url}/configs/{id_}'
-        r = self.session.get(url, headers=self._headers)
-        self.raise_from_response(r)
-        return r.json()['config']
+    async def list_async(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """List configurations asynchronously.
 
-    def get_raw(self, id_):
-        url = f'{self.base_url}/configs/{id_}/raw'
-        r = self.session.get(url, headers=self._headers)
-        self.raise_from_response(r)
-        return r.json()['raw_config']
+        Args:
+            *args: Positional arguments for backward compatibility
+            **kwargs: Additional filtering parameters
 
-    def create(self, data):
-        url = f'{self.base_url}/configs'
-        r = self.session.post(url, json={'config': data}, headers=self._headers)
-        self.raise_from_response(r)
-        return r.json()
+        Returns:
+            List of configurations
 
-    def update(self, data):
-        id_ = data['id']
-        url = f'{self.base_url}/configs/{id_}'
-        r = self.session.put(url, json={'config': data}, headers=self._headers)
-        self.raise_from_response(r)
+        Raises:
+            ProvdError: If the request fails
 
-    def delete(self, id_):
-        url = f'{self.base_url}/configs/{id_}'
-        r = self.session.delete(url)
-        self.raise_from_response(r)
-
-    def autocreate(self):
-        url = f'{self.base_url}/autocreate'
-        r = self.session.post(url, json={}, headers=self._headers)
+        """
+        url = f"{self.base_url}/configs"
+        r = await self.async_client.get(
+            url, params=self._build_list_params(*args, **kwargs)
+        )
         self.raise_from_response(r)
         return r.json()
 
-    def _prepare_query(self, query):
-        query = base64.b64encode(json.dumps(query).encode('utf-8'))
-        return {'q64': query}
+    def list(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """List configurations.
+
+        Args:
+            *args: Positional arguments for backward compatibility
+            **kwargs: Additional filtering parameters
+
+        Returns:
+            List of configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        r = self.sync_client.get(url, params=self._build_list_params(*args, **kwargs))
+        self.raise_from_response(r)
+        return r.json()
+
+    async def get_all_async(self) -> dict[str, Any]:
+        """Get all configurations asynchronously.
+
+        Returns:
+            All configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        r = await self.async_client.get(url)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_all(self) -> dict[str, Any]:
+        """Get all configurations.
+
+        Returns:
+            All configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        r = self.sync_client.get(url)
+        self.raise_from_response(r)
+        return r.json()
+
+    async def get_async(self, id_: str) -> dict[str, Any]:
+        """Get a configuration by ID asynchronously.
+
+        Args:
+            id_: Configuration ID
+
+        Returns:
+            Configuration data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs/{id_}"
+        r = await self.async_client.get(url, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()["config"]
+
+    def get(self, id_: str) -> dict[str, Any]:
+        """Get a configuration by ID.
+
+        Args:
+            id_: Configuration ID
+
+        Returns:
+            Configuration data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs/{id_}"
+        r = self.sync_client.get(url, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()["config"]
+
+    async def get_raw_async(self, id_: str) -> dict[str, Any]:
+        """Get raw configuration by ID asynchronously.
+
+        Args:
+            id_: Configuration ID
+
+        Returns:
+            Raw configuration data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs/{id_}/raw"
+        r = await self.async_client.get(url, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()["raw_config"]
+
+    def get_raw(self, id_: str) -> dict[str, Any]:
+        """Get raw configuration by ID.
+
+        Args:
+            id_: Configuration ID
+
+        Returns:
+            Raw configuration data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs/{id_}/raw"
+        r = self.sync_client.get(url, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()["raw_config"]
+
+    async def create_async(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Create a configuration asynchronously.
+
+        Args:
+            data: Configuration data
+
+        Returns:
+            Created configuration
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        r = await self.async_client.post(
+            url, json={"config": data}, headers=self._headers
+        )
+        self.raise_from_response(r)
+        return r.json()
+
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Create a configuration.
+
+        Args:
+            data: Configuration data
+
+        Returns:
+            Created configuration
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs"
+        r = self.sync_client.post(url, json={"config": data}, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    async def update_async(self, data: dict[str, Any]) -> None:
+        """Update a configuration asynchronously.
+
+        Args:
+            data: Configuration data with ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        id_ = data["id"]
+        url = f"{self.base_url}/configs/{id_}"
+        r = await self.async_client.put(
+            url, json={"config": data}, headers=self._headers
+        )
+        self.raise_from_response(r)
+
+    def update(self, data: dict[str, Any]) -> None:
+        """Update a configuration.
+
+        Args:
+            data: Configuration data with ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        id_ = data["id"]
+        url = f"{self.base_url}/configs/{id_}"
+        r = self.sync_client.put(url, json={"config": data}, headers=self._headers)
+        self.raise_from_response(r)
+
+    async def delete_async(self, id_: str) -> None:
+        """Delete a configuration asynchronously.
+
+        Args:
+            id_: Configuration ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs/{id_}"
+        r = await self.async_client.delete(url)
+        self.raise_from_response(r)
+
+    def delete(self, id_: str) -> None:
+        """Delete a configuration.
+
+        Args:
+            id_: Configuration ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/configs/{id_}"
+        r = self.sync_client.delete(url)
+        self.raise_from_response(r)
+
+    async def autocreate_async(self) -> dict[str, Any]:
+        """Auto-create configurations asynchronously.
+
+        Returns:
+            Created configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/autocreate"
+        r = await self.async_client.post(url, json={}, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def autocreate(self) -> dict[str, Any]:
+        """Auto-create configurations.
+
+        Returns:
+            Created configurations
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/autocreate"
+        r = self.sync_client.post(url, json={}, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def _prepare_query(self, query: dict[str, Any]) -> dict[str, str]:
+        """Prepare a query for the API.
+
+        Args:
+            query: Query parameters
+
+        Returns:
+            Encoded query parameters
+
+        """
+        query_json = json.dumps(query).encode("utf-8")
+        query_b64 = base64.b64encode(query_json).decode("utf-8")
+        return {"q64": query_b64}
 
 ----------------------------------------
 
 File: commands/devices.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Commands for device management."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from accent_provd_client.command import ProvdCommand
 from accent_provd_client.operation import OperationInProgress
 
+logger = logging.getLogger(__name__)
+
 
 class DevicesCommand(ProvdCommand):
-    resource = 'dev_mgr'
-    _headers = {'Content-Type': 'application/vnd.accent.provd+json'}
+    """Commands for device management.
 
-    def _build_headers(self, kwargs):
-        headers = {}
+    Provides methods for managing devices.
+    """
+
+    resource = "dev_mgr"
+    _headers = {"Content-Type": "application/vnd.accent.provd+json"}
+
+    def _build_headers(self, kwargs: dict[str, Any]) -> dict[str, str]:
+        """Build headers for device commands.
+
+        Args:
+            kwargs: Keyword arguments
+
+        Returns:
+            Headers dictionary
+
+        """
+        headers: dict[str, str] = {}
         # The requests session will use self.tenant_uuid by default
-        tenant_uuid = kwargs.pop('tenant_uuid', None)
+        tenant_uuid = kwargs.pop("tenant_uuid", None)
         if tenant_uuid:
-            headers['Accent-Tenant'] = tenant_uuid
+            headers["Accent-Tenant"] = str(tenant_uuid)
         return headers
 
-    def _build_headers_with_global_headers(self, kwargs):
+    def _build_headers_with_global_headers(
+        self, kwargs: dict[str, Any]
+    ) -> dict[str, str]:
+        """Build headers with global headers included.
+
+        Args:
+            kwargs: Keyword arguments
+
+        Returns:
+            Headers dictionary
+
+        """
         headers = dict(self._headers)
         headers.update(self._build_headers(kwargs))
         return headers
 
-    def get(self, device_id, **kwargs):
-        url = f'{self.base_url}/devices/{device_id}'
-        r = self.session.get(url, headers=self._build_headers(kwargs), params=kwargs)
-        self.raise_from_response(r)
-        return r.json()['device']
+    async def get_async(self, device_id: str, **kwargs: Any) -> dict[str, Any]:
+        """Get a device by ID asynchronously.
 
-    def list(self, *args, **kwargs):
-        url = f'{self.base_url}/devices'
-        r = self.session.get(
+        Args:
+            device_id: Device ID
+            **kwargs: Additional parameters
+
+        Returns:
+            Device data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices/{device_id}"
+        r = await self.async_client.get(
+            url, headers=self._build_headers(kwargs), params=kwargs
+        )
+        self.raise_from_response(r)
+        return r.json()["device"]
+
+    def get(self, device_id: str, **kwargs: Any) -> dict[str, Any]:
+        """Get a device by ID.
+
+        Args:
+            device_id: Device ID
+            **kwargs: Additional parameters
+
+        Returns:
+            Device data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices/{device_id}"
+        r = self.sync_client.get(
+            url, headers=self._build_headers(kwargs), params=kwargs
+        )
+        self.raise_from_response(r)
+        return r.json()["device"]
+
+    async def list_async(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """List devices asynchronously.
+
+        Args:
+            *args: Positional arguments for backward compatibility
+            **kwargs: Additional filtering parameters
+
+        Returns:
+            List of devices
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices"
+        r = await self.async_client.get(
             url,
             headers=self._build_headers(kwargs),
             params=self._build_list_params(*args, **kwargs),
@@ -215,65 +727,276 @@ class DevicesCommand(ProvdCommand):
         self.raise_from_response(r)
         return r.json()
 
-    def update(self, data, **kwargs):
-        device_id = data.get('id')
-        url = f'{self.base_url}/devices/{device_id}'
-        data = {'device': data}
-        r = self.session.put(
+    def list(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """List devices.
+
+        Args:
+            *args: Positional arguments for backward compatibility
+            **kwargs: Additional filtering parameters
+
+        Returns:
+            List of devices
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices"
+        r = self.sync_client.get(
             url,
-            json=data,
+            headers=self._build_headers(kwargs),
+            params=self._build_list_params(*args, **kwargs),
+        )
+        self.raise_from_response(r)
+        return r.json()
+
+    async def update_async(self, data: dict[str, Any], **kwargs: Any) -> None:
+        """Update a device asynchronously.
+
+        Args:
+            data: Device data with ID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        device_id = data.get("id")
+        url = f"{self.base_url}/devices/{device_id}"
+        r = await self.async_client.put(
+            url,
+            json={"device": data},
             headers=self._build_headers_with_global_headers(kwargs),
             params=kwargs,
         )
         self.raise_from_response(r)
 
-    def create(self, data, **kwargs):
-        url = f'{self.base_url}/devices'
-        data = {'device': data}
-        r = self.session.post(
+    def update(self, data: dict[str, Any], **kwargs: Any) -> None:
+        """Update a device.
+
+        Args:
+            data: Device data with ID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        device_id = data.get("id")
+        url = f"{self.base_url}/devices/{device_id}"
+        r = self.sync_client.put(
             url,
-            json=data,
+            json={"device": data},
+            headers=self._build_headers_with_global_headers(kwargs),
+            params=kwargs,
+        )
+        self.raise_from_response(r)
+
+    async def create_async(self, data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        """Create a device asynchronously.
+
+        Args:
+            data: Device data
+            **kwargs: Additional parameters
+
+        Returns:
+            Created device data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices"
+        r = await self.async_client.post(
+            url,
+            json={"device": data},
             headers=self._build_headers_with_global_headers(kwargs),
             params=kwargs,
         )
         self.raise_from_response(r)
         return r.json()
 
-    def delete(self, id_, **kwargs):
-        url = f'{self.base_url}/devices/{id_}'
-        r = self.session.delete(
+    def create(self, data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        """Create a device.
+
+        Args:
+            data: Device data
+            **kwargs: Additional parameters
+
+        Returns:
+            Created device data
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices"
+        r = self.sync_client.post(
+            url,
+            json={"device": data},
+            headers=self._build_headers_with_global_headers(kwargs),
+            params=kwargs,
+        )
+        self.raise_from_response(r)
+        return r.json()
+
+    async def delete_async(self, id_: str, **kwargs: Any) -> None:
+        """Delete a device asynchronously.
+
+        Args:
+            id_: Device ID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices/{id_}"
+        r = await self.async_client.delete(
             url, headers=self._build_headers_with_global_headers(kwargs), params=kwargs
         )
         self.raise_from_response(r)
 
-    def synchronize(self, id_, **kwargs):
-        url = f'{self.base_url}/synchronize'
-        data = {'id': id_}
-        r = self.session.post(
+    def delete(self, id_: str, **kwargs: Any) -> None:
+        """Delete a device.
+
+        Args:
+            id_: Device ID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/devices/{id_}"
+        r = self.sync_client.delete(
+            url, headers=self._build_headers_with_global_headers(kwargs), params=kwargs
+        )
+        self.raise_from_response(r)
+
+    async def synchronize_async(self, id_: str, **kwargs: Any) -> OperationInProgress:
+        """Synchronize a device asynchronously.
+
+        Args:
+            id_: Device ID
+            **kwargs: Additional parameters
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/synchronize"
+        r = await self.async_client.post(
             url,
-            json=data,
+            json={"id": id_},
             headers=self._build_headers_with_global_headers(kwargs),
             params=kwargs,
         )
         self.raise_from_response(r)
-        return OperationInProgress(self, r.headers['Location'])
+        return OperationInProgress(self, r.headers["Location"])
 
-    def reconfigure(self, id_, **kwargs):
-        url = f'{self.base_url}/reconfigure'
-        data = {'id': id_}
-        r = self.session.post(
+    def synchronize(self, id_: str, **kwargs: Any) -> OperationInProgress:
+        """Synchronize a device.
+
+        Args:
+            id_: Device ID
+            **kwargs: Additional parameters
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/synchronize"
+        r = self.sync_client.post(
             url,
-            json=data,
+            json={"id": id_},
+            headers=self._build_headers_with_global_headers(kwargs),
+            params=kwargs,
+        )
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    async def reconfigure_async(self, id_: str, **kwargs: Any) -> None:
+        """Reconfigure a device asynchronously.
+
+        Args:
+            id_: Device ID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/reconfigure"
+        r = await self.async_client.post(
+            url,
+            json={"id": id_},
             headers=self._build_headers_with_global_headers(kwargs),
             params=kwargs,
         )
         self.raise_from_response(r)
 
-    def create_from_dhcp(self, data, **kwargs):
-        url = f'{self.base_url}/dhcpinfo'
-        r = self.session.post(
+    def reconfigure(self, id_: str, **kwargs: Any) -> None:
+        """Reconfigure a device.
+
+        Args:
+            id_: Device ID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/reconfigure"
+        r = self.sync_client.post(
             url,
-            json={'dhcp_info': data},
+            json={"id": id_},
+            headers=self._build_headers_with_global_headers(kwargs),
+            params=kwargs,
+        )
+        self.raise_from_response(r)
+
+    async def create_from_dhcp_async(self, data: dict[str, Any], **kwargs: Any) -> None:
+        """Create a device from DHCP information asynchronously.
+
+        Args:
+            data: DHCP information
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/dhcpinfo"
+        r = await self.async_client.post(
+            url,
+            json={"dhcp_info": data},
+            headers=self._build_headers_with_global_headers(kwargs),
+            params=kwargs,
+        )
+        self.raise_from_response(r)
+
+    def create_from_dhcp(self, data: dict[str, Any], **kwargs: Any) -> None:
+        """Create a device from DHCP information.
+
+        Args:
+            data: DHCP information
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/dhcpinfo"
+        r = self.sync_client.post(
+            url,
+            json={"dhcp_info": data},
             headers=self._build_headers_with_global_headers(kwargs),
             params=kwargs,
         )
@@ -284,36 +1007,167 @@ class DevicesCommand(ProvdCommand):
 File: commands/params.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Commands for parameter management."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from accent_provd_client.command import ProvdCommand
 
+logger = logging.getLogger(__name__)
+
 
 class ParamsCommand(ProvdCommand):
-    resource = 'configure'
-    _headers = {'Content-Type': 'application/vnd.accent.provd+json'}
+    """Commands for parameter management.
 
-    def list(self):
-        url = f'{self.base_url}'
-        r = self.session.get(url)
+    Provides methods for managing system parameters.
+    """
+
+    resource = "configure"
+    _headers = {"Content-Type": "application/vnd.accent.provd+json"}
+
+    async def list_async(self) -> dict[str, Any]:
+        """List parameters asynchronously.
+
+        Returns:
+            List of parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}"
+        r = await self.async_client.get(url)
         self.raise_from_response(r)
         return r.json()
 
-    def get(self, param, tenant_uuid=None, **kwargs):
-        url = f'{self.base_url}/{param}'
-        headers = self._get_headers(tenant_uuid=tenant_uuid)
-        r = self.session.get(url, headers=headers)
-        self.raise_from_response(r)
-        return r.json()['param']
+    def list(self) -> dict[str, Any]:
+        """List parameters.
 
-    def update(self, param, value, tenant_uuid=None, **kwargs):
-        url = f'{self.base_url}/{param}'
-        data = {'param': {'value': value}}
+        Returns:
+            List of parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}"
+        r = self.sync_client.get(url)
+        self.raise_from_response(r)
+        return r.json()
+
+    async def get_async(
+        self, param: str, tenant_uuid: str | None = None, **kwargs: Any
+    ) -> Any:
+        """Get a parameter value asynchronously.
+
+        Args:
+            param: Parameter name
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional parameters
+
+        Returns:
+            Parameter value
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/{param}"
         headers = self._get_headers(tenant_uuid=tenant_uuid)
-        r = self.session.put(url, json=data, headers=headers)
+        r = await self.async_client.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()["param"]
+
+    def get(self, param: str, tenant_uuid: str | None = None, **kwargs: Any) -> Any:
+        """Get a parameter value.
+
+        Args:
+            param: Parameter name
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional parameters
+
+        Returns:
+            Parameter value
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/{param}"
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.sync_client.get(url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()["param"]
+
+    async def update_async(
+        self, param: str, value: Any, tenant_uuid: str | None = None, **kwargs: Any
+    ) -> None:
+        """Update a parameter value asynchronously.
+
+        Args:
+            param: Parameter name
+            value: New parameter value
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/{param}"
+        data = {"param": {"value": value}}
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = await self.async_client.put(url, json=data, headers=headers)
         self.raise_from_response(r)
 
-    def delete(self, param):
+    def update(
+        self, param: str, value: Any, tenant_uuid: str | None = None, **kwargs: Any
+    ) -> None:
+        """Update a parameter value.
+
+        Args:
+            param: Parameter name
+            value: New parameter value
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional parameters
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/{param}"
+        data = {"param": {"value": value}}
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.sync_client.put(url, json=data, headers=headers)
+        self.raise_from_response(r)
+
+    async def delete_async(self, param: str) -> None:
+        """Delete a parameter asynchronously.
+
+        Args:
+            param: Parameter name
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        await self.update_async(param, None)
+
+    def delete(self, param: str) -> None:
+        """Delete a parameter.
+
+        Args:
+            param: Parameter name
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
         self.update(param, None)
 
 ----------------------------------------
@@ -321,108 +1175,574 @@ class ParamsCommand(ProvdCommand):
 File: commands/plugins.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Commands for plugin management."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from accent_provd_client.command import ProvdCommand
 from accent_provd_client.operation import OperationInProgress
 
+logger = logging.getLogger(__name__)
 
 class PluginsCommand(ProvdCommand):
-    resource = 'pg_mgr'
-    _headers = {'Content-Type': 'application/vnd.accent.provd+json'}
+    """Commands for plugin management.
 
-    def update(self):
-        url = f'{self.base_url}/install/update'
-        r = self.session.post(url, json={}, headers=self._headers)
+    Provides methods for managing provisioning plugins.
+    """
+
+    resource = "pg_mgr"
+    _headers = {"Content-Type": "application/vnd.accent.provd+json"}
+
+    async def update_async(self) -> OperationInProgress:
+        """Update plugins asynchronously.
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/update"
+        r = await self.async_client.post(url, json={}, headers=self._headers)
         self.raise_from_response(r)
-        return OperationInProgress(self, r.headers['Location'])
+        return OperationInProgress(self, r.headers["Location"])
 
-    def get(self, id_):
-        url = f'{self.base_url}/plugins/{id_}/info'
-        r = self.session.get(url)
+    def update(self) -> OperationInProgress:
+        """Update plugins.
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/update"
+        r = self.sync_client.post(url, json={}, headers=self._headers)
         self.raise_from_response(r)
-        return r.json()['plugin_info']
+        return OperationInProgress(self, r.headers["Location"])
 
-    def upgrade(self, id_):
-        url = f'{self.base_url}/install/upgrade'
-        r = self.session.post(url, json={'id': id_}, headers=self._headers)
+    async def get_async(self, id_: str) -> dict[str, Any]:
+        """Get plugin information asynchronously.
+
+        Args:
+            id_: Plugin ID
+
+        Returns:
+            Plugin information
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{id_}/info"
+        r = await self.async_client.get(url)
         self.raise_from_response(r)
-        return OperationInProgress(self, r.headers['Location'])
+        return r.json()["plugin_info"]
 
-    def install(self, id_):
-        url = f'{self.base_url}/install/install'
-        r = self.session.post(url, json={'id': id_}, headers=self._headers)
+    def get(self, id_: str) -> dict[str, Any]:
+        """Get plugin information.
+
+        Args:
+            id_: Plugin ID
+
+        Returns:
+            Plugin information
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{id_}/info"
+        r = self.sync_client.get(url)
         self.raise_from_response(r)
-        return OperationInProgress(self, r.headers['Location'])
+        return r.json()["plugin_info"]
 
-    def uninstall(self, id_):
-        url = f'{self.base_url}/install/uninstall'
-        r = self.session.post(url, json={'id': id_}, headers=self._headers)
+    async def upgrade_async(self, id_: str) -> OperationInProgress:
+        """Upgrade a plugin asynchronously.
+
+        Args:
+            id_: Plugin ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/upgrade"
+        r = await self.async_client.post(url, json={"id": id_}, headers=self._headers)
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    def upgrade(self, id_: str) -> OperationInProgress:
+        """Upgrade a plugin.
+
+        Args:
+            id_: Plugin ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/upgrade"
+        r = self.sync_client.post(url, json={"id": id_}, headers=self._headers)
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    async def install_async(self, id_: str) -> OperationInProgress:
+        """Install a plugin asynchronously.
+
+        Args:
+            id_: Plugin ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/install"
+        r = await self.async_client.post(url, json={"id": id_}, headers=self._headers)
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    def install(self, id_: str) -> OperationInProgress:
+        """Install a plugin.
+
+        Args:
+            id_: Plugin ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/install"
+        r = self.sync_client.post(url, json={"id": id_}, headers=self._headers)
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    async def uninstall_async(self, id_: str) -> None:
+        """Uninstall a plugin asynchronously.
+
+        Args:
+            id_: Plugin ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/uninstall"
+        r = await self.async_client.post(url, json={"id": id_}, headers=self._headers)
         self.raise_from_response(r)
 
-    def list(self, **params):
-        url = f'{self.base_url}/plugins'
-        r = self.session.get(url, params=params)
+    def uninstall(self, id_: str) -> None:
+        """Uninstall a plugin.
+
+        Args:
+            id_: Plugin ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/uninstall"
+        r = self.sync_client.post(url, json={"id": id_}, headers=self._headers)
+        self.raise_from_response(r)
+
+    async def list_async(self, **params: Any) -> dict[str, Any]:
+        """List plugins asynchronously.
+
+        Args:
+            **params: Filter parameters
+
+        Returns:
+            List of plugins
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins"
+        r = await self.async_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def list_installed(self, **params):
-        url = f'{self.base_url}/install/installed'
-        r = self.session.get(url, params=params)
+    def list(self, **params: Any) -> dict[str, Any]:
+        """List plugins.
+
+        Args:
+            **params: Filter parameters
+
+        Returns:
+            List of plugins
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins"
+        r = self.sync_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def list_installable(self, **params):
-        url = f'{self.base_url}/install/installable'
-        r = self.session.get(url, params=params)
+    async def list_installed_async(self, **params: Any) -> dict[str, Any]:
+        """List installed plugins asynchronously.
+
+        Args:
+            **params: Filter parameters
+
+        Returns:
+            List of installed plugins
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/installed"
+        r = await self.async_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def get_packages_installed(self, plugin, **params):
-        url = f'{self.base_url}/plugins/{plugin}/install/installed'
-        r = self.session.get(url, params=params)
+    def list_installed(self, **params: Any) -> dict[str, Any]:
+        """List installed plugins.
+
+        Args:
+            **params: Filter parameters
+
+        Returns:
+            List of installed plugins
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/installed"
+        r = self.sync_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def get_packages_installable(self, plugin, **params):
-        url = f'{self.base_url}/plugins/{plugin}/install/installable'
-        r = self.session.get(url, params=params)
+    async def list_installable_async(self, **params: Any) -> dict[str, Any]:
+        """List installable plugins asynchronously.
+
+        Args:
+            **params: Filter parameters
+
+        Returns:
+            List of installable plugins
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/installable"
+        r = await self.async_client.get(url, params=params)
         self.raise_from_response(r)
         return r.json()
 
-    def install_package(self, plugin, package):
-        url = f'{self.base_url}/plugins/{plugin}/install/install'
-        r = self.session.post(url, json={'id': package}, headers=self._headers)
-        self.raise_from_response(r)
-        return OperationInProgress(self, r.headers['Location'])
+    def list_installable(self, **params: Any) -> dict[str, Any]:
+        """List installable plugins.
 
-    def uninstall_package(self, plugin, package):
-        url = f'{self.base_url}/plugins/{plugin}/install/uninstall'
-        r = self.session.post(url, json={'id': package}, headers=self._headers)
+        Args:
+            **params: Filter parameters
+
+        Returns:
+            List of installable plugins
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/install/installable"
+        r = self.sync_client.get(url, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    async def get_packages_installed_async(
+        self,
+        plugin: str,
+        **params: Any
+    ) -> dict[str, Any]:
+        """Get installed packages for a plugin asynchronously.
+
+        Args:
+            plugin: Plugin ID
+            **params: Filter parameters
+
+        Returns:
+            List of installed packages
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/installed"
+        r = await self.async_client.get(url, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_packages_installed(self, plugin: str, **params: Any) -> dict[str, Any]:
+        """Get installed packages for a plugin.
+
+        Args:
+            plugin: Plugin ID
+            **params: Filter parameters
+
+        Returns:
+            List of installed packages
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/installed"
+        r = self.sync_client.get(url, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    async def get_packages_installable_async(
+        self,
+        plugin: str,
+        **params: Any
+    ) -> dict[str, Any]:
+        """Get installable packages for a plugin asynchronously.
+
+        Args:
+            plugin: Plugin ID
+            **params: Filter parameters
+
+        Returns:
+            List of installable packages
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/installable"
+        r = await self.async_client.get(url, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get_packages_installable(self, plugin: str, **params: Any) -> dict[str, Any]:
+        """Get installable packages for a plugin.
+
+        Args:
+            plugin: Plugin ID
+            **params: Filter parameters
+
+        Returns:
+            List of installable packages
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/installable"
+        r = self.sync_client.get(url, params=params)
+        self.raise_from_response(r)
+        return r.json()
+
+    async def install_package_async(
+        self,
+        plugin: str,
+        package: str
+    ) -> OperationInProgress:
+        """Install a package asynchronously.
+
+        Args:
+            plugin: Plugin ID
+            package: Package ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/install"
+        r = await self.async_client.post(
+            url,
+            json={"id": package},
+            headers=self._headers
+        )
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    def install_package(self, plugin: str, package: str) -> OperationInProgress:
+        """Install a package.
+
+        Args:
+            plugin: Plugin ID
+            package: Package ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/install"
+        r = self.sync_client.post(
+            url,
+            json={"id": package},
+            headers=self._headers
+        )
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    async def uninstall_package_async(self, plugin: str, package: str) -> None:
+        """Uninstall a package asynchronously.
+
+        Args:
+            plugin: Plugin ID
+            package: Package ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/uninstall"
+        r = await self.async_client.post(
+            url,
+            json={"id": package},
+            headers=self._headers
+        )
         self.raise_from_response(r)
 
-    def upgrade_package(self, plugin, package):
-        url = f'{self.base_url}/plugins/{plugin}/install/upgrade'
-        r = self.session.post(url, json={'id': package}, headers=self._headers)
+    def uninstall_package(self, plugin: str, package: str) -> None:
+        """Uninstall a package.
+
+        Args:
+            plugin: Plugin ID
+            package: Package ID
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/uninstall"
+        r = self.sync_client.post(
+            url,
+            json={"id": package},
+            headers=self._headers
+        )
         self.raise_from_response(r)
-        return OperationInProgress(self, r.headers['Location'])
+
+    async def upgrade_package_async(
+        self,
+        plugin: str,
+        package: str
+    ) -> OperationInProgress:
+        """Upgrade a package asynchronously.
+
+        Args:
+            plugin: Plugin ID
+            package: Package ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/upgrade"
+        r = await self.async_client.post(
+            url,
+            json={"id": package},
+            headers=self._headers
+        )
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
+
+    def upgrade_package(self, plugin: str, package: str) -> OperationInProgress:
+        """Upgrade a package.
+
+        Args:
+            plugin: Plugin ID
+            package: Package ID
+
+        Returns:
+            Operation tracking object
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        url = f"{self.base_url}/plugins/{plugin}/install/upgrade"
+        r = self.sync_client.post(url, json={"id": package}, headers=self._headers)
+        self.raise_from_response(r)
+        return OperationInProgress(self, r.headers["Location"])
 
 ----------------------------------------
 
 File: commands/status.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Commands for status checking."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from accent_provd_client.command import ProvdCommand
 
+logger = logging.getLogger(__name__)
+
 
 class StatusCommand(ProvdCommand):
-    resource = 'status'
-    _headers = {'Content-Type': 'application/vnd.accent.provd+json'}
+    """Commands for checking service status.
 
-    def get(self):
-        r = self.session.get(self.base_url, headers=self._headers)
+    Provides methods for checking the status of the provisioning service.
+    """
+
+    resource = "status"
+    _headers = {"Content-Type": "application/vnd.accent.provd+json"}
+
+    async def get_async(self) -> dict[str, Any]:
+        """Get service status asynchronously.
+
+        Returns:
+            Status information
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        r = await self.async_client.get(self.base_url, headers=self._headers)
+        self.raise_from_response(r)
+        return r.json()
+
+    def get(self) -> dict[str, Any]:
+        """Get service status.
+
+        Returns:
+            Status information
+
+        Raises:
+            ProvdError: If the request fails
+
+        """
+        r = self.sync_client.get(self.base_url, headers=self._headers)
         self.raise_from_response(r)
         return r.json()
 
@@ -431,149 +1751,440 @@ class StatusCommand(ProvdCommand):
 File: exceptions.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from requests import HTTPError
+"""Exception classes for the provisioning client."""
+
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import httpx
+
+logger = logging.getLogger(__name__)
 
 
-class ProvdError(HTTPError):
-    def __init__(self, *args, **kwargs):
-        response = kwargs.get('response', None)
-        self.status_code = getattr(response, 'status_code', None)
-        super().__init__(*args, **kwargs)
+class ProvdError(Exception):
+    """Base exception for provisioning errors.
+
+    Attributes:
+        message: Error message
+        status_code: HTTP status code
+        response: The HTTP response that caused the error
+
+    """
+
+    def __init__(
+        self,
+        message: str | Exception,
+        *,
+        response: httpx.Response | None = None,
+        status_code: int | None = None,
+    ) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message or original exception
+            response: HTTP response that triggered the error
+            status_code: HTTP status code
+
+        """
+        self.response = response
+        self.status_code = status_code or getattr(response, "status_code", None)
+        super().__init__(message)
 
 
-class ProvdServiceUnavailable(Exception):
-    pass
+class ProvdServiceUnavailable(ProvdError):
+    """Exception raised when the provisioning service is unavailable."""
+
+    def __init__(self, response: httpx.Response) -> None:
+        """Initialize the exception.
+
+        Args:
+            response: HTTP response indicating service unavailability
+
+        """
+        super().__init__("Provisioning service unavailable", response=response)
 
 
-class InvalidProvdError(Exception):
-    pass
+class InvalidProvdError(ProvdError):
+    """Exception raised for invalid provisioning operations."""
+
+    def __init__(self, message: str) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message)
 
 ----------------------------------------
 
 File: operation.py
 Please review for update
 
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-import re
+"""Operation tracking for long-running provisioning tasks."""
 
-OIP_WAITING = 'waiting'
-OIP_PROGRESS = 'progress'
-OIP_SUCCESS = 'success'
-OIP_FAIL = 'fail'
+from __future__ import annotations
 
-_PARSE_OIP_REGEX = re.compile(r'^(?:(\w+)\|)?(\w+)(?:;(\d+)(?:/(\d+))?)?')
+import logging
 
+import httpx
 
-class BaseOperation:
-    def __init__(
-        self, label=None, state=OIP_WAITING, current=None, end=None, sub_oips=None
-    ):
-        self.label = label
-        self.state = state
-        self.current = current
-        self.end = end
-        self.sub_oips = sub_oips or []
+from accent_provd_client.command import ProvdCommand
+from accent_provd_client.models import BaseOperation, parse_operation
 
-    def __str__(self):
-        status = f'{self.label}: {self.state}'
-        if self.current and self.end:
-            status += f' ({self.current}/{self.end})'
-
-        if self.sub_oips:
-            for sub_oip in self.sub_oips:
-                status += f'\n  {sub_oip}'
-
-        return status
+logger = logging.getLogger(__name__)
 
 
 class OperationInProgress(BaseOperation):
-    def __init__(self, command, location, delete_on_exit=True):
+    """Tracks an operation in progress.
+
+    This class extends BaseOperation to provide methods for tracking and
+    updating the status of a long-running operation.
+
+    Attributes:
+        location: URL path to the operation status
+
+    """
+
+    def __init__(
+        self, command: ProvdCommand, location: str, delete_on_exit: bool = True
+    ) -> None:
+        """Initialize the operation.
+
+        Args:
+            command: The command that initiated the operation
+            location: Location URL for the operation status
+            delete_on_exit: Whether to delete the operation on exit
+
+        """
         super().__init__()
         self._command = command
-        self.location = location
-        fixed_location = self._fix_location_url(location)
-        self._url = f'{self._command.base_url}/{fixed_location}'
+        self._location = location
+        self._url = f"{self._command.base_url}/{self._fix_location_url(location)}"
         self._delete_on_exit = delete_on_exit
 
         self.update()
 
-    def __enter__(self):
+    def __enter__(self) -> OperationInProgress:
+        """Context manager entry point.
+
+        Returns:
+            This OperationInProgress instance
+
+        """
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit point.
+
+        Args:
+            exc_type: Exception type if an exception was raised
+            exc_val: Exception value if an exception was raised
+            exc_tb: Exception traceback if an exception was raised
+
+        """
         if self._delete_on_exit:
             self.delete()
 
     @property
-    def location(self):
+    def location(self) -> str:
+        """Get the operation location URL.
+
+        Returns:
+            The location URL
+
+        """
         return self._location
 
-    @location.setter
-    def location(self, value):
-        self._location = value
+    async def update_async(self) -> None:
+        """Update the operation status asynchronously.
 
-    def update(self):
-        r = self._command.session.get(self._url)
-        self._command.raise_from_response(r)
-        base_operation = parse_operation(r.json()['status'])
-        self.label = base_operation.label
-        self.state = base_operation.state
-        self.current = base_operation.current
-        self.end = base_operation.end
-        self.sub_oips = base_operation.sub_oips
+        Raises:
+            ProvdError: If the status update fails
 
-    def delete(self):
-        r = self._command.session.delete(self._url)
-        self._command.raise_from_response(r)
+        """
+        try:
+            r = await self._command.async_client.get(self._url)
+            r.raise_for_status()
+            base_operation = parse_operation(r.json()["status"])
+
+            self.label = base_operation.label
+            self.state = base_operation.state
+            self.current = base_operation.current
+            self.end = base_operation.end
+            self.sub_operations = base_operation.sub_operations
+        except httpx.HTTPStatusError as e:
+            self._command.raise_from_response(e.response)
+
+    def update(self) -> None:
+        """Update the operation status.
+
+        Raises:
+            ProvdError: If the status update fails
+
+        """
+        try:
+            r = self._command.sync_client.get(self._url)
+            r.raise_for_status()
+            base_operation = parse_operation(r.json()["status"])
+
+            self.label = base_operation.label
+            self.state = base_operation.state
+            self.current = base_operation.current
+            self.end = base_operation.end
+            self.sub_operations = base_operation.sub_operations
+        except httpx.HTTPStatusError as e:
+            self._command.raise_from_response(e.response)
+
+    async def delete_async(self) -> None:
+        """Delete the operation asynchronously.
+
+        Raises:
+            ProvdError: If the deletion fails
+
+        """
+        try:
+            r = await self._command.async_client.delete(self._url)
+            r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            self._command.raise_from_response(e.response)
+
+    def delete(self) -> None:
+        """Delete the operation.
+
+        Raises:
+            ProvdError: If the deletion fails
+
+        """
+        try:
+            r = self._command.sync_client.delete(self._url)
+            r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            self._command.raise_from_response(e.response)
 
     @staticmethod
-    def _fix_location_url(location):
-        location_parts = location.split('/')
-        return '/'.join(
+    def _fix_location_url(location: str) -> str:
+        """Fix the location URL to remove redundant prefixes.
+
+        Args:
+            location: The raw location URL
+
+        Returns:
+            The fixed location URL
+
+        """
+        location_parts = location.split("/")
+        return "/".join(
             location_parts[3:]
         )  # We do not want /provd/{pg,dev,cfg}_mgr/ prefix
 
+----------------------------------------
 
-def parse_operation(operation_string):
-    m = _PARSE_OIP_REGEX.search(operation_string)
+File: models.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+"""Data models for the provisioning client."""
+
+from __future__ import annotations
+
+import re
+from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+# Operation state constants
+class OperationState(str, Enum):
+    """Operation states for provisioning operations."""
+
+    WAITING = "waiting"
+    PROGRESS = "progress"
+    SUCCESS = "success"
+    FAIL = "fail"
+
+
+class BaseOperation(BaseModel):
+    """Base model for operations.
+
+    Attributes:
+        label: Operation label
+        state: Current operation state
+        current: Current progress count
+        end: End progress count
+        sub_operations: List of sub-operations
+
+    """
+
+    label: str | None = None
+    state: str = OperationState.WAITING
+    current: int | None = None
+    end: int | None = None
+    sub_operations: list[BaseOperation] = Field(default_factory=list, alias="sub_oips")
+
+    def __str__(self) -> str:
+        """String representation of the operation."""
+        status = f"{self.label}: {self.state}" if self.label else f"{self.state}"
+        if self.current is not None and self.end is not None:
+            status += f" ({self.current}/{self.end})"
+
+        if self.sub_operations:
+            for sub_op in self.sub_operations:
+                status += f"\n  {sub_op}"
+
+        return status
+
+    class Config:
+        """Pydantic model configuration."""
+
+        populate_by_name = True
+
+
+class ConfigEntry(BaseModel):
+    """Model for configuration entries.
+
+    Attributes:
+        id: Configuration ID
+        config_data: Configuration data
+
+    """
+
+    id: str
+    config_data: dict[str, Any]
+
+
+class DeviceEntry(BaseModel):
+    """Model for device entries.
+
+    Attributes:
+        id: Device ID
+        device_data: Device data
+
+    """
+
+    id: str
+    device_data: dict[str, Any]
+
+
+class PluginInfo(BaseModel):
+    """Model for plugin information.
+
+    Attributes:
+        id: Plugin ID
+        plugin_data: Plugin data
+
+    """
+
+    id: str
+    plugin_data: dict[str, Any]
+
+
+class ParamEntry(BaseModel):
+    """Model for parameter entries.
+
+    Attributes:
+        name: Parameter name
+        value: Parameter value
+
+    """
+
+    name: str
+    value: Any
+
+
+# Define regex pattern for parsing operation strings
+PARSE_OIP_REGEX = re.compile(r"^(?:(\w+)\|)?(\w+)(?:;(\d+)(?:/(\d+))?)?")
+
+
+def parse_operation(operation_string: str) -> BaseOperation:
+    """Parse an operation string into a BaseOperation object.
+
+    Args:
+        operation_string: The operation string to parse
+
+    Returns:
+        Parsed BaseOperation
+
+    Raises:
+        ValueError: If the operation string format is invalid
+
+    """
+    m = PARSE_OIP_REGEX.search(operation_string)
     if not m:
-        raise ValueError(f'Invalid progress string: {operation_string}')
-    else:
-        label, state, raw_current, raw_end = m.groups()
-        raw_sub_oips = operation_string[m.end() :]
-        current = raw_current if raw_current is None else int(raw_current)
-        end = raw_end if raw_end is None else int(raw_end)
-        sub_oips = [
-            parse_operation(sub_oip_string)
-            for sub_oip_string in _split_top_parentheses(raw_sub_oips)
+        raise ValueError(f"Invalid progress string: {operation_string}")
+
+    label, state, raw_current, raw_end = m.groups()
+    raw_sub_ops = operation_string[m.end() :]
+    current = int(raw_current) if raw_current is not None else None
+    end = int(raw_end) if raw_end is not None else None
+
+    sub_operations = (
+        [
+            parse_operation(sub_op_string)
+            for sub_op_string in _split_top_parentheses(raw_sub_ops)
         ]
-        return BaseOperation(label, state, current, end, sub_oips)
+        if raw_sub_ops
+        else []
+    )
+
+    return BaseOperation(
+        label=label,
+        state=state,
+        current=current,
+        end=end,
+        sub_operations=sub_operations,
+    )
 
 
-def _split_top_parentheses(str_):
+def _split_top_parentheses(str_: str) -> list[str]:
+    """Split a string by top-level parentheses.
+
+    Args:
+        str_: String to split
+
+    Returns:
+        List of substring contents between parentheses
+
+    Raises:
+        ValueError: If the parenthesis structure is invalid
+
+    """
     idx = 0
     length = len(str_)
     result = []
+
     while idx < length:
-        if str_[idx] != '(':
-            raise ValueError(f'invalid character: {str_[idx]}')
+        if str_[idx] != "(":
+            raise ValueError(f"invalid character: {str_[idx]}")
+
         start_idx = idx
         idx += 1
         count = 1
+
         while count:
             if idx >= length:
-                raise ValueError(f'unbalanced number of parentheses: {str_}')
+                raise ValueError(f"unbalanced number of parentheses: {str_}")
+
             c = str_[idx]
-            if c == '(':
+            if c == "(":
                 count += 1
-            elif c == ')':
+            elif c == ")":
                 count -= 1
+
             idx += 1
+
         end_idx = idx
         result.append(str_[start_idx + 1 : end_idx - 1])
+
     return result
 
 ----------------------------------------
