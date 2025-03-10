@@ -15,10 +15,10 @@ import psycopg2
 from accent import db_helper
 from accent_uuid.uuid_ import get_accent_uuid
 
-from accent_db import path
-from accent_db.exception import DBError
+from accent_manage_db import path
+from accent_manage_db.exception import DBError
 
-RT = TypeVar('RT')
+RT = TypeVar("RT")
 
 
 def run_as(user_name: str) -> Callable[[Callable[..., RT]], Callable[..., RT]]:
@@ -36,7 +36,7 @@ def run_as(user_name: str) -> Callable[[Callable[..., RT]], Callable[..., RT]]:
     return wrapper
 
 
-@run_as('postgres')
+@run_as("postgres")
 def init_db(db_name: str, db_user: str, db_user_password: str, pg_db_uri: str) -> None:
     for _ in range(40):
         try:
@@ -46,7 +46,7 @@ def init_db(db_name: str, db_user: str, db_user_password: str, pg_db_uri: str) -
             print(e, file=sys.stderr)
             time.sleep(0.25)
     else:
-        print('Failed to connect to postgres', file=sys.stderr)
+        print("Failed to connect to postgres", file=sys.stderr)
         return
 
     conn.autocommit = True
@@ -58,7 +58,7 @@ def init_db(db_name: str, db_user: str, db_user_password: str, pg_db_uri: str) -
                 db_helper.create_db(cursor, db_name, db_user)
 
 
-@run_as('postgres')
+@run_as("postgres")
 def enable_extension(extension: str, app_db_uri: str) -> None:
     with psycopg2.connect(app_db_uri) as conn:
         with conn.cursor() as cursor:
@@ -78,11 +78,11 @@ def populate_db(app_db_uri: str) -> None:
 
 
 def _call_as_postgres(pathname: str) -> None:
-    user = 'postgres'
+    user = "postgres"
     if getpass.getuser() == user:
         args = [pathname]
     else:
-        args = ['su', '-c', pathname, user]
+        args = ["su", "-c", pathname, user]
 
-    if subprocess.call(args, cwd='/tmp'):
+    if subprocess.call(args, cwd="/tmp"):
         raise DBError()

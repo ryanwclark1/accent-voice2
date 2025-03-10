@@ -1,7 +1,9 @@
 [project]
 name = "accent-voice-2"
 version = "0.1.0"
+description = "Accent Voice Project"
 requires-python = ">=3.9,<4.0"
+readme = "README.md"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 dependencies = []
 
@@ -16,11 +18,18 @@ dev = [
     "refurb>=0.4.0",
     "ruff>=0.9.10",
     "tox>=4.0.0",
+    "poethepoet>=0.33.0",
+    "httpx>=0.28.1",
+    "pydantic>=2.10.6",
+    "validators>=0.34.0",
 ]
 docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.7",
     "mkdocstrings[python]>=0.28.2",
+]
+test = [
+    "httpx>=0.28.1",
 ]
 
 [tool.uv.workspace]
@@ -89,3 +98,16 @@ members = [
     "service/accent-auth-conversion",
 ]
 
+[tool.poe.tasks]
+# run with eg `uv run poe fmt`
+fmt = "ruff format ${PWD}"
+lint = "ruff check --fix ${PWD}"
+check = "basedpyright ${PWD}"
+test = "pytest ${PWD}"
+# run all the above
+all = [ {ref="fmt"}, {ref="lint"}, {ref="check"}, {ref="test"} ]
+
+echo = "echo ${PWD}"
+
+"ci:fmt" = "ruff format --check ${PWD}"  # fail if not formatted
+"ci:lint" = "ruff check ${PWD}"

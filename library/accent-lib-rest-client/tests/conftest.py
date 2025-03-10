@@ -1,6 +1,6 @@
 # tests/conftest.py
-import pytest
 import httpx
+import pytest
 from accent_lib_rest_client.client import BaseClient
 
 

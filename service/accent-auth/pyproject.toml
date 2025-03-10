@@ -63,9 +63,9 @@ user_admin_status = "accent_auth.plugins.metadata.user_admin_status:UserAdminSta
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.5",
- "accent-test-helpers",
- "ruff>=0.9.10",
+  "pytest>=8.3.5",
+  "accent-test-helpers",
+  "ruff>=0.9.10",
 ]
 
 [tool.uv.sources]

@@ -234,7 +234,7 @@
 │   │   ├── /accent-voice/service/accent-export-import/accent_export_import/accent_export_import/
 │   │   └── /accent-voice/service/accent-export-import/contrib/contrib/
 │   ├── /accent-voice/service/accent-manage-db/accent-manage-db/
-│   │   ├── /accent-voice/service/accent-manage-db/accent_db/accent_db/
+│   │   ├── /accent-voice/service/accent-manage-db/accent_manage_db/accent_manage_db/
 │   │   ├── /accent-voice/service/accent-manage-db/alembic/alembic/
 │   │   ├── /accent-voice/service/accent-manage-db/bin/bin/
 │   │   ├── /accent-voice/service/accent-manage-db/contribs/contribs/

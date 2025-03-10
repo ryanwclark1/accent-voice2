@@ -92,15 +92,15 @@ dev = ["pytest>=8.3.5", "gunicorn>=21.2.0"]
 [tool.uv]
 
 [tool.uv.sources]
-accent-lib-rest-client = { path = "../../../library/accent-lib-rest-client" }
-accent-amid-client = { path = "../../../library/accent-amid-client" }
-accent-auth-client = { path = "../../../library/accent-auth-client" }
-accent-call-logd-client = { path = "../../../library/accent-call-logd-client" }
-accent-confd-client = { path = "../../../library/accent-confd-client" }
-accent-dird-client = { path = "../../../library/accent-dird-client" }
-accent-plugind-client = { path = "../../../library/accent-plugind-client" }
-accent-provd-client = { path = "../../../library/accent-provd-client" }
-accent-webhookd-client = { path = "../../../library/accent-webhookd-client" }
+accent-lib-rest-client = { workspace = true }
+accent-amid-client = { workspace = true }
+accent-auth-client = { workspace = true }
+accent-call-logd-client = { workspace = true }
+accent-confd-client = { workspace = true }
+accent-dird-client = { workspace = true }
+accent-plugind-client = { workspace = true }
+accent-provd-client = { workspace = true }
+accent-webhookd-client = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
 include = [

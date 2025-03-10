@@ -40,7 +40,7 @@ RUN true \
 
 
 # COPY ./service/accent-manage-db/pyproject.toml ./service/accent-manage-db/poetry.lock ./
-# COPY ./service/accent-manage-db/accent_db/ ./accent_db/
+# COPY ./service/accent-manage-db/accent_manage_db/ ./accent_manage_db/
 
 # RUN alias python='python3' \
 #     && poetry install --without=dev

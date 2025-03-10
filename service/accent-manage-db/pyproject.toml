@@ -1,5 +1,5 @@
 [project]
-name = "accent-db"
+name = "accent-manage-db"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
@@ -18,11 +18,9 @@ dependencies = [
 ]
 
 [project.scripts]
-accent-check-db = "accent_db.check_db:main"
-accent-init-db = "accent_db.init_db:main"
-accent-update-db = "accent_db.update_db:main"
-
-[project.entry-points]
+accent-check-db = "accent_manage_db.check_db:main"
+accent-init-db = "accent_manage_db.init_db:main"
+accent-update-db = "accent_manage_db.update_db:main"
 
 [dependency-groups]
 dev = ["pytest>=8.3.5"]
@@ -33,10 +31,10 @@ accent = { workspace = true }
 accent-uuid = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
-include = ["accent_db", "bin/pg-drop-db", "bin/pg-populate-db"]
+include = ["accent_manage_db", "bin/pg-drop-db", "bin/pg-populate-db"]
 
 [tool.hatch.build.targets.wheel]
-include = ["accent_db", "bin/pg-drop-db", "bin/pg-populate-db"]
+include = ["accent_manage_db", "bin/pg-drop-db", "bin/pg-populate-db"]
 
 [build-system]
 requires = ["hatchling"]

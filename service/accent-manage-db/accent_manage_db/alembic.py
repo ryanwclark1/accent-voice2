@@ -6,8 +6,8 @@ import re
 import subprocess
 from typing import Any, NamedTuple
 
-from accent_db import path
-from accent_db.exception import DBError
+from accent_manage_db import path
+from accent_manage_db.exception import DBError
 
 
 class _AlembicCurrentStatus(NamedTuple):
@@ -16,38 +16,38 @@ class _AlembicCurrentStatus(NamedTuple):
 
 
 def check_db() -> None:
-    print('Checking database...')
-    p = _new_alembic_popen(['current'], stdout=subprocess.PIPE, text=True)
+    print("Checking database...")
+    p = _new_alembic_popen(["current"], stdout=subprocess.PIPE, text=True)
     output = p.communicate()[0]
     if p.returncode:
-        raise Exception(f'alembic command returned {p.returncode}')
+        raise Exception(f"alembic command returned {p.returncode}")
 
     status = _parse_alembic_current_output(output)
     if status.is_head:
-        status_msg = 'OK'
+        status_msg = "OK"
     else:
-        status_msg = f'NOK (current revision is {status.revision})'
-    print(f'\t{status_msg}')
+        status_msg = f"NOK (current revision is {status.revision})"
+    print(f"\t{status_msg}")
 
 
 def _parse_alembic_current_output(output: str) -> _AlembicCurrentStatus:
-    match = re.match(r'^(\w+)( \(head\))?$', output)
+    match = re.match(r"^(\w+)( \(head\))?$", output)
     if not match:
-        raise Exception(f'not a valid alembic current output: {output!r}')
+        raise Exception(f"not a valid alembic current output: {output!r}")
 
     return _AlembicCurrentStatus(match.group(1), True if match.group(2) else False)
 
 
 def update_db() -> None:
-    if _new_alembic_popen(['upgrade', 'head']).wait():
+    if _new_alembic_popen(["upgrade", "head"]).wait():
         raise DBError()
 
 
 def stamp_head() -> None:
-    if _new_alembic_popen(['stamp', 'head']).wait():
+    if _new_alembic_popen(["stamp", "head"]).wait():
         raise DBError()
 
 
 def _new_alembic_popen(args: list[str], **kwargs: Any) -> subprocess.Popen:
-    args = ['alembic'] + args
+    args = ["alembic"] + args
     return subprocess.Popen(args, cwd=path.USR_SHARE, **kwargs)

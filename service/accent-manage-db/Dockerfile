@@ -38,7 +38,7 @@ WORKDIR $PYSETUP_PATH
 COPY ./library ../../library
 
 COPY ./service/accent-manage-db/pyproject.toml ./service/accent-manage-db/poetry.lock ./
-COPY ./service/accent-manage-db/accent_db/ ./accent_db
+COPY ./service/accent-manage-db/accent_manage_db/ ./accent_manage_db
 
 
 RUN true \
@@ -63,7 +63,7 @@ ENV PATH="$PYSETUP_PATH/bin:$PATH"
 RUN true \
     && apt-get -q update \
     && apt-get -yq install --no-install-recommends \
-        libpq5 \
+    libpq5 \
     && accent-configure-uuid \
     && mkdir /usr/share/accent-manage-db /usr/lib/accent-manage-db \
     && cp -a alembic alembic.ini populate /usr/share/accent-manage-db \
