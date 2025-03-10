@@ -1,3 +1,5 @@
+# Copyright 2025 Accent Communications
+
 from .admin import AdminCommand
 from .backends import BackendsCommand
 from .config import ConfigCommand
@@ -17,21 +19,21 @@ from .token import TokenCommand
 from .users import UsersCommand
 
 __all__ = [
-    'AdminCommand',
-    'BackendsCommand',
-    'ConfigCommand',
-    'EmailsCommand',
-    'ExternalAuthCommand',
-    'GroupsCommand',
-    'IDPCommand',
-    'LDAPBackendConfigCommand',
-    'PoliciesCommand',
-    'RefreshTokenCommand',
-    'SAMLCommand',
-    'SAMLConfigCommand',
-    'SessionsCommand',
-    'StatusCommand',
-    'TenantsCommand',
-    'TokenCommand',
-    'UsersCommand',
+    "AdminCommand",
+    "BackendsCommand",
+    "ConfigCommand",
+    "EmailsCommand",
+    "ExternalAuthCommand",
+    "GroupsCommand",
+    "IDPCommand",
+    "LDAPBackendConfigCommand",
+    "PoliciesCommand",
+    "RefreshTokenCommand",
+    "SAMLCommand",
+    "SAMLConfigCommand",
+    "SessionsCommand",
+    "StatusCommand",
+    "TenantsCommand",
+    "TokenCommand",
+    "UsersCommand",
 ]

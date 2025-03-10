@@ -522,6 +522,16 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
     { name = "pytest" },
 ]
 
@@ -534,7 +544,17 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [{ name = "pytest", specifier = ">=8.3.5" }]
 
 [[package]]
 name = "accent-auth-keys"
