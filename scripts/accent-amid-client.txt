@@ -1,0 +1,251 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_amid_client.client import AmidClient as Client
+
+__all__ = [
+    'Client',
+]
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+
+class AmidClient(BaseClient):
+    namespace = 'accent_amid_client.commands'
+
+    def __init__(self, host, port=443, prefix='/api/amid', version='1.0', **kwargs):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import (
+    AmidError,
+    AmidProtocolError,
+    AmidServiceUnavailable,
+    InvalidAmidError,
+)
+
+
+class AmidCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response):
+        if response.status_code == 503:
+            raise AmidServiceUnavailable(response)
+
+        try:
+            raise AmidError(response)
+        except InvalidAmidError:
+            RESTCommand.raise_from_response(response)
+
+    @staticmethod
+    def raise_from_protocol(response):
+        try:
+            raise AmidProtocolError(response)
+        except InvalidAmidError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: commands/__init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+----------------------------------------
+
+File: commands/action.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_amid_client.command import AmidCommand
+
+
+class ActionCommand(AmidCommand):
+    resource = 'action'
+
+    def __call__(self, action, params=None, **kwargs):
+        url = f'{self.base_url}/{action}'
+        r = self.session.post(url, json=params, params=kwargs)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        results = r.json()
+        for result in results:
+            if result.get('Response') == 'Error':
+                self.raise_from_protocol(r)
+
+        return results
+
+----------------------------------------
+
+File: commands/command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_amid_client.command import AmidCommand
+
+
+class CommandCommand(AmidCommand):
+    resource = 'action'
+
+    def __call__(self, command):
+        body = {'command': command}
+        url = f'{self.base_url}/Command'
+        r = self.session.post(url, json=body)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_amid_client.command import AmidCommand
+
+from ..types import JSON
+
+
+class ConfigCommand(AmidCommand):
+    resource = 'config'
+
+    def __call__(self):
+        headers = self._get_headers()
+        url = self.base_url
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+    def patch(self, config_patch: dict[str, JSON]) -> JSON:
+        headers = self._get_headers()
+        r = self.session.patch(self.base_url, headers=headers, json=config_patch)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_amid_client.command import AmidCommand
+
+
+class StatusCommand(AmidCommand):
+    resource = 'status'
+
+    def __call__(self):
+        headers = self._get_headers()
+        url = self.base_url
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+
+File: exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class AmidError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidAmidError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+            if body.get('resource', None):
+                self.resource = body['resource']
+        except KeyError:
+            raise InvalidAmidError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class AmidServiceUnavailable(AmidError):
+    pass
+
+
+class AmidProtocolError(AmidError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidAmidError()
+
+        try:
+            for msg in body:
+                self.message = msg['Message']
+        except (TypeError, KeyError):
+            raise InvalidAmidError()
+
+        super(HTTPError, self).__init__(f'{self.message}', response=response)
+
+
+class InvalidAmidError(Exception):
+    pass
+
+----------------------------------------
+
+File: types.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from __future__ import annotations
+
+from typing import Union
+
+try:
+    from typing import TypeAlias
+except ImportError:
+    from typing_extensions import TypeAlias
+
+JSON: TypeAlias = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+
+----------------------------------------
+
