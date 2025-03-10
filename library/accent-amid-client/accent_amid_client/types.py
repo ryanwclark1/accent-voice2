@@ -1,12 +1,8 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Type definitions for the AMID client."""
 
 from __future__ import annotations
 
-from typing import Union
-
-try:
-    from typing import TypeAlias
-except ImportError:
-    from typing_extensions import TypeAlias
-
-JSON: TypeAlias = Union[str, int, float, bool, None, list['JSON'], dict[str, 'JSON']]
+# Use PEP 604 style union types
+JSON = str | int | float | bool | None | list["JSON"] | dict[str, "JSON"]
