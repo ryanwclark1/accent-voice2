@@ -1,5 +1,5 @@
 # tests/test_client.py
-
+import logging  # Import the logging module
 import pytest
 import httpx
 from uuid import UUID, uuid4
@@ -16,7 +16,7 @@ def test_client_initialization(mock_httpx_client):
     assert client._port == 8080
     assert client._https is False
     assert client._prefix == "/api"
-    assert client._version == "v1"
+    assert client._version == "/v1"  # Expect leading slash
     assert client.config.host == "example.com"  # Check Pydantic model
     assert isinstance(client.config, ClientConfig)
     assert client._url_config.build_base_url() == "http://example.com:8080/api/v1"

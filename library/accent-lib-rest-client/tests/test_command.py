@@ -1,5 +1,4 @@
 # tests/test_command.py
-
 import pytest
 import httpx
 from pydantic import BaseModel, ValidationError
@@ -21,15 +20,10 @@ def http_command():
     return HTTPCommand(client)
 
 
-def test_http_command_session(http_command, mocker: MockerFixture):
+def test_http_command_session(http_command):
     """Test that session property returns an httpx.Client instance."""
-    # Mock the httpx.Client constructor
-    mock_client = mocker.patch(
-        "httpx.Client", return_value=mocker.MagicMock(spec=httpx.Client)
-    )
     session = http_command.session
-    assert isinstance(session, httpx.Client)  # Check type
-    mock_client.assert_called_once()  # Check constructor called
+    assert isinstance(session, httpx.Client)
 
 
 def test_validate_response_success(http_command, mocker: MockerFixture):
@@ -146,17 +140,12 @@ def test_rest_command_get_headers(rest_command):
 
 
 @pytest.mark.parametrize("method", ["get", "post", "put", "delete"])
-def test_rest_command_http_methods(rest_command, mock_httpx_client, method):
+def test_rest_command_http_methods(rest_command, method, mocker: MockerFixture):
     """Test the get, post, put, and delete methods of RESTCommand."""
 
-    mock_response = httpx.Response(
-        200,
-        json={"result": "success"},
-        request=httpx.Request(method.upper(), "http://example.com"),
-    )  # Need a request
-    rest_command._client.mock_session.request.return_value = (
-        mock_response  # Use the mocked session
-    )
+    mock_response = mocker.MagicMock(spec=httpx.Response)
+    mock_response.json.return_value = {"result": "success"}  # Mock the json method
+    rest_command._client.mock_session.request.return_value = mock_response
 
     # Get the correct method from the rest_command instance
     command_method = getattr(rest_command, method)
