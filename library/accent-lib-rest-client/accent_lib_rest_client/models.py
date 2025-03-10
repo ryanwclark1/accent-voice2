@@ -33,8 +33,10 @@ class URLConfig(BaseModel):
         return v.lower()
 
     @staticmethod
-    def _add_leading_slash(v: str) -> str:
+    def _add_leading_slash(v: str | None) -> str:  # Allow None
         """Add a leading slash to a string if it doesn't already have one."""
+        if v is None:
+            return "/"  # Handle None: return just a slash
         return v if v.startswith("/") else f"/{v}"
 
     @field_validator("prefix", "version")
@@ -105,9 +107,7 @@ class ClientConfig(URLConfig):
     @field_validator("port")
     @classmethod
     def validate_port(cls, v: int, info: ValidationInfo) -> int:
-        # Access 'https' via info.data.  Default to https if not provided.
-
-        scheme = info.data.get("scheme", "https")  # Safely get scheme
+        scheme = info.data.get("scheme", "https")
         if scheme == "http" and v == 443:
             return 80
         elif scheme == "https" and v == 80:
