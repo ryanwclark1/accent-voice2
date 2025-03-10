@@ -1,6 +1,10 @@
 # Copyright 2025 Accent Communications
 
+import logging
+
 from .command import RESTCommand
+
+logger = logging.getLogger(__name__)
 
 
 class ExampleCommand(RESTCommand):

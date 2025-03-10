@@ -64,4 +64,4 @@ line-ending = "auto"
 
 [lint.per-file-ignores]
 # Ignore import sorting and Bandit security rules for test files.
-"tests/**" = ["INP001", "S101"]
+"**/tests/**/*.py" = ["INP001", "S101"]

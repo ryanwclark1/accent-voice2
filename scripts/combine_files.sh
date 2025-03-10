@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Define the search directory and output file
-SEARCH_DIR="$PROJECT_DIR/service/accent-ui/accent_ui/"
-OUTPUT_FILE="$PROJECT_DIR/scripts/accent_ui.txt"
+SEARCH_DIR="$PROJECT_DIR/library/accent-lib-rest-client/accent_lib_rest_client/"
+OUTPUT_FILE="$PROJECT_DIR/scripts/accent-lib-rest-client.txt"
 GITIGNORE_FILE="$PROJECT_DIR/scripts/.gitignore"
 
 # Check if the search directory exists

@@ -3,7 +3,7 @@ name = "accent-lib-rest-client"
 version = "0.1.0"
 description = "Library for the Accent REST clients"
 authors = [{ name = "Ryan Clark", email = "ryanwclark@yahoo.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 readme = "README.md"
 dependencies = [
     "httpx>=0.28.1",
@@ -30,12 +30,15 @@ dev = [
 test = [
     "coverage[toml]>=7.6.12",
     "fastapi>=0.115.11",
+    "httpx>=0.28.1",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.25.3",
     "pytest-cov>=6.0.0",
+    "pytest-httpx>=0.35.0",
     "pytest-mock>=3.14.0",
     "pytest-recording>=0.13.2",
     "respx>=0.22.0",
+    "uvicorn>=0.34.0",
 ]
 
 [tool.uv]

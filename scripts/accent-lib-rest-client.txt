@@ -1,0 +1,871 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+from .command import HTTPCommand, RESTCommand
+from .exceptions import (
+    AccentAPIError,
+    AuthenticationError,
+    InvalidArgumentError,
+    ResourceNotFoundError,
+    ServerError,
+)
+from .models import ClientConfig, CommandResponse, JSONResponse, PaginatedResponse
+
+__all__ = [
+    "AccentAPIError",
+    "AuthenticationError",
+    "ClientConfig",
+    "CommandResponse",
+    "HTTPCommand",
+    "InvalidArgumentError",
+    "JSONResponse",
+    "PaginatedResponse",
+    "RESTCommand",
+    "ResourceNotFoundError",
+    "ServerError",
+]
+
+----------------------------------------
+
+File: example_cmd.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+from .command import RESTCommand
+
+
+class ExampleCommand(RESTCommand):
+    """Example REST command implementation."""
+
+    resource = "test"
+
+    def __call__(self) -> bytes:
+        """Call the command as a function.
+
+        Returns:
+            Raw response content
+
+        """
+        return self.test()
+
+    async def __call_async__(self) -> bytes:
+        """Call the command as a function (async version).
+
+        Returns:
+            Raw response content
+
+        """
+        return await self.test_async()
+
+    def test(self) -> bytes:
+        """Execute a test request.
+
+        Returns:
+            Raw response content
+
+        """
+        r = self.sync_client.get(self.base_url)
+        r.raise_for_status()
+        return r.content
+
+    async def test_async(self) -> bytes:
+        """Execute a test request asynchronously.
+
+        Returns:
+            Raw response content
+
+        """
+        r = await self.async_client.get(self.base_url)
+        r.raise_for_status()
+        return r.content
+
+----------------------------------------
+
+File: exceptions.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+from __future__ import annotations
+
+import json
+
+import httpx
+import structlog
+
+logger = structlog.get_logger(__name__)
+
+
+class AccentAPIError(Exception):
+    """Base exception for all API errors."""
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+            status_code: Optional HTTP status code
+
+        """
+        super().__init__(message)
+        self.status_code = status_code
+        self.message = message
+
+
+class InvalidArgumentError(Exception):
+    """Raised when an invalid argument is provided to the client."""
+
+    def __init__(self, argument_name: str) -> None:
+        """Initialize the exception.
+
+        Args:
+            argument_name: Name of the invalid argument
+
+        """
+        super().__init__(f'Invalid value for argument "{argument_name}"')
+        self.argument_name = argument_name
+
+
+class AuthenticationError(AccentAPIError):
+    """Raised when authentication fails."""
+
+    def __init__(self, message: str = "Authentication failed") -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message, status_code=401)
+
+
+class ResourceNotFoundError(AccentAPIError):
+    """Raised when a requested resource is not found."""
+
+    def __init__(self, resource: str) -> None:
+        """Initialize the exception.
+
+        Args:
+            resource: The requested resource name
+
+        """
+        super().__init__(f"Resource not found: {resource}", status_code=404)
+        self.resource = resource
+
+
+class ServerError(AccentAPIError):
+    """Raised when the server encounters an error."""
+
+    def __init__(self, message: str = "Server error occurred") -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message, status_code=500)
+
+
+def handle_http_error(error: httpx.HTTPStatusError) -> None:
+    """Handle HTTP errors by raising appropriate exceptions.
+
+    Args:
+        error: The HTTP error
+
+    Raises:
+        AuthenticationError: For 401 errors
+        ResourceNotFoundError: For 404 errors
+        ServerError: For 5xx errors
+        AccentAPIError: For other errors
+
+    """
+    response = error.response
+    status_code = response.status_code
+
+    try:
+        error_data = response.json()
+        message = error_data.get("message", str(error))
+    except (json.JSONDecodeError, ValueError):
+        message = str(error)
+
+    logger.error("http_error", status_code=status_code, message=message)
+
+    if status_code == 401:
+        raise AuthenticationError(message)
+    if status_code == 404:
+        raise ResourceNotFoundError(message)
+    if 500 <= status_code < 600:
+        raise ServerError(message)
+    raise AccentAPIError(message, status_code=status_code)
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+from __future__ import annotations
+
+import os
+import sys
+from functools import lru_cache
+from typing import (
+    Any,
+    ClassVar,
+    TypeVar,
+)
+
+import httpx
+import structlog
+from stevedore import extension
+
+from accent_lib_rest_client.exceptions import InvalidArgumentError
+from accent_lib_rest_client.models import ClientConfig
+
+# Configure structured logging
+logger = structlog.get_logger(__name__)
+
+T = TypeVar("T")
+
+# Global cache for plugins
+PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
+
+class BaseClient:
+    """Base client for API interactions.
+
+    This class handles connection configuration, session management,
+    and command loading from plugins.
+    """
+
+    namespace: ClassVar[str | None] = None
+    _url_fmt = "{scheme}://{host}{port}{prefix}{version}"
+
+    def __init__(
+        self,
+        host: str,
+        port: int | None = None,
+        version: str = "",
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        https: bool = True,
+        timeout: float = 10.0,
+        verify_certificate: bool | str = True,
+        prefix: str | None = None,
+        user_agent: str = "",
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize a new API client.
+
+        Args:
+            host: Hostname or IP of the server
+            port: Port number for the server
+            version: API version string
+            token: Authentication token
+            tenant_uuid: Tenant identifier
+            https: Whether to use HTTPS
+            timeout: Request timeout in seconds
+            verify_certificate: Whether to verify SSL certificates or path to a CA bundle
+            prefix: URL prefix path
+            user_agent: User agent string for requests
+            max_retries: Maximum number of retries for requests
+            retry_delay: Delay between retries in seconds
+            **kwargs: Additional arguments (will be logged but not used)
+
+        Raises:
+            InvalidArgumentError: If host is empty
+
+        """
+        if not host:
+            raise InvalidArgumentError("host")
+
+        if not user_agent:
+            user_agent = os.path.basename(sys.argv[0])
+
+        self.config = ClientConfig(
+            host=host,
+            port=port,
+            version=version,
+            token=token,
+            tenant_uuid=tenant_uuid,
+            https=https,
+            timeout=timeout,
+            verify_certificate=verify_certificate,
+            prefix=self._build_prefix(prefix),
+            user_agent=user_agent,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+        )
+
+        # Create sync and async clients
+        self._sync_client: httpx.Client | None = None
+        self._async_client: httpx.AsyncClient | None = None
+
+        if kwargs:
+            logger.warning(
+                "unexpected_arguments",
+                class_name=self.__class__.__name__,
+                arguments=list(kwargs.keys()),
+            )
+
+        self._load_plugins()
+
+    def _build_prefix(self, prefix: str | None) -> str:
+        """Build a properly formatted URL prefix.
+
+        Args:
+            prefix: Raw prefix string
+
+        Returns:
+            Formatted prefix with leading slash
+
+        """
+        if not prefix:
+            return ""
+        if not prefix.startswith("/"):
+            prefix = "/" + prefix
+        return prefix
+
+    def _load_plugins(self) -> None:
+        """Load command plugins for this client.
+
+        Raises:
+            ValueError: If namespace is not defined
+
+        """
+        global PLUGINS_CACHE
+
+        if not self.namespace:
+            raise ValueError("You must redefine BaseClient.namespace")
+
+        if self.namespace not in PLUGINS_CACHE:
+            PLUGINS_CACHE[self.namespace] = list(
+                extension.ExtensionManager(self.namespace)
+            )
+
+        plugins = PLUGINS_CACHE[self.namespace]
+        if not plugins:
+            logger.warning("no_commands_found")
+            return
+
+        for ext in plugins:
+            setattr(self, ext.name, ext.plugin(self))
+
+    @property
+    def sync_client(self) -> httpx.Client:
+        """Get or create a synchronous HTTP client.
+
+        Returns:
+            Configured httpx.Client instance
+
+        """
+        if self._sync_client is None:
+            self._sync_client = self._create_client(httpx.Client)
+        return self._sync_client
+
+    @property
+    def async_client(self) -> httpx.AsyncClient:
+        """Get or create an asynchronous HTTP client.
+
+        Returns:
+            Configured httpx.AsyncClient instance
+
+        """
+        if self._async_client is None:
+            self._async_client = self._create_client(httpx.AsyncClient)
+        return self._async_client
+
+    def _create_client(self, client_class: type[T]) -> T:
+        """Create a new HTTP client with the configured settings.
+
+        Args:
+            client_class: The httpx client class to instantiate
+
+        Returns:
+            Configured client instance
+
+        """
+        headers = {"Connection": "close"}
+
+        if self.config.token:
+            headers["X-Auth-Token"] = self.config.token
+
+        if self.config.tenant_uuid:
+            headers["Accent-Tenant"] = self.config.tenant_uuid
+
+        if self.config.user_agent:
+            headers["User-agent"] = self.config.user_agent
+
+        return client_class(
+            timeout=self.config.timeout,
+            verify=self.config.verify_certificate if self.config.https else False,
+            headers=headers,
+        )
+
+    # For backwards compatibility
+    def session(self) -> httpx.Client:
+        """Get a synchronous HTTP client (compatibility method).
+
+        Returns:
+            Configured httpx.Client instance
+
+        """
+        logger.warning("deprecated_method", method="session", replacement="sync_client")
+        return self.sync_client
+
+    def set_tenant(self, tenant_uuid: str) -> None:
+        """Set the tenant UUID for subsequent requests (deprecated).
+
+        Args:
+            tenant_uuid: Tenant identifier
+
+        """
+        logger.warning(
+            "deprecated_method", method="set_tenant", replacement="tenant_uuid"
+        )
+        self.config.tenant_uuid = tenant_uuid
+
+        # Reset clients to recreate with new headers
+        if self._sync_client:
+            self._sync_client.close()
+            self._sync_client = None
+        if self._async_client:
+            import asyncio
+
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(self._close_async_client())
+            else:
+                asyncio.run(self._close_async_client())
+            self._async_client = None
+
+    async def _close_async_client(self) -> None:
+        """Close the async client safely."""
+        if self._async_client:
+            await self._async_client.aclose()
+            self._async_client = None
+
+    def tenant(self) -> str | None:
+        """Get the current tenant UUID (deprecated).
+
+        Returns:
+            Current tenant UUID or None
+
+        """
+        logger.warning("deprecated_method", method="tenant", replacement="tenant_uuid")
+        return self.config.tenant_uuid
+
+    def set_token(self, token: str) -> None:
+        """Set the authentication token for subsequent requests.
+
+        Args:
+            token: Authentication token
+
+        """
+        self.config.token = token
+
+        # Reset clients to recreate with new headers
+        if self._sync_client:
+            self._sync_client.close()
+            self._sync_client = None
+        if self._async_client:
+            import asyncio
+
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(self._close_async_client())
+            else:
+                asyncio.run(self._close_async_client())
+            self._async_client = None
+
+    @lru_cache(maxsize=128)
+    def url(self, *fragments: str) -> str:
+        """Build a URL with the configured base and optional path fragments.
+
+        Args:
+            *fragments: URL path fragments to append
+
+        Returns:
+            Complete URL string
+
+        """
+        base = self._url_fmt.format(
+            scheme="https" if self.config.https else "http",
+            host=self.config.host,
+            port=f":{self.config.port}" if self.config.port else "",
+            prefix=self.config.prefix,
+            version=f"/{self.config.version}" if self.config.version else "",
+        )
+        if fragments:
+            path = "/".join(str(fragment) for fragment in fragments)
+            base = f"{base}/{path}"
+        return base
+
+    def is_server_reachable(self) -> bool:
+        """Check if the server is reachable.
+
+        Returns:
+            True if the server responds, False otherwise
+
+        """
+        try:
+            self.sync_client.head(self.url())
+            return True
+        except httpx.HTTPStatusError:
+            return True
+        except httpx.RequestError as e:
+            logger.debug("server_unreachable", error=str(e))
+            return False
+
+    async def is_server_reachable_async(self) -> bool:
+        """Check if the server is reachable (async version).
+
+        Returns:
+            True if the server responds, False otherwise
+
+        """
+        try:
+            await self.async_client.head(self.url())
+            return True
+        except httpx.HTTPStatusError:
+            return True
+        except httpx.RequestError as e:
+            logger.debug("server_unreachable", error=str(e))
+            return False
+
+    def __del__(self) -> None:
+        """Close HTTP clients when the object is destroyed."""
+        if self._sync_client:
+            self._sync_client.close()
+        # Async client needs to be closed explicitly with await
+
+----------------------------------------
+
+File: command.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+from __future__ import annotations
+
+import time
+from abc import ABCMeta
+from typing import Any, ClassVar
+
+import httpx
+
+from accent_lib_rest_client.client import BaseClient
+from accent_lib_rest_client.exceptions import handle_http_error
+from accent_lib_rest_client.models import CommandResponse, JSONResponse
+
+
+class HTTPCommand:
+    """Base class for HTTP commands.
+
+    This provides basic HTTP functionality common to all commands.
+    """
+
+    def __init__(self, client: BaseClient) -> None:
+        """Initialize the command with a client.
+
+        Args:
+            client: The API client to use for requests
+
+        """
+        self._client = client
+
+    @property
+    def sync_client(self) -> httpx.Client:
+        """Get the synchronous HTTP client.
+
+        Returns:
+            Configured httpx.Client instance
+
+        """
+        return self._client.sync_client
+
+    @property
+    def async_client(self) -> httpx.AsyncClient:
+        """Get the asynchronous HTTP client.
+
+        Returns:
+            Configured httpx.AsyncClient instance
+
+        """
+        return self._client.async_client
+
+    # For backwards compatibility
+    @property
+    def session(self) -> httpx.Client:
+        """Get the synchronous HTTP client (compatibility method).
+
+        Returns:
+            Configured httpx.Client instance
+
+        """
+        return self._client.sync_client
+
+    @staticmethod
+    def raise_from_response(response: httpx.Response) -> None:
+        """Extract error information from a response and raise an exception.
+
+        Args:
+            response: The HTTP response
+
+        Raises:
+            httpx.HTTPStatusError: If the response indicates an error
+
+        """
+        try:
+            response_json = response.json()
+            if isinstance(response_json, dict) and "message" in response_json:
+                response.reason_phrase = response_json["message"]
+        except (ValueError, KeyError, TypeError):
+            pass
+
+        response.raise_for_status()
+
+    def process_response(
+        self, response: httpx.Response, start_time: float | None = None
+    ) -> CommandResponse:
+        """Process an HTTP response into a standard CommandResponse.
+
+        Args:
+            response: The HTTP response
+            start_time: Optional start time for calculating response time
+
+        Returns:
+            Standardized response object
+
+        Raises:
+            AccentAPIError: If the response indicates an error
+
+        """
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            handle_http_error(e)
+
+        response_time = None
+        if start_time:
+            response_time = time.time() - start_time
+
+        return CommandResponse(
+            content=response.content,
+            status_code=response.status_code,
+            headers={k: v for k, v in response.headers.items()},
+            response_time=response_time,
+        )
+
+    def process_json_response(
+        self, response: httpx.Response, start_time: float | None = None
+    ) -> JSONResponse:
+        """Process an HTTP response into a JSON response object.
+
+        Args:
+            response: The HTTP response
+            start_time: Optional start time for calculating response time
+
+        Returns:
+            JSON response object
+
+        Raises:
+            AccentAPIError: If the response indicates an error
+            ValueError: If the response is not valid JSON
+
+        """
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            handle_http_error(e)
+
+        response_time = None
+        if start_time:
+            response_time = time.time() - start_time
+
+        return JSONResponse(
+            data=response.json(),
+            status_code=response.status_code,
+            headers={k: v for k, v in response.headers.items()},
+            response_time=response_time,
+        )
+
+
+class RESTCommand(HTTPCommand):
+    """Base class for REST API commands.
+
+    This extends HTTPCommand with REST-specific functionality.
+    """
+
+    __metaclass__ = ABCMeta
+
+    resource: ClassVar[str]
+    _headers: ClassVar[dict[str, str]] = {"Accept": "application/json"}
+
+    def __init__(self, client: BaseClient) -> None:
+        """Initialize the REST command.
+
+        Args:
+            client: The API client to use for requests
+
+        """
+        super().__init__(client)
+        self.base_url = self._client.url(self.resource)
+        self.timeout = self._client.config.timeout
+
+    def _get_headers(self, **kwargs: Any) -> dict[str, str]:
+        """Get headers for the request, including custom tenant if specified.
+
+        Args:
+            **kwargs: Additional parameters, can include tenant_uuid
+
+        Returns:
+            Headers dictionary
+
+        """
+        headers = dict(self._headers)
+        # The client will use client.tenant_uuid by default
+        tenant_uuid = kwargs.pop("tenant_uuid", None)
+        if tenant_uuid:
+            headers["Accent-Tenant"] = str(tenant_uuid)
+        return headers
+
+----------------------------------------
+
+File: models.py
+Please review for update
+
+# Copyright 2025 Accent Communications
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class ClientConfig(BaseModel):
+    """Configuration model for API clients.
+
+    Attributes:
+        host: Hostname or IP of the server
+        port: Port number for the server
+        version: API version string
+        token: Authentication token
+        tenant_uuid: Tenant identifier
+        https: Whether to use HTTPS
+        timeout: Request timeout in seconds
+        verify_certificate: Whether to verify SSL certificates
+        prefix: URL prefix path
+        user_agent: User agent string for requests
+        max_retries: Maximum number of retries for requests
+        retry_delay: Delay between retries in seconds
+
+    """
+
+    host: str
+    port: int | None = None
+    version: str = ""
+    token: str | None = None
+    tenant_uuid: str | None = None
+    https: bool = True
+    timeout: float = 10.0
+    verify_certificate: bool | str = True
+    prefix: str | None = None
+    user_agent: str = ""
+    max_retries: int = 3
+    retry_delay: float = 1.0
+
+
+class CommandResponse(BaseModel):
+    """Standard response model for API command results.
+
+    Attributes:
+        content: Raw response content
+        status_code: HTTP status code
+        headers: Response headers
+        response_time: Time taken for the request in seconds
+
+    """
+
+    content: bytes | str
+    status_code: int
+    headers: dict[str, str]
+    response_time: float | None = None
+
+
+class JSONResponse(BaseModel):
+    """Model for JSON responses.
+
+    Attributes:
+        data: The parsed JSON data
+        status_code: HTTP status code
+        headers: Response headers
+        response_time: Time taken for the request in seconds
+
+    """
+
+    data: Any
+    status_code: int
+    headers: dict[str, str]
+    response_time: float | None = None
+
+
+class PaginatedResponse(BaseModel):
+    """Model for paginated responses.
+
+    Attributes:
+        items: List of items in the current page
+        total: Total number of items
+        page: Current page number
+        per_page: Number of items per page
+        pages: Total number of pages
+
+    """
+
+    items: list[Any]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
+
+class ErrorDetail(BaseModel):
+    """Model for detailed error information.
+
+    Attributes:
+        code: Error code
+        message: Error message
+        field: Optional field name for validation errors
+        details: Optional additional error details
+
+    """
+
+    code: str
+    message: str
+    field: str | None = None
+    details: dict[str, Any] | None = None
+
+
+class ErrorResponse(BaseModel):
+    """Model for API error responses.
+
+    Attributes:
+        message: Main error message
+        errors: List of detailed errors
+        status_code: HTTP status code
+        timestamp: When the error occurred
+
+    """
+
+    message: str
+    errors: list[ErrorDetail] = Field(default_factory=list)
+    status_code: int
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+----------------------------------------
+

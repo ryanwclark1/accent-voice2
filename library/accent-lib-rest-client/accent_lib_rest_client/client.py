@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from functools import lru_cache
@@ -12,19 +13,19 @@ from typing import (
 )
 
 import httpx
-import structlog
 from stevedore import extension
 
 from accent_lib_rest_client.exceptions import InvalidArgumentError
 from accent_lib_rest_client.models import ClientConfig
 
-# Configure structured logging
-logger = structlog.get_logger(__name__)
+# Configure standard logging
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 # Global cache for plugins
 PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
+
 
 class BaseClient:
     """Base client for API interactions.
@@ -100,9 +101,9 @@ class BaseClient:
 
         if kwargs:
             logger.warning(
-                "unexpected_arguments",
-                class_name=self.__class__.__name__,
-                arguments=list(kwargs.keys()),
+                "%s received unexpected arguments: %s",
+                self.__class__.__name__,
+                list(kwargs.keys()),
             )
 
         self._load_plugins()
@@ -133,7 +134,8 @@ class BaseClient:
         global PLUGINS_CACHE
 
         if not self.namespace:
-            raise ValueError("You must redefine BaseClient.namespace")
+            error_msg = "You must redefine BaseClient.namespace"
+            raise ValueError(error_msg)
 
         if self.namespace not in PLUGINS_CACHE:
             PLUGINS_CACHE[self.namespace] = list(
@@ -142,7 +144,7 @@ class BaseClient:
 
         plugins = PLUGINS_CACHE[self.namespace]
         if not plugins:
-            logger.warning("no_commands_found")
+            logger.warning("No commands found")
             return
 
         for ext in plugins:
@@ -207,7 +209,7 @@ class BaseClient:
             Configured httpx.Client instance
 
         """
-        logger.warning("deprecated_method", method="session", replacement="sync_client")
+        logger.warning("Deprecated method 'session()'. Use 'sync_client' instead.")
         return self.sync_client
 
     def set_tenant(self, tenant_uuid: str) -> None:
@@ -218,7 +220,7 @@ class BaseClient:
 
         """
         logger.warning(
-            "deprecated_method", method="set_tenant", replacement="tenant_uuid"
+            "Deprecated method 'set_tenant()'. Set 'tenant_uuid' directly instead."
         )
         self.config.tenant_uuid = tenant_uuid
 
@@ -248,7 +250,9 @@ class BaseClient:
             Current tenant UUID or None
 
         """
-        logger.warning("deprecated_method", method="tenant", replacement="tenant_uuid")
+        logger.warning(
+            "Deprecated method 'tenant()'. Access 'tenant_uuid' directly instead."
+        )
         return self.config.tenant_uuid
 
     def set_token(self, token: str) -> None:
@@ -309,7 +313,7 @@ class BaseClient:
         except httpx.HTTPStatusError:
             return True
         except httpx.RequestError as e:
-            logger.debug("server_unreachable", error=str(e))
+            logger.debug("Server unreachable: %s", e)
             return False
 
     async def is_server_reachable_async(self) -> bool:
@@ -325,7 +329,7 @@ class BaseClient:
         except httpx.HTTPStatusError:
             return True
         except httpx.RequestError as e:
-            logger.debug("server_unreachable", error=str(e))
+            logger.debug("Server unreachable: %s", e)
             return False
 
     def __del__(self) -> None:

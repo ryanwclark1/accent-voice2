@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 import json
+import logging
+from typing import TYPE_CHECKING
 
-import httpx
-import structlog
+if TYPE_CHECKING:
+    import httpx
 
-logger = structlog.get_logger(__name__)
+# Configure standard logging
+logger = logging.getLogger(__name__)
+
+# HTTP Status Code Constants
+HTTP_UNAUTHORIZED = 401
+HTTP_NOT_FOUND = 404
+HTTP_SERVER_ERROR_MIN = 500
+HTTP_SERVER_ERROR_MAX = 600
 
 
 class AccentAPIError(Exception):
@@ -36,7 +45,8 @@ class InvalidArgumentError(Exception):
             argument_name: Name of the invalid argument
 
         """
-        super().__init__(f'Invalid value for argument "{argument_name}"')
+        error_msg = f'Invalid value for argument "{argument_name}"'
+        super().__init__(error_msg)
         self.argument_name = argument_name
 
 
@@ -50,7 +60,7 @@ class AuthenticationError(AccentAPIError):
             message: Error message
 
         """
-        super().__init__(message, status_code=401)
+        super().__init__(message, status_code=HTTP_UNAUTHORIZED)
 
 
 class ResourceNotFoundError(AccentAPIError):
@@ -63,7 +73,8 @@ class ResourceNotFoundError(AccentAPIError):
             resource: The requested resource name
 
         """
-        super().__init__(f"Resource not found: {resource}", status_code=404)
+        error_msg = f"Resource not found: {resource}"
+        super().__init__(error_msg, status_code=HTTP_NOT_FOUND)
         self.resource = resource
 
 
@@ -77,7 +88,7 @@ class ServerError(AccentAPIError):
             message: Error message
 
         """
-        super().__init__(message, status_code=500)
+        super().__init__(message, status_code=HTTP_SERVER_ERROR_MIN)
 
 
 def handle_http_error(error: httpx.HTTPStatusError) -> None:
@@ -102,12 +113,12 @@ def handle_http_error(error: httpx.HTTPStatusError) -> None:
     except (json.JSONDecodeError, ValueError):
         message = str(error)
 
-    logger.error("http_error", status_code=status_code, message=message)
+    logger.error("HTTP error: %s - %s", status_code, message)
 
-    if status_code == 401:
+    if status_code == HTTP_UNAUTHORIZED:
         raise AuthenticationError(message)
-    if status_code == 404:
+    if status_code == HTTP_NOT_FOUND:
         raise ResourceNotFoundError(message)
-    if 500 <= status_code < 600:
+    if HTTP_SERVER_ERROR_MIN <= status_code < HTTP_SERVER_ERROR_MAX:
         raise ServerError(message)
     raise AccentAPIError(message, status_code=status_code)
