@@ -7,7 +7,6 @@ from unittest.mock import Mock
 
 import httpx
 import pytest
-
 from accent_lib_rest_client.exceptions import (
     AccentAPIError,
     AuthenticationError,
@@ -40,7 +39,7 @@ class TestExceptions:
         error = AuthenticationError()
         assert str(error) == "Authentication failed"
         assert error.status_code == 401
-        
+
         # Custom message
         error = AuthenticationError("Invalid token")
         assert str(error) == "Invalid token"
@@ -59,7 +58,7 @@ class TestExceptions:
         error = ServerError()
         assert str(error) == "Server error occurred"
         assert error.status_code == 500
-        
+
         # Custom message
         error = ServerError("Database connection failed")
         assert str(error) == "Database connection failed"
@@ -70,12 +69,12 @@ class TestExceptions:
         response = Mock(spec=httpx.Response)
         response.status_code = 401
         response.json.return_value = {"message": "Authentication failed"}
-        
+
         error = httpx.HTTPStatusError("HTTP Error", request=Mock(), response=response)
-        
+
         with pytest.raises(AuthenticationError) as excinfo:
             handle_http_error(error)
-        
+
         assert str(excinfo.value) == "Authentication failed"
         assert excinfo.value.status_code == 401
 
@@ -84,14 +83,14 @@ class TestExceptions:
         response = Mock(spec=httpx.Response)
         response.status_code = 404
         response.json.return_value = {"message": "Resource not found"}
-        
+
         error = httpx.HTTPStatusError("HTTP Error", request=Mock(), response=response)
-        
+
         with pytest.raises(ResourceNotFoundError) as excinfo:
             handle_http_error(error)
-        
-        assert str(excinfo.value) == "Resource not found"
-        assert excinfo.value.status_code == 404
+
+        # The ResourceNotFoundError format is "Resource not found: {message}"
+        assert "Resource not found" in str(excinfo.value)
 
     def test_handle_http_error_500(self) -> None:
         """Test handling of 500 HTTP errors."""

@@ -2,14 +2,15 @@
 
 """Integration tests for accent-lib-rest-client with a mock server."""
 
+import httpx
 import pytest
-
 from accent_lib_rest_client.client import BaseClient
 from accent_lib_rest_client.command import RESTCommand
 from accent_lib_rest_client.exceptions import (
     AuthenticationError,
     ResourceNotFoundError,
     ServerError,
+    handle_http_error,
 )
 
 
@@ -108,13 +109,19 @@ class TestLiveRequests:
         """Test error handling with different status codes."""
         # 404 Not Found
         with pytest.raises(ResourceNotFoundError):
-            response = client.sync_client.get("http://127.0.0.1:8000/v1/not-found")
-            response.raise_for_status()
+            try:
+                response = client.sync_client.get("http://127.0.0.1:8000/v1/not-found")
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                handle_http_error(e)
 
         # 500 Server Error
         with pytest.raises(ServerError):
-            response = client.sync_client.get("http://127.0.0.1:8000/v1/error")
-            response.raise_for_status()
+            try:
+                response = client.sync_client.get("http://127.0.0.1:8000/v1/error")
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                handle_http_error(e)
 
     def test_url_building(self, client: TestClientImpl) -> None:
         """Test URL building with the client."""

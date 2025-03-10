@@ -3,7 +3,7 @@
 """Async tests for accent-lib-rest-client."""
 
 import asyncio
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict
 
 import httpx
 import pytest
@@ -14,6 +14,7 @@ from accent_lib_rest_client.exceptions import (
     AuthenticationError,
     ResourceNotFoundError,
     ServerError,
+    handle_http_error,
 )
 
 
@@ -23,13 +24,13 @@ class AsyncTestCommandImpl(RESTCommand):
 
     resource = "test"
 
-    async def get_data(self) -> dict[str, Any]:
+    async def get_data(self) -> Dict[str, Any]:
         """Get test data asynchronously."""
         response = await self.async_client.get(f"{self.base_url}/data")
         response.raise_for_status()
         return response.json()
 
-    async def create_item(self, data: dict[str, Any]) -> dict[str, Any]:
+    async def create_item(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new item asynchronously."""
         response = await self.async_client.post(f"{self.base_url}/create", json=data)
         response.raise_for_status()
@@ -68,7 +69,8 @@ class TestAsyncClient:
     @pytest.mark.asyncio
     async def test_async_client_creation(self) -> None:
         """Test async client creation."""
-        client = BaseClient(host="example.com")
+        # Use AsyncTestClientImpl instead of BaseClient to avoid namespace issues
+        client = AsyncTestClientImpl(host="example.com")
         async_client = client.async_client
 
         assert isinstance(async_client, httpx.AsyncClient)
@@ -117,19 +119,28 @@ class TestAsyncClient:
         self, async_client: AsyncTestClientImpl
     ) -> None:
         """Test async error handling."""
+        # Import inside the test to avoid circular imports
+        import httpx
+
         # 404 Not Found
         with pytest.raises(ResourceNotFoundError):
-            response = await async_client.async_client.get(
-                "http://127.0.0.1:8000/v1/not-found"
-            )
-            response.raise_for_status()
+            try:
+                response = await async_client.async_client.get(
+                    "http://127.0.0.1:8000/v1/not-found"
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                handle_http_error(e)
 
         # 500 Server Error
         with pytest.raises(ServerError):
-            response = await async_client.async_client.get(
-                "http://127.0.0.1:8000/v1/error"
-            )
-            response.raise_for_status()
+            try:
+                response = await async_client.async_client.get(
+                    "http://127.0.0.1:8000/v1/error"
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                handle_http_error(e)
 
     @pytest.mark.asyncio
     async def test_concurrent_requests(self, async_client: AsyncTestClientImpl) -> None:

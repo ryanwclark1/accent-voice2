@@ -334,6 +334,10 @@ class BaseClient:
 
     def __del__(self) -> None:
         """Close HTTP clients when the object is destroyed."""
-        if self._sync_client:
+        if hasattr(self, "_sync_client") and self._sync_client:
             self._sync_client.close()
         # Async client needs to be closed explicitly with await
+        # We can't await in __del__, but we can check if it exists
+        if hasattr(self, "_async_client") and self._async_client:
+        # Can't await in __del__, will rely on garbage collection
+            pass
