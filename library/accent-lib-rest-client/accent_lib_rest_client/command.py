@@ -2,28 +2,15 @@
 
 from __future__ import annotations
 
+import time
 from abc import ABCMeta
 from typing import Any, ClassVar
 
 import httpx
-from pydantic import BaseModel
 
 from accent_lib_rest_client.client import BaseClient
-
-
-class CommandResponse(BaseModel):
-    """Standard response model for API command results.
-
-    Attributes:
-        content: Raw response content
-        status_code: HTTP status code
-        headers: Response headers
-
-    """
-
-    content: bytes | str
-    status_code: int
-    headers: dict[str, str]
+from accent_lib_rest_client.exceptions import handle_http_error
+from accent_lib_rest_client.models import CommandResponse, JSONResponse
 
 
 class HTTPCommand:
@@ -91,6 +78,71 @@ class HTTPCommand:
             pass
 
         response.raise_for_status()
+
+    def process_response(
+        self, response: httpx.Response, start_time: float | None = None
+    ) -> CommandResponse:
+        """Process an HTTP response into a standard CommandResponse.
+
+        Args:
+            response: The HTTP response
+            start_time: Optional start time for calculating response time
+
+        Returns:
+            Standardized response object
+
+        Raises:
+            AccentAPIError: If the response indicates an error
+
+        """
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            handle_http_error(e)
+
+        response_time = None
+        if start_time:
+            response_time = time.time() - start_time
+
+        return CommandResponse(
+            content=response.content,
+            status_code=response.status_code,
+            headers={k: v for k, v in response.headers.items()},
+            response_time=response_time,
+        )
+
+    def process_json_response(
+        self, response: httpx.Response, start_time: float | None = None
+    ) -> JSONResponse:
+        """Process an HTTP response into a JSON response object.
+
+        Args:
+            response: The HTTP response
+            start_time: Optional start time for calculating response time
+
+        Returns:
+            JSON response object
+
+        Raises:
+            AccentAPIError: If the response indicates an error
+            ValueError: If the response is not valid JSON
+
+        """
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            handle_http_error(e)
+
+        response_time = None
+        if start_time:
+            response_time = time.time() - start_time
+
+        return JSONResponse(
+            data=response.json(),
+            status_code=response.status_code,
+            headers={k: v for k, v in response.headers.items()},
+            response_time=response_time,
+        )
 
 
 class RESTCommand(HTTPCommand):

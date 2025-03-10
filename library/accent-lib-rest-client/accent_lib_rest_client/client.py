@@ -5,12 +5,18 @@ from __future__ import annotations
 import os
 import sys
 from functools import lru_cache
-from typing import Any, ClassVar, TypeVar
+from typing import (
+    Any,
+    ClassVar,
+    TypeVar,
+)
 
 import httpx
 import structlog
-from pydantic import BaseModel
 from stevedore import extension
+
+from accent_lib_rest_client.exceptions import InvalidArgumentError
+from accent_lib_rest_client.models import ClientConfig
 
 # Configure structured logging
 logger = structlog.get_logger(__name__)
@@ -19,49 +25,6 @@ T = TypeVar("T")
 
 # Global cache for plugins
 PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
-
-
-class ClientConfig(BaseModel):
-    """Configuration model for API clients.
-
-    Attributes:
-        host: Hostname or IP of the server
-        port: Port number for the server
-        version: API version string
-        token: Authentication token
-        tenant_uuid: Tenant identifier
-        https: Whether to use HTTPS
-        timeout: Request timeout in seconds
-        verify_certificate: Whether to verify SSL certificates
-        prefix: URL prefix path
-        user_agent: User agent string for requests
-
-    """
-
-    host: str
-    port: int | None = None
-    version: str = ""
-    token: str | None = None
-    tenant_uuid: str | None = None
-    https: bool = True
-    timeout: float = 10.0
-    verify_certificate: bool = True
-    prefix: str | None = None
-    user_agent: str = ""
-
-
-class InvalidArgumentError(Exception):
-    """Raised when an invalid argument is provided to the client."""
-
-    def __init__(self, argument_name: str) -> None:
-        """Initialize the exception.
-
-        Args:
-            argument_name: Name of the invalid argument
-
-        """
-        super().__init__(f'Invalid value for argument "{argument_name}"')
-
 
 class BaseClient:
     """Base client for API interactions.
@@ -85,6 +48,8 @@ class BaseClient:
         verify_certificate: bool | str = True,
         prefix: str | None = None,
         user_agent: str = "",
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
         **kwargs: Any,
     ) -> None:
         """Initialize a new API client.
@@ -100,6 +65,8 @@ class BaseClient:
             verify_certificate: Whether to verify SSL certificates or path to a CA bundle
             prefix: URL prefix path
             user_agent: User agent string for requests
+            max_retries: Maximum number of retries for requests
+            retry_delay: Delay between retries in seconds
             **kwargs: Additional arguments (will be logged but not used)
 
         Raises:
@@ -123,6 +90,8 @@ class BaseClient:
             verify_certificate=verify_certificate,
             prefix=self._build_prefix(prefix),
             user_agent=user_agent,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
         )
 
         # Create sync and async clients
