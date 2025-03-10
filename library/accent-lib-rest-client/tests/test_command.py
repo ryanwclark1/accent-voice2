@@ -3,6 +3,7 @@
 import pytest
 import httpx
 from pydantic import BaseModel, ValidationError
+from pytest_mock import MockerFixture
 from accent_lib_rest_client.command import HTTPCommand, RESTCommand
 from accent_lib_rest_client.exceptions import HTTPError, ResponseValidationError
 
@@ -20,7 +21,7 @@ def http_command():
     return HTTPCommand(client)
 
 
-def test_http_command_session(http_command, mocker):
+def test_http_command_session(http_command, mocker: MockerFixture):
     """Test that session property returns an httpx.Client instance."""
     # Mock the httpx.Client constructor
     mock_client = mocker.patch(
@@ -31,7 +32,7 @@ def test_http_command_session(http_command, mocker):
     mock_client.assert_called_once()  # Check constructor called
 
 
-def test_validate_response_success(http_command, mocker):
+def test_validate_response_success(http_command, mocker: MockerFixture):
     """Test successful response validation."""
     mock_response = mocker.MagicMock(spec=httpx.Response)
     mock_response.status_code = 200
@@ -43,7 +44,7 @@ def test_validate_response_success(http_command, mocker):
     mock_response.json.assert_called_once()
 
 
-def test_validate_response_with_model_success(http_command, mocker):
+def test_validate_response_with_model_success(http_command, mocker: MockerFixture):
     """Test response validation with a Pydantic model."""
 
     class TestModel(BaseModel):
@@ -60,7 +61,9 @@ def test_validate_response_with_model_success(http_command, mocker):
     mock_response.json.assert_called_once()
 
 
-def test_validate_response_with_model_validation_error(http_command, mocker):
+def test_validate_response_with_model_validation_error(
+    http_command, mocker: MockerFixture
+):
     """Test response validation with a Pydantic model and validation error."""
 
     class TestModel(BaseModel):
@@ -76,7 +79,7 @@ def test_validate_response_with_model_validation_error(http_command, mocker):
     mock_response.json.assert_called_once()
 
 
-def test_validate_response_http_error(http_command, mocker):
+def test_validate_response_http_error(http_command, mocker: MockerFixture):
     """Test response validation with an HTTP error."""
     mock_response = mocker.MagicMock(spec=httpx.Response)
     mock_response.status_code = 404
@@ -96,18 +99,27 @@ def test_validate_response_http_error(http_command, mocker):
 class MockRESTClient:
     """Mock client for testing RESTCommand, providing url and timeout."""
 
+    def __init__(self, mock_session):
+        self.mock_session = mock_session
+
     def url(self, *fragments):
         return "/".join(fragments)  # Simple URL joining
+
+    @property  # Make session a property
+    def session(self):
+        return self.mock_session
 
     timeout = 10
 
 
 @pytest.fixture
-def rest_command():
+def rest_command(mocker: MockerFixture):
     class TestRESTCommand(RESTCommand):
         resource = "test_resource"  # Must define 'resource'
 
-    client = MockRESTClient()
+    mock_session = mocker.MagicMock(spec=httpx.Client)
+    # Pass the mock session to the MockRESTClient
+    client = MockRESTClient(mock_session=mock_session)
     return TestRESTCommand(client)
 
 
@@ -142,9 +154,11 @@ def test_rest_command_http_methods(rest_command, mock_httpx_client, method):
         json={"result": "success"},
         request=httpx.Request(method.upper(), "http://example.com"),
     )  # Need a request
-    mock_httpx_client.request.return_value = mock_response
+    rest_command._client.mock_session.request.return_value = (
+        mock_response  # Use the mocked session
+    )
 
-    # Get the correct method from the rest_command instance (get, post, put, delete)
+    # Get the correct method from the rest_command instance
     command_method = getattr(rest_command, method)
 
     # Call the method.  Pass json data for post/put, nothing for get/delete
@@ -155,7 +169,7 @@ def test_rest_command_http_methods(rest_command, mock_httpx_client, method):
 
     assert result == {"result": "success"}
 
-    mock_httpx_client.request.assert_called_once_with(
+    rest_command._client.mock_session.request.assert_called_once_with(
         method.upper(),
         "test_resource/path",
         headers={"Accept": "application/json"},

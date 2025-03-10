@@ -1,8 +1,16 @@
+# accent_lib_rest_client/models.py
 from datetime import datetime
 from pathlib import PurePosixPath
 
 import validators
-from pydantic import UUID4, BaseModel, Field, ValidationInfo, field_validator
+from pydantic import (
+    UUID4,
+    BaseModel,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 
 class URLConfig(BaseModel):
@@ -85,16 +93,24 @@ class ClientConfig(URLConfig):
     user_agent: str = Field(default="")
     verify_certificate: bool = True
     version: str = ""
-    tenant_uuid: UUID4 | None = None
 
     model_config = {"frozen": True}
+
+    @model_validator(mode="before")
+    def set_scheme(cls, values):
+        if "https" in values:
+            values["scheme"] = "https" if values["https"] else "http"
+        return values
 
     @field_validator("port")
     @classmethod
     def validate_port(cls, v: int, info: ValidationInfo) -> int:
-        if info.data["scheme"] == "http" and v == 443:
+        # Access 'https' via info.data.  Default to https if not provided.
+
+        scheme = info.data.get("scheme", "https")  # Safely get scheme
+        if scheme == "http" and v == 443:
             return 80
-        elif info.data["scheme"] == "https" and v == 80:
+        elif scheme == "https" and v == 80:
             return 443
         return v
 
