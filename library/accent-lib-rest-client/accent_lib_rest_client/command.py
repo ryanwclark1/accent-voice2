@@ -1,185 +1,133 @@
 # Copyright 2025 Accent Communications
 
-from abc import ABCMeta, abstractmethod
-from typing import Any, ClassVar, TypeVar, cast
-from uuid import UUID
+from __future__ import annotations
+
+from abc import ABCMeta
+from typing import Any, ClassVar
 
 import httpx
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from .client import BaseClient
-from .exceptions import HTTPError, ResponseValidationError
+from accent_lib_rest_client.client import BaseClient
 
-T = TypeVar("T", bound=BaseModel)
-ResponseType = TypeVar("ResponseType")
+
+class CommandResponse(BaseModel):
+    """Standard response model for API command results.
+
+    Attributes:
+        content: Raw response content
+        status_code: HTTP status code
+        headers: Response headers
+
+    """
+
+    content: bytes | str
+    status_code: int
+    headers: dict[str, str]
 
 
 class HTTPCommand:
-    """Base class for HTTP commands."""
+    """Base class for HTTP commands.
+
+    This provides basic HTTP functionality common to all commands.
+    """
 
     def __init__(self, client: BaseClient) -> None:
+        """Initialize the command with a client.
+
+        Args:
+            client: The API client to use for requests
+
+        """
         self._client = client
 
     @property
-    def session(self) -> httpx.Client:
-        return self._client.session()
-
-    def validate_response(
-        self, response: httpx.Response, model: type[T] | None = None
-    ) -> Any:
-        """Validate and parse response data.
-
-        Args:
-            response: HTTP response to validate
-            model: Optional Pydantic model to validate against
+    def sync_client(self) -> httpx.Client:
+        """Get the synchronous HTTP client.
 
         Returns:
-            Validated response data
+            Configured httpx.Client instance
 
-        Raises:
-            HTTPError: For HTTP-level errors
-            ResponseValidationError: For validation errors
         """
-        try:
-            response.raise_for_status()
-            data = response.json()
-
-            if model is not None:
-                try:
-                    return model.model_validate(data)
-                except ValidationError as e:
-                    raise ResponseValidationError(e) from e
-
-            return data
-
-        except httpx.HTTPStatusError as e:
-            raise HTTPError(e.response) from e
-
-
-class RESTCommand(HTTPCommand, metaclass=ABCMeta):
-    """Base class for REST commands with validation."""
-
-    _headers: ClassVar[dict[str, str]] = {"Accept": "application/json"}
+        return self._client.sync_client
 
     @property
-    @abstractmethod
-    def resource(self) -> str:
-        """Resource endpoint for this command."""
-        pass
-
-    def __init__(self, client: BaseClient) -> None:
-        super().__init__(client)
-        self.base_url = self._client.url(self.resource)
-        self.timeout = self._client.timeout
-
-    def _get_headers(
-        self, tenant_uuid: UUID | str | None = None, **kwargs: str
-    ) -> dict[str, str]:
-        """Build headers for the request.
-
-        Args:
-            tenant_uuid: Optional tenant UUID
-            **kwargs: Additional header values
+    def async_client(self) -> httpx.AsyncClient:
+        """Get the asynchronous HTTP client.
 
         Returns:
-            Complete headers dictionary
+            Configured httpx.AsyncClient instance
+
         """
-        headers = dict(self._headers)
+        return self._client.async_client
 
-        if tenant_uuid:
-            headers["Accent-Tenant"] = str(tenant_uuid)
-
-        headers.update(kwargs)
-        return headers
-
-    def get(
-        self, *path_segments: str, response_model: type[T] | None = None, **kwargs: Any
-    ) -> Any:
-        """Perform GET request.
-
-        Args:
-            *path_segments: URL path segments to append
-            response_model: Optional response validation model
-            **kwargs: Additional request parameters (e.g., headers, params)
+    # For backwards compatibility
+    @property
+    def session(self) -> httpx.Client:
+        """Get the synchronous HTTP client (compatibility method).
 
         Returns:
-            Validated response data
+            Configured httpx.Client instance
+
         """
-        url = self._client.url(self.resource, *path_segments)
-        return self.handle_request("GET", url, response_model, **kwargs)
+        return self._client.sync_client
 
-    def post(
-        self, *path_segments: str, response_model: type[T] | None = None, **kwargs: Any
-    ) -> Any:
-        """Perform POST request.
+    @staticmethod
+    def raise_from_response(response: httpx.Response) -> None:
+        """Extract error information from a response and raise an exception.
 
         Args:
-            *path_segments: URL path segments to append
-            response_model: Optional response validation model
-            **kwargs: Additional request parameters (e.g., headers, json, data)
-
-        Returns:
-            Validated response data
-        """
-        url = self._client.url(self.resource, *path_segments)
-        return self.handle_request("POST", url, response_model, **kwargs)
-
-    def put(
-        self, *path_segments: str, response_model: type[T] | None = None, **kwargs: Any
-    ) -> Any:
-        """Perform PUT request.
-
-        Args:
-            *path_segments: URL path segments to append
-            response_model: Optional response validation model
-            **kwargs: Additional request parameters (e.g., headers, data)
-
-        Returns:
-            Validated response data
-        """
-        url = self._client.url(self.resource, *path_segments)
-        return self.handle_request("PUT", url, response_model, **kwargs)
-
-    def delete(
-        self, *path_segments: str, response_model: type[T] | None = None, **kwargs: Any
-    ) -> Any:
-        """Perform DELETE request.
-
-        Args:
-            *path_segments: URL path segments to append
-            response_model: Optional response validation model
-            **kwargs: Additional request parameters (e.g., headers)
-
-        Returns:
-            Validated response data
-        """
-        url = self._client.url(self.resource, *path_segments)
-        return self.handle_request("DELETE", url, response_model, **kwargs)
-
-    def handle_request(
-        self,
-        method: str,
-        url: str,
-        response_model: type[T] | None = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Handle the HTTP request and response validation.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            url: Full URL for the request
-            response_model: Optional Pydantic model for response validation
-            **kwargs:  Additional keyword arguments passed to httpx.request
-
-        Returns:
-            Validated response data, or None if no response body
+            response: The HTTP response
 
         Raises:
-            HTTPError: If the HTTP request fails
-            ResponseValidationError: If response validation fails.
+            httpx.HTTPStatusError: If the response indicates an error
+
         """
-        headers = kwargs.pop("headers", {})  # Extract headers, default to empty dict
-        merged_headers = self._get_headers(**headers)
-        with self.session as client:
-            response = client.request(method, url, headers=merged_headers, **kwargs)
-            return self.validate_response(response, response_model)
+        try:
+            response_json = response.json()
+            if isinstance(response_json, dict) and "message" in response_json:
+                response.reason_phrase = response_json["message"]
+        except (ValueError, KeyError, TypeError):
+            pass
+
+        response.raise_for_status()
+
+
+class RESTCommand(HTTPCommand):
+    """Base class for REST API commands.
+
+    This extends HTTPCommand with REST-specific functionality.
+    """
+
+    __metaclass__ = ABCMeta
+
+    resource: ClassVar[str]
+    _headers: ClassVar[dict[str, str]] = {"Accept": "application/json"}
+
+    def __init__(self, client: BaseClient) -> None:
+        """Initialize the REST command.
+
+        Args:
+            client: The API client to use for requests
+
+        """
+        super().__init__(client)
+        self.base_url = self._client.url(self.resource)
+        self.timeout = self._client.config.timeout
+
+    def _get_headers(self, **kwargs: Any) -> dict[str, str]:
+        """Get headers for the request, including custom tenant if specified.
+
+        Args:
+            **kwargs: Additional parameters, can include tenant_uuid
+
+        Returns:
+            Headers dictionary
+
+        """
+        headers = dict(self._headers)
+        # The client will use client.tenant_uuid by default
+        tenant_uuid = kwargs.pop("tenant_uuid", None)
+        if tenant_uuid:
+            headers["Accent-Tenant"] = str(tenant_uuid)
+        return headers

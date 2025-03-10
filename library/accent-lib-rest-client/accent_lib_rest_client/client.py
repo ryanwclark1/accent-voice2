@@ -1,159 +1,366 @@
-# Copyright 2024 Accent Communications
+# Copyright 2025 Accent Communications
 
-import logging
+from __future__ import annotations
+
 import os
 import sys
-from typing import Any, TypeVar
-from uuid import UUID
+from functools import lru_cache
+from typing import Any, ClassVar, TypeVar
 
 import httpx
+import structlog
+from pydantic import BaseModel
 from stevedore import extension
 
-from .models import (
-    ClientConfig,
-    RequestParameters,
-    TenantConfig,
-    TokenConfig,
-    URLConfig,
-)
+# Configure structured logging
+logger = structlog.get_logger(__name__)
 
-logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
-T = TypeVar("T", bound="BaseClient")
-
-global PLUGINS_CACHE
+# Global cache for plugins
 PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
 
 
-class BaseClient:
-    """Base REST client with modern features."""
+class ClientConfig(BaseModel):
+    """Configuration model for API clients.
 
-    namespace: str | None = None
+    Attributes:
+        host: Hostname or IP of the server
+        port: Port number for the server
+        version: API version string
+        token: Authentication token
+        tenant_uuid: Tenant identifier
+        https: Whether to use HTTPS
+        timeout: Request timeout in seconds
+        verify_certificate: Whether to verify SSL certificates
+        prefix: URL prefix path
+        user_agent: User agent string for requests
+
+    """
+
+    host: str
+    port: int | None = None
+    version: str = ""
+    token: str | None = None
+    tenant_uuid: str | None = None
+    https: bool = True
+    timeout: float = 10.0
+    verify_certificate: bool = True
+    prefix: str | None = None
+    user_agent: str = ""
+
+
+class InvalidArgumentError(Exception):
+    """Raised when an invalid argument is provided to the client."""
+
+    def __init__(self, argument_name: str) -> None:
+        """Initialize the exception.
+
+        Args:
+            argument_name: Name of the invalid argument
+
+        """
+        super().__init__(f'Invalid value for argument "{argument_name}"')
+
+
+class BaseClient:
+    """Base client for API interactions.
+
+    This class handles connection configuration, session management,
+    and command loading from plugins.
+    """
+
+    namespace: ClassVar[str | None] = None
+    _url_fmt = "{scheme}://{host}{port}{prefix}{version}"
 
     def __init__(
         self,
         host: str,
-        https: bool = True,
-        port: int = 443,
-        prefix: str | None = None,
-        tenant_uuid: UUID | str | None = None,
-        timeout: int = 10,
-        token: str | None = None,
-        user_agent: str = "",
-        verify_certificate: bool = True,
+        port: int | None = None,
         version: str = "",
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        https: bool = True,
+        timeout: float = 10.0,
+        verify_certificate: bool | str = True,
+        prefix: str | None = None,
+        user_agent: str = "",
         **kwargs: Any,
     ) -> None:
-        """Initialize the REST client with validation."""
-        # Convert string UUID to UUID object if necessary
-        if isinstance(tenant_uuid, str):
-            tenant_uuid = UUID(tenant_uuid)
+        """Initialize a new API client.
 
-        # Create and validate configuration
+        Args:
+            host: Hostname or IP of the server
+            port: Port number for the server
+            version: API version string
+            token: Authentication token
+            tenant_uuid: Tenant identifier
+            https: Whether to use HTTPS
+            timeout: Request timeout in seconds
+            verify_certificate: Whether to verify SSL certificates or path to a CA bundle
+            prefix: URL prefix path
+            user_agent: User agent string for requests
+            **kwargs: Additional arguments (will be logged but not used)
+
+        Raises:
+            InvalidArgumentError: If host is empty
+
+        """
+        if not host:
+            raise InvalidArgumentError("host")
+
+        if not user_agent:
+            user_agent = os.path.basename(sys.argv[0])
+
         self.config = ClientConfig(
             host=host,
-            https=https,
             port=port,
-            prefix=prefix,
-            tenant_uuid=tenant_uuid,
-            timeout=timeout,
-            token=token,
-            user_agent=user_agent or os.path.basename(sys.argv[0]),
-            verify_certificate=verify_certificate,
             version=version,
+            token=token,
+            tenant_uuid=tenant_uuid,
+            https=https,
+            timeout=timeout,
+            verify_certificate=verify_certificate,
+            prefix=self._build_prefix(prefix),
+            user_agent=user_agent,
         )
 
-        # Initialize URL configuration
-        self._url_config = URLConfig(
-            scheme="https" if self.config.https else "http",
-            host=self.config.host,
-            port=self.config.port,
-            prefix=self.config.prefix,
-            version=self.config.version,
-        )
-
-        # Initialize tenant and token configurations
-        self._tenant_config = TenantConfig(tenant_uuid=tenant_uuid)
-        self._token_config = TokenConfig(token=token) if token else None
-
-        # Set internal state from validated config
-        for key, value in self.config.model_dump().items():
-            setattr(self, f"_{key}", value)
+        # Create sync and async clients
+        self._sync_client: httpx.Client | None = None
+        self._async_client: httpx.AsyncClient | None = None
 
         if kwargs:
-            logger.debug(
-                "%s received unexpected arguments: %s",
-                self.__class__.__name__,
-                list(kwargs.keys()),
+            logger.warning(
+                "unexpected_arguments",
+                class_name=self.__class__.__name__,
+                arguments=list(kwargs.keys()),
             )
 
         self._load_plugins()
 
-    @property
-    def tenant_uuid(self) -> UUID | None:
-        """Get the current tenant UUID."""
-        return self._tenant_config.tenant_uuid if self._tenant_config else None
-
-    @tenant_uuid.setter
-    def tenant_uuid(self, value: UUID | str | None) -> None:
-        """Set the tenant UUID for subsequent requests."""
-        if isinstance(value, str):
-            value = UUID(value)
-
-        if self._tenant_config is None:
-            self._tenant_config = TenantConfig(tenant_uuid=value)
-        else:
-            self._tenant_config.tenant_uuid = value
-
-    def set_token(self, token: str) -> None:
-        """Set the authentication token for subsequent requests."""
-        self._token_config = TokenConfig(token=token)
-        self._token = token
-
-    def session(self, parameters: RequestParameters | None = None) -> httpx.Client:
-        """Create an HTTP client session with the current configuration.
+    def _build_prefix(self, prefix: str | None) -> str:
+        """Build a properly formatted URL prefix.
 
         Args:
-            parameters (RequestParameters, optional): Additional request parameters. Defaults to None.
+            prefix: Raw prefix string
 
         Returns:
-            httpx.Client: Configured HTTPX client instance.
+            Formatted prefix with leading slash
+
+        """
+        if not prefix:
+            return ""
+        if not prefix.startswith("/"):
+            prefix = "/" + prefix
+        return prefix
+
+    def _load_plugins(self) -> None:
+        """Load command plugins for this client.
+
+        Raises:
+            ValueError: If namespace is not defined
+
+        """
+        global PLUGINS_CACHE
+
+        if not self.namespace:
+            raise ValueError("You must redefine BaseClient.namespace")
+
+        if self.namespace not in PLUGINS_CACHE:
+            PLUGINS_CACHE[self.namespace] = list(
+                extension.ExtensionManager(self.namespace)
+            )
+
+        plugins = PLUGINS_CACHE[self.namespace]
+        if not plugins:
+            logger.warning("no_commands_found")
+            return
+
+        for ext in plugins:
+            setattr(self, ext.name, ext.plugin(self))
+
+    @property
+    def sync_client(self) -> httpx.Client:
+        """Get or create a synchronous HTTP client.
+
+        Returns:
+            Configured httpx.Client instance
+
+        """
+        if self._sync_client is None:
+            self._sync_client = self._create_client(httpx.Client)
+        return self._sync_client
+
+    @property
+    def async_client(self) -> httpx.AsyncClient:
+        """Get or create an asynchronous HTTP client.
+
+        Returns:
+            Configured httpx.AsyncClient instance
+
+        """
+        if self._async_client is None:
+            self._async_client = self._create_client(httpx.AsyncClient)
+        return self._async_client
+
+    def _create_client(self, client_class: type[T]) -> T:
+        """Create a new HTTP client with the configured settings.
+
+        Args:
+            client_class: The httpx client class to instantiate
+
+        Returns:
+            Configured client instance
+
         """
         headers = {"Connection": "close"}
 
-        if self._token_config and self._token_config.token:
-            headers["X-Auth-Token"] = self._token_config.token
+        if self.config.token:
+            headers["X-Auth-Token"] = self.config.token
 
-        if self._tenant_config and self._tenant_config.tenant_uuid:
-            headers["Accent-Tenant"] = str(self._tenant_config.tenant_uuid)
+        if self.config.tenant_uuid:
+            headers["Accent-Tenant"] = self.config.tenant_uuid
 
-        if self._user_agent:
-            headers["User-agent"] = self._user_agent
+        if self.config.user_agent:
+            headers["User-agent"] = self.config.user_agent
 
-        verify = self._verify_certificate if self._https else False
-        # if not verify:  # No longer needed - HTTPX handles this directly
-        #     disable_warnings()
-
-        return httpx.Client(
-            timeout=self._timeout, headers=headers, verify=verify, follow_redirects=True
+        return client_class(
+            timeout=self.config.timeout,
+            verify=self.config.verify_certificate if self.config.https else False,
+            headers=headers,
         )
 
+    # For backwards compatibility
+    def session(self) -> httpx.Client:
+        """Get a synchronous HTTP client (compatibility method).
+
+        Returns:
+            Configured httpx.Client instance
+
+        """
+        logger.warning("deprecated_method", method="session", replacement="sync_client")
+        return self.sync_client
+
+    def set_tenant(self, tenant_uuid: str) -> None:
+        """Set the tenant UUID for subsequent requests (deprecated).
+
+        Args:
+            tenant_uuid: Tenant identifier
+
+        """
+        logger.warning(
+            "deprecated_method", method="set_tenant", replacement="tenant_uuid"
+        )
+        self.config.tenant_uuid = tenant_uuid
+
+        # Reset clients to recreate with new headers
+        if self._sync_client:
+            self._sync_client.close()
+            self._sync_client = None
+        if self._async_client:
+            import asyncio
+
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(self._close_async_client())
+            else:
+                asyncio.run(self._close_async_client())
+            self._async_client = None
+
+    async def _close_async_client(self) -> None:
+        """Close the async client safely."""
+        if self._async_client:
+            await self._async_client.aclose()
+            self._async_client = None
+
+    def tenant(self) -> str | None:
+        """Get the current tenant UUID (deprecated).
+
+        Returns:
+            Current tenant UUID or None
+
+        """
+        logger.warning("deprecated_method", method="tenant", replacement="tenant_uuid")
+        return self.config.tenant_uuid
+
+    def set_token(self, token: str) -> None:
+        """Set the authentication token for subsequent requests.
+
+        Args:
+            token: Authentication token
+
+        """
+        self.config.token = token
+
+        # Reset clients to recreate with new headers
+        if self._sync_client:
+            self._sync_client.close()
+            self._sync_client = None
+        if self._async_client:
+            import asyncio
+
+            if asyncio.get_event_loop().is_running():
+                asyncio.create_task(self._close_async_client())
+            else:
+                asyncio.run(self._close_async_client())
+            self._async_client = None
+
+    @lru_cache(maxsize=128)
     def url(self, *fragments: str) -> str:
-        """Build a complete URL for the API endpoint."""
-        return self._url_config.build_url(*fragments)
+        """Build a URL with the configured base and optional path fragments.
+
+        Args:
+            *fragments: URL path fragments to append
+
+        Returns:
+            Complete URL string
+
+        """
+        base = self._url_fmt.format(
+            scheme="https" if self.config.https else "http",
+            host=self.config.host,
+            port=f":{self.config.port}" if self.config.port else "",
+            prefix=self.config.prefix,
+            version=f"/{self.config.version}" if self.config.version else "",
+        )
+        if fragments:
+            path = "/".join(str(fragment) for fragment in fragments)
+            base = f"{base}/{path}"
+        return base
 
     def is_server_reachable(self) -> bool:
-        """Check if the server is reachable."""
+        """Check if the server is reachable.
+
+        Returns:
+            True if the server responds, False otherwise
+
+        """
         try:
-            with self.session() as client:
-                response = client.head(self.url())  # Use response
-                response.raise_for_status()  # Raise for status
+            self.sync_client.head(self.url())
             return True
         except httpx.HTTPStatusError:
-            return True  # Server is reachable
+            return True
         except httpx.RequestError as e:
-            logger.debug("Server unreachable: %s", e)
+            logger.debug("server_unreachable", error=str(e))
             return False
 
-    def _load_plugins(self):
-        """Placeholder to demonstrate intended method"""
+    async def is_server_reachable_async(self) -> bool:
+        """Check if the server is reachable (async version).
+
+        Returns:
+            True if the server responds, False otherwise
+
+        """
+        try:
+            await self.async_client.head(self.url())
+            return True
+        except httpx.HTTPStatusError:
+            return True
+        except httpx.RequestError as e:
+            logger.debug("server_unreachable", error=str(e))
+            return False
+
+    def __del__(self) -> None:
+        """Close HTTP clients when the object is destroyed."""
+        if self._sync_client:
+            self._sync_client.close()
+        # Async client needs to be closed explicitly with await

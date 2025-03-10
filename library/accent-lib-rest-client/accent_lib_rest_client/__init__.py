@@ -1,6 +1,5 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from .command import HTTPCommand, RESTCommand
+from .command import CommandResponse, HTTPCommand, RESTCommand
 
-
-__all__ = ['HTTPCommand', 'RESTCommand']
+__all__ = ["CommandResponse", "HTTPCommand", "RESTCommand"]

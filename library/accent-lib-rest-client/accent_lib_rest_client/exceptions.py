@@ -1,43 +1,113 @@
+# Copyright 2025 Accent Communications
+
+from __future__ import annotations
+
+import json
+
 import httpx
-from pydantic import ValidationError
+import structlog
 
-from .models import ErrorResponse
-
-
-class ClientError(Exception):
-    """Base exception for client errors."""
-
-    pass
+logger = structlog.get_logger(__name__)
 
 
-class InvalidArgumentError(ClientError):
-    """Raised when an argument is invalid."""
+class AccentAPIError(Exception):
+    """Base exception for all API errors."""
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+            status_code: Optional HTTP status code
+
+        """
+        super().__init__(message)
+        self.status_code = status_code
+        self.message = message
+
+
+class InvalidArgumentError(Exception):
+    """Raised when an invalid argument is provided to the client."""
 
     def __init__(self, argument_name: str) -> None:
+        """Initialize the exception.
+
+        Args:
+            argument_name: Name of the invalid argument
+
+        """
         super().__init__(f'Invalid value for argument "{argument_name}"')
+        self.argument_name = argument_name
 
 
-class ResponseValidationError(ClientError):
-    """Raised when response validation fails."""
+class AuthenticationError(AccentAPIError):
+    """Raised when authentication fails."""
 
-    def __init__(self, validation_error: ValidationError) -> None:
-        self.validation_error = validation_error
-        super().__init__(str(validation_error))
+    def __init__(self, message: str = "Authentication failed") -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message, status_code=401)
 
 
-class HTTPError(ClientError):
-    """Enhanced HTTP error with structured error data."""
+class ResourceNotFoundError(AccentAPIError):
+    """Raised when a requested resource is not found."""
 
-    def __init__(self, response: httpx.Response) -> None:
-        try:
-            error_data = ErrorResponse.model_validate(response.json())
-            message = (
-                f"{error_data.message}: {error_data.details}"
-                if error_data.details
-                else error_data.message
-            )
-        except (ValueError, ValidationError):
-            message = f"HTTP {response.status_code}: {response.text}"
+    def __init__(self, resource: str) -> None:
+        """Initialize the exception.
 
-        super().__init__(message)
-        self.response = response
+        Args:
+            resource: The requested resource name
+
+        """
+        super().__init__(f"Resource not found: {resource}", status_code=404)
+        self.resource = resource
+
+
+class ServerError(AccentAPIError):
+    """Raised when the server encounters an error."""
+
+    def __init__(self, message: str = "Server error occurred") -> None:
+        """Initialize the exception.
+
+        Args:
+            message: Error message
+
+        """
+        super().__init__(message, status_code=500)
+
+
+def handle_http_error(error: httpx.HTTPStatusError) -> None:
+    """Handle HTTP errors by raising appropriate exceptions.
+
+    Args:
+        error: The HTTP error
+
+    Raises:
+        AuthenticationError: For 401 errors
+        ResourceNotFoundError: For 404 errors
+        ServerError: For 5xx errors
+        AccentAPIError: For other errors
+
+    """
+    response = error.response
+    status_code = response.status_code
+
+    try:
+        error_data = response.json()
+        message = error_data.get("message", str(error))
+    except (json.JSONDecodeError, ValueError):
+        message = str(error)
+
+    logger.error("http_error", status_code=status_code, message=message)
+
+    if status_code == 401:
+        raise AuthenticationError(message)
+    if status_code == 404:
+        raise ResourceNotFoundError(message)
+    if 500 <= status_code < 600:
+        raise ServerError(message)
+    raise AccentAPIError(message, status_code=status_code)
