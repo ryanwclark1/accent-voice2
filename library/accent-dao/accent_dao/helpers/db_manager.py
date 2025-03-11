@@ -6,10 +6,11 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager, contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, String, create_engine
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
@@ -20,10 +21,11 @@ from sqlalchemy.orm import (
     scoped_session,
     sessionmaker,
 )
-from sqlalchemy.types import String, TypeDecorator
+from sqlalchemy.types import TypeDecorator
 
-if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable
+# Type variables for generic functions
+T = TypeVar("T")
+R = TypeVar("R")
 
 # Default configurations
 DEFAULT_DB_URI = (
@@ -35,14 +37,13 @@ DEFAULT_POOL_SIZE = 16
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# For regular sync operations
-SyncSession = scoped_session(sessionmaker())
-# For async operations
-async_session_factory = None
+# Engine instances
+sync_engine: Engine | None = None
+async_engine: AsyncEngine | None = None
 
-# Type variables for generic functions
-T = TypeVar("T")
-R = TypeVar("R")
+# Session factories
+SyncSession = scoped_session(sessionmaker())
+async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
 class Base(DeclarativeBase):
@@ -53,6 +54,9 @@ class Base(DeclarativeBase):
 
     def __repr__(self) -> str:
         """Represent the model instance with its primary key values.
+
+        Args:
+            None
 
         Returns:
             str: String representation of the model instance.
@@ -73,7 +77,7 @@ class Base(DeclarativeBase):
             exclude: Optional list of fields to exclude.
 
         Returns:
-            Dictionary representation of the model.
+            dict[str, Any]: Dictionary representation of the model.
 
         """
         exclude = exclude or []
@@ -107,7 +111,7 @@ class IntAsString(TypeDecorator):
             dialect: SQLAlchemy dialect.
 
         Returns:
-            The processed value.
+            str | None: The processed value.
 
         """
         if value is not None:
@@ -129,7 +133,7 @@ class UUIDAsString(TypeDecorator):
             dialect: SQLAlchemy dialect.
 
         Returns:
-            The processed value.
+            str | None: The processed value.
 
         """
         if value is not None:
@@ -137,14 +141,14 @@ class UUIDAsString(TypeDecorator):
         return value
 
 
-def daosession(func: Callable[..., R]) -> Callable[..., R]:
+def daosession(func: callable[..., R]) -> callable[..., R]:
     """Decorator that passes a session to the decorated function.
 
     Args:
         func: The function to decorate.
 
     Returns:
-        The decorated function.
+        callable: The decorated function.
 
     """
 
@@ -170,11 +174,20 @@ async def init_async_db(
         pool_size: Connection pool size.
 
     """
-    global async_session_factory
-    engine = create_async_engine(
-        db_uri, pool_size=pool_size, pool_pre_ping=True, echo=False
+    global async_engine, async_session_factory
+
+    if async_engine:
+        await async_engine.dispose()
+
+    async_engine = create_async_engine(
+        db_uri, pool_size=pool_size, pool_pre_ping=True, echo=False, future=True
     )
-    async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async_session_factory = async_sessionmaker(
+        async_engine, expire_on_commit=False, class_=AsyncSession
+    )
+
+    logger.info(f"Initialized async database connection to {db_uri}")
 
 
 def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) -> None:
@@ -185,9 +198,19 @@ def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) ->
         pool_size: Connection pool size.
 
     """
-    engine = create_engine(db_uri, pool_size=pool_size, pool_pre_ping=True)
-    SyncSession.configure(bind=engine)
-    Base.metadata.bind = engine
+    global sync_engine
+
+    if sync_engine:
+        sync_engine.dispose()
+
+    sync_engine = create_engine(
+        db_uri, pool_size=pool_size, pool_pre_ping=True, future=True
+    )
+
+    SyncSession.configure(bind=sync_engine)
+    Base.metadata.bind = sync_engine
+
+    logger.info(f"Initialized sync database connection to {db_uri}")
 
 
 def init_db_from_config(config: dict[str, Any] | None = None) -> None:
@@ -208,13 +231,14 @@ def init_db_from_config(config: dict[str, Any] | None = None) -> None:
 
     init_db(url, pool_size=pool_size)
     # Note: async_db init should be handled separately with await
+    logger.info("Initialized database connections from config")
 
 
 def default_config() -> dict[str, Any]:
     """Load default configuration.
 
     Returns:
-        Configuration dictionary.
+        dict[str, Any]: Configuration dictionary.
 
     """
     from accent.config_helper import ConfigParser, ErrorHandler
@@ -232,7 +256,7 @@ def get_session() -> Session:
     """Get a session for synchronous operations.
 
     Yields:
-        Database session.
+        Session: Database session.
 
     """
     session = SyncSession()
@@ -243,11 +267,11 @@ def get_session() -> Session:
 
 
 @asynccontextmanager
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncSession:
     """Get a session for asynchronous operations.
 
     Yields:
-        Async database session.
+        AsyncSession: Async database session.
 
     """
     if async_session_factory is None:
@@ -262,14 +286,14 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
         await session.close()
 
 
-def async_daosession(func: Callable[..., R]) -> Callable[..., R]:
+def async_daosession(func: callable[..., R]) -> callable[..., R]:
     """Decorator for async DAO operations.
 
     Args:
         func: Function to decorate.
 
     Returns:
-        Decorated function with session automatically provided.
+        callable: Decorated function with session automatically provided.
 
     """
 
