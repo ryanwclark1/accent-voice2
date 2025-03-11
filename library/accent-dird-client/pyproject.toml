@@ -5,8 +5,9 @@ description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.9"
 dependencies = [
+  "httpx>=0.28.1",
+  "pydantic>=2.10.6",
   "stevedore>=5.4.1",
-  "requests>=2.25.1",
   "accent-lib-rest-client",
 ]
 

@@ -6,7 +6,8 @@ authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.12"
 readme = "README.md"
 dependencies = [
-    "requests>=2.25.1",
+    "httpx>=0.28.1",
+    "pydantic>=2.10.6",
     "stevedore>=5.4.1",
     "typing-extensions>=4.4.0.0",
     "accent-lib-rest-client",
@@ -43,7 +44,19 @@ dev = [
     "tox>=4.24.2",
 ]
 
-test = ["pytest>=8.3.5"]
+test = [
+    "coverage[toml]>=7.6.12",
+    "fastapi>=0.115.11",
+    "httpx>=0.28.1",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.25.3",
+    "pytest-cov>=6.0.0",
+    "pytest-httpx>=0.35.0",
+    "pytest-mock>=3.14.0",
+    "pytest-recording>=0.13.2",
+    "respx>=0.22.0",
+    "uvicorn>=0.34.0",
+]
 
 [tool.uv]
 default-groups = ["dev", "test"]

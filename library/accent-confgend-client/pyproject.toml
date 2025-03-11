@@ -3,8 +3,12 @@ name = "accent-confgend-client"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
-dependencies = ["Twisted>=21.2.0"]
+requires-python = ">=3.12"
+dependencies = [
+  "httpx>=0.28.1",
+  "pydantic>=2.10.6",
+  "asyncio>=3.4.3",
+]
 
 [project.scripts]
 accent-confgen = "accent_confgend_client.main:main"
@@ -12,7 +16,32 @@ accent-confgen = "accent_confgend_client.main:main"
 [project.entry-points]
 
 [dependency-groups]
-dev = ["pytest>=8.3.5"]
+dev = [
+  "bandit>=1.8.3",
+  "deptry>=0.23.0",
+  "mypy>=1.15.0",
+  "pytest>=8.3.5",
+  "pytest-cov>=6.0.0",
+  "refurb>=2.0.0",
+  "ruff>=0.9.10",
+  "tox>=4.24.2",
+]
+test = [
+  "coverage[toml]>=7.6.12",
+  "fastapi>=0.115.11",
+  "httpx>=0.28.1",
+  "pytest>=8.3.5",
+  "pytest-asyncio>=0.25.3",
+  "pytest-cov>=6.0.0",
+  "pytest-httpx>=0.35.0",
+  "pytest-mock>=3.14.0",
+  "pytest-recording>=0.13.2",
+  "respx>=0.22.0",
+  "uvicorn>=0.34.0",
+]
+
+[tool.uv]
+default-groups = ["dev", "test"]
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_confgend_client"]
