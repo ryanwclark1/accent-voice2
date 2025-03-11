@@ -1,9 +1,14 @@
-# Copyright 2023 Accent Communications
+# helpers/cel_exceptions.py
+# Copyright 2025 Accent Communications
 
 
 class CELException(Exception):
-    pass
+    """Base exception for CEL-related errors."""
+
+    pass  # noqa: PIE790
 
 
 class MissingCELEventException(CELException):
-    pass
+    """Exception raised when a required CEL event is missing."""
+
+    pass  # noqa: PIE790
