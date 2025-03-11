@@ -3,25 +3,24 @@
 
 """Utility functions for the Accent Configuration Generator client."""
 
+import configparser
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
 
-import configparser
 from accent_confgend_client.models import ConfgendConfig
 
 logger = logging.getLogger(__name__)
 
 
 def load_config_from_file(config_file: str) -> ConfgendConfig:
-    """
-    Load configuration from a file.
+    """Load configuration from a file.
 
     Args:
         config_file: Path to the configuration file.
 
     Returns:
         ConfgendConfig object.
+
     """
     config_dict = {}
 
