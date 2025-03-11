@@ -1,5 +1,11 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from accent_setupd_client.client import SetupdClient as Client
+"""Accent Setup Daemon client library.
 
-__all__ = [Client]
+This package provides a client for interacting with the Accent Setup Daemon API,
+with both synchronous and asynchronous interfaces.
+"""
+
+from accent_setupd_client.client import SetupdClient
+
+__all__ = ["SetupdClient"]
