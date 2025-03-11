@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
-import os
 import sys
 from functools import lru_cache
+from pathlib import Path
 from typing import (
     Any,
     ClassVar,
@@ -20,8 +20,8 @@ from accent_lib_rest_client.models import ClientConfig
 
 # Configure standard logging
 logger = logging.getLogger(__name__)
-
-T = TypeVar("T")
+# T = TypeVar("T")
+T = TypeVar("T", httpx.Client, httpx.AsyncClient)
 
 # Global cache for plugins
 PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}
@@ -78,7 +78,7 @@ class BaseClient:
             raise InvalidArgumentError("host")
 
         if not user_agent:
-            user_agent = os.path.basename(sys.argv[0])
+            user_agent = Path(sys.argv[0]).name
 
         self.config = ClientConfig(
             host=host,
@@ -339,5 +339,5 @@ class BaseClient:
         # Async client needs to be closed explicitly with await
         # We can't await in __del__, but we can check if it exists
         if hasattr(self, "_async_client") and self._async_client:
-        # Can't await in __del__, will rely on garbage collection
+            # Can't await in __del__, will rely on garbage collection
             pass
