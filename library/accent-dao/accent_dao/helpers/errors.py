@@ -1,9 +1,36 @@
-# Copyright 2023 Accent Communications
+# helpers/errors.py
+# Copyright 2025 Accent Communications
 
-from accent_dao.helpers.exception import InputError, NotFoundError, ResourceError
+import logging
+from typing import Any, TypeVar
+
+from accent_dao.helpers.exception import (
+    InputError,
+    NotFoundError,
+    ResourceError,
+    ServiceError,
+)
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=ServiceError)
 
 
-def format_error(category, error, metadata=None):
+def format_error(
+    category: str, error: str, metadata: dict[str, Any] | None = None
+) -> str:
+    """Format an error message with category, error, and metadata.
+
+    Args:
+        category: The error category.
+        error: The error message.
+        metadata: Additional metadata to include in the error message.
+
+    Returns:
+        str: Formatted error message.
+
+    """
     metadata = metadata or {}
     template = "{category} - {error} {metadata}"
     message = template.format(
@@ -12,53 +39,136 @@ def format_error(category, error, metadata=None):
     return message.strip()
 
 
-def _format_metadata(metadata):
+def _format_metadata(metadata: dict[str, Any]) -> str:
+    """Format metadata dictionary into a string.
+
+    Args:
+        metadata: Dictionary of metadata to format.
+
+    Returns:
+        str: Formatted metadata string.
+
+    """
     if len(metadata) == 0:
-        return ''
+        return ""
     return f"({str(metadata).strip('{}')})"
 
 
-def _format_list(elements):
-    return ', '.join(elements)
+def _format_list(elements: list[str]) -> str:
+    """Join a list of elements with commas.
+
+    Args:
+        elements: List of elements to join.
+
+    Returns:
+        str: Comma-separated string of elements.
+
+    """
+    return ", ".join(elements)
 
 
 class FormattedError:
-    def __init__(self, exception, error_template):
-        self.exception = exception
-        self.error_template = error_template
+    """Factory class for creating formatted error exceptions.
 
-    def __call__(self, *args, **metadata):
+    Attributes:
+        exception: The exception class to instantiate.
+        error_template: Template string for formatting the error message.
+
+    """
+
+    def __init__(self, exception: type[T], error_template: str) -> None:
+        """Initialize the FormattedError.
+
+        Args:
+            exception: The exception class to instantiate.
+            error_template: Template string for formatting the error message.
+
+        """
+        self.exception: type[T] = exception
+        self.error_template: str = error_template
+
+    def __call__(self, *args: Any, **metadata: Any) -> T:
+        """Create and return a formatted exception.
+
+        Args:
+            *args: Arguments to format into the error template.
+            **metadata: Additional metadata for the error.
+
+        Returns:
+            The instantiated exception with formatted message.
+
+        """
         message = self._format_message(args, metadata)
         error = self.exception(message, metadata)
         return error
 
-    def _format_message(self, args, metadata):
+    def _format_message(self, args: tuple[Any, ...], metadata: dict[str, Any]) -> str:
+        """Format the error message using the template and arguments.
+
+        Args:
+            args: Arguments to format into the error template.
+            metadata: Additional metadata for the error.
+
+        Returns:
+            str: Formatted error message.
+
+        """
         error = self.error_template.format(*args)
         message = format_error(self.exception.prefix, error, metadata)
         return message
 
 
-def missing(*params):
+def missing(*params: str) -> InputError:
+    """Create an error for missing parameters.
+
+    Args:
+        *params: Names of the missing parameters.
+
+    Returns:
+        InputError: Formatted error for missing parameters.
+
+    """
     template = "missing parameters: {params}"
     message = template.format(params=_format_list(params))
-    error = format_error('Input Error', message)
+    error = format_error("Input Error", message)
     return InputError(error)
 
 
-def unknown(*params):
+def unknown(*params: str) -> InputError:
+    """Create an error for unknown parameters.
+
+    Args:
+        *params: Names of the unknown parameters.
+
+    Returns:
+        InputError: Formatted error for unknown parameters.
+
+    """
     template = "unknown parameters: {params}"
     message = template.format(params=_format_list(params))
-    error = format_error('Input Error', message)
+    error = format_error("Input Error", message)
     return InputError(error)
 
 
-def invalid_choice(field, choices, **metadata):
+def invalid_choice(field: str, choices: list[str], **metadata: Any) -> InputError:
+    """Create an error for an invalid choice.
+
+    Args:
+        field: The field name that has an invalid choice.
+        choices: List of valid choices.
+        **metadata: Additional metadata for the error.
+
+    Returns:
+        InputError: Formatted error for invalid choice.
+
+    """
     template = "'{field}' must be one of ({choices})"
     message = template.format(field=field, choices=_format_list(choices))
-    error = format_error('Input Error', message, metadata)
+    error = format_error("Input Error", message, metadata)
     return InputError(error)
 
 
+# Predefined formatted errors
 minimum_length = FormattedError(
     InputError, "field '{}': must have a minimum length of {}"
 )
