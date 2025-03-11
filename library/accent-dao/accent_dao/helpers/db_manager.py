@@ -4,10 +4,9 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from contextlib import asynccontextmanager, contextmanager
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from accent.config_helper import ConfigParser, ErrorHandler
 from sqlalchemy import create_engine
@@ -23,6 +22,9 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 from sqlalchemy.types import String, TypeDecorator
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 DEFAULT_DB_URI = (
     "postgresql://asterisk:password123@localhost/asterisk?application_name=accent-dao"
