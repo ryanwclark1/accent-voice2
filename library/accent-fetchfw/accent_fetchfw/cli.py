@@ -22,25 +22,26 @@ logger = logging.getLogger(__name__)
 
 class UserCancellationError(PackageError):
     """Raised when the user cancels an operation.
-    
+
     This is not an error per se, but is raised when the user
     doesn't want to proceed with an operation.
     """
 
 
-
 class CliInstallerController(DefaultInstallerController):
     """Command-line interface for package installation."""
 
-    def preprocess_raw_pkgs(self, raw_installable_pkgs: list[InstallablePackage]) -> list[InstallablePackage]:
+    def preprocess_raw_pkgs(
+        self, raw_installable_pkgs: list[InstallablePackage]
+    ) -> list[InstallablePackage]:
         """Process the raw packages to be installed.
-        
+
         Args:
             raw_installable_pkgs: List of packages to process
-            
+
         Returns:
             Processed list of packages
-            
+
         Raises:
             UserCancellationError: If the user cancels the installation
 
@@ -56,10 +57,10 @@ class CliInstallerController(DefaultInstallerController):
 
     def pre_download(self, remote_files: list) -> None:
         """Perform pre-download actions.
-        
+
         Args:
             remote_files: List of files to be downloaded
-            
+
         Raises:
             UserCancellationError: If the user cancels the installation
 
@@ -73,7 +74,7 @@ class CliInstallerController(DefaultInstallerController):
 
     def download_file(self, remote_file) -> None:
         """Download a file with progress indication.
-        
+
         Args:
             remote_file: The file to download
 
@@ -94,7 +95,7 @@ class CliInstallerController(DefaultInstallerController):
 
     async def download_file_async(self, remote_file) -> None:
         """Download a file asynchronously with progress indication.
-        
+
         Args:
             remote_file: The file to download
 
@@ -115,7 +116,7 @@ class CliInstallerController(DefaultInstallerController):
 
     def pre_install_pkg(self, installable_pkg: InstallablePackage) -> None:
         """Perform pre-installation actions for a package.
-        
+
         Args:
             installable_pkg: The package to install
 
@@ -128,10 +129,10 @@ class CliUninstallerController(DefaultUninstallerController):
 
     def pre_uninstall(self, installed_pkgs: list[InstalledPackage]) -> None:
         """Perform pre-uninstallation actions.
-        
+
         Args:
             installed_pkgs: The packages to uninstall
-            
+
         Raises:
             UserCancellationError: If the user cancels the uninstallation
 
@@ -146,7 +147,7 @@ class CliUninstallerController(DefaultUninstallerController):
 
     def pre_uninstall_pkg(self, installed_pkg: InstalledPackage) -> None:
         """Perform pre-uninstallation actions for a package.
-        
+
         Args:
             installed_pkg: The package to uninstall
 
@@ -159,7 +160,7 @@ class CliUpgraderController(DefaultUpgraderController):
 
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the upgrader controller.
-        
+
         Args:
             *args: Positional arguments for the parent class
             **kwargs: Keyword arguments for the parent class

@@ -22,7 +22,6 @@ from accent_agentd_client.models import (
 # Configure logging
 logger = logging.getLogger(__name__)
 
-
 class AgentsCommand(RESTCommand):
     """Command for managing agents."""
 
@@ -30,7 +29,7 @@ class AgentsCommand(RESTCommand):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the agents command.
-        
+
         Args:
             *args: Positional arguments passed to RESTCommand
             **kwargs: Keyword arguments passed to RESTCommand
@@ -46,12 +45,12 @@ class AgentsCommand(RESTCommand):
         self, agent_id: str, queue_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Add an agent to a queue.
-        
+
         Args:
             agent_id: Agent identifier
             queue_id: Queue identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -70,12 +69,12 @@ class AgentsCommand(RESTCommand):
         self, agent_id: str, queue_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Add an agent to a queue asynchronously.
-        
+
         Args:
             agent_id: Agent identifier
             queue_id: Queue identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -94,12 +93,12 @@ class AgentsCommand(RESTCommand):
         self, agent_id: str, queue_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Remove an agent from a queue.
-        
+
         Args:
             agent_id: Agent identifier
             queue_id: Queue identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -118,12 +117,12 @@ class AgentsCommand(RESTCommand):
         self, agent_id: str, queue_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Remove an agent from a queue asynchronously.
-        
+
         Args:
             agent_id: Agent identifier
             queue_id: Queue identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -147,13 +146,13 @@ class AgentsCommand(RESTCommand):
         tenant_uuid: str | None = None
     ) -> None:
         """Log in an agent.
-        
+
         Args:
             agent_id: Agent identifier
             extension: Extension number
             context: Context
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -179,13 +178,13 @@ class AgentsCommand(RESTCommand):
         tenant_uuid: str | None = None
     ) -> None:
         """Log in an agent asynchronously.
-        
+
         Args:
             agent_id: Agent identifier
             extension: Extension number
             context: Context
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -211,13 +210,13 @@ class AgentsCommand(RESTCommand):
         tenant_uuid: str | None = None
     ) -> None:
         """Log in an agent by number.
-        
+
         Args:
             agent_number: Agent number
             extension: Extension number
             context: Context
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -243,13 +242,13 @@ class AgentsCommand(RESTCommand):
         tenant_uuid: str | None = None
     ) -> None:
         """Log in an agent by number asynchronously.
-        
+
         Args:
             agent_number: Agent number
             extension: Extension number
             context: Context
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -271,11 +270,11 @@ class AgentsCommand(RESTCommand):
         self, line_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Log in a user agent.
-        
+
         Args:
             line_id: Line identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -295,11 +294,11 @@ class AgentsCommand(RESTCommand):
         self, line_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Log in a user agent asynchronously.
-        
+
         Args:
             line_id: Line identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -320,11 +319,11 @@ class AgentsCommand(RESTCommand):
         self, agent_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Log off an agent.
-        
+
         Args:
             agent_id: Agent identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -343,11 +342,11 @@ class AgentsCommand(RESTCommand):
         self, agent_id: str, tenant_uuid: str | None = None
     ) -> None:
         """Log off an agent asynchronously.
-        
+
         Args:
             agent_id: Agent identifier
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -366,11 +365,11 @@ class AgentsCommand(RESTCommand):
         self, agent_number: str, tenant_uuid: str | None = None
     ) -> None:
         """Log off an agent by number.
-        
+
         Args:
             agent_number: Agent number
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -389,11 +388,11 @@ class AgentsCommand(RESTCommand):
         self, agent_number: str, tenant_uuid: str | None = None
     ) -> None:
         """Log off an agent by number asynchronously.
-        
+
         Args:
             agent_number: Agent number
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -410,10 +409,10 @@ class AgentsCommand(RESTCommand):
 
     def logoff_user_agent(self, tenant_uuid: str | None = None) -> None:
         """Log off a user agent.
-        
+
         Args:
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -429,10 +428,10 @@ class AgentsCommand(RESTCommand):
 
     async def logoff_user_agent_async(self, tenant_uuid: str | None = None) -> None:
         """Log off a user agent asynchronously.
-        
+
         Args:
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -450,11 +449,11 @@ class AgentsCommand(RESTCommand):
         self, tenant_uuid: str | None = None, recurse: bool = False
     ) -> None:
         """Log off all agents.
-        
+
         Args:
             tenant_uuid: Tenant UUID (optional)
             recurse: Whether to recursively log off agents in subtenants
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -473,11 +472,11 @@ class AgentsCommand(RESTCommand):
         self, tenant_uuid: str | None = None, recurse: bool = False
     ) -> None:
         """Log off all agents asynchronously.
-        
+
         Args:
             tenant_uuid: Tenant UUID (optional)
             recurse: Whether to recursively log off agents in subtenants
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -499,12 +498,12 @@ class AgentsCommand(RESTCommand):
         timeout: float | None = None
     ) -> None:
         """Relog all agents.
-        
+
         Args:
             tenant_uuid: Tenant UUID (optional)
             recurse: Whether to recursively relog agents in subtenants
             timeout: Request timeout in seconds (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -527,12 +526,12 @@ class AgentsCommand(RESTCommand):
         timeout: float | None = None
     ) -> None:
         """Relog all agents asynchronously.
-        
+
         Args:
             tenant_uuid: Tenant UUID (optional)
             recurse: Whether to recursively relog agents in subtenants
             timeout: Request timeout in seconds (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -553,11 +552,11 @@ class AgentsCommand(RESTCommand):
         self, agent_number: str, tenant_uuid: str | None = None
     ) -> None:
         """Pause an agent by number.
-        
+
         Args:
             agent_number: Agent number
             tenant_uuid: Tenant UUID (optional)
-            
+
         Raises:
             AgentdClientError: If the operation fails
 
@@ -911,7 +910,6 @@ class AgentsCommand(RESTCommand):
 
         resp = await self.async_client.send(req)
         return await self._resp_processor.status_all_async(resp)
-
 
 class _RequestFactory:
     """Factory for creating HTTP requests."""
