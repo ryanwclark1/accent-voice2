@@ -1,12 +1,23 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Main client implementation for the Directory Service API."""
+
+from typing import Any, TypeVar
 
 from accent_lib_rest_client.client import BaseClient
 
 import accent_dird_client.commands
 
+T = TypeVar("T")
+
 
 class DirdClient(BaseClient):
-    namespace = 'accent_dird_client.commands'
+    """Directory service client.
+
+    Provides access to all directory service commands.
+    """
+
+    namespace = "accent_dird_client.commands"
 
     backends: accent_dird_client.commands.backends.BackendsCommand
     conference_source: accent_dird_client.commands.conference_source.Command
@@ -19,7 +30,9 @@ class DirdClient(BaseClient):
     ldap_source: accent_dird_client.commands.ldap_source.Command
     personal: accent_dird_client.commands.personal.PersonalCommand
     phonebook: accent_dird_client.commands.phonebook.PhonebookCommand
-    phonebook_deprecated: accent_dird_client.commands.phonebook_deprecated.DeprecatedPhonebookCommand
+    phonebook_deprecated: (
+        accent_dird_client.commands.phonebook_deprecated.DeprecatedPhonebookCommand
+    )
     accent_source: accent_dird_client.commands.accent_source.Command
     personal_source: accent_dird_client.commands.personal_source.Command
     phonebook_source: accent_dird_client.commands.phonebook_source.Command
@@ -27,5 +40,22 @@ class DirdClient(BaseClient):
     sources: accent_dird_client.commands.sources.SourcesCommand
     status: accent_dird_client.commands.status.StatusCommand
 
-    def __init__(self, host, port=443, prefix='/api/dird', version='0.1', **kwargs):
+    def __init__(
+        self,
+        host: str,
+        port: int = 443,
+        prefix: str = "/api/dird",
+        version: str = "0.1",
+        **kwargs: Any,
+    ) -> None:
+        """Initialize a new Directory client.
+
+        Args:
+            host: Hostname or IP of the server
+            port: Port number for the server
+            prefix: URL prefix path
+            version: API version string
+            **kwargs: Additional arguments for the base client
+
+        """
         super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)

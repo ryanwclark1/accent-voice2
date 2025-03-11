@@ -1,10 +1,28 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from accent_lib_rest_client import RESTCommand
+"""Base command helpers for directory service operations."""
+
+
+
+from accent_lib_rest_client.command import RESTCommand
 
 
 class DirdRESTCommand(RESTCommand):
-    def build_headers(self, tenant_uuid=None, token=None):
+    """Base REST command for directory service operations."""
+
+    def build_headers(
+        self, tenant_uuid: str | None = None, token: str | None = None
+    ) -> dict[str, str]:
+        """Build request headers with optional tenant and token.
+
+        Args:
+            tenant_uuid: Optional tenant UUID
+            token: Optional authentication token
+
+        Returns:
+            Headers dictionary
+
+        """
         headers = self._get_headers(tenant_uuid=tenant_uuid)
         return self._build_headers(headers, token)
 
@@ -12,7 +30,19 @@ class DirdRESTCommand(RESTCommand):
     build_rw_headers = build_headers
     build_ro_headers = build_headers
 
-    def _build_headers(self, headers, token):
+    def _build_headers(
+        self, headers: dict[str, str], token: str | None
+    ) -> dict[str, str]:
+        """Add token to headers if provided.
+
+        Args:
+            headers: Base headers
+            token: Authentication token
+
+        Returns:
+            Updated headers dictionary
+
+        """
         if token:
-            headers['X-Auth-Token'] = token
+            headers["X-Auth-Token"] = token
         return headers

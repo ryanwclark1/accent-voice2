@@ -1,7 +1,11 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""CSV source command implementation."""
 
 from accent_dird_client.commands.helpers.base_source_command import SourceCommand
 
 
 class Command(SourceCommand):
-    resource = 'backends/csv/sources'
+    """Command for CSV source operations."""
+
+    resource = "backends/csv/sources"

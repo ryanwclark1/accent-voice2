@@ -1,177 +1,743 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Deprecated phonebook command implementation."""
+
+from typing import Any
+
+from accent_lib_rest_client.models import JSONResponse
 
 from accent_dird_client.commands.helpers.base_command import DirdRESTCommand
 
 
 class DeprecatedPhonebookCommand(DirdRESTCommand):
-    resource = 'tenants'
+    """Deprecated command for phonebook operations."""
 
-    def create(
-        self, token=None, tenant=None, phonebook_body=None, tenant_uuid=None, **kwargs
-    ):
+    resource = "tenants"
+
+    async def create_async(
+        self,
+        tenant: str,
+        phonebook_body: dict[str, Any],
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Create a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_body: Phonebook configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Created phonebook details
+
+        """
         url = self._phonebook_all_url(tenant)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.post(url, json=phonebook_body, params=kwargs, headers=headers)
-        if r.status_code != 201:
-            self.raise_from_response(r)
+        response = await self.async_client.post(
+            url, json=phonebook_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 201:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
-        return r.json()
+    def create(
+        self,
+        tenant: str | None = None,
+        phonebook_body: dict[str, Any] | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Create a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_body: Phonebook configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Created phonebook details
+
+        """
+        url = self._phonebook_all_url(tenant)
+        headers = self.build_headers(tenant_uuid, token)
+        response = self.sync_client.post(
+            url, json=phonebook_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 201:
+            self.raise_from_response(response)
+        return response.json()
+
+    async def create_contact_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        contact_body: dict[str, Any],
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Create a contact in a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_body: Contact configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Created contact details
+
+        """
+        url = self._contact_all_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        response = await self.async_client.post(
+            url, json=contact_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 201:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
     def create_contact(
         self,
-        token=None,
-        tenant=None,
-        phonebook_id=None,
-        contact_body=None,
-        tenant_uuid=None,
-        **kwargs,
-    ):
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        contact_body: dict[str, Any] | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Create a contact in a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_body: Contact configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Created contact details
+
+        """
         url = self._contact_all_url(tenant, phonebook_id)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.post(url, json=contact_body, params=kwargs, headers=headers)
-        if r.status_code != 201:
-            self.raise_from_response(r)
+        response = self.sync_client.post(
+            url, json=contact_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 201:
+            self.raise_from_response(response)
+        return response.json()
 
-        return r.json()
+    async def list_async(
+        self,
+        tenant: str,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """List phonebooks asynchronously (deprecated).
 
-    def list(self, token=None, tenant=None, tenant_uuid=None, **kwargs):
+        Args:
+            tenant: Tenant identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of phonebooks
+
+        """
         url = self._phonebook_all_url(tenant)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.get(url, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        response = await self.async_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
-        return r.json()
+    def list(
+        self,
+        tenant: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """List phonebooks (deprecated).
 
-    def list_contacts(
-        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
-    ):
+        Args:
+            tenant: Tenant identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of phonebooks
+
+        """
+        url = self._phonebook_all_url(tenant)
+        headers = self.build_headers(tenant_uuid, token)
+        response = self.sync_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
+
+    async def list_contacts_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """List contacts in a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of contacts
+
+        """
         url = self._contact_all_url(tenant, phonebook_id)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.get(url, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        response = await self.async_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
-        return r.json()
+    def list_contacts(
+        self,
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """List contacts in a phonebook (deprecated).
 
-    def delete(
-        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
-    ):
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            List of contacts
+
+        """
+        url = self._contact_all_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        response = self.sync_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
+
+    async def delete_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        """
         url = self._phonebook_one_url(tenant, phonebook_id)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.delete(url, params=kwargs, headers=headers)
-        if r.status_code != 204:
-            self.raise_from_response(r)
+        response = await self.async_client.delete(url, params=kwargs, headers=headers)
+        if response.status_code != 204:
+            self.raise_from_response(response)
+
+    def delete(
+        self,
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        """
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        response = self.sync_client.delete(url, params=kwargs, headers=headers)
+        if response.status_code != 204:
+            self.raise_from_response(response)
+
+    async def edit_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        phonebook_body: dict[str, Any],
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Edit a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            phonebook_body: Updated phonebook configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Updated phonebook details
+
+        """
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        response = await self.async_client.put(
+            url, json=phonebook_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
     def edit(
         self,
-        token=None,
-        tenant=None,
-        phonebook_id=None,
-        phonebook_body=None,
-        tenant_uuid=None,
-        **kwargs,
-    ):
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        phonebook_body: dict[str, Any] | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Edit a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            phonebook_body: Updated phonebook configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Updated phonebook details
+
+        """
         url = self._phonebook_one_url(tenant, phonebook_id)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.put(url, json=phonebook_body, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        response = self.sync_client.put(
+            url, json=phonebook_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
 
-        return r.json()
+    async def get_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Get a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Phonebook details
+
+        """
+        url = self._phonebook_one_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        response = await self.async_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
     def get(
-        self, token=None, tenant=None, phonebook_id=None, tenant_uuid=None, **kwargs
-    ):
+        self,
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Get a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Phonebook details
+
+        """
         url = self._phonebook_one_url(tenant, phonebook_id)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.get(url, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        response = self.sync_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
 
-        return r.json()
+    async def get_contact_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        contact_uuid: str,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Get a contact from a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Contact details
+
+        """
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        response = await self.async_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
     def get_contact(
         self,
-        token=None,
-        tenant=None,
-        phonebook_id=None,
-        contact_uuid=None,
-        tenant_uuid=None,
-        **kwargs,
-    ):
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        contact_uuid: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Get a contact from a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Contact details
+
+        """
         url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.get(url, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        response = self.sync_client.get(url, params=kwargs, headers=headers)
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
 
-        return r.json()
+    async def edit_contact_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        contact_uuid: str,
+        contact_body: dict[str, Any],
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Edit a contact in a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+            contact_body: Updated contact configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Updated contact details
+
+        """
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        response = await self.async_client.put(
+            url, json=contact_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
     def edit_contact(
         self,
-        token=None,
-        tenant=None,
-        phonebook_id=None,
-        contact_uuid=None,
-        contact_body=None,
-        tenant_uuid=None,
-        **kwargs,
-    ):
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        contact_uuid: str | None = None,
+        contact_body: dict[str, Any] | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Edit a contact in a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+            contact_body: Updated contact configuration
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Updated contact details
+
+        """
         url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.put(url, json=contact_body, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        response = self.sync_client.put(
+            url, json=contact_body, params=kwargs, headers=headers
+        )
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
 
-        return r.json()
+    async def delete_contact_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        contact_uuid: str,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete a contact from a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        """
+        url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
+        headers = self.build_headers(tenant_uuid, token)
+        response = await self.async_client.delete(url, params=kwargs, headers=headers)
+        if response.status_code != 204:
+            self.raise_from_response(response)
 
     def delete_contact(
         self,
-        token=None,
-        tenant=None,
-        phonebook_id=None,
-        contact_uuid=None,
-        tenant_uuid=None,
-        **kwargs,
-    ):
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        contact_uuid: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Delete a contact from a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        """
         url = self._contact_one_url(tenant, phonebook_id, contact_uuid)
         headers = self.build_headers(tenant_uuid, token)
-        r = self.session.delete(url, params=kwargs, headers=headers)
-        if r.status_code != 204:
-            self.raise_from_response(r)
+        response = self.sync_client.delete(url, params=kwargs, headers=headers)
+        if response.status_code != 204:
+            self.raise_from_response(response)
+
+    async def import_csv_async(
+        self,
+        tenant: str,
+        phonebook_id: str,
+        csv_text: str,
+        encoding: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> JSONResponse:
+        """Import contacts from CSV to a phonebook asynchronously (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            csv_text: CSV content
+            encoding: Optional character encoding
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Import results
+
+        """
+        url = self._contact_import_url(tenant, phonebook_id)
+        headers = self.build_headers(tenant_uuid, token)
+        content_type = f"text/csv; charset={encoding}" if encoding else "text/csv"
+        headers["Content-Type"] = content_type
+
+        response = await self.async_client.post(
+            url, content=csv_text, params=kwargs, headers=headers
+        )
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return self.process_json_response(response)
 
     def import_csv(
         self,
-        tenant=None,
-        phonebook_id=None,
-        csv_text=None,
-        encoding=None,
-        token=None,
-        tenant_uuid=None,
-        **kwargs,
-    ):
+        tenant: str | None = None,
+        phonebook_id: str | None = None,
+        csv_text: str | None = None,
+        encoding: str | None = None,
+        token: str | None = None,
+        tenant_uuid: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Import contacts from CSV to a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            csv_text: CSV content
+            encoding: Optional character encoding
+            token: Optional authentication token
+            tenant_uuid: Optional tenant UUID
+            **kwargs: Additional query parameters
+
+        Returns:
+            Import results
+
+        """
         url = self._contact_import_url(tenant, phonebook_id)
         headers = self.build_headers(tenant_uuid, token)
-        content_type = f'text/csv; charset={encoding}' if encoding else 'text/csv'
-        headers['Content-Type'] = content_type
-        r = self.session.post(url, data=csv_text, params=kwargs, headers=headers)
-        if r.status_code != 200:
-            self.raise_from_response(r)
+        content_type = f"text/csv; charset={encoding}" if encoding else "text/csv"
+        headers["Content-Type"] = content_type
 
-        return r.json()
+        response = self.sync_client.post(
+            url, data=csv_text, params=kwargs, headers=headers
+        )
+        if response.status_code != 200:
+            self.raise_from_response(response)
+        return response.json()
 
-    def _contact_all_url(self, tenant, phonebook_id):
-        return f'{self._phonebook_one_url(tenant, phonebook_id)}/{"contacts"}'
+    def _contact_all_url(
+        self, tenant: str | None, phonebook_id: str | None
+    ) -> str:
+        """Build URL for all contacts in a phonebook (deprecated).
 
-    def _contact_one_url(self, tenant, phonebook_id, contact_uuid):
-        return f'{self._contact_all_url(tenant, phonebook_id)}/{contact_uuid}'
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
 
-    def _contact_import_url(self, tenant, phonebook_id):
-        return f'{self._contact_all_url(tenant, phonebook_id)}/import'
+        Returns:
+            URL string
 
-    def _phonebook_all_url(self, tenant):
-        return f'{self.base_url}/{tenant}/phonebooks'
+        """
+        return f"{self._phonebook_one_url(tenant, phonebook_id)}/{'contacts'}"
 
-    def _phonebook_one_url(self, tenant, phonebook_id):
-        return f'{self._phonebook_all_url(tenant)}/{phonebook_id}'
+    def _contact_one_url(
+        self,
+        tenant: str | None,
+        phonebook_id: str | None,
+        contact_uuid: str | None,
+    ) -> str:
+        """Build URL for a specific contact in a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+            contact_uuid: Contact UUID
+
+        Returns:
+            URL string
+
+        """
+        return f"{self._contact_all_url(tenant, phonebook_id)}/{contact_uuid}"
+
+    def _contact_import_url(
+        self, tenant: str | None, phonebook_id: str | None
+    ) -> str:
+        """Build URL for importing contacts to a phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+
+        Returns:
+            URL string
+
+        """
+        return f"{self._contact_all_url(tenant, phonebook_id)}/import"
+
+    def _phonebook_all_url(self, tenant: str | None) -> str:
+        """Build URL for all phonebooks (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+
+        Returns:
+            URL string
+
+        """
+        return f"{self.base_url}/{tenant}/phonebooks"
+
+    def _phonebook_one_url(self, tenant: str | None, phonebook_id: str | None) -> str:
+        """Build URL for a specific phonebook (deprecated).
+
+        Args:
+            tenant: Tenant identifier
+            phonebook_id: Phonebook identifier
+
+        Returns:
+            URL string
+
+        """
+        return f"{self._phonebook_all_url(tenant)}/{phonebook_id}"
