@@ -20,8 +20,9 @@ from accent_lib_rest_client.models import ClientConfig
 
 # Configure standard logging
 logger = logging.getLogger(__name__)
-# T = TypeVar("T")
-T = TypeVar("T", httpx.Client, httpx.AsyncClient)
+
+T = TypeVar("T")
+
 
 # Global cache for plugins
 PLUGINS_CACHE: dict[str, list[extension.Extension]] = {}

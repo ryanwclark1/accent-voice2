@@ -29,7 +29,7 @@ class HTTPCommand:
     This provides basic HTTP functionality common to all commands.
     """
 
-    def __init__(self, client: "BaseClient") -> None:
+    def __init__(self, client: BaseClient) -> None:
         """Initialize the command with a client.
 
         Args:
@@ -176,7 +176,7 @@ class RESTCommand(HTTPCommand):
     resource: ClassVar[str]
     _headers: ClassVar[dict[str, str]] = {"Accept": "application/json"}
 
-    def __init__(self, client: "BaseClient") -> None:
+    def __init__(self, client: BaseClient) -> None:
         """Initialize the REST command.
 
         Args:
