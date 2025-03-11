@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     TypeVar,
@@ -16,6 +16,9 @@ from sqlalchemy.orm import Session
 
 from accent_dao.helpers import errors
 from accent_dao.resources.utils.search import SearchResult
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 T = TypeVar("T")
 ModelType = TypeVar("ModelType")
