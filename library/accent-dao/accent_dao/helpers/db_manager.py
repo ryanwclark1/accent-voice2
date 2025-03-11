@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager, contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from accent.config_helper import ConfigParser, ErrorHandler
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -24,14 +23,16 @@ from sqlalchemy.orm import (
 from sqlalchemy.types import String, TypeDecorator
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import AsyncGenerator, Callable
 
+# Default configurations
 DEFAULT_DB_URI = (
     "postgresql://asterisk:password123@localhost/asterisk?application_name=accent-dao"
 )
 DEFAULT_ASYNC_DB_URI = "postgresql+psycopg://asterisk:password123@localhost/asterisk?application_name=accent-dao-async"
 DEFAULT_POOL_SIZE = 16
 
+# Set up logging
 logger = logging.getLogger(__name__)
 
 # For regular sync operations
@@ -39,14 +40,24 @@ SyncSession = scoped_session(sessionmaker())
 # For async operations
 async_session_factory = None
 
+# Type variables for generic functions
 T = TypeVar("T")
 R = TypeVar("R")
 
 
 class Base(DeclarativeBase):
-    """Base class for all models."""
+    """Base class for all SQLAlchemy models.
+
+    Provides utility methods for all models to inherit.
+    """
 
     def __repr__(self) -> str:
+        """Represent the model instance with its primary key values.
+
+        Returns:
+            str: String representation of the model instance.
+
+        """
         attrs = {
             col.name: getattr(self, col.name)
             for col in self.__table__.columns
@@ -59,10 +70,10 @@ class Base(DeclarativeBase):
         """Convert SQLAlchemy model to dictionary.
 
         Args:
-            exclude: Optional list of fields to exclude
+            exclude: Optional list of fields to exclude.
 
         Returns:
-            Dictionary representation of the model
+            Dictionary representation of the model.
 
         """
         exclude = exclude or []
@@ -88,33 +99,63 @@ class IntAsString(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def process_bind_param(
-        self, value: int | str | None, dialect
-    ) -> str | None:
+    def process_bind_param(self, value: int | str | None, dialect: Any) -> str | None:
+        """Process a value before binding to the database.
+
+        Args:
+            value: The value to be processed.
+            dialect: SQLAlchemy dialect.
+
+        Returns:
+            The processed value.
+
+        """
         if value is not None:
             value = str(value)
         return value
 
 
 class UUIDAsString(TypeDecorator):
-    """Convert UUID to string."""
+    """Convert UUID to string for database storage."""
 
     impl = String
     cache_ok = True
 
-    def process_bind_param(self, value: Any, dialect) -> str | None:
+    def process_bind_param(self, value: Any, dialect: Any) -> str | None:
+        """Process a value before binding to the database.
+
+        Args:
+            value: The value to be processed.
+            dialect: SQLAlchemy dialect.
+
+        Returns:
+            The processed value.
+
+        """
         if value is not None:
             value = str(value)
         return value
 
 
 def daosession(func: Callable[..., R]) -> Callable[..., R]:
-    """Decorator that passes a session to the decorated function."""
+    """Decorator that passes a session to the decorated function.
+
+    Args:
+        func: The function to decorate.
+
+    Returns:
+        The decorated function.
+
+    """
 
     @wraps(func)
     def wrapped(*args: Any, **kwargs: Any) -> R:
         session = SyncSession()
-        return func(session, *args, **kwargs)
+        try:
+            result = func(session, *args, **kwargs)
+            return result
+        finally:
+            session.close()
 
     return wrapped
 
@@ -125,33 +166,26 @@ async def init_async_db(
     """Initialize the async database connection.
 
     Args:
-        db_uri: Database connection string
-        pool_size: Connection pool size
+        db_uri: Database connection string.
+        pool_size: Connection pool size.
 
     """
     global async_session_factory
     engine = create_async_engine(
-        db_uri, pool_size=pool_size, pool_pre_ping=True, echo=False, future=True
+        db_uri, pool_size=pool_size, pool_pre_ping=True, echo=False
     )
-    async_session_factory = async_sessionmaker(
-        engine, expire_on_commit=False, class_=AsyncSession
-    )
-
-    # Create tables if they don't exist - generally done in migrations, but added for completeness
-    # This is async and would need to be awaited if used
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
+    async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
 
 def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) -> None:
     """Initialize the synchronous database connection.
 
     Args:
-        db_uri: Database connection string
-        pool_size: Connection pool size
+        db_uri: Database connection string.
+        pool_size: Connection pool size.
 
     """
-    engine = create_engine(db_uri, pool_size=pool_size, pool_pre_ping=True, future=True)
+    engine = create_engine(db_uri, pool_size=pool_size, pool_pre_ping=True)
     SyncSession.configure(bind=engine)
     Base.metadata.bind = engine
 
@@ -160,7 +194,7 @@ def init_db_from_config(config: dict[str, Any] | None = None) -> None:
     """Initialize database from configuration.
 
     Args:
-        config: Configuration dictionary, will be loaded from default if None
+        config: Configuration dictionary, will be loaded from default if None.
 
     """
     config = config or default_config()
@@ -173,17 +207,18 @@ def init_db_from_config(config: dict[str, Any] | None = None) -> None:
         pool_size = DEFAULT_POOL_SIZE
 
     init_db(url, pool_size=pool_size)
-    # We must await this, but this function is sync, so we'll use a background task or explicitly await elsewhere
-    # asyncio.create_task(init_async_db(async_url, pool_size=pool_size))
+    # Note: async_db init should be handled separately with await
 
 
 def default_config() -> dict[str, Any]:
     """Load default configuration.
 
     Returns:
-        Configuration dictionary
+        Configuration dictionary.
 
     """
+    from accent.config_helper import ConfigParser, ErrorHandler
+
     config = {
         "config_file": "/etc/accent-dao/config.yml",
         "extra_config_files": "/etc/accent-dao/conf.d",
@@ -196,8 +231,8 @@ def default_config() -> dict[str, Any]:
 def get_session() -> Session:
     """Get a session for synchronous operations.
 
-    Returns:
-        Database session
+    Yields:
+        Database session.
 
     """
     session = SyncSession()
@@ -208,15 +243,17 @@ def get_session() -> Session:
 
 
 @asynccontextmanager
-async def get_async_session() -> AsyncSession:
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a session for asynchronous operations.
 
-    Returns:
-        Async database session
+    Yields:
+        Async database session.
 
     """
     if async_session_factory is None:
         await init_async_db()
+
+    assert async_session_factory is not None, "Async session factory not initialized"
 
     session = async_session_factory()
     try:
@@ -225,14 +262,14 @@ async def get_async_session() -> AsyncSession:
         await session.close()
 
 
-async def async_daosession(func: Callable[..., R]) -> Callable[..., R]:
+def async_daosession(func: Callable[..., R]) -> Callable[..., R]:
     """Decorator for async DAO operations.
 
     Args:
-        func: Function to decorate
+        func: Function to decorate.
 
     Returns:
-        Decorated function with session automatically provided
+        Decorated function with session automatically provided.
 
     """
 
