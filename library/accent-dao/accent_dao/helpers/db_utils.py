@@ -1,13 +1,31 @@
-# Copyright 2023 Accent Communications
+# helpers/db_utils.py
+# Copyright 2025 Accent Communications
 
-from contextlib import contextmanager
+from __future__ import annotations
+
+from contextlib import asynccontextmanager, contextmanager
+from typing import AsyncContextManager, ContextManager, TypeVar
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from accent_dao.helpers import db_manager
 from accent_dao.helpers.db_manager import daosession
 
+T = TypeVar("T")
+
 
 @contextmanager
-def flush_session(session):
+def flush_session(session: Session) -> ContextManager[None]:
+    """Context manager that flushes the session on exit.
+
+    Args:
+        session: Database session
+
+    Yields:
+        None
+
+    """
     try:
         yield
         session.flush()
@@ -16,14 +34,51 @@ def flush_session(session):
         raise
 
 
+@asynccontextmanager
+async def async_flush_session(session: AsyncSession) -> AsyncContextManager[None]:
+    """Context manager that flushes the async session on exit.
+
+    Args:
+        session: Async database session
+
+    Yields:
+        None
+
+    """
+    try:
+        yield
+        await session.flush()
+    except Exception:
+        await session.rollback()
+        raise
+
+
 @daosession
-def get_dao_session(session):
+def get_dao_session(session: Session) -> Session:
+    """Get the current database session.
+
+    Args:
+        session: Database session (injected by decorator)
+
+    Returns:
+        Database session
+
+    """
     return session
 
 
 @contextmanager
-def session_scope(read_only=False):
-    session = db_manager.Session()
+def session_scope(read_only: bool = False) -> ContextManager[Session]:
+    """Provides a transactional scope around a series of operations.
+
+    Args:
+        read_only: If True, session will not be committed
+
+    Yields:
+        Database session
+
+    """
+    session = db_manager.SyncSession()
     try:
         yield session
         if not read_only:
@@ -32,4 +87,27 @@ def session_scope(read_only=False):
         session.rollback()
         raise
     finally:
-        db_manager.Session.remove()
+        db_manager.SyncSession.remove()
+
+
+@asynccontextmanager
+async def async_session_scope(
+    read_only: bool = False,
+) -> AsyncContextManager[AsyncSession]:
+    """Provides an async transactional scope around a series of operations.
+
+    Args:
+        read_only: If True, session will not be committed
+
+    Yields:
+        Async database session
+
+    """
+    async with db_manager.get_async_session() as session:
+        try:
+            yield session
+            if not read_only:
+                await session.commit()
+        except Exception:
+            await session.rollback()
+            raise

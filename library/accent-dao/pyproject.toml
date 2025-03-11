@@ -5,12 +5,11 @@ description = "Data Access Layer"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.9"
 dependencies = [
-  "psycopg",
-  "pyyaml>=6.0",
+  "psycopg[binary,pool]",
   "sqlalchemy[asyncio]>=2.0.0",
-  "Unidecode>=1.2.0",
   "accent",
-  "sqlalchemy-utils>=0.37.2",
+  "sqlalchemy-utils>=0.41.1",
+  "greenlet>=3.1.1",
 ]
 
 [dependency-groups]
