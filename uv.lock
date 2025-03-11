@@ -80,24 +80,32 @@ dependencies = [
     { name = "accent-auth-client" },
     { name = "accent-bus" },
     { name = "accent-lib-rest-client" },
-    { name = "cheroot" },
-    { name = "flask" },
-    { name = "itsdangerous" },
-    { name = "jinja2" },
-    { name = "markupsafe" },
-    { name = "marshmallow" },
-    { name = "netifaces2" },
     { name = "pydantic" },
-    { name = "python-consul" },
     { name = "pyyaml" },
-    { name = "setuptools" },
     { name = "stevedore" },
-    { name = "werkzeug" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
     { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -105,23 +113,33 @@ requires-dist = [
     { name = "accent-auth-client", editable = "library/accent-auth-client" },
     { name = "accent-bus", editable = "library/accent-bus" },
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "cheroot", specifier = ">=8.5.2" },
-    { name = "flask", specifier = ">=1.1.2" },
-    { name = "itsdangerous", specifier = ">=1.1.0" },
-    { name = "jinja2", specifier = ">=2.11.3" },
-    { name = "markupsafe", specifier = ">=1.1.1" },
-    { name = "marshmallow", specifier = ">=3.10.0" },
-    { name = "netifaces2" },
     { name = "pydantic", specifier = ">=2.10.6" },
-    { name = "python-consul", specifier = ">=1.1.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "setuptools", specifier = ">=75.6.0" },
     { name = "stevedore", specifier = ">=5.4.1" },
-    { name = "werkzeug", specifier = ">=1.0.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "ruff", specifier = ">=0.9.10" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-agentd"
@@ -223,24 +241,64 @@ version = "0.1.0"
 source = { editable = "library/accent-agentd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-agid"
@@ -366,8 +424,6 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
@@ -399,8 +455,6 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
@@ -557,7 +611,8 @@ version = "0.1.0"
 source = { editable = "library/accent-auth-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
     { name = "typing-extensions" },
 ]
@@ -567,20 +622,29 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
 ]
 test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
     { name = "typing-extensions", specifier = ">=4.4.0.0" },
 ]
@@ -590,13 +654,23 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
 ]
-test = [{ name = "pytest", specifier = ">=8.3.5" }]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-auth-keys"
@@ -613,7 +687,25 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -627,7 +719,27 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-auth2"
@@ -819,7 +931,8 @@ version = "0.1.0"
 source = { editable = "library/accent-call-logd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
@@ -828,8 +941,6 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
@@ -851,7 +962,8 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -860,8 +972,6 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
@@ -957,24 +1067,64 @@ version = "0.1.0"
 source = { editable = "library/accent-calld-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-certs"
@@ -1078,7 +1228,8 @@ version = "0.1.0"
 source = { editable = "library/accent-chatd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
@@ -1090,7 +1241,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -1207,7 +1359,8 @@ version = "1.1.2"
 source = { editable = "library/accent-confd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
@@ -1219,7 +1372,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -1272,19 +1426,63 @@ name = "accent-confgend-client"
 version = "0.1.0"
 source = { editable = "library/accent-confgend-client" }
 dependencies = [
-    { name = "twisted" },
+    { name = "asyncio" },
+    { name = "httpx" },
+    { name = "pydantic" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "twisted", specifier = ">=21.2.0" }]
+requires-dist = [
+    { name = "asyncio", specifier = ">=3.4.3" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
+]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-config"
@@ -1325,11 +1523,10 @@ version = "0.1.0"
 source = { editable = "library/accent-dao" }
 dependencies = [
     { name = "accent" },
-    { name = "psycopg" },
-    { name = "pyyaml" },
+    { name = "greenlet" },
+    { name = "psycopg", extra = ["binary", "pool"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "sqlalchemy-utils" },
-    { name = "unidecode" },
 ]
 
 [package.dev-dependencies]
@@ -1342,11 +1539,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accent", editable = "library/accent-lib-python" },
-    { name = "psycopg" },
-    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "greenlet", specifier = ">=3.1.1" },
+    { name = "psycopg", extras = ["binary", "pool"] },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
-    { name = "sqlalchemy-utils", specifier = ">=0.37.2" },
-    { name = "unidecode", specifier = ">=1.2.0" },
+    { name = "sqlalchemy-utils", specifier = ">=0.41.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -1399,7 +1595,8 @@ version = "0.1.0"
 source = { editable = "library/accent-deployd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
@@ -1411,7 +1608,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -1497,7 +1695,8 @@ version = "0.1.0"
 source = { editable = "library/accent-dird-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
@@ -1506,8 +1705,6 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
@@ -1529,7 +1726,8 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -1538,8 +1736,6 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
@@ -1593,18 +1789,48 @@ version = "0.1.0"
 source = { editable = "library/accent-fetchfw" }
 dependencies = [
     { name = "progressbar2" },
+    { name = "pydantic" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-recording" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "progressbar2", specifier = ">=4.0.0" }]
+requires-dist = [
+    { name = "progressbar2", specifier = ">=4.0.0" },
+    { name = "pydantic", specifier = ">=2.10.6" },
+]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+]
 
 [[package]]
 name = "accent-lib-rest-client"
@@ -1621,8 +1847,6 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
@@ -1653,8 +1877,6 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
@@ -1718,24 +1940,64 @@ version = "0.1.0"
 source = { editable = "library/accent-market-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-phoned"
@@ -1860,24 +2122,64 @@ version = "0.1.0"
 source = { editable = "library/accent-plugind-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-provd"
@@ -1975,8 +2277,6 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
@@ -2008,8 +2308,6 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
@@ -2162,24 +2460,64 @@ version = "0.1.0"
 source = { editable = "library/accent-setupd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-stat"
@@ -2228,26 +2566,66 @@ version = "0.1.0"
 source = { editable = "library/accent-test-helpers" }
 dependencies = [
     { name = "docker" },
+    { name = "httpx" },
     { name = "kombu" },
-    { name = "requests" },
+    { name = "pydantic" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "docker", specifier = ">=5.0.3" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "kombu", specifier = ">=5.0.2" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-ui"
@@ -2377,6 +2755,7 @@ test = [
     { name = "pytest-mock" },
     { name = "pytest-recording" },
     { name = "respx" },
+    { name = "uvicorn" },
     { name = "validators" },
 ]
 
@@ -2409,6 +2788,7 @@ test = [
     { name = "pytest-mock", specifier = ">=3.14.0" },
     { name = "pytest-recording", specifier = ">=0.13.2" },
     { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
     { name = "validators", specifier = ">=0.34.0" },
 ]
 
@@ -2501,24 +2881,64 @@ version = "0.1.0"
 source = { editable = "library/accent-webhookd-client" }
 dependencies = [
     { name = "accent-lib-rest-client" },
-    { name = "requests" },
+    { name = "httpx" },
+    { name = "pydantic" },
     { name = "stevedore" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-websocketd"
@@ -2571,8 +2991,6 @@ dev = [
     { name = "bandit" },
     { name = "deptry" },
     { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
@@ -2602,8 +3020,6 @@ dev = [
     { name = "bandit", specifier = ">=1.8.3" },
     { name = "deptry", specifier = ">=0.23.0" },
     { name = "mypy", specifier = ">=1.15.0" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
@@ -2780,6 +3196,15 @@ requires-dist = [{ name = "swaggerpy", editable = "library/swagger-py" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+
+[[package]]
+name = "asyncio"
+version = "3.4.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/54/054bafaf2c0fb8473d423743e191fcdf49b2c1fd5e9af3524efbe097bafd/asyncio-3.4.3.tar.gz", hash = "sha256:83360ff8bc97980e4ff25c964c7bd3923d333d177aa4f7fb736b019f26c7cb41", size = 204411 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/74/07679c5b9f98a7cb0fc147b1ef1cc1853bc07a4eb9cb5731e24732c5f773/asyncio-3.4.3-py3-none-any.whl", hash = "sha256:c4d18b22701821de07bd6aea8b53d21449ec0ec5680645e5317062ea21817d2d", size = 101767 },
+]
 
 [[package]]
 name = "attrs"
@@ -4444,6 +4869,55 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0e/cf/dc1a4d45e3c6222fe272a245c5cea9a969a7157639da606ac7f2ab5de3a1/psycopg-3.2.5.tar.gz", hash = "sha256:f5f750611c67cb200e85b408882f29265c66d1de7f813add4f8125978bfd70e8", size = 156158 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/18/f3/14a1370b1449ca875d5e353ef02cb9db6b70bd46ec361c236176837c0be1/psycopg-3.2.5-py3-none-any.whl", hash = "sha256:b782130983e5b3de30b4c529623d3687033b4dafa05bb661fc6bf45837ca5879", size = 198749 },
+]
+
+[package.optional-dependencies]
+binary = [
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy'" },
+]
+pool = [
+    { name = "psycopg-pool" },
+]
+
+[[package]]
+name = "psycopg-binary"
+version = "3.2.5"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/eb/175a81bfd26734eeaaa39b651bc44a3c5e3fce1190963ace21e428c4d2ee/psycopg_binary-3.2.5-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:a4321ee8180982d70458d3e8378e31448901bf0ee40fe0d410a87413578f4098", size = 3857964 },
+    { url = "https://files.pythonhosted.org/packages/ca/2e/0d57047372c3dd31becc1a48185862d7e6714ffbdc1401742a32f2294f79/psycopg_binary-3.2.5-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2cc86657c05e09c701e97f87132cd58e0d55381dd568520081ac1fe7580a9bbb", size = 3940056 },
+    { url = "https://files.pythonhosted.org/packages/c5/2f/339a18b28787d33fe892d1ae1fbaa83739c6274327cbf9ada4158322ad9d/psycopg_binary-3.2.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5244bebaa9734a236b7157fb57c065b6c0f2344281916187bd73f951df1899e0", size = 4499081 },
+    { url = "https://files.pythonhosted.org/packages/42/21/32d7115b2cbd87d043ad494254fd7c4c8652ac3c32f49bb571fd8111caf3/psycopg_binary-3.2.5-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:21b839f9bfd77ed074f7f71464a43f453400c57d038a0ba0716329a28e335897", size = 4307502 },
+    { url = "https://files.pythonhosted.org/packages/00/67/e99b58f616dd02c5e52c179b3df047d9683a9f699993cb1795ee435db598/psycopg_binary-3.2.5-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:7376b13504396da9678b646f5338462347da01286b2a688a0d8493ec764683a2", size = 4547821 },
+    { url = "https://files.pythonhosted.org/packages/0d/64/9d13ee0fed78a47c506a93d1e67ee53cc7ffd75c1f5885b59d17810fe5cd/psycopg_binary-3.2.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:473f6827cf1faf3924eb77146d1e85126a1b5e48a88053b8d8b78dd29e971d78", size = 4259849 },
+    { url = "https://files.pythonhosted.org/packages/ea/f2/172b6ebcd60a1a86f5ce1a539cfb93ffbe42fc9bc7ab2e1ed79e99a75d71/psycopg_binary-3.2.5-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:28bd5cb2324567e5e70f07fe1d646398d6b0e210e28b49be0e69593590a59980", size = 3847280 },
+    { url = "https://files.pythonhosted.org/packages/0f/51/9cd26c6b862d499b4b25ea173ae6e21c9d460ddce6b09cbe9501dff66211/psycopg_binary-3.2.5-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:48f97936145cb7de18b95d85670b2d3e2c257277263272be05815b74fb0ef195", size = 3320262 },
+    { url = "https://files.pythonhosted.org/packages/51/7d/2dac61ff16476e77c6ce0a49a30b130e2ba6ad08c83c4950591b4bc49cf2/psycopg_binary-3.2.5-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:8e6f2bef5aed021fbdf46323d3cd8847bf960efb56394698644a8ee2306f8892", size = 3400254 },
+    { url = "https://files.pythonhosted.org/packages/45/67/bd36932c24f96dc1bc21fb18b1bdebcda7b9791067f7151a1c5dc1193e6b/psycopg_binary-3.2.5-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:3d2e57a1d06f3968e49e948ba374f21a7d8dcf44f37d582a4aeddeb7c85ce239", size = 3438916 },
+    { url = "https://files.pythonhosted.org/packages/00/ab/882b861cfcf83d7faffe583e1e092117cd66eacc86fb4517d27973e52f35/psycopg_binary-3.2.5-cp312-cp312-win_amd64.whl", hash = "sha256:2cbb8649cfdacbd14e17f5ab78edc52d33350013888518c73e90c5d17d7bea55", size = 2782504 },
+    { url = "https://files.pythonhosted.org/packages/81/3d/26483d75e1a5daa93cbb47ee7cde96fac07a9b026058b036b00a04f5c012/psycopg_binary-3.2.5-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:2dbaf32c18c0d11c4480016b89c9c5cadb7b64c55de7f181d222b189bd13a558", size = 3852616 },
+    { url = "https://files.pythonhosted.org/packages/90/cb/542bd0eab110ed2ddcc02cbe8f5df0afe3e86bd843c533fc6a795ffd7c0f/psycopg_binary-3.2.5-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ca5e36a3e7480a5c09aed99ecdb8e6554b21485c3b064297fe77f7b1b5806106", size = 3936563 },
+    { url = "https://files.pythonhosted.org/packages/e1/43/2b347816983a5b0f1cc3e608eae4650422476187e047e574981081bcf9ec/psycopg_binary-3.2.5-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9abe093a303e25ac58774a11241150e2fe2947358d1ca12521ad03c90b131060", size = 4499166 },
+    { url = "https://files.pythonhosted.org/packages/3f/0d/d7ac5289dfa1163b0fcce9aeb848a7f4499d7b3ef34f1de565d0ba9a51bd/psycopg_binary-3.2.5-cp313-cp313-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a91b0e096fdfeb52d86bb8f5ee25dc22483d6960af9b968e6b381a8ec5bfbf82", size = 4311647 },
+    { url = "https://files.pythonhosted.org/packages/7b/a2/b238d91cbbc5953ff6910737b5a598cc4d5aad84453052005891cec329b3/psycopg_binary-3.2.5-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3eb71cfc35116e4a8e336b7e785f1fe06ca23b4516a48ea91facd577d1a1fdf6", size = 4547848 },
+    { url = "https://files.pythonhosted.org/packages/d7/33/e78ae02d8f23753af2884303370b914a5d172f76fed13bfde380ec473f53/psycopg_binary-3.2.5-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:98efaedf2bf79f4d563ca039a57a025b72847bd80568f54709cc39fc1404772c", size = 4261732 },
+    { url = "https://files.pythonhosted.org/packages/44/9a/1745ff5c6e4c715aa71f3da3f393022ec0c7cc972fa0ee7296df8871d6d6/psycopg_binary-3.2.5-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ba4a610882171bdaae0779f14e0ff45f3ee271fd2dbf16cdadfc81bd67323232", size = 3850803 },
+    { url = "https://files.pythonhosted.org/packages/7b/1c/933fb04560e7bcf5f24c632f9381e8700dcf8462adcd32eabd6192480d66/psycopg_binary-3.2.5-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:1494827c43265820d5dcdc6f8086521bc7dd04b9da8831310978a788cdcd2e62", size = 3320315 },
+    { url = "https://files.pythonhosted.org/packages/5d/36/111e2db9c3ff5123da4ce814aa9462d242a7c393f132a4005ec427e09903/psycopg_binary-3.2.5-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:7a94020821723a6a210206ddb458001f3ed27e1e6a0555b9422bebf7ead8ff37", size = 3403225 },
+    { url = "https://files.pythonhosted.org/packages/90/04/246efe587463d13b015202ab344e12e8e30ea9ba90ca952def0469b95a9e/psycopg_binary-3.2.5-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:659f2c675d478b1bc01b95a8d3ded74fa939b370e71ffbecd496f617b215eb05", size = 3440446 },
+    { url = "https://files.pythonhosted.org/packages/92/75/5e15e7a6ad4c6a00fe1a28fe704310dc7f7b26dbd5e6e14c817e7899451b/psycopg_binary-3.2.5-cp313-cp313-win_amd64.whl", hash = "sha256:6b581da13126b8715c0c0585cd37ce934c9864d44b2a4019f5487c0b943275e6", size = 2783095 },
+]
+
+[[package]]
+name = "psycopg-pool"
+version = "3.2.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cf/13/1e7850bb2c69a63267c3dbf37387d3f71a00fd0e2fa55c5db14d64ba1af4/psycopg_pool-3.2.6.tar.gz", hash = "sha256:0f92a7817719517212fbfe2fd58b8c35c1850cdd2a80d36b581ba2085d9148e5", size = 29770 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/fd/4feb52a55c1a4bd748f2acaed1903ab54a723c47f6d0242780f4d97104d4/psycopg_pool-3.2.6-py3-none-any.whl", hash = "sha256:5887318a9f6af906d041a0b1dc1c60f8f0dda8340c2572b74e10907b51ed5da7", size = 38252 },
 ]
 
 [[package]]

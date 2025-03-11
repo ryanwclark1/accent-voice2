@@ -39,6 +39,7 @@ test = [
     "httpx>=0.28.1",
     "pydantic>=2.10.6",
     "validators>=0.34.0",
+    "uvicorn>=0.34.0",
 ]
 
 [tool.uv.workspace]

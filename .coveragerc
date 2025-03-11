@@ -1,0 +1,27 @@
+[run]
+source =
+    library/accent-lib-rest-client/
+    library/accent-agentd-client/
+    library/accent-amid-client/
+branch = true
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if False:
+    pass
+
+omit =
+    */tests/*
+    library/accent-*/tests/*
+
+[html]
+directory = coverage_html
+
+[xml]
+output = coverage.xml

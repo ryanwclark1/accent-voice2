@@ -4,11 +4,7 @@ version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.12"
-dependencies = [
-  "httpx>=0.28.1",
-  "pydantic>=2.10.6",
-  "asyncio>=3.4.3",
-]
+dependencies = ["httpx>=0.28.1", "pydantic>=2.10.6", "asyncio>=3.4.3"]
 
 [project.scripts]
 accent-confgen = "accent_confgend_client.main:main"
@@ -20,8 +16,6 @@ dev = [
   "bandit>=1.8.3",
   "deptry>=0.23.0",
   "mypy>=1.15.0",
-  "pytest>=8.3.5",
-  "pytest-cov>=6.0.0",
   "refurb>=2.0.0",
   "ruff>=0.9.10",
   "tox>=4.24.2",
