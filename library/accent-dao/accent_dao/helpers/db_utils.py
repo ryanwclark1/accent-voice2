@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
-from typing import AsyncContextManager, ContextManager, TypeVar
+from typing import TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -16,7 +16,7 @@ T = TypeVar("T")
 
 
 @contextmanager
-def flush_session(session: Session) -> ContextManager[None]:
+def flush_session(session: Session) -> None:
     """Context manager that flushes the session on exit.
 
     Args:
@@ -35,7 +35,7 @@ def flush_session(session: Session) -> ContextManager[None]:
 
 
 @asynccontextmanager
-async def async_flush_session(session: AsyncSession) -> AsyncContextManager[None]:
+async def async_flush_session(session: AsyncSession) -> None:
     """Context manager that flushes the async session on exit.
 
     Args:
@@ -61,21 +61,21 @@ def get_dao_session(session: Session) -> Session:
         session: Database session (injected by decorator)
 
     Returns:
-        Database session
+        Session: Database session
 
     """
     return session
 
 
 @contextmanager
-def session_scope(read_only: bool = False) -> ContextManager[Session]:
+def session_scope(read_only: bool = False) -> Session:
     """Provides a transactional scope around a series of operations.
 
     Args:
         read_only: If True, session will not be committed
 
     Yields:
-        Database session
+        Session: Database session
 
     """
     session = db_manager.SyncSession()
@@ -91,16 +91,14 @@ def session_scope(read_only: bool = False) -> ContextManager[Session]:
 
 
 @asynccontextmanager
-async def async_session_scope(
-    read_only: bool = False,
-) -> AsyncContextManager[AsyncSession]:
+async def async_session_scope(read_only: bool = False) -> AsyncSession:
     """Provides an async transactional scope around a series of operations.
 
     Args:
         read_only: If True, session will not be committed
 
     Yields:
-        Async database session
+        AsyncSession: Async database session
 
     """
     async with db_manager.get_async_session() as session:
