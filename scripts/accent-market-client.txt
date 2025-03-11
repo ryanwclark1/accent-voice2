@@ -1,0 +1,51 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from .client import Client
+
+__all__ = ['Client']
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+
+class Client(BaseClient):
+    namespace = 'accent_market_client.commands'
+
+    def __init__(
+        self, host='apps.accentvoice.io', port=None, version='v1', https=False, **kwargs
+    ):
+        super().__init__(host=host, port=port, version=version, https=https, **kwargs)
+
+----------------------------------------
+
+File: commands.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client import RESTCommand
+
+DEFAULT_HEADERS = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+
+class PluginCommand(RESTCommand):
+    resource = 'plugins'
+
+    def list(self):
+        r = self.session.get(self.base_url, headers=DEFAULT_HEADERS)
+        if r.status_code != 200:
+            self.raise_from_response(r)
+
+        return r.json()
+
+----------------------------------------
+

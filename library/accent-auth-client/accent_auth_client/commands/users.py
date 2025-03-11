@@ -9,7 +9,7 @@ from typing import Any, cast
 import httpx
 from accent_lib_rest_client import RESTCommand
 
-from ..types import JSON
+from accent_auth_client.type_definitions import JSON
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,13 @@
-from __future__ import absolute_import
+# Copyright 2025 Accent Communications
+"""Accent applicationd client API package
 
-# flake8: noqa
+Contains API classes for interacting with different endpoints.
+"""
 
-# import apis into api package
 from accent_applicationd_client.api.application_api import ApplicationApi
 from accent_applicationd_client.api.status_api import StatusApi
+
+__all__ = [
+    "ApplicationApi",
+    "StatusApi",
+]

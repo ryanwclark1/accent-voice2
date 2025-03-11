@@ -1,7 +1,7 @@
 # Copyright 2025 Accent Communications
+
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any, TypeAlias
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field
@@ -10,19 +10,17 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field
 JSON: TypeAlias = str | int | float | bool | None | list["JSON"] | dict[str, "JSON"]
 ACSRedirectLocation: TypeAlias = str
 LogoutRedirectLocation: TypeAlias = str
-TokenDict: TypeAlias = dict[str, Any]
-SSOResponseDict: TypeAlias = dict[str, str]
 
 
 class TokenMetadata(BaseModel):
     """Base token metadata with required fields.
 
     Attributes:
-        uuid: Unique identifier
-        tenant_uuid: Tenant unique identifier
-        auth_id: Authentication identifier
-        pbx_user_uuid: PBX user identifier
-        accent_uuid: Accent system identifier
+        uuid: Token UUID
+        tenant_uuid: Tenant UUID
+        auth_id: Authentication ID
+        pbx_user_uuid: PBX user UUID
+        accent_uuid: Accent UUID
 
     """
 
@@ -54,16 +52,16 @@ class Token(BaseModel):
     """Authentication token information.
 
     Attributes:
-        token: The token string
-        session_uuid: Session identifier
+        token: The authentication token string
+        session_uuid: Session UUID
         metadata: Token metadata
         acl: Access control list
-        auth_id: Authentication identifier
-        accent_uuid: Accent system identifier
+        auth_id: Authentication ID
+        accent_uuid: Accent UUID
         expires_at: Expiration timestamp
-        utc_expires_at: Expiration timestamp in UTC
-        issued_at: Issuance timestamp
-        utc_issued_at: Issuance timestamp in UTC
+        utc_expires_at: UTC expiration timestamp
+        issued_at: Issue timestamp
+        utc_issued_at: UTC issue timestamp
         user_agent: User agent string
         remote_addr: Remote address
 
@@ -113,8 +111,8 @@ class SSOResponse(BaseModel):
     """SSO response information.
 
     Attributes:
-        location: The redirect location
-        saml_session_id: SAML session identifier
+        location: Redirect location
+        saml_session_id: SAML session ID
 
     """
 
@@ -132,39 +130,6 @@ class SSOResponse(BaseModel):
     )
 
 
-class ErrorDetail(BaseModel):
-    """Model for detailed error information.
-
-    Attributes:
-        code: Error code
-        message: Error message
-        field: Optional field name for validation errors
-        details: Optional additional error details
-
-    """
-
-    code: str
-    message: str
-    field: str | None = None
-    details: dict[str, Any] | None = None
-
-    model_config = ConfigDict(frozen=True)
-
-
-class ErrorResponse(BaseModel):
-    """Model for API error responses.
-
-    Attributes:
-        message: Main error message
-        errors: List of detailed errors
-        status_code: HTTP status code
-        timestamp: When the error occurred
-
-    """
-
-    message: str
-    errors: list[ErrorDetail] = Field(default_factory=list)
-    status_code: int
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-    model_config = ConfigDict(frozen=True)
+# Type aliases for specific response types
+SSOResponseDict: TypeAlias = dict[str, str]
+TokenDict: TypeAlias = dict[str, Any]

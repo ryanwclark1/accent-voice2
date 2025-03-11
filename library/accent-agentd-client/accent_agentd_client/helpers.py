@@ -1,60 +1,144 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
+"""Helper functions and classes for the Accent Agent Daemon client."""
+
+from __future__ import annotations
+
+import logging
+
+import httpx
 
 from accent_agentd_client.error import AgentdClientError
+from accent_agentd_client.models import AgentStatus
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ResponseProcessor:
-    def generic(self, resp):
+    """Process HTTP responses from the Agentd API."""
+
+    def generic(self, resp: httpx.Response) -> None:
+        """Process a generic response.
+
+        Args:
+            resp: HTTP response
+
+        Raises:
+            AgentdClientError: If the response indicates an error
+
+        """
         self._raise_if_not_success(resp)
+        logger.debug("Successfully processed generic response: %s", resp.status_code)
 
-    def status(self, resp):
+    async def generic_async(self, resp: httpx.Response) -> None:
+        """Process a generic response asynchronously.
+
+        Args:
+            resp: HTTP response
+
+        Raises:
+            AgentdClientError: If the response indicates an error
+
+        """
+        self._raise_if_not_success(resp)
+        logger.debug(
+            "Successfully processed generic async response: %s", resp.status_code
+        )
+
+    def status(self, resp: httpx.Response) -> AgentStatus:
+        """Process an agent status response.
+
+        Args:
+            resp: HTTP response
+
+        Returns:
+            Agent status
+
+        Raises:
+            AgentdClientError: If the response indicates an error
+
+        """
         self._raise_if_not_success(resp, 200)
+        logger.debug("Successfully processed status response")
+        return AgentStatus.from_dict(resp.json())
 
-        return _AgentStatus.new_from_dict(resp.json())
+    async def status_async(self, resp: httpx.Response) -> AgentStatus:
+        """Process an agent status response asynchronously.
 
-    def status_all(self, resp):
+        Args:
+            resp: HTTP response
+
+        Returns:
+            Agent status
+
+        Raises:
+            AgentdClientError: If the response indicates an error
+
+        """
         self._raise_if_not_success(resp, 200)
+        logger.debug("Successfully processed async status response")
+        return AgentStatus.from_dict(resp.json())
 
-        return [_AgentStatus.new_from_dict(d) for d in resp.json()]
+    def status_all(self, resp: httpx.Response) -> list[AgentStatus]:
+        """Process a multiple agent status response.
 
-    def _raise_if_not_success(self, resp, expected_status_code=None):
+        Args:
+            resp: HTTP response
+
+        Returns:
+            List of agent statuses
+
+        Raises:
+            AgentdClientError: If the response indicates an error
+
+        """
+        self._raise_if_not_success(resp, 200)
+        logger.debug("Successfully processed multiple status response")
+        return [AgentStatus.from_dict(d) for d in resp.json()]
+
+    async def status_all_async(self, resp: httpx.Response) -> list[AgentStatus]:
+        """Process a multiple agent status response asynchronously.
+
+        Args:
+            resp: HTTP response
+
+        Returns:
+            List of agent statuses
+
+        Raises:
+            AgentdClientError: If the response indicates an error
+
+        """
+        self._raise_if_not_success(resp, 200)
+        logger.debug("Successfully processed async multiple status response")
+        return [AgentStatus.from_dict(d) for d in resp.json()]
+
+    def _raise_if_not_success(
+        self, resp: httpx.Response, expected_status_code: int | None = None
+    ) -> None:
+        """Raise an exception if the response is not successful.
+
+        Args:
+            resp: HTTP response
+            expected_status_code: Expected HTTP status code
+
+        Raises:
+            AgentdClientError: If the response indicates an API error
+            httpx.HTTPStatusError: For other HTTP errors
+
+        """
         status_code_class = resp.status_code // 100
-        if status_code_class == 4 or status_code_class == 5:
+        if status_code_class in (4, 5):
             try:
                 obj = resp.json()
-                obj_error = obj['error']
-            except Exception:
+                if isinstance(obj, dict) and "error" in obj:
+                    obj_error = obj["error"]
+                    raise AgentdClientError(obj_error)
                 resp.raise_for_status()
-            else:
-                raise AgentdClientError(obj_error)
+            except (ValueError, KeyError):
+                # JSON parsing failed, use the default handler
+                resp.raise_for_status()
 
-        if expected_status_code:
-            if expected_status_code != resp.status_code:
-                resp.raise_for_status()
-        elif status_code_class != 2:
+        if (expected_status_code and expected_status_code != resp.status_code) or status_code_class != 2:
             resp.raise_for_status()
-
-
-class _AgentStatus:
-    def __init__(self, agent_id, agent_number, origin_uuid):
-        self.id = agent_id
-        self.number = agent_number
-        self.origin_uuid = origin_uuid
-        self.logged = False
-        self.paused = None
-        self.extension = None
-        self.context = None
-        self.state_interface = None
-        self.tenant_uuid = None
-
-    @classmethod
-    def new_from_dict(cls, d):
-        obj = cls(d['id'], d['number'], d['origin_uuid'])
-        obj.logged = d['logged']
-        obj.paused = d['paused']
-        obj.extension = d['extension']
-        obj.context = d['context']
-        obj.state_interface = d['state_interface']
-        obj.tenant_uuid = d['tenant_uuid']
-        return obj

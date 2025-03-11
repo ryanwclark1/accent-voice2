@@ -1503,7 +1503,27 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
     { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -1514,7 +1534,29 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-export-import"
@@ -2520,19 +2562,65 @@ name = "accent-websocketd-client"
 version = "0.1.0"
 source = { editable = "library/accent-websocketd-client" }
 dependencies = [
-    { name = "websocket-client" },
+    { name = "pydantic" },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
     { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "websocket-client", specifier = ">=0.57.0" }]
+requires-dist = [
+    { name = "pydantic", specifier = ">=2.10.6" },
+    { name = "websockets", specifier = ">=15.0.1" },
+]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "aioamqp"

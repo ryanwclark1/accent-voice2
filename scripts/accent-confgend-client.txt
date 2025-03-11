@@ -1,0 +1,95 @@
+File: __init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: main.py
+Please review for update
+
+#!/usr/bin/env python3
+# Copyright 2023 Accent Communications
+
+import argparse
+import configparser
+import socket
+import sys
+import collections
+
+BUFSIZE = 16384
+DEFAULT_CONFIG_FILE = '/etc/accent-confgend-client/config.conf'
+DEFAULT_HOST = '127.0.0.1'
+DEFAULT_PORT = 8669
+DEFAULT_TIMEOUT = 5
+
+
+def main():
+    parsed_args = _parse_args()
+    file_config = _read_config_file(parsed_args.config_file)
+    cmdline_config = dict()
+    if parsed_args.port:
+        cmdline_config["port"] = parsed_args.port
+    if parsed_args.host:
+        cmdline_config["host"] = parsed_args.host
+    if parsed_args.timeout:
+        cmdline_config["timeout"] = parsed_args.timeout
+    config = collections.ChainMap(cmdline_config, file_config)
+    cmd = [parsed_args.filename]
+    if parsed_args.invalidate:
+        cmd.append('invalidate')
+    if parsed_args.cached:
+        cmd.append('cached')
+
+    _get_from_confgend(' '.join(cmd), sys.stdout.buffer, config)
+
+
+def _parse_args():
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-c', '--config-file', default=DEFAULT_CONFIG_FILE)
+    arg_parser.add_argument('-p', '--port', dest="port", type=int)
+    arg_parser.add_argument('--host', dest="host")
+    arg_parser.add_argument('-t', '--timeout', dest="timeout", type=int)
+    arg_parser.add_argument('filename', metavar='frontend/conffile')
+    arg_parser.add_argument(
+        '--cached',
+        action='store_true',
+        help=(
+            'Use the cached version of the file if it exists. '
+            'If there no cached version a new one will be generated'
+        ),
+    )
+    arg_parser.add_argument(
+        '--invalidate',
+        action='store_true',
+        help='Invalidates the cached version of this configuration file',
+    )
+    return arg_parser.parse_args()
+
+
+def _read_config_file(filename):
+    cfg_parser = configparser.ConfigParser()
+    cfg_parser.read(filename)
+    return {
+        'host': cfg_parser.get('confgen', 'server', fallback=DEFAULT_HOST),
+        'port': cfg_parser.getint('confgen', 'port', fallback=DEFAULT_PORT),
+        'timeout': cfg_parser.getint('confgen', 'timeout', fallback=DEFAULT_TIMEOUT),
+    }
+
+
+def _get_from_confgend(cmd, out, config):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(config['timeout'])
+        s.connect((config['host'], config['port']))
+        s.settimeout(None)
+        s.send(cmd.encode('utf-8'))
+        while True:
+            data = s.recv(BUFSIZE)
+            if not data:
+                break
+            out.write(data)
+
+
+main()
+
+----------------------------------------
+

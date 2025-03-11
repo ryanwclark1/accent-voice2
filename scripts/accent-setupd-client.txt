@@ -1,0 +1,168 @@
+File: __init__.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_setupd_client.client import SetupdClient as Client
+
+__all__ = [Client]
+
+----------------------------------------
+
+File: client.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.client import BaseClient
+
+
+class SetupdClient(BaseClient):
+    namespace = 'accent_setupd_client.commands'
+
+    def __init__(self, host, port=443, prefix='/api/setupd', version='1.0', **kwargs):
+        super().__init__(host=host, port=port, prefix=prefix, version=version, **kwargs)
+
+----------------------------------------
+
+File: command.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_lib_rest_client.command import RESTCommand
+
+from .exceptions import (
+    InvalidSetupdError,
+    SetupdError,
+    SetupdServiceUnavailable,
+    SetupdSetupError,
+)
+
+
+class SetupdCommand(RESTCommand):
+    @staticmethod
+    def raise_from_response(response):
+        if response.status_code == 503:
+            raise SetupdServiceUnavailable(response)
+        if response.status_code == 500:
+            try:
+                raise SetupdSetupError(response)
+            except InvalidSetupdError:
+                pass
+
+        try:
+            raise SetupdError(response)
+        except InvalidSetupdError:
+            RESTCommand.raise_from_response(response)
+
+----------------------------------------
+
+File: commands/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import SetupdCommand
+
+
+class ConfigCommand(SetupdCommand):
+    resource = 'config'
+
+    def get(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: commands/setup.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from ..command import SetupdCommand
+
+DEFAULT_TIMEOUT = 60
+
+
+class SetupCommand(SetupdCommand):
+    resource = 'setup'
+    _headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    def create(self, body, timeout=DEFAULT_TIMEOUT):
+        headers = self._get_headers()
+        r = self.session.post(
+            self.base_url, json=body, headers=headers, timeout=timeout
+        )
+        self.raise_from_response(r)
+
+----------------------------------------
+
+File: commands/status.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from accent_setupd_client.command import SetupdCommand
+
+
+class StatusCommand(SetupdCommand):
+    resource = 'status'
+
+    def get(self, tenant_uuid=None):
+        headers = self._get_headers(tenant_uuid=tenant_uuid)
+        r = self.session.get(self.base_url, headers=headers)
+        self.raise_from_response(r)
+        return r.json()
+
+----------------------------------------
+
+File: exceptions.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from requests import HTTPError
+
+
+class SetupdError(HTTPError):
+    def __init__(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            raise InvalidSetupdError()
+
+        self.status_code = response.status_code
+        try:
+            self.message = body['message']
+            self.error_id = body['error_id']
+            self.details = body['details']
+            self.timestamp = body['timestamp']
+        except KeyError:
+            raise InvalidSetupdError()
+
+        exception_message = f'{self.message}: {self.details}'
+        super().__init__(exception_message, response=response)
+
+
+class SetupdServiceUnavailable(SetupdError):
+    pass
+
+
+class InvalidSetupdError(Exception):
+    pass
+
+
+class SetupdSetupError(SetupdError):
+    pass
+
+----------------------------------------
+

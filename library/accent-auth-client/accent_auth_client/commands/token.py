@@ -10,8 +10,11 @@ from typing import Any, cast
 import httpx
 from accent_lib_rest_client import RESTCommand
 
-from ..exceptions import InvalidTokenException, MissingPermissionsTokenException
-from ..types import JSON, TokenDict
+from accent_auth_client.exceptions import (
+    InvalidTokenException,
+    MissingPermissionsTokenException,
+)
+from accent_auth_client.type_definitions import JSON, TokenDict
 
 logger = logging.getLogger(__name__)
 

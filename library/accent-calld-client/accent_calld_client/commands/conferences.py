@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ..command import CalldCommand
+from accent_calld_client.command import CalldCommand
 
 logger = logging.getLogger(__name__)
 

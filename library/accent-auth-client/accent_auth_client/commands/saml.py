@@ -8,7 +8,7 @@ from typing import cast
 import httpx
 from accent_lib_rest_client import RESTCommand
 
-from ..types import ACSRedirectLocation, LogoutRedirectLocation, SSOResponseDict
+from accent_auth_client.type_definitions import ACSRedirectLocation, LogoutRedirectLocation, SSOResponseDict
 
 logger = logging.getLogger(__name__)
 

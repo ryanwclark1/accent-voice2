@@ -1,0 +1,3349 @@
+File: __init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: cli.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import logging
+
+import progressbar
+
+from accent_fetchfw.download import ProgressBarHook
+from accent_fetchfw.package import (
+    DefaultInstallerController,
+    DefaultUninstallerController,
+    DefaultUpgraderController,
+    PackageError,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class UserCancellationError(PackageError):
+    # Not an error per se, but raised when the user don't want to proceed
+    pass
+
+
+class CliInstallerController(DefaultInstallerController):
+    def preprocess_raw_pkgs(self, raw_installable_pkgs):
+        if not self._nodeps:
+            print("resolving dependencies...")
+        installable_pkgs = DefaultInstallerController.preprocess_raw_pkgs(self, raw_installable_pkgs)
+        print("Targets (%d):" % len(installable_pkgs))
+        for pkg in installable_pkgs:
+            print("    ", pkg)
+        print()
+        return installable_pkgs
+
+    def pre_download(self, remote_files):
+        total_dl_size = sum(remote_file.size for remote_file in remote_files)
+        print("Total Download Size:    %.2f MB" % (float(total_dl_size) / 1000**2))
+        print()
+        rep = input("Proceed with installation? [Y/n] ")
+        if rep and rep.lower() != 'y':
+            raise UserCancellationError()
+
+    def download_file(self, remote_file):
+        widgets = [
+            remote_file.filename,
+            ':    ',
+            progressbar.FileTransferSpeed(),
+            ' ',
+            progressbar.ETA(),
+            ' ',
+            progressbar.Bar(),
+            ' ',
+            progressbar.Percentage(),
+        ]
+        pbar = progressbar.ProgressBar(widgets=widgets, maxval=remote_file.size)
+        remote_file.download([ProgressBarHook(pbar)])
+
+    def pre_install_pkg(self, installable_pkg):
+        print("Installing %s..." % installable_pkg.pkg_info['id'])
+
+
+class CliUninstallerController(DefaultUninstallerController):
+    def pre_uninstall(self, installed_pkgs):
+        print("Remove (%d):" % len(installed_pkgs))
+        for pkg in installed_pkgs:
+            print("    ", pkg)
+        print()
+        rep = input("Do you want to remove these packages? [Y/n] ")
+        if rep and rep.lower() != 'y':
+            raise UserCancellationError()
+
+    def pre_uninstall_pkg(self, installed_pkg):
+        print("Removing %s..." % installed_pkg.pkg_info['id'])
+
+
+class CliUpgraderController(DefaultUpgraderController):
+    _nothing_to_do = False
+
+    def preprocess_upgrade_list(self, upgrade_list):
+        if not self._nodeps:
+            print("resolving dependencies...")
+        installed_specs = DefaultUpgraderController.preprocess_upgrade_list(self, upgrade_list)
+        if not installed_specs:
+            print(" there is nothing to do")
+            self._nothing_to_do = True
+        else:
+            installable_pkgs = []
+            for installed_spec in installed_specs:
+                installable_pkgs.append(installed_spec[1])
+                installable_pkgs.extend(installed_spec[2])
+            print("Targets (%d):" % len(installable_pkgs))
+            for pkg in installable_pkgs:
+                print("    ", pkg)
+            print()
+        return installed_specs
+
+    def pre_download(self, remote_files):
+        if self._nothing_to_do:
+            return
+
+        total_dl_size = sum(remote_file.size for remote_file in remote_files)
+        print("Total Download Size:    %.2f MB" % (float(total_dl_size) / 1000**2))
+        print()
+        rep = input("Proceed with upgrade? [Y/n] ")
+        if rep and rep.lower() != 'y':
+            raise UserCancellationError()
+
+    def download_file(self, remote_file):
+        widgets = [
+            remote_file.filename,
+            ':    ',
+            progressbar.FileTransferSpeed(),
+            ' ',
+            progressbar.ETA(),
+            ' ',
+            progressbar.Bar(),
+            ' ',
+            progressbar.Percentage(),
+        ]
+        pbar = progressbar.ProgressBar(widgets=widgets, maxval=remote_file.size)
+        remote_file.download([ProgressBarHook(pbar)])
+
+    def pre_upgrade_uninstall_pkg(self, installed_pkg):
+        print("Removing %s..." % installed_pkg.pkg_info['id'])
+
+    def pre_upgrade_install_pkg(self, installable_pkg):
+        print("Installing %s..." % installable_pkg.pkg_info['id'])
+
+    def pre_upgrade_pkg(self, installed_pkg):
+        print("Upgrading %s..." % installed_pkg.pkg_info['id'])
+
+----------------------------------------
+
+File: commands.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import argparse
+import sys
+
+
+def execute_command(command, args=None):
+    if args is None:
+        args = sys.argv[1:]
+    command_executor = CommandExecutor(command)
+    command_executor.execute(args)
+
+
+class CommandExecutor:
+    def __init__(self, command):
+        self._command = command
+
+    def execute(self, args):
+        parser = self._command.create_parser()
+        self._command.configure_parser(parser)
+
+        subcommands = self._command.create_subcommands()
+        self._command.configure_subcommands(subcommands)
+        subcommands.configure_parser(parser)
+
+        parsed_args = parser.parse_args(args)
+        self._command.pre_execute(parsed_args)
+        subcommands.execute(parsed_args)
+
+
+class AbstractCommand:
+    def create_parser(self):
+        return argparse.ArgumentParser()
+
+    def configure_parser(self, parser):
+        pass
+
+    def create_subcommands(self):
+        return Subcommands()
+
+    def configure_subcommands(self, subcommands):
+        raise Exception('must be overriden in derived class')
+
+    def pre_execute(self, parsed_args):
+        pass
+
+
+class Subcommands:
+    def __init__(self):
+        self._subcommands = []
+
+    def add_subcommand(self, subcommand):
+        self._subcommands.append(subcommand)
+
+    def configure_parser(self, parser):
+        subparsers = parser.add_subparsers(required=True, dest='_subcommand')
+        for subcommand in self._subcommands:
+            subcommand_parser = subparsers.add_parser(subcommand.name)
+            subcommand_parser.set_defaults(_subcommand=subcommand)
+            subcommand.configure_parser(subcommand_parser)
+
+    def execute(self, parsed_args):
+        subcommand = parsed_args._subcommand
+        subcommand.execute(parsed_args)
+
+
+class AbstractSubcommand:
+    def __init__(self, name):
+        self.name = name
+
+    def configure_parser(self, parser):
+        pass
+
+    def execute(self, parsed_args):
+        raise Exception('must be overriden in derived class')
+
+----------------------------------------
+
+File: config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+from configparser import RawConfigParser
+
+from accent_fetchfw.params import ConfigSpec
+
+
+def _new_config_spec():
+    cfg_spec = ConfigSpec()
+
+    # [general] section definition
+    cfg_spec.add_param('general.root_dir', default='/')
+    cfg_spec.add_param('general.db_dir', default='/var/lib/accent-fetchfw')
+    cfg_spec.add_param('general.cache_dir', default='/var/cache/accent-fetchfw')
+
+    @cfg_spec.add_param_decorator('general.auth_sections', default=[])
+    def _auth_sections_fun(raw_value):
+        return raw_value.split()
+
+    # [global_vars] section definition
+    cfg_spec.add_section('global_vars')
+
+    # [proxy] section definition
+    cfg_spec.add_section('proxy')
+
+    # dynamic [auth-section] definition (referenced by general.auth_sections)
+    cfg_spec.add_dyn_param('auth-section', 'uri', default=ConfigSpec.MANDATORY)
+    cfg_spec.add_dyn_param('auth-section', 'username', default=ConfigSpec.MANDATORY)
+    cfg_spec.add_dyn_param('auth-section', 'password', default=ConfigSpec.MANDATORY)
+
+    # unknown section hook for dynamic auth sections
+    @cfg_spec.set_unknown_section_hook_decorator
+    def _unknown_section_hook(config_dict, section_id, section_dict):
+        if section_id in config_dict['general.auth_sections']:
+            return 'auth-section'
+
+    return cfg_spec
+
+
+_CONFIG_SPEC = _new_config_spec()
+
+
+def read_config(filename):
+    config_parser = RawConfigParser()
+    # case-sensitive options (used for section 'global_vars')
+    config_parser.optionxform = str
+    with open(filename) as f:
+        config_parser.read_file(f)
+    return _CONFIG_SPEC.read_config(config_parser)
+
+----------------------------------------
+
+File: download.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import contextlib
+import hashlib
+import logging
+import os
+from binascii import b2a_hex
+from urllib import request
+from urllib.error import HTTPError, URLError
+from urllib.request import HTTPBasicAuthHandler, HTTPDigestAuthHandler, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
+
+from accent_fetchfw.util import FetchfwError
+
+logger = logging.getLogger(__name__)
+
+
+class DownloadError(FetchfwError):
+    pass
+
+
+class InvalidCredentialsError(DownloadError):
+    pass
+
+
+class CorruptedFileError(DownloadError):
+    pass
+
+
+class AbortedDownloadError(DownloadError):
+    pass
+
+
+class DefaultDownloader:
+    _TIMEOUT = 15.0
+
+    def __init__(self, handlers=None):
+        if handlers is None:
+            self._opener = request.build_opener()
+        else:
+            self._opener = request.build_opener(*handlers)
+        self._opener.addheaders = [('User-agent', 'accent-fetchfw/1.0')]
+
+    def download(self, url, timeout=_TIMEOUT):
+        """Open the URL url and return a file-like object."""
+        try:
+            return self._do_download(url, timeout)
+        except HTTPError as e:
+            logger.warning("HTTPError while downloading '%s': %s", self._get_url(url), e)
+            if e.code == 401:
+                raise InvalidCredentialsError("unauthorized access to '%s'" % self._get_url(url))
+            else:
+                raise DownloadError(e)
+        except URLError as e:
+            logger.warning("URLError while downloading '%s': %s", self._get_url(url), e)
+            raise DownloadError(e)
+
+    def _get_url(self, url):
+        # Return the URL from either a urllib2.Request or string instance
+        if hasattr(url, 'get_full_url'):
+            return url.get_full_url()
+        else:
+            return url
+
+    def _do_download(self, url, timeout):
+        """This method is called by the download method. Any urllib2-related exception
+        raised in this method will be caught and wrapped around an exception who
+        derives from DownloadError. Derived class may override this method if
+        needed.
+
+        """
+        return self._opener.open(url, timeout=timeout)
+
+
+class AuthenticatingDownloader(DefaultDownloader):
+    def __init__(self, handlers=None):
+        super().__init__(handlers)
+        self._pwd_manager = HTTPPasswordMgrWithDefaultRealm()
+        self._opener.add_handler(HTTPBasicAuthHandler(self._pwd_manager))
+        self._opener.add_handler(HTTPDigestAuthHandler(self._pwd_manager))
+
+    def add_password(self, realm, uri, user, passwd):
+        # Note that if the realm and uri are the same that for an already
+        # added user/passwd, it will be replaced by the new value
+        self._pwd_manager.add_password(realm, uri, user, passwd)
+
+
+class _OpenerWithTimeout:
+    def __init__(self, opener, timeout):
+        self._opener = opener
+        self._timeout = timeout
+
+    def open(self, url, data=None):
+        return self._opener.open(url, data, self._timeout)
+
+
+class BaseRemoteFile:
+    """A remote file that can be downloaded."""
+
+    _BLOCK_SIZE = 4096
+
+    def __init__(self, url, downloader, hook_factories=None):
+        """
+        url -- the URL/object to pass to the downloader
+        downloader -- the file downloader
+        hook_factories -- a list of callable objects that return download hook
+
+        """
+        self._url = url
+        self._downloader = downloader
+        if hook_factories is None:
+            self._hook_factories = []
+        else:
+            self._hook_factories = list(hook_factories)
+
+    def download(self, supp_hooks=[]):
+        """Download the file and run it through the hooks.
+
+        Download hooks are stopped in the reverse order they are started.
+
+        """
+        logger.debug('Downloading %s', self._url)
+        hooks = supp_hooks + [factory() for factory in self._hook_factories]
+        last_started_idx = 0
+        try:
+            while last_started_idx < len(hooks):
+                hooks[last_started_idx].start()
+                last_started_idx += 1
+            with contextlib.closing(self._downloader.download(self._url)) as dlfile:
+                while True:
+                    data = dlfile.read(self._BLOCK_SIZE)
+                    if not data:
+                        break
+                    for hook in hooks:
+                        hook.update(data)
+            for hook in reversed(hooks):
+                hook.complete()
+        except Exception as e:
+            # preserve traceback info
+            try:
+                raise
+            finally:
+                hook_idx = last_started_idx
+                while hook_idx:
+                    # Although hook.fail MUST NOT raise an exception, catch
+                    # any exception that could be raised from badly implemented
+                    # hook so that the contract for the other hooks is respected
+                    hook_idx -= 1
+                    try:
+                        hooks[hook_idx].fail(e)
+                    except Exception:
+                        logger.error('hook.fail raised an exception', exc_info=True)
+        finally:
+            hook_idx = last_started_idx
+            while hook_idx:
+                hook_idx -= 1
+                try:
+                    hooks[hook_idx].stop()
+                except Exception:
+                    logger.error('hook.stop raised an exception', exc_info=True)
+
+
+class RemoteFile:
+    """A BaseRemoteFile with a few extra attributes:
+
+    size -- the size of the remote file
+    filename -- the filename of the file that will be written to the filesystem
+    path -- the complete path of the file that will be written to the filesystem
+    exists -- a method that returns true if the remote file exists on the filesystem
+
+    """
+
+    def __init__(self, path, size, base_remote_file):
+        """
+        path -- the path where the file will be written
+
+        Note that you probably want to use the "new_remote_file" function
+        instead of directly using this constructor.
+
+        """
+        self.path = path
+        self.size = size
+        self._base_remote_file = base_remote_file
+
+    @property
+    def filename(self):
+        return os.path.basename(self.path)
+
+    def exists(self):
+        """Return True if the destination path of the file to download refers to
+        an existing path.
+
+        """
+        return os.path.isfile(self.path)
+
+    def download(self, supp_hooks=[]):
+        self._base_remote_file.download(supp_hooks)
+
+    @classmethod
+    def new_remote_file(cls, path, size, url, downloader, hook_factories=[]):
+        hook_factories = [*hook_factories, WriteToFileHook.create_factory(path)]
+        base_remote_file = BaseRemoteFile(url, downloader, hook_factories)
+        return cls(path, size, base_remote_file)
+
+
+class DownloadHook:
+    """Base class for download hooks."""
+
+    def start(self):
+        """Called just before the download is started.
+
+        If this method returns without raising an exception, this hook is
+        guaranteed to have one of it's complete/fail method called and its
+        stop method called.
+
+        """
+        pass
+
+    def update(self, data):
+        """Called every time a certain amount of data from the download is
+        received.
+
+        """
+        pass
+
+    def complete(self):
+        """Called just after the download has completed.
+
+        An exception MAY be raised if this hook consider the download not to
+        have successfully completed.
+
+        """
+        pass
+
+    def fail(self, exc_value):
+        """Called just after the download has failed.
+
+        exc_value is the exception that caused the download to fail.
+
+        Note that this method can be called even if the complete method has
+        been called earlier. This happens if another hook in the chain decided
+        that the download was in fact not complete.
+
+        This method MUST NOT raise an exception.
+
+        """
+        pass
+
+    def stop(self):
+        """Called just after the download is stopped, either because the
+        download completed succesfully or failed.
+
+        This method is always called if the method
+
+        This method MUST NOT raise an exception.
+
+        """
+        pass
+
+
+class WriteToFileHook(DownloadHook):
+    """Write a download to a file."""
+
+    def __init__(self, filename):
+        super().__init__()
+        self._filename = filename
+        # XXX usage of a fixed suffix might not be the best idea since we could
+        #     overwrite a 'valid' file with this name, that said we want both files
+        #     to be on the same filesystem so that rename are atomic...
+        self._tmp_filename = filename + '.tmp'
+        self._fobj = None
+        self._renamed = False
+
+    def start(self):
+        self._fobj = open(self._tmp_filename, 'wb')
+
+    def update(self, data):
+        self._fobj.write(data)
+
+    def complete(self):
+        self._fobj.close()
+        os.rename(self._tmp_filename, self._filename)
+        self._renamed = True
+
+    def fail(self, exc_value):
+        # note that self._fobj.close() might have already been called since
+        # fail can sometimes be called after complete, but this is not a problem
+        self._fobj.close()
+        # remove temporary file without modifying the stack trace
+        try:
+            pass
+        finally:
+            try:
+                filename = self._filename if self._renamed else self._tmp_filename
+                os.remove(filename)
+            except OSError as e:
+                logger.error("error while removing '%s': %s", filename, e)
+
+    @classmethod
+    def create_factory(cls, filename):
+        """Create a hook factory that will return WriteToFileHook instances."""
+
+        def aux():
+            return cls(filename)
+
+        return aux
+
+
+class SHA1Hook(DownloadHook):
+    """Compute the SHA1 sum of a download and check if it match."""
+
+    def __init__(self, sha1sum):
+        """
+        sha1sum -- the raw sha1 sum (NOT an hex representation).
+        """
+        super().__init__()
+        self._sha1sum = sha1sum
+        self._hash = None
+
+    def start(self):
+        self._hash = hashlib.sha1()
+
+    def update(self, data):
+        self._hash.update(data)
+
+    def complete(self):
+        sha1sum = self._hash.digest()
+        if sha1sum != self._sha1sum:
+            raise CorruptedFileError(f"sha1sum mismatch: {b2a_hex(sha1sum)} instead of {b2a_hex(self._sha1sum)}")
+
+    @classmethod
+    def create_factory(cls, sha1sum):
+        """Create a hook factory that will return SHA1Hook instances."""
+
+        def aux():
+            return cls(sha1sum)
+
+        return aux
+
+
+class ProgressBarHook(DownloadHook):
+    """Update a progress bar matching the download status."""
+
+    def __init__(self, pbar):
+        super().__init__()
+        self._pbar = pbar
+        self._size = 0
+
+    def start(self):
+        self._pbar.start()
+
+    def update(self, data):
+        self._size += len(data)
+        self._pbar.update(self._size)
+
+    def complete(self):
+        self._pbar.finish()
+
+
+class AbortHook(DownloadHook):
+    """Abort a download at will by raising an exception in a call to update."""
+
+    def __init__(self):
+        super().__init__()
+        self._abort = False
+
+    def update(self, data):
+        if self._abort:
+            logger.info('explicitly aborting download')
+            raise AbortedDownloadError()
+
+    def abort_download(self):
+        logger.info('scheduling download abortion')
+        self._abort = True
+
+
+def new_handlers(proxies=None):
+    """Return a list of standard handlers to be used by downloaders.
+
+    proxies -- a dictionary mapping protocol names to URLs of proxies, or
+      None
+
+    """
+    if proxies:
+        return [ProxyHandler(proxies)]
+    else:
+        return []
+
+
+def new_downloaders_from_handlers(handlers=None):
+    """Return a 2-items dictionary ret, for which:
+
+    ret['default'] is a DefaultDownloader
+    ret['auth'] is an AuthenticatingDownloader
+
+    """
+    auth = AuthenticatingDownloader(handlers)
+    default = DefaultDownloader(handlers)
+    return {'auth': auth, 'default': default}
+
+
+def new_downloaders(proxies=None):
+    """Create standard handlers and downloaders."""
+    return new_downloaders_from_handlers(new_handlers(proxies))
+
+----------------------------------------
+
+File: install.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import collections
+import contextlib
+import glob
+import itertools
+import logging
+import os
+import shutil
+import subprocess
+import tarfile
+import tempfile
+import zipfile
+from fnmatch import fnmatch
+
+from accent_fetchfw.util import FetchfwError
+
+logger = logging.getLogger(__name__)
+
+
+class InstallationError(FetchfwError):
+    pass
+
+
+class InstallationGraphError(InstallationError):
+    pass
+
+
+class _InstallationProcess:
+    def __init__(self, sources, filters, dir=None):
+        self._sources = sources
+        self._filters = filters
+        self._dir = dir
+        self._executed = False
+        self._need_cleanup = False
+        self._base_dir = None
+
+    def execute(self):
+        """Execute the installation.
+
+        Return the directory (subdirectory of dir) which contains the result
+        of the installation process.
+
+        """
+        if self._executed:
+            raise Exception('Installation process already executed')
+        self._base_dir = tempfile.mkdtemp(dir=self._dir)
+        req_map = self._build_requirement_map()
+
+        sources = self._sources
+        filters = self._filters
+        result_dir, input_dirs, output_dirs = self._create_directories_map(req_map)
+        try:
+            for node_id in self._create_execution_plan(req_map):
+                if node_id in sources:
+                    source_obj = sources[node_id]
+                    output_dir = output_dirs[node_id]
+                    logger.debug("Executing source node %s", node_id)
+                    source_obj.pull(output_dir)
+                else:
+                    assert node_id in filters
+                    filter_obj = filters[node_id][0]
+                    input_dir = input_dirs[node_id]
+                    output_dir = output_dirs[node_id]
+                    logger.debug("Executing filter node %s", node_id)
+                    filter_obj.apply(input_dir, output_dir)
+        except Exception:
+            logger.error("Error during execution of installation manager", exc_info=True)
+            try:
+                raise
+            finally:
+                shutil.rmtree(self._base_dir, True)
+        else:
+            self._executed = True
+            self._need_cleanup = True
+            return result_dir
+
+    def _build_requirement_map(self):
+        # Return a 'requirement map', i.e. a dictionary which keys are node id
+        # and values are node id that depends on the key
+        req_map = {node_id: [] for node_id in itertools.chain(self._sources, self._filters)}
+        for filter_id, (_, filter_dependency) in self._filters.items():
+            req_map[filter_dependency].append(filter_id)
+        return req_map
+
+    def _create_directories_map(self, req_map):
+        # note that self._base_dir must have been set
+        result_dir = os.path.join(self._base_dir, 'result')
+        os.mkdir(result_dir)
+        input_dirs = {}
+        output_dirs = {}
+        for node_id, requirements in req_map.items():
+            if not requirements:
+                # terminal node
+                output_dirs[node_id] = result_dir
+            else:
+                # non-terminal node
+                cur_dir = os.path.join(self._base_dir, 'node_' + node_id)
+                os.mkdir(cur_dir)
+                output_dirs[node_id] = cur_dir
+                for requirement in requirements:
+                    input_dirs[requirement] = cur_dir
+        return result_dir, input_dirs, output_dirs
+
+    def _create_execution_plan(self, req_map):
+        # Return a iterator which gives a valid order of execution of nodes
+        # The algorithm is correct since each filter has 1 and exactly 1 dependency
+        deque = collections.deque(self._sources)
+        while deque:
+            node_id = deque.popleft()
+            yield node_id
+            for requirement in req_map[node_id]:
+                if requirement not in deque:
+                    deque.append(requirement)
+
+    def cleanup(self):
+        """Remove all files and directory created during the installation.
+
+        Note that this includes the files in the result directory.
+
+        It is safe to call this method even if the install process has not
+        been executed or to call this method more than once.
+
+        """
+        if self._need_cleanup:
+            shutil.rmtree(self._base_dir, True)
+            self._need_cleanup = False
+
+
+class InstallationManager:
+    """An installation manager..."""
+
+    def __init__(self, installation_graph):
+        r"""Build an InstallationManager.
+
+        Installation_graph is a dictionary, for example:
+          {'filters':
+              {'ZipFilter1': (<ZipFilter object>, 'TarFilter1'),
+               'TarFilter1': (<TarFilter object>, 'FilesystemLinkSource'),
+              },
+           'sources':
+              {'FilesystemLinkSource1': <FilesystemLinkSource object>}
+          }
+
+        Note that node id MUST match the regex \w+.
+
+        A filter is an object with a 'apply(src_directory, dst_directory)' method.
+        A source is an object with a 'pull(dst_directory)' method.
+
+        Raise an InstallationGraphError if the installation graph is invalid.
+
+        """
+        self._sources = installation_graph['sources']
+        self._filters = installation_graph['filters']
+        self._check_installation_graph_validity()
+
+    def _check_installation_graph_validity(self):
+        # Check if the installation graph is valid, if not, raise an InstallationError.
+        self._check_nodes_id_are_unique()
+        self._check_filters_depend_on_valid_node()
+        self._check_no_useless_source()
+        self._check_is_acyclic()
+
+    def _check_nodes_id_are_unique(self):
+        common_ids = set(self._sources).intersection(self._filters)
+        if common_ids:
+            raise InstallationGraphError("these IDs are shared by both a source and a filter: %s" % common_ids)
+
+    def _check_filters_depend_on_valid_node(self):
+        # Check that there's no unknown identifier in the installation graph, i.e. raise an
+        # exception if there's a filter such that it depends on an unknown node.
+        sources = self._sources
+        filters = self._filters
+        for filter_id, filter_value in filters.items():
+            node_dependency = filter_value[1]
+            if node_dependency not in filters and node_dependency not in sources:
+                raise InstallationGraphError(
+                    f"filter '{filter_id}' depends on unknown filter/source '{node_dependency}'"
+                )
+
+    def _check_no_useless_source(self):
+        # Check if every source participates in the installation process, i.e. raise an exception
+        # if there's a source such that no other filter depend on it.
+        dependencies = (v[1] for v in self._filters.values())
+        unused_sources = set(self._sources).difference(dependencies)
+        if unused_sources:
+            raise InstallationGraphError("these sources doesn't participate in the installation: %s" % unused_sources)
+
+    def _check_is_acyclic(self):
+        # Check that the installation graph is acyclic
+        sources = self._sources
+        filters = self._filters
+        visited = set()
+        for node_id in filters:
+            if node_id not in visited:
+                currently_visited = {node_id}
+                while True:
+                    next_node_id = filters[node_id][1]
+                    if next_node_id in sources:
+                        break
+                    if next_node_id in currently_visited:
+                        raise InstallationGraphError("a cycle in the installation graph has been detected")
+                    currently_visited.add(next_node_id)
+                    node_id = next_node_id
+                visited.update(currently_visited)
+
+    def new_installation_process(self, dir=None):
+        """Return an installation process instance, i.e. an object with an
+        "execute" and "cleanup" method.
+
+        See _InstallationProcess for more info on these methods.
+
+        Temporaries directory and files will be created in subdirectories of
+        dir, which can be None, in the case the default system temporary
+        directory will be used.
+
+        """
+        return _InstallationProcess(self._sources, self._filters, dir)
+
+
+class _GlobHelper:
+    """The python glob module works only with the notion of the current directory.
+    This class is used to facilitate the application of one or more glob patterns
+    inside arbitrary directories.
+
+    """
+
+    def __init__(self, pathnames, error_on_no_matches=True):
+        """pathnames can be either a single path name or an iterable of path names."""
+        if isinstance(pathnames, str):
+            self._pathnames = [os.path.normpath(pathnames)]
+        else:
+            self._pathnames = [os.path.normpath(pathname) for pathname in pathnames]
+        for pathname in self._pathnames:
+            if os.path.isabs(pathname):
+                raise ValueError("path name '%s' is an absolute path" % pathname)
+            if pathname.startswith(os.pardir):
+                raise ValueError("path name '%s' makes reference to the parent directory" % pathname)
+        self._error_on_no_matches = error_on_no_matches
+
+    def glob_in_dir(self, src_directory):
+        return list(self.iglob_in_dir(src_directory))
+
+    def iglob_in_dir(self, src_directory):
+        """Apply the glob patterns in src_directory and return an iterator over
+        each file matched.
+
+        """
+        no_matches = True
+        for rel_pathname in self._pathnames:
+            abs_pathname = os.path.join(src_directory, rel_pathname)
+            for globbed_abs_pathname in glob.iglob(abs_pathname):
+                no_matches = False
+                yield globbed_abs_pathname
+        if no_matches and self._error_on_no_matches:
+            raise InstallationError(
+                f"the glob patterns {self._pathnames} did not match anything in directory '{src_directory}'"
+            )
+
+
+class FilesystemLinkSource:
+    """A source which create symlink of existing files to the destination
+    directory.
+
+    You should be careful if you plan on using this source with directories,
+    i.e. you might be looking for trouble if you are creating links to parent
+    directories of the destination directory.
+
+    """
+
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+
+        """
+        if isinstance(pathnames, str):
+            self._pathnames = [pathnames]
+        else:
+            self._pathnames = list(pathnames)
+
+    def pull(self, dst_directory):
+        for pathname in self._pathnames:
+            for globbed_pathname in glob.iglob(pathname):
+                os.symlink(globbed_pathname, os.path.join(dst_directory, os.path.basename(globbed_pathname)))
+
+
+class NonGlobbingFilesystemLinkSource:
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single pathname or an iterator over multiple pathnames
+
+        """
+        if isinstance(pathnames, str):
+            self._pathnames = [pathnames]
+        else:
+            self._pathnames = list(pathnames)
+
+    def pull(self, dst_directory):
+        for pathname in self._pathnames:
+            # note that we check if pathname really exist so we can easily
+            # detect human error, that said it's still possible that the file
+            # be removed during execution
+            if not os.path.exists(pathname):
+                raise InstallationError('path doesn\'t exist: %s' % pathname)
+            os.symlink(pathname, os.path.join(dst_directory, os.path.basename(pathname)))
+
+
+class FilesystemCopySource:
+    """A cleaner alternative to FilesystemLinkSource if you are worried about
+    race condition, side effects, etc.
+
+    """
+
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+
+        """
+        if isinstance(pathnames, str):
+            self._pathnames = [pathnames]
+        else:
+            self._pathnames = list(pathnames)
+
+    def pull(self, dst_directory):
+        for pathname in self._pathnames:
+            for globbed_pathname in glob.iglob(pathname):
+                dst_pathname = os.path.join(dst_directory, os.path.basename(globbed_pathname))
+                if os.path.isdir(globbed_pathname):
+                    shutil.copytree(globbed_pathname, dst_pathname)
+                else:
+                    shutil.copy(globbed_pathname, dst_pathname)
+
+
+class NullSource:
+    """A source that add nothing to the destination directory.
+
+    Mostly useful for testing purposes.
+
+    """
+
+    def pull(self, dst_directory):
+        pass
+
+
+class ZipFilter:
+    """A filter who transform a directory containing zip files to a directory containing
+    the content of these zip files.
+
+    """
+
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+
+        """
+        self._glob_helper = _GlobHelper(pathnames)
+
+    def apply(self, src_directory, dst_directory):
+        for pathname in self._glob_helper.iglob_in_dir(src_directory):
+            with contextlib.closing(zipfile.ZipFile(pathname, 'r')) as zf:
+                zf.extractall(dst_directory)
+
+
+class TarFilter:
+    """A filter who transform a directory containing tar files to a directory containing
+    the content of these tar files. The tar files can be either uncompressed, gzipped
+    or bz2-ipped.
+
+    """
+
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+
+        """
+        self._glob_helper = _GlobHelper(pathnames)
+
+    def apply(self, src_directory, dst_directory):
+        for pathname in self._glob_helper.iglob_in_dir(src_directory):
+            with contextlib.closing(tarfile.open(pathname)) as tf:
+                tf.extractall(dst_directory)
+
+
+class RarFilter:
+    """A filter who transform a directory containing rar files to a directory
+    containing the content of these rar files.
+
+    Note that it depends on the "unrar" executable to be present on the host
+    system. On Debian squeeze, this executable is found in the "unrar"
+    package (non-free version).
+
+    """
+
+    _CMD_PREFIX = ['unrar', 'e', '-idq', '-y']
+
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+
+        """
+        self._glob_helper = _GlobHelper(pathnames)
+
+    def apply(self, src_directory, dst_directory):
+        for pathname in self._glob_helper.iglob_in_dir(src_directory):
+            cmd = [*self._CMD_PREFIX, pathname, dst_directory]
+            logger.debug('Executing external command: %s', cmd)
+            retcode = subprocess.call(cmd)
+            if retcode:
+                raise InstallationError('unrar returned status code %s' % retcode)
+
+
+class Filter7z:
+    """A filter who transform a directory containing 7z files to a directory
+    containing the content of these 7z files.
+
+    Note that it depends on the "7zr" executable to be present on the host
+    system. On Debian squeeze, this executable is found in the "p7zip" package.
+
+    Also, note that the 7zr has a somehow weird behaviour when specifying an
+    output directory, files inside directory of the archive will be all
+    extracted in the same base directory.
+
+    This class is not named '7zFilter' because this is an invalid python
+    identifier.
+
+    """
+
+    _CMD_PREFIX = ['7zr', 'e', '-bd']
+
+    def __init__(self, pathnames):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+
+        """
+        self._glob_helper = _GlobHelper(pathnames)
+
+    def apply(self, src_directory, dst_directory):
+        for pathname in self._glob_helper.iglob_in_dir(src_directory):
+            cmd = [*self._CMD_PREFIX, '-o%s' % dst_directory, pathname]
+            # there's no "quiet" option for 7zr, so we redirect stdout to /dev/null
+            with open(os.devnull, 'wb') as devnull_fobj:
+                logger.debug('Executing external command: %s', cmd)
+                retcode = subprocess.call(cmd, stdout=devnull_fobj)
+            if retcode:
+                raise InstallationError('7zr returned status code %s' % retcode)
+
+
+class CiscoUnsignFilter:
+    """A filter who transform a directory containing a Cisco-signed gzip file to a directory
+    containing the gzipped file inside the signed file.
+
+    """
+
+    _BUF_SIZE = 512
+    _GZIP_MAGIC_NUMBER = b'\x1f\x8b'  # see http://www.gzip.org/zlib/rfc-gzip.html#file-format
+
+    def __init__(self, signed_pathname, unsigned_pathname):
+        """Note: signed_pathname can be a glob pattern, but when the pattern is expanded,
+        it must match only ONE file or an error will be raised. This is for convenience, so
+        that if you don't know the exact name of a file, you can still use a glob pattern to
+        match it.
+
+        """
+        self._glob_helper = _GlobHelper(signed_pathname)
+        self._unsigned_pathname = os.path.normpath(unsigned_pathname)
+        if os.path.isabs(self._unsigned_pathname):
+            raise ValueError("unsigned path name '%s' is an absolute path" % self._unsigned_pathname)
+        if self._unsigned_pathname.startswith(os.pardir):
+            raise ValueError(
+                "unsigned path name '%s' makes reference to the parent directory" % self._unsigned_pathname
+            )
+
+    def apply(self, src_directory, dst_directory):
+        signed_pathnames = self._glob_helper.glob_in_dir(src_directory)
+        if len(signed_pathnames) > 1:
+            raise InstallationError("glob pattern matched %d files" % len(signed_pathnames))
+        signed_pathname = signed_pathnames[0]
+        with open(signed_pathname, 'rb') as sf:
+            buf = sf.read(CiscoUnsignFilter._BUF_SIZE)
+            index = buf.find(CiscoUnsignFilter._GZIP_MAGIC_NUMBER)
+            if index == -1:
+                raise InstallationError("Couldn't find gzip magic number in the signed file.")
+            unsigned_filename = os.path.join(dst_directory, self._unsigned_pathname)
+            with open(unsigned_filename, 'wb') as f:
+                f.write(buf[index:])
+                shutil.copyfileobj(sf, f)
+
+
+class IncludeExcludeFilter:
+    def __init__(self, filter_fun):
+        """
+        filter_fun -- a callable object taking two arguments, the first being
+          the relative name of the file currently under test and the second
+          being the absolute name of the file. The call returns true if the
+          file is to be included in the destination directory, or false to
+          exclude it.
+
+        The relative name is relative to the source directory, i.e. if the
+        source directory contains a directory named 'dir1' that contains a
+        file named 'file1', the relative name for this file would be
+        'dir1/file1'.
+
+        Note that if false is returned for a file that is a directory, the
+        filter_fun object won't be called for any files under this directory
+        because it wouldn't make sense to include a file if you excluded the
+        parent directory.
+
+        That said, if true is returned for a directory, the files under this
+        directory are not automatically included and the filter_fun will be
+        called for every child files of this directory.
+
+        """
+        self._filter_fun = filter_fun
+
+    def apply(self, src_directory, dst_directory):
+        rel_dir_stack = [os.curdir]
+        while rel_dir_stack:
+            rel_current_dir = rel_dir_stack.pop()
+            abs_current_dir = os.path.join(src_directory, rel_current_dir)
+            for file in os.listdir(abs_current_dir):
+                rel_file = file if rel_current_dir == os.curdir else os.path.join(rel_current_dir, file)
+                src_abs_file = os.path.join(src_directory, rel_file)
+                if self._filter_fun(rel_file, src_abs_file):
+                    dst_abs_file = os.path.join(dst_directory, rel_file)
+                    if os.path.isdir(src_abs_file):
+                        os.mkdir(dst_abs_file)
+                        rel_dir_stack.append(rel_file)
+                    else:
+                        shutil.copy(src_abs_file, dst_abs_file)
+
+
+def ExcludeFilter(pathnames):
+    """A filter which excludes some files of the source directory from the destination
+    directory. Excluded files can be either files, directories or both.
+
+    Takes the following arguments:
+      pathnames -- a single glob pattern or an iterator over multiple glob
+        patterns
+
+    """
+    pathnames = [pathnames] if isinstance(pathnames, str) else list(pathnames)
+
+    def filter_fun(rel_file, abs_file):
+        return all(not fnmatch(rel_file, pathname) for pathname in pathnames)
+
+    return IncludeExcludeFilter(filter_fun)
+
+
+def IncludeFilter(pathnames):
+    """A filter which includes some files of the source directory from the destination
+    directory. Included files can be either files, directories or both.
+
+    Takes the following arguments:
+      pathnames -- a single glob pattern or an iterator over multiple glob
+        patterns
+
+    """
+    pathnames = [pathnames] if isinstance(pathnames, str) else list(pathnames)
+
+    included_dirs = set()
+
+    def filter_fun(rel_file, abs_file):
+        # include rel_file if its a child of an already included directory
+        rel_dirname = os.path.dirname(rel_file)
+        if rel_dirname in included_dirs:
+            if os.path.isdir(abs_file):
+                included_dirs.add(rel_file)
+            return True
+        for pathname in pathnames:
+            if fnmatch(rel_file, pathname):
+                if os.path.isdir(abs_file):
+                    included_dirs.add(rel_file)
+                return True
+        return False
+
+    return IncludeExcludeFilter(filter_fun)
+
+
+class CopyFilter:
+    """A filter which copy one or more files or directories to a certain path
+    in the destination directory.
+
+    """
+
+    def __init__(self, pathnames, dst):
+        """
+        pathnames -- a single glob pattern or an iterator over multiple glob
+          patterns
+        dst -- either a directory name, if it ends with '/', or else a file name.
+          This must be explicit because the installer create any missing directory
+          when copying files. This is a relative destination.
+
+        """
+        self._glob_helper = _GlobHelper(pathnames)
+        self._dst = dst
+
+    def apply(self, src_directory, dst_directory):
+        dst_is_dir = self._dst.endswith('/')
+        abs_dst = os.path.join(dst_directory, self._dst)
+        try:
+            if os.path.exists(abs_dst):
+                if os.path.isdir(abs_dst) != dst_is_dir:
+                    if dst_is_dir:
+                        raise InstallationError("destination exists and is a file but should be a directory")
+                    else:
+                        raise InstallationError("destination exists and is a directory but should be a file")
+            else:
+                dirname = os.path.dirname(abs_dst)
+                if not os.path.exists(dirname):
+                    os.makedirs(dirname)
+            if dst_is_dir:
+                self._apply_dir(src_directory, abs_dst)
+            else:
+                self._apply_file(src_directory, abs_dst)
+        except OSError as e:
+            logger.error("Error during execution of copy filter", exc_info=True)
+            raise InstallationError(e)
+
+    def _apply_dir(self, src_directory, abs_dst):
+        for pathname in self._glob_helper.iglob_in_dir(src_directory):
+            if os.path.isdir(pathname):
+                src_dir_name = os.path.basename(pathname)
+                shutil.copytree(pathname, os.path.join(abs_dst, src_dir_name), True)
+            else:
+                shutil.copy(pathname, abs_dst)
+
+    def _apply_file(self, src_directory, abs_dst):
+        pathnames = self._glob_helper.glob_in_dir(src_directory)
+        if len(pathnames) > 1:
+            raise InstallationError("glob pattern matched %d files" % len(pathnames))
+        pathname = pathnames[0]
+        shutil.copy(pathname, abs_dst)
+
+
+class NullFilter:
+    """A filter that add nothing to the destination directory.
+
+    Mostly useful for testing purposes.
+
+    """
+
+    def apply(self, src_directory, dst_directory):
+        pass
+
+----------------------------------------
+
+File: main.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import logging
+import sys
+from operator import itemgetter
+
+from accent_fetchfw import cli, commands, config, download, package, params, storage, util
+
+logger = logging.getLogger('accent-fetchfw')
+
+
+def main():
+    _init_logging()
+    try:
+        commands.execute_command(_AccentFetchfwCommand())
+    except cli.UserCancellationError:
+        pass
+    except util.FetchfwError as e:
+        print("error:", e, file=sys.stderr)
+        logger.debug('Stack trace:', exc_info=True)
+        sys.exit(1)
+    except Exception as e:
+        print("Unexpected exception:", e, file=sys.stderr)
+        logger.debug('Stack trace:', exc_info=True)
+        sys.exit(1)
+
+
+def _init_logging():
+    logger = logging.getLogger()
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(handler)
+    logger.setLevel(logging.ERROR)
+
+
+class _AccentFetchfwCommand(commands.AbstractCommand):
+    def configure_parser(self, parser):
+        parser.add_argument(
+            '--config', default='/etc/accent/accent-fetchfw.conf', help='set an alternate configuration file'
+        )
+        parser.add_argument('--debug', action='store_true', default=False, help='display debug messages')
+        parser.add_argument('--root', help='set the root directory')
+
+    def configure_subcommands(self, subcommands):
+        subcommands.add_subcommand(_InstallSubcommand('install'))
+        subcommands.add_subcommand(_UpgradeSubcommand('upgrade'))
+        subcommands.add_subcommand(_SearchSubcommand('search'))
+        subcommands.add_subcommand(_RemoveSubcommand('remove'))
+
+    def pre_execute(self, parsed_args):
+        self._process_debug(parsed_args)
+        self._process_config(parsed_args)
+        self._process_root(parsed_args)
+        self._create_pkg_mgr(parsed_args)
+
+    def _process_debug(self, parsed_args):
+        if parsed_args.debug:
+            logger = logging.getLogger()
+            logger.setLevel(logging.DEBUG)
+
+    def _process_config(self, parsed_args):
+        config_filename = parsed_args.config
+        try:
+            config_dict = config.read_config(config_filename)
+        except Exception as e:
+            print(f"error: config file '{cfg_filename}': {e}", file=sys.stderr)
+            logger.debug('Stack trace:', exc_info=True)
+            sys.exit(1)
+        else:
+            parsed_args.config_dict = config_dict
+
+    def _process_root(self, parsed_args):
+        if not parsed_args.root:
+            parsed_args.root = parsed_args.config_dict['general.root_dir']
+
+    def _create_pkg_mgr(self, parsed_args):
+        config_dict = parsed_args.config_dict
+        proxies = params.filter_section(config_dict, 'proxy')
+        downloaders = download.new_downloaders(proxies)
+        global_vars = params.filter_section(config_dict, 'global_vars')
+        able_pkg_sto, ed_pkg_sto = storage.new_pkg_storages(
+            config_dict['general.db_dir'], config_dict['general.cache_dir'], downloaders, global_vars
+        )
+        parsed_args.pkg_mgr = package.PackageManager(able_pkg_sto, ed_pkg_sto)
+
+
+class _InstallSubcommand(commands.AbstractSubcommand):
+    def configure_parser(self, parser):
+        parser.add_argument('packages', nargs='+', help='package(s) to install')
+
+    def execute(self, parsed_args):
+        pkg_ids = parsed_args.packages
+        pkg_mgr = parsed_args.pkg_mgr
+        for pkg_id in pkg_ids:
+            if pkg_id in pkg_mgr.installed_pkg_sto and pkg_id in pkg_mgr.installable_pkg_sto:
+                installed_pkg = pkg_mgr.installed_pkg_sto[pkg_id]
+                installed_version = installed_pkg.pkg_info['version']
+                installable_version = pkg_mgr.installable_pkg_sto[pkg_id].pkg_info['version']
+                cmp_result = util.cmp_version(installed_version, installable_version)
+                if cmp_result == 0:
+                    print("warning: %s is up to date -- reinstalling" % installed_pkg)
+                else:
+                    print("error: %s is already installed" % installed_pkg, file=sys.stderr)
+                    sys.exit(1)
+        ctrl_factory = cli.CliInstallerController.new_factory()
+        pkg_mgr.install(pkg_ids, parsed_args.root, ctrl_factory)
+
+
+class _UpgradeSubcommand(commands.AbstractSubcommand):
+    def execute(self, parsed_args):
+        pkg_mgr = parsed_args.pkg_mgr
+        ctrl_factory = cli.CliUpgraderController.new_factory()
+        pkg_mgr.upgrade(parsed_args.root, ctrl_factory)
+
+
+class _SearchSubcommand(commands.AbstractSubcommand):
+    def configure_parser(self, parser):
+        parser.add_argument('pattern', nargs='?', help='search pattern')
+
+    def execute(self, parsed_args):
+        search_pattern = parsed_args.pattern
+        pkg_mgr = parsed_args.pkg_mgr
+        word = '' if not search_pattern else search_pattern.lower()
+        for installable_pkg in _sorted_itervalues(pkg_mgr.installable_pkg_sto):
+            pkg_id = installable_pkg.pkg_info['id']
+            description = installable_pkg.pkg_info['description']
+            if word in pkg_id.lower() or word in description.lower():
+                if pkg_id in pkg_mgr.installed_pkg_sto:
+                    installed_version = pkg_mgr.installed_pkg_sto[pkg_id].pkg_info['version']
+                    if installed_version != installable_pkg.pkg_info['version']:
+                        print(installable_pkg, "[installed: %s]" % installed_version)
+                    else:
+                        print(installable_pkg, "[installed]")
+                else:
+                    print(installable_pkg)
+                print('   ', installable_pkg.pkg_info['description'])
+
+
+def _sorted_itervalues(dict_):
+    return list(map(itemgetter(1), sorted(dict_.items(), key=itemgetter(0))))
+
+
+class _RemoveSubcommand(commands.AbstractSubcommand):
+    def configure_parser(self, parser):
+        parser.add_argument('packages', nargs='+', help='package(s) to remove')
+
+    def execute(self, parsed_args):
+        pkg_ids = parsed_args.packages
+        pkg_mgr = parsed_args.pkg_mgr
+        ctrl_factory = cli.CliUninstallerController.new_factory(recursive=True)
+        pkg_mgr.uninstall(pkg_ids, parsed_args.root, ctrl_factory)
+
+----------------------------------------
+
+File: package.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import copy
+import logging
+
+from accent_fetchfw.util import FetchfwError, cmp_version, install_paths, remove_paths
+
+logger = logging.getLogger(__name__)
+
+
+class PackageError(FetchfwError):
+    pass
+
+
+_COMMON_MANDATORY_KEYS = ['id', 'version', 'description']
+
+
+def _check_pkg_info(pkg_info, mandatory_keys):
+    for key in mandatory_keys:
+        if key not in pkg_info:
+            raise Exception("missing mandatory key %s" % key)
+
+
+def _add_pkg_info_defaults(pkg_info):
+    pkg_info.setdefault('depends', [])
+
+
+class InstallablePackage:
+    _MANDATORY_KEYS = _COMMON_MANDATORY_KEYS
+
+    def __init__(self, pkg_info, remote_files, install_mgr):
+        r"""Create a new installable package.
+
+        pkg_info -- a dictionary with the following standardised keys:
+          id -- id of the package (mandatory)
+          version -- version of the package. See util.cmp_version for valid
+            version examples (mandatory)
+          description -- the description of the package (mandatory)
+          description_<locale> -- the localized description of the package
+            (optional)
+          depends -- a list of package IDs on which this package depends
+            (optional, default [])
+        remotes_files -- a list of remote file
+        install_mgr -- an installer manager or None
+
+        Note that pkg_info values must be only of these type:
+        - int
+        - float
+        - boolean
+        - unicode string
+        - list
+        - dict
+
+        All pkg_info keys must match \w+ and contains only character from the ASCII set.
+
+        """
+        _check_pkg_info(pkg_info, self._MANDATORY_KEYS)
+        _add_pkg_info_defaults(pkg_info)
+        self.pkg_info = pkg_info
+        self.remote_files = remote_files
+        self.install_mgr = install_mgr
+
+    def clone(self):
+        new_pkg_info = copy.deepcopy(self.pkg_info)
+        return InstallablePackage(new_pkg_info, self.remote_files, self.install_mgr)
+
+    def new_installed_package(self):
+        # Note that for this to works, self must already have all mandatory keys
+        # in it's info
+        new_pkg_info = copy.deepcopy(self.pkg_info)
+        return InstalledPackage(new_pkg_info)
+
+    def __str__(self):
+        return f"{self.pkg_info['id']} {self.pkg_info['version']}"
+
+
+class InstalledPackage:
+    _MANDATORY_KEYS = [*_COMMON_MANDATORY_KEYS, 'files', 'explicit_install']
+
+    def __init__(self, pkg_info):
+        """Create a new installed package.
+
+        pkg_info -- same as pkg_info for installable package but adds the
+          following standardized keys:
+          explicit_install -- a boolean, true if the package was explictly
+            installed (mandatory)
+          files -- a list of files that were created on the host filesysmtem
+            during installation (mandatory)
+
+        """
+        _check_pkg_info(pkg_info, self._MANDATORY_KEYS)
+        _add_pkg_info_defaults(pkg_info)
+        self.pkg_info = pkg_info
+
+    def __str__(self):
+        return f"{self.pkg_info['id']} {self.pkg_info['version']}"
+
+
+class PackageManager:
+    def __init__(self, installable_pkg_sto, installed_pkg_sto):
+        self.installable_pkg_sto = installable_pkg_sto
+        self.installed_pkg_sto = installed_pkg_sto
+
+    def _remove_installed_paths(self, installed_paths, root_dir):
+        # This method never raise an error
+        removed_paths = []
+        try:
+            # this rely on the fact that remove_paths is a generator
+            for removed_path in remove_paths(installed_paths, root_dir):
+                removed_paths.append(removed_path)
+        except Exception as e:
+            # error while removing files we were succesfull at installating
+            non_removed_paths = list(set(installed_paths).difference(removed_paths))
+            logger.warning('Error while removing already installed files: %s' % e, exc_info=True)
+            logger.warning(f'The following files have been left in {root_dir}: {non_removed_paths}')
+
+    def _install_pkg_from_install_mgr(self, install_mgr, root_dir, pkg_id):
+        install_process = install_mgr.new_installation_process()
+        result_dir = install_process.execute()
+
+        installed_paths = []
+        # this rely on the fact that install_paths is a generator (see doc)
+        try:
+            for installed_path in install_paths(result_dir, root_dir):
+                installed_paths.append(installed_path)
+        except Exception as e:
+            logger.error(f'Error during installation of pkg {pkg_id} in {root_dir}: {e}')
+            # preserve stack trace while removing installed files
+            try:
+                raise
+            finally:
+                self._remove_installed_paths(installed_paths, root_dir)
+        else:
+            return installed_paths
+        finally:
+            install_process.cleanup()
+
+    def _install_pkg(self, installable_pkg, root_dir):
+        # install the installable pkg and update the installed pkg sto
+        pkg_id = installable_pkg.pkg_info['id']
+
+        # install files
+        install_mgr = installable_pkg.install_mgr
+        if install_mgr is None:
+            logger.debug("No install mgr for pkg %s" % pkg_id)
+            files = []
+        else:
+            files = self._install_pkg_from_install_mgr(install_mgr, root_dir, pkg_id)
+
+        # commit to installed database
+        try:
+            installable_pkg.pkg_info['files'] = files
+            installed_pkg = installable_pkg.new_installed_package()
+
+            self.installed_pkg_sto.upsert_pkg(installed_pkg)
+        except Exception as e:
+            logger.error(f"Error while commiting pkg {pkg_id} to storage: {e}")
+            # preserve stack trace while removing installed files
+            try:
+                raise
+            finally:
+                self._remove_installed_paths(files, root_dir)
+        else:
+            return installed_pkg
+
+    def install(self, raw_pkg_ids, root_dir, installer_ctrl_factory):
+        # 1. do some preparation
+        installable_pkg_sto = self.installable_pkg_sto
+        installed_pkg_sto = self.installed_pkg_sto
+        # 1.1. instantiate an installer controller
+        installer_ctrl = installer_ctrl_factory(installable_pkg_sto, installed_pkg_sto)
+        installer_ctrl.pre_installation()
+
+        try:
+            # 2. preprocessing
+            # 2.1. get the list of package ids to install
+            pkg_ids = installer_ctrl.preprocess_raw_pkg_ids(raw_pkg_ids)
+
+            # 2.2. get the list of packages to install
+            # next line raise an error if one of pkg id is invalid, which is what we want
+            raw_pkgs = [installable_pkg_sto[pkg_id].clone() for pkg_id in pkg_ids]
+            pkgs = installer_ctrl.preprocess_raw_pkgs(raw_pkgs)
+
+            # 2.3. get the list of remote files to download
+            # this is a quick way to get the list of unique remote files
+            raw_remote_files = list(
+                {remote_file.path: remote_file for pkg in pkgs for remote_file in pkg.remote_files}.values()
+            )
+            remote_files = installer_ctrl.preprocess_raw_remote_files(raw_remote_files)
+
+            # 3. download remote files
+            installer_ctrl.pre_download(remote_files)
+            for remote_file in remote_files:
+                installer_ctrl.download_file(remote_file)
+            installer_ctrl.post_download(remote_files)
+
+            # 4. install package
+            installer_ctrl.pre_install(pkgs)
+            for pkg in pkgs:
+                installer_ctrl.pre_install_pkg(pkg)
+                self._install_pkg(pkg, root_dir)
+                installer_ctrl.post_install_pkg(pkg)
+            installer_ctrl.post_install(pkgs)
+        except Exception as e:
+            # preserve stack trace
+            try:
+                raise
+            finally:
+                try:
+                    installer_ctrl.post_installation(e)
+                except Exception as e:
+                    logger.error("Error during installer post installation: %s", e, exc_info=True)
+        else:
+            installer_ctrl.post_installation(None)
+
+    def _uninstall_pkg(self, installed_pkg, root_dir):
+        # uninstall the installed pkg and update the installed pkg sto
+        pkg_id = installed_pkg.pkg_info['id']
+        installed_paths = installed_pkg.pkg_info['files']
+
+        removed_paths = []
+        try:
+            for removed_path in remove_paths(installed_paths, root_dir):
+                removed_paths.append(removed_path)
+        except Exception as e:
+            logger.error("Error while removing files of pkg %s: %s", pkg_id, e)
+            if removed_paths:
+                logger.error(
+                    f"These files have been removed from {root_dir} although the"
+                    f"package will still be shown as installed: {removed_path}"
+                )
+            raise
+        else:
+            try:
+                self.installed_pkg_sto.delete_pkg(pkg_id)
+            except Exception as e:
+                logger.error(f"Error while commiting pkg {pkg_id} to storage: {e}")
+                if removed_paths:
+                    logger.error(
+                        f"These files have been removed from {root_dir} although the"
+                        f"package will still be shown as installed: {removed_path}"
+                    )
+                raise
+
+    def uninstall(self, raw_pkg_ids, root_dir, uninstaller_ctrl_factory):
+        # 1. do some preparation
+        installable_pkg_sto = self.installable_pkg_sto
+        installed_pkg_sto = self.installed_pkg_sto
+        # 1.1. instantiate an installer controller
+        uninstaller_ctrl = uninstaller_ctrl_factory(installable_pkg_sto, installed_pkg_sto)
+        uninstaller_ctrl.pre_uninstallation()
+
+        try:
+            # 2. preprocessing
+            # 2.1. get the list of package ids to uninstall
+            pkg_ids = uninstaller_ctrl.preprocess_raw_pkg_ids(raw_pkg_ids)
+
+            # 2.2. get the list of packages to install
+            # next line raise an error if one of pkg id is invalid, which is what we want
+            raw_pkgs = [installed_pkg_sto[pkg_id] for pkg_id in pkg_ids]
+            pkgs = uninstaller_ctrl.preprocess_raw_pkgs(raw_pkgs)
+
+            # 3. uninstall package
+            uninstaller_ctrl.pre_uninstall(pkgs)
+            for pkg in pkgs:
+                uninstaller_ctrl.pre_uninstall_pkg(pkg)
+                self._uninstall_pkg(pkg, root_dir)
+                uninstaller_ctrl.post_uninstall_pkg(pkg)
+            uninstaller_ctrl.post_uninstall(pkgs)
+        except Exception as e:
+            # preserve stack trace
+            try:
+                raise
+            finally:
+                try:
+                    uninstaller_ctrl.post_uninstallation(e)
+                except Exception as e:
+                    logger.error('Error during uninstaller post uninstallation: %s', e, exc_info=True)
+        else:
+            uninstaller_ctrl.post_uninstallation(None)
+
+    def _get_raw_upgrade_list(self):
+        # Return a list of tuple (<installed package>, <installable_pkg>) for
+        # which the version differs
+        raw_upgrade_list = []
+        for installed_pkg in self.installed_pkg_sto.values():
+            pkg_id = installed_pkg.pkg_info['id']
+            if pkg_id in self.installable_pkg_sto:
+                installable_pkg = self.installable_pkg_sto[pkg_id]
+                if installable_pkg.pkg_info['version'] != installed_pkg.pkg_info['version']:
+                    installable_pkg = self.installable_pkg_sto[pkg_id].clone()
+                    installable_pkg.pkg_info['explicit_install'] = installed_pkg.pkg_info['explicit_install']
+                    raw_upgrade_list.append((installed_pkg, installable_pkg))
+        return raw_upgrade_list
+
+    def upgrade(self, root_dir, upgrader_ctrl_factory):
+        # 1. do some preparation
+        installable_pkg_sto = self.installable_pkg_sto
+        installed_pkg_sto = self.installed_pkg_sto
+        # 1.1. instantiate an installer controller
+        upgrader_ctrl = upgrader_ctrl_factory(installable_pkg_sto, installed_pkg_sto)
+        upgrader_ctrl.pre_upgradation()
+
+        try:
+            raw_upgrade_list = self._get_raw_upgrade_list()
+
+            # 2. preprocess stuff
+            # 2.1.
+            upgrade_list = upgrader_ctrl.preprocess_raw_upgrade_list(raw_upgrade_list)
+
+            # 2.2. from this list, get any package that should be
+            #      uninstalled/installed at the same time
+            upgrade_specs = upgrader_ctrl.preprocess_upgrade_list(upgrade_list)
+
+            # 2.3. get the list of remote files to download
+            raw_remote_files_dict = {}
+            for _, installable_pkg, install_list, _ in upgrade_specs:
+                for pkg in [installable_pkg, *install_list]:
+                    for remote_file in pkg.remote_files:
+                        raw_remote_files_dict[remote_file.path] = remote_file
+            raw_remote_files = list(raw_remote_files_dict.values())
+            remote_files = upgrader_ctrl.preprocess_raw_remote_files(raw_remote_files)
+
+            # 3. download remote files
+            upgrader_ctrl.pre_download(remote_files)
+            for remote_file in remote_files:
+                upgrader_ctrl.download(remote_file)
+            upgrader_ctrl.post_download(remote_files)
+
+            # 4. upgrade packages
+            upgrader_ctrl.pre_upgrade(upgrade_specs)
+            for installed_pkg, installable_pkg, install_list, uninstall_list in upgrade_specs:
+                # 4.1 first uninstall pkg from the list
+                for cur_installed_pkg in uninstall_list:
+                    upgrader_ctrl.pre_upgrade_uninstall_pkg(cur_installed_pkg)
+                    self._uninstall_pkg(cur_installed_pkg, root_dir)
+                    upgrader_ctrl.post_upgrade_uninstall_pkg(cur_installed_pkg)
+                # 4.2 then install pkg from the list
+                for cur_installable_pkg in install_list:
+                    upgrader_ctrl.pre_upgrade_install_pkg(cur_installable_pkg)
+                    self._install_pkg(pkg, root_dir)
+                    upgrader_ctrl.post_upgrade_install_pkg(cur_installable_pkg)
+                # 4.3 then "upgrade" installed pkg, i.e. uninstall and install
+                upgrader_ctrl.pre_upgrade_pkg(installed_pkg)
+                self._uninstall_pkg(installed_pkg, root_dir)
+                self._install_pkg(installable_pkg, root_dir)
+                upgrader_ctrl.post_upgrade_pkg(installed_pkg)
+            upgrader_ctrl.post_upgrade(upgrade_specs)
+        except Exception as e:
+            # preserve stack trace
+            try:
+                raise
+            finally:
+                try:
+                    upgrader_ctrl.post_upgradation(e)
+                except Exception as e:
+                    logger.error('Error during upgrader post upgradation: %s', e, exc_info=True)
+        else:
+            upgrader_ctrl.post_upgradation(None)
+
+
+class InstallerController:
+    """The method are shown in the order they are called.
+
+    All installer controller should inherit from this one. Although this class
+    is a valid installer controller, it's so basic that you mostly do not want
+    to use it directly.
+
+    """
+
+    def __init__(self, installable_pkg_sto, installed_pkg_sto):
+        pass
+
+    def pre_installation(self):
+        """Called before anything else, i.e. just after installer controller
+        creation.
+
+        Return value is ignored.
+
+        """
+        pass
+
+    def preprocess_raw_pkg_ids(self, raw_pkg_ids):
+        """Return a list of package IDs from the given list of package IDs.
+
+        Every returned package ID must be in the installable package storage.
+
+        In this function, you could do things like:
+        - remove package from the ignore list (?)
+        - print a warning message and raise an exception if a pkg id is
+          invalid
+
+        """
+        return raw_pkg_ids
+
+    def preprocess_raw_pkgs(self, raw_installable_pkgs):
+        """Return a list of package from the given list of packages.
+
+        In this function, you could do things like:
+        - add dependencies
+        - remove the package that are already installed
+        - print a warning if a package to be installed is older than an
+          already installed package
+
+        Note that you can modify the list and the packages given in arguments.
+
+        """
+        for installable_pkg in raw_installable_pkgs:
+            installable_pkg.pkg_info['explicit_install'] = True
+        return raw_installable_pkgs
+
+    def preprocess_raw_remote_files(self, raw_remote_files):
+        """Return a list of remote file from the given list of remote files.
+
+        In this function, you could do things like:
+        - remove already downloaded remote files
+
+        """
+        return [xfile for xfile in raw_remote_files if not xfile.exists()]
+
+    def pre_download(self, remote_files):
+        """Called before any files have downloaded."""
+        pass
+
+    def download_file(self, remote_file):
+        """Called to download the next file."""
+        remote_file.download()
+
+    def post_download(self, remote_files):
+        """Called after every files have been downloaded."""
+        pass
+
+    def pre_install(self, installable_pkgs):
+        """Called before the installation of any pkg."""
+        pass
+
+    def pre_install_pkg(self, installable_pkg):
+        """Called before the installation of the given installable pkg."""
+        pass
+
+    def post_install_pkg(self, installable_pkg):
+        """Called after the successful installation of the given installable pkg."""
+        pass
+
+    def post_install(self, installable_pkgs):
+        """Called after the successful installation of all pkg."""
+        pass
+
+    def post_installation(self, exc_value):
+        """Called after anything else (will be called if pre_installation returned successfully)
+        exc_value is None if no error, else the exception value
+
+        """
+        pass
+
+    @classmethod
+    def new_factory(cls, *args, **kwargs):
+        def aux(installable_pkg_sto, installed_pkg_sto):
+            return cls(installable_pkg_sto, installed_pkg_sto, *args, **kwargs)
+
+        return aux
+
+
+class DefaultInstallerController(InstallerController):
+    def __init__(self, installable_pkg_sto, installed_pkg_sto, nodeps=False):
+        self._installable_pkg_sto = installable_pkg_sto
+        self._installed_pkg_sto = installed_pkg_sto
+        self._nodeps = nodeps
+
+    def preprocess_raw_pkg_ids(self, raw_pkg_ids):
+        # check that all package are installable and raise our own
+        # error even though this job is redone indirectly by the
+        # package manager
+        for pkg_id in raw_pkg_ids:
+            if pkg_id not in self._installable_pkg_sto:
+                raise PackageError("could not find package '%s'" % pkg_id)
+        return raw_pkg_ids
+
+    def preprocess_raw_pkgs(self, raw_installable_pkgs):
+        installable_pkgs = list(raw_installable_pkgs)
+        for installable_pkg in installable_pkgs:
+            installable_pkg.pkg_info['explicit_install'] = True
+        if not self._nodeps:
+            pkg_ids = {pkg.pkg_info['id'] for pkg in installable_pkgs}
+
+            def filter_fun(dep_pkg_id):
+                return dep_pkg_id not in self._installed_pkg_sto and dep_pkg_id not in pkg_ids
+
+            dependencies = self._installable_pkg_sto.get_dependencies_many(pkg_ids, filter_fun=filter_fun)
+            for dep_pkg_id in dependencies:
+                dep_pkg = self._installable_pkg_sto[dep_pkg_id].clone()
+                dep_pkg.pkg_info['explicit_install'] = False
+                installable_pkgs.append(dep_pkg)
+        return installable_pkgs
+
+
+class UninstallerController:
+    def __init__(self, installable_pkg_sto, installed_pkg_sto):
+        pass
+
+    def pre_uninstallation(self):
+        pass
+
+    def preprocess_raw_pkg_ids(self, raw_pkg_ids):
+        return raw_pkg_ids
+
+    def preprocess_raw_pkgs(self, raw_installed_pkgs):
+        return raw_installed_pkgs
+
+    def pre_uninstall(self, installed_pkgs):
+        pass
+
+    def pre_uninstall_pkg(self, installed_pkg):
+        pass
+
+    def post_uninstall_pkg(self, installed_pkg):
+        pass
+
+    def post_uninstall(self, installed_pkgs):
+        pass
+
+    def post_uninstallation(self, exc_value):
+        pass
+
+    @classmethod
+    def new_factory(cls, *args, **kwargs):
+        def aux(installable_pkg_sto, installed_pkg_sto):
+            return cls(installable_pkg_sto, installed_pkg_sto, *args, **kwargs)
+
+        return aux
+
+
+class DefaultUninstallerController(UninstallerController):
+    def __init__(self, installable_pkg_sto, installed_pkg_sto, recursive=False):
+        self._installable_pkg_sto = installable_pkg_sto
+        self._installed_pkg_sto = installed_pkg_sto
+        self._recursive = recursive
+
+    def preprocess_raw_pkg_ids(self, raw_pkg_ids):
+        for pkg_id in raw_pkg_ids:
+            # Check that each pkg_id in pkg_ids is installed on this system
+            if pkg_id not in self._installed_pkg_sto:
+                raise PackageError("package '%s' not found" % pkg_id)
+            # Check that there's no installed package that depends on one of the
+            # package that we are about to uninstall
+            requisite_ids = self._installed_pkg_sto.get_requisites(pkg_id)
+            requisite_ids.difference_update(raw_pkg_ids)
+            if requisite_ids:
+                raise PackageError("{} is required by: {}".format(pkg_id, ' '.join(requisite_ids)))
+        return raw_pkg_ids
+
+    def preprocess_raw_pkgs(self, raw_installed_pkgs):
+        installed_pkgs = list(raw_installed_pkgs)
+        if self._recursive:
+            # some cases are complex to handle, this is why this might
+            # seems overly complex
+            to_remove_ids = {pkg.pkg_info['id'] for pkg in installed_pkgs}
+
+            def filter_fun(dep_pkg_id):
+                # next line should never raise a KeyError since we are asking
+                # to ignore missing dependencies
+                dep_pkg = self._installed_pkg_sto[dep_pkg_id]
+                return not dep_pkg.pkg_info['explicit_install']
+
+            candidate1_ids = self._installed_pkg_sto.get_dependencies_many(
+                to_remove_ids, filter_fun=filter_fun, ignore_missing=True
+            )
+            candidate2_ids = set(candidate1_ids)
+            candidate2_ids.difference_update(to_remove_ids)
+            augm_candidate1_ids = set(candidate1_ids)
+            augm_candidate1_ids.update(to_remove_ids)
+            for candidate_id in candidate1_ids:
+                requisite_ids = self._installed_pkg_sto.get_requisites(candidate_id)
+                if not requisite_ids.issubset(augm_candidate1_ids):
+                    dependency_ids = self._installed_pkg_sto.get_dependencies(candidate_id, ignore_missing=True)
+                    candidate2_ids.discard(candidate_id)
+                    candidate2_ids.difference_update(dependency_ids)
+            for candidate_id in candidate2_ids:
+                installed_pkgs.append(self._installed_pkg_sto[candidate_id])
+        return installed_pkgs
+
+
+class UpgraderController:
+    # TODO add comments
+    def __init__(self, installable_pkg_sto, installed_pkg_sto):
+        pass
+
+    def pre_upgradation(self):
+        pass
+
+    def preprocess_raw_upgrade_list(self, raw_upgrade_list):
+        """Return the list of tuple (installed pkg, installable pkg) to
+        upgrade from the list of (installed pkg, installable pkg) tuple
+        that have a different version than their installable counterpart.
+
+        """
+        # By default, upgrade all package that are not in sync, which is
+        # not what you want to do for more evolved package management
+        return raw_upgrade_list
+
+    def preprocess_upgrade_list(self, upgrade_list):
+        """From the list of known to be upgraded pkgs, return a list of tuple
+        (installed_pkg, [<new_to_install_pkg>], [<to_uninstall_pkg>])) such
+        that both list doesn't contains the pkg of the installed pkg.
+
+        Also, if a new package to install is found in more than in one list, it
+        will be discard in the later list.
+
+        """
+        return [(ed_pkg, able_pkg, [], []) for (ed_pkg, able_pkg) in upgrade_list]
+
+    def preprocess_raw_remote_files(self, raw_remote_files):
+        return [xfile for xfile in raw_remote_files if not xfile.exists()]
+
+    def pre_download(self, remote_files):
+        pass
+
+    def download_file(self, remote_file):
+        remote_file.download()
+
+    def post_download(self, remote_files):
+        pass
+
+    def pre_upgrade(self, upgrade_specs):
+        """Called before the installation of any pkg."""
+        pass
+
+    def pre_upgrade_uninstall_pkg(self, installed_pkg):
+        pass
+
+    def post_upgrade_uninstall_pkg(self, installed_pkg):
+        pass
+
+    def pre_upgrade_install_pkg(self, installable_pkg):
+        pass
+
+    def post_upgrade_install_pkg(self, installable_pkg):
+        pass
+
+    def pre_upgrade_pkg(self, installed_pkg):
+        pass
+
+    def post_upgrade_pkg(self, installed_pkg):
+        pass
+
+    def post_upgrade(self, upgrade_specs):
+        pass
+
+    def post_upgradation(self, exc_value):
+        pass
+
+    @classmethod
+    def new_factory(cls, *args, **kwargs):
+        def aux(installable_pkg_sto, installed_pkg_sto):
+            return cls(installable_pkg_sto, installed_pkg_sto, *args, **kwargs)
+
+        return aux
+
+
+class DefaultUpgraderController(UpgraderController):
+    def __init__(self, installable_pkg_sto, installed_pkg_sto, ignore=None, nodeps=False):
+        self._installable_pkg_sto = installable_pkg_sto
+        self._installed_pkg_sto = installed_pkg_sto
+        self._ignore = [] if ignore is None else ignore
+        self._nodeps = nodeps
+
+    def _upgrade_list_filter_function(self, pkgs):
+        # Return true if installed_pkg is not in the ignore list and if
+        # installable_pkg version is higher than installed_pkg version
+        (installed_pkg, installable_pkg) = pkgs
+        pkg_id = installed_pkg.pkg_info['id']
+        if pkg_id in self._ignore:
+            return False
+
+        installed_version = installed_pkg.pkg_info['version']
+        installable_version = installable_pkg.pkg_info['version']
+        return cmp_version(installable_version, installed_version) > 0
+
+    def preprocess_raw_upgrade_list(self, raw_upgrade_list):
+        return list(filter(self._upgrade_list_filter_function, raw_upgrade_list))
+
+    def preprocess_upgrade_list(self, upgrade_list):
+        installed_specs = []
+        scheduled_pkg_ids = {elem[0].pkg_info['id'] for elem in upgrade_list}
+        for installed_pkg, installable_pkg in upgrade_list:
+            install_list = []
+            if not self._nodeps:
+                pkg_id = installed_pkg.pkg_info['id']
+
+                def filter_fun(dep_pkg_id):
+                    return dep_pkg_id not in self._installed_pkg_sto and dep_pkg_id not in scheduled_pkg_ids
+
+                dependencies = self._installable_pkg_sto.get_dependencies(pkg_id, filter_fun=filter_fun)
+                for dep_pkg_id in dependencies:
+                    scheduled_pkg_ids.add(dep_pkg_id)
+                    dep_pkg = self._installable_pkg_sto[dep_pkg_id].clone()
+                    dep_pkg.pkg_info['explicit_install'] = False
+                    install_list.append(dep_pkg)
+            installed_specs.append((installed_pkg, installable_pkg, install_list, []))
+        return installed_specs
+
+----------------------------------------
+
+File: params.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+"""Module to transform configuration file to configuration data.
+
+This is a bit of an experiment to create an easy, declarative way to declare
+the valid format and options of an INI configuration file.
+
+This module is not fetchfw specific, so it could be used by other projects if
+it's found to be useful and not just a waste of time.
+
+That said, look in fetchfw.config and fetchfw.conf to see examples on how
+to use this module.
+
+"""
+
+import collections
+from configparser import RawConfigParser
+
+
+class ConfigSpec:
+    """Represent a configuration file's specification."""
+
+    NO_DEFAULT = object()
+    MANDATORY = object()
+
+    def __init__(self):
+        # a dictionary where keys are param ids and values are tuple
+        # (default value, fun). fun takes one argument, raw_value.
+        self._params = {}
+        # a dictionary where keys are section ids and values are fun. fun
+        # takes two arguments, name and raw_value
+        self._sections = {}
+        # a dictionary where keys are template ids and values are dictionaries
+        # which keys are options ids and value are tuple (default value, fun)
+        self._dyn_params = collections.defaultdict(dict)
+        self._unknown_section_hook = None
+        self.add_param_decorator = self._create_param_decorator()
+        self.add_dyn_param_decorator = self._create_dyn_param_decorator()
+        self.add_section_decorator = self._create_section_decorator()
+        self.set_unknown_section_hook_decorator = self._create_unknown_section_dec()
+
+    def _create_param_decorator(self):
+        def param_decorator(param_id, default=self.NO_DEFAULT):
+            def aux(fun):
+                self.add_param(param_id, default, fun)
+                return fun
+
+            return aux
+
+        return param_decorator
+
+    def _create_dyn_param_decorator(self):
+        def dyn_param_decorator(template_id, option_id, default=self.NO_DEFAULT):
+            def aux(fun):
+                self.add_dyn_param(template_id, option_id, default, fun)
+                return fun
+
+            return aux
+
+        return dyn_param_decorator
+
+    def _create_section_decorator(self):
+        def section_decorator(section_id):
+            def aux(fun):
+                self.add_section(section_id, fun)
+                return fun
+
+            return aux
+
+        return section_decorator
+
+    def _create_unknown_section_dec(self):
+        def unknown_section_hook_decorator(fun):
+            self.set_unknown_section_hook(fun)
+            return fun
+
+        return unknown_section_hook_decorator
+
+    def add_param(self, param_id, default=NO_DEFAULT, fun=None):
+        """
+        param_id -- a parameter id, i.e. a section id concatenated with an
+          option id. For example, "general.db_dir" is a valid param id.
+        default -- the default value to set if the param is not present in
+          the configuration file. If NO_DEFAULT, then the param is not set.
+          If MANDATORY, then an error is raised if the parameter is missing.
+        fun -- a function taking one argument, raw_value, and return
+          the "cleaned" value. Can also be None.
+
+        """
+        if '.' not in param_id:
+            raise ValueError('no dot character in param: %s' % param_id)
+        if param_id in self._params:
+            raise ValueError('param has already been specified: %s' % param_id)
+        self._params[param_id] = (default, fun)
+
+    def add_dyn_param(self, template_id, option_id, default=NO_DEFAULT, fun=None):
+        """
+        template_id -- an unique id for representing the unknown section
+        fun -- a function taking one argument, raw_value, and return
+          the "cleaned" value. Can also be None.
+
+        Dynamic parameters are a way to process section which names is not
+        known in advance. For this to work, you need to set a unknown section
+        hook function that will examine each unknown section are return the
+        correspondent template id.
+
+        """
+        template_dict = self._dyn_params[template_id]
+        if option_id in template_dict:
+            raise ValueError(f'dyn param already been specified: {template_id}.{option_id}')
+        template_dict[option_id] = (default, fun)
+
+    def add_section(self, section_id, fun=None):
+        """
+        fun -- a function taking two arguments, option_id and raw_value, and return
+          the "cleaned" value. Can also be None.
+
+        """
+        if '.' in section_id:
+            raise ValueError('dot character in section: %s' % section_id)
+        if section_id in self._sections:
+            raise ValueError('section has already been specified: %s' % section_id)
+        self._sections[section_id] = fun
+
+    def set_unknown_section_hook(self, fun):
+        """
+        fun -- a function taking three arguments, config_dict, section_id,
+          section_dict, and return the template id of the section or None.
+
+        The unknown section hook is call after all known section have been
+        processed, and it is call for every unknown section seen.
+
+        """
+        self._unknown_section_hook = fun
+
+    def _process_param(self, param_id, raw_value):
+        assert param_id in self._params
+        fun = self._params[param_id][1]
+        if fun is None:
+            return raw_value
+        else:
+            return fun(raw_value)
+
+    def _process_section(self, section_id, option_id, raw_value):
+        assert section_id in self._sections
+        fun = self._sections[section_id]
+        if fun is None:
+            return raw_value
+        else:
+            return fun(option_id, raw_value)
+
+    def _add_default_and_check_mandatory(self, config_dict):
+        for param_id, param_value in self._params.items():
+            if param_id not in config_dict:
+                default = param_value[0]
+                if default is self.MANDATORY:
+                    raise ValueError('missing parameter: %s' % param_id)
+                elif default is self.NO_DEFAULT:
+                    pass
+                else:
+                    config_dict[param_id] = default
+
+    def read_config(self, config_parser):
+        """Return a dictionary where keys are parameter ids and values are
+        parameter values.
+
+        """
+        config_dict = {}
+        unknown_sections = collections.defaultdict(dict)
+        for section_id in config_parser.sections():
+            for option_id, raw_value in config_parser.items(section_id):
+                param_id = f"{section_id}.{option_id}"
+                if param_id in self._params:
+                    config_dict[param_id] = self._process_param(param_id, raw_value)
+                elif section_id in self._sections:
+                    config_dict[param_id] = self._process_section(section_id, option_id, raw_value)
+                else:
+                    unknown_sections[section_id][option_id] = raw_value
+        self._add_default_and_check_mandatory(config_dict)
+
+        # unknown section handling
+        if unknown_sections:
+            if self._unknown_section_hook:
+                for section_id, section_dict in unknown_sections.items():
+                    template_id = self._unknown_section_hook(config_dict, section_id, section_dict)
+                    if template_id in self._dyn_params:
+                        cur_dyn_params = self._dyn_params[template_id]
+                        for option_id, raw_value in section_dict.items():
+                            if option_id in cur_dyn_params:
+                                fun = cur_dyn_params[option_id][1]
+                                param_id = f'{section_id}.{option_id}'
+                                if fun is None:
+                                    config_dict[param_id] = raw_value
+                                else:
+                                    config_dict[param_id] = fun(raw_value)
+                            else:
+                                raise ValueError(f"unknown dynamic option {option_id} for template {template_id}")
+                        for option_id, (default, _) in cur_dyn_params.items():
+                            param_id = f'{section_id}.{option_id}'
+                            if param_id not in config_dict:
+                                if default is self.MANDATORY:
+                                    raise ValueError('missing dyn parameter: %s' % param_id)
+                                elif default is self.NO_DEFAULT:
+                                    pass
+                                else:
+                                    config_dict[param_id] = default
+                    else:
+                        raise ValueError(f"unknown template {template_id} returned for section {section_id}")
+            else:
+                raise ValueError("unknown sections: %s" % list(unknown_sections.keys()))
+        return config_dict
+
+    def read_config_from_filename(self, filename):
+        config_parser = RawConfigParser()
+        with open(filename) as f:
+            config_parser.read_file(f)
+        return self.read_config(config_parser)
+
+
+def filter_section(config_dict, section_id):
+    """Return a dictionary containing all the options of a given section.
+
+    >>> d = {'foo.a': 1, 'foo.b': 2, 'bar.c': 3}
+    >>> filter_section(d, 'foo')
+    {'a': 1, 'b': 2}
+
+    """
+    if '.' in section_id:
+        raise ValueError('dot character in section: %s' % section_id)
+    result = {}
+    dot_section_id = section_id + '.'
+    dot_section_id_len = len(dot_section_id)
+    for param_id, value in config_dict.items():
+        if param_id.startswith(dot_section_id):
+            result[param_id[dot_section_id_len:]] = value
+    return result
+
+
+_BOOL_TRUE = ['True', 'true']
+_BOOL_FALSE = ['False', 'false']
+
+
+def bool_(raw_value):
+    """Return a bool from a string."""
+    if raw_value in _BOOL_TRUE:
+        return True
+    elif raw_value in _BOOL_FALSE:
+        return False
+    else:
+        raise ValueError('invalid boolean raw value "%s"' % raw_value)
+
+----------------------------------------
+
+File: storage.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import collections
+import json
+import logging
+import os
+from binascii import a2b_hex
+from configparser import ParsingError, RawConfigParser
+
+from accent_fetchfw import download, install, util
+from accent_fetchfw.package import InstallablePackage, InstalledPackage
+
+logger = logging.getLogger(__name__)
+
+
+class StorageError(util.FetchfwError):
+    pass
+
+
+class ParsingError(StorageError):
+    pass
+
+
+class DefaultRemoteFileBuilder:
+    """A remote file builder takes a config object (RawConfigParser) and a
+    file section and builds a remote file (RemoteFile) from it.
+
+    Here's an example section:
+
+    [some_section_name]
+    filename: foo.gz    ; optional
+    url: http://example.org/foo.gz
+    size: 29252
+    sha1sum: 56c59081b1bd29c97f352b62c9667c409ca99f69
+    downloader: default      ; optional
+
+    """
+
+    def __init__(self, cache_dir, downloaders):
+        """Initialize a new remote file builder.
+
+        cache_dir -- the directory where downloaded files are going to be
+          saved
+        downloaders -- a dictionary where keys are strings and values are
+          downloaders (see fetchfw.download).
+
+        When a remote file is built, if no downloader is specified in the
+        section, the builder will look for the key 'default' in the
+        downloaders dictionary.
+
+        """
+        self._cache_dir = cache_dir
+        self._downloaders = downloaders
+
+    def build_remote_file(self, config, section):
+        url = config.get(section, 'url')
+        size = config.getint(section, 'size')
+        sha1sum = a2b_hex(config.get(section, 'sha1sum'))
+        filename = config.get(section, 'filename') if config.has_option(section, 'filename') else os.path.basename(url)
+        path = os.path.join(self._cache_dir, filename)
+        downloader_name = config.get(section, 'downloader') if config.has_option(section, 'downloader') else 'default'
+        try:
+            downloader = self._downloaders[downloader_name]
+        except KeyError:
+            raise ParsingError(f"'{downloader_name}' is not a valid downloader name in file definition '{section}'")
+        return download.RemoteFile.new_remote_file(
+            path, size, url, downloader, [download.SHA1Hook.create_factory(sha1sum)]
+        )
+
+
+class DefaultFilterBuilder:
+    """A filter builder takes a list of string tokens and returns a filter object.
+
+    For example, if 'fb' is a DefaultFilterBuilder object, then:
+      fb.build_node(['untar', 'test.tar'])
+    will return a <TarFilter('test.tar')> object.
+
+    """
+
+    def _build_unzip(self, args):
+        if len(args) != 1:
+            raise ValueError("unzip takes 1 arguments: has %d" % len(args))
+        return install.ZipFilter(args[0])
+
+    def _build_untar(self, args):
+        if len(args) != 1:
+            raise ValueError("untar takes 1 arguments: has %d" % len(args))
+        return install.TarFilter(args[0])
+
+    def _build_unrar(self, args):
+        if len(args) != 1:
+            raise ValueError("unrar takes 1 arguments: has %d" % len(args))
+        return install.RarFilter(args[0])
+
+    def _build_7z(self, args):
+        if len(args) != 1:
+            raise ValueError("7z takes 1 arguments: has %d" % len(args))
+        return install.Filter7z(args[0])
+
+    def _build_unsign(self, args):
+        if len(args) != 2:
+            raise ValueError("unsign takes 1 arguments: has %d" % len(args))
+        return install.CiscoUnsignFilter(args[0], args[1])
+
+    def _build_exclude(self, args):
+        if not args:
+            raise ValueError("exclude takes at least 1 arguments")
+        return install.ExcludeFilter(args)
+
+    def _build_include(self, args):
+        if not args:
+            raise ValueError("include takes at least 1 arguments")
+        return install.IncludeFilter(args)
+
+    def _build_cp(self, args):
+        if len(args) < 2:
+            raise ValueError("cp takes at least 2 arguments: has %d" % len(args))
+        return install.CopyFilter(args[:-1], args[-1])
+
+    def _build_null(self, args):
+        if args:
+            raise ValueError("null takes no arguments: has %d" % len(args))
+        return install.NullFilter()
+
+    def build_node(self, tokens):
+        """
+        Raise a ValueError if arguments are not in the right number or invalid.
+
+        Pre: len(tokens) >= 1
+
+        """
+        type, args = tokens[0], tokens[1:]
+        method_name = '_build_' + type
+        try:
+            fun = getattr(self, method_name)
+        except AttributeError:
+            raise ValueError("unknown node type %s" % type)
+        else:
+            return fun(args)
+
+
+class DefaultInstallMgrFactory:
+    """
+
+    Note that unless you really know what you're doing, you probably don't
+    want to instantiate this class directly, but instead create instances
+    of this class via a DefaultInstallMgrFactoryBuilder.
+
+    Here's an example section (we suppose a DefaultFilterBuilder):
+
+    [some_section_name]
+    a-b: untar $FILE1
+    b-c: exclude $ARG1
+    c-d: cp */*.txt var/lib/foo/
+
+    """
+
+    def __init__(self, config, section, filter_builder, global_vars):
+        # XXX it could be "better" if we could create an intermediate representation
+        #     with the info we have so that creating a new install manager would
+        #     be faster and we would already have checked the validity of the section
+        self._config = config
+        self._section = section
+        self._filter_builder = filter_builder
+        self._global_vars = global_vars
+
+    def new_install_mgr(self, src_node, local_vars):
+        vars = dict(self._global_vars)
+        vars.update(local_vars)
+        filters = {}
+        graph = {'sources': {'a': src_node}, 'filters': filters}
+        for name, value in self._config.items(self._section):
+            src, dst = self._get_src_and_dst(name, self._section)
+            if dst == 'a':
+                raise ParsingError("usage of reserved dst 'a' in install definition '%s'" % self._section)
+            if dst in filters:
+                raise ParsingError(f"at least two filter with dst '{dst}' in install definition '{self._section}'")
+            raw_tokens = self._tokenize(value, self._section)
+            tokens = self._substitute(raw_tokens, vars)
+            filter_obj = self._filter_builder.build_node(tokens)
+            filters[dst] = (filter_obj, src)
+        return install.InstallationManager(graph)
+
+    def _get_src_and_dst(self, name, section):
+        try:
+            src, dst = name.split('-')
+        except ValueError:
+            raise ParsingError(f"'{name}' is not a valid key in install definition '{section}'")
+        else:
+            return src, dst
+
+    def _tokenize(self, value, section):
+        tokens = value.split()
+        if not tokens:
+            raise ParsingError(f"'{value}' is not a valid value in install definition '{section}'")
+        return tokens
+
+    def _substitute(self, raw_tokens, local_vars):
+        vars = dict(self._global_vars)
+        vars.update(local_vars)
+        return [util.apply_subs(token, vars) for token in raw_tokens]
+
+
+class DefaultInstallMgrFactoryBuilder:
+    """A factory that creates DefaultInstallMgrFactory instances."""
+
+    def __init__(self, filter_builder, global_vars):
+        self._filter_builder = filter_builder
+        self._global_vars = global_vars
+
+    def build_install_mgr_factory(self, config, section):
+        return DefaultInstallMgrFactory(config, section, self._filter_builder, self._global_vars)
+
+
+class DefaultPkgBuilder:
+    """A package builder takes a config object (RawConfigParser) and a
+    pkg section and builds an installable package (InstallablePackage) from it.
+
+    It also takes a package id, a dict of available remotes files and a dict
+    of installation manager factories to build a package.
+
+    Here's an example section:
+
+    [some_section_name]
+    description: Firmware for Digium HX8.
+    version: 2.06
+    files: digium-hx8fw
+    install: digium-fw
+    depends: base-digium        ; optional
+
+    """
+
+    def build_installable_pkg(self, config, section, pkg_id, remotes_files, install_mgr_factories):
+        # remote files -- a map where keys are remote file ids and values are remote files
+        # install_mgr_factories -- a map where keys are install manager ids and values are
+        #   install manager factories
+        pkg_info = {'id': pkg_id}
+        raw_pkg_info = dict(config.items(section))
+
+        if 'id' in raw_pkg_info:
+            raise ParsingError("found invalid option 'id' in pkg def '%s'" % section)
+
+        if 'depends' in raw_pkg_info:
+            pkg_info['depends'] = raw_pkg_info.pop('depends').split()
+
+        pkg_remote_files = []
+        if 'files' in raw_pkg_info:
+            for remote_file_id in raw_pkg_info.pop('files').split():
+                try:
+                    pkg_remote_files.append(remotes_files[remote_file_id])
+                except KeyError:
+                    raise ParsingError(f"unknown file '{remote_file_id}' in pkg def '{section}'")
+
+        if 'install' in raw_pkg_info:
+            tokens = raw_pkg_info.pop('install').split()
+            install_mgr_id = tokens[0]
+            install_mgr_args = tokens[1:]
+            try:
+                install_mgr_factory = install_mgr_factories[install_mgr_id]
+            except KeyError:
+                raise ParsingError(f"unknown install '{remote_file_id}' in pkg def '{section}'")
+            else:
+                src_node = install.NonGlobbingFilesystemLinkSource(f.path for f in pkg_remote_files)
+                local_vars = {}
+                for i, remote_file in enumerate(pkg_remote_files):
+                    local_vars['FILE%d' % (i + 1)] = remote_file.filename
+                for i, arg in enumerate(install_mgr_args):
+                    local_vars['ARG%d' % (i + 1)] = arg
+                pkg_install_mgr = install_mgr_factory.new_install_mgr(src_node, local_vars)
+        else:
+            pkg_install_mgr = None
+
+        pkg_info.update(raw_pkg_info)
+
+        return InstallablePackage(pkg_info, pkg_remote_files, pkg_install_mgr)
+
+
+class BasePkgStorage:
+    """Note to be instantiated directly but to serve as a base class for
+    package storage classes.
+
+    If you derive from this class, instances must haves a '_pkgs' attribute
+    which is a dictionary where keys are package ids and values are package.
+
+    """
+
+    def __getitem__(self, key):
+        return self._pkgs[key]
+
+    def __len__(self):
+        return len(self._pkgs)
+
+    def __iter__(self):
+        return iter(self._pkgs)
+
+    def __contains__(self, item):
+        return item in self._pkgs
+
+    def get(self, key, *args):
+        return self._pkgs.get(key, *args)
+
+    def items(self):
+        return list(self._pkgs.items())
+
+    def keys(self):
+        return list(self._pkgs.keys())
+
+    def values(self):
+        return list(self._pkgs.values())
+
+    def get_dependencies(self, pkg_id, maxdepth=-1, filter_fun=None, ignore_missing=False):
+        """Return the set of direct and indirect dependencies of pkg_id.
+
+        maxdepth -- -1 to get recursively all the dependencies, 0 to return an
+          empty set or a positive number to get the dependencies up to this
+          depth
+        filter_fun -- a function taking a package id and returning true if the
+          package is to be added as a dependencies (and its child, up to maxdepth)
+
+        """
+        return self.get_dependencies_many([pkg_id], maxdepth, filter_fun, ignore_missing)
+
+    def get_dependencies_many(self, pkg_ids, maxdepth=-1, filter_fun=None, ignore_missing=False):
+        """Similar to get_depencies but accept a list of package IDs instead
+        of only one package ID.
+
+        """
+        # return immediately if maxdepth is 0, this simplify the implementation
+        if maxdepth == 0:
+            return set()
+        stack = [(pkg_id, maxdepth) for pkg_id in pkg_ids]
+        dependencies = set()
+        # dictionary of pkg_id -> maxdepth to prevent infinite loop
+        visited = {}
+        while stack:
+            # note that depth is not a real depth value
+            pkg_id, depth = stack.pop()
+            try:
+                pkg = self._pkgs[pkg_id]
+            except KeyError:
+                if not ignore_missing:
+                    raise
+            else:
+                next_depth = depth - 1
+                for dep_pkg_id in pkg.pkg_info['depends']:
+                    if dep_pkg_id in visited:
+                        visit_depth = visited[dep_pkg_id]
+                        if visit_depth >= next_depth:
+                            continue
+                    visited[dep_pkg_id] = next_depth
+                    if filter_fun is None or filter_fun(dep_pkg_id):
+                        dependencies.add(dep_pkg_id)
+                        if next_depth:
+                            stack.append((dep_pkg_id, next_depth))
+        return dependencies
+
+
+class DefaultInstallablePkgStorage(BasePkgStorage):
+    def __init__(self, db_dir, remote_file_builder, install_mgr_factory_builder, pkg_builder):
+        self._db_dir = db_dir
+        self._remote_file_builder = remote_file_builder
+        self._install_mgr_factory_builder = install_mgr_factory_builder
+        self._pkg_builder = pkg_builder
+        self._load_pkgs()
+
+    def _load_pkgs(self):
+        config = self._read_db_files()
+        pkg_sections, file_sections, install_sections = self._split_sections(config)
+        remote_files = self._create_remote_files(config, file_sections)
+        install_mgr_factories = self._create_install_mgr_factories(config, install_sections)
+        self._pkgs = self._create_pkg(config, pkg_sections, remote_files, install_mgr_factories)
+
+    def _read_db_files(self):
+        # Read the files in the db dir and return a config parser object
+        db_dir = self._db_dir
+        config = RawConfigParser()
+        try:
+            for rel_path in os.listdir(db_dir):
+                if not rel_path.startswith('.'):
+                    path = os.path.join(db_dir, rel_path)
+                    with open(path) as f:
+                        config.read_file(f)
+        except OSError as e:
+            raise StorageError(f"could not open/read file '{path}': {e}")
+        except ParsingError as e:
+            raise StorageError(f"could not parse file '{path}': {e}")
+        return config
+
+    def _split_sections(self, config):
+        pkg_sections = []
+        file_sections = []
+        install_sections = []
+        for section in config.sections():
+            if section.startswith('pkg_'):
+                pkg_sections.append(section)
+            elif section.startswith('file_'):
+                file_sections.append(section)
+            elif section.startswith('install_'):
+                install_sections.append(section)
+            else:
+                raise ParsingError("invalid section '%s'" % section)
+        return pkg_sections, file_sections, install_sections
+
+    def _create_remote_files(self, config, sections):
+        # Return a map where keys are remote file ids and values are remote files
+        remote_files = {}
+        remote_file_paths = set()
+        for section in sections:
+            assert section.startswith('file_')
+            remote_file_id = section[5:]
+            remote_file = self._remote_file_builder.build_remote_file(config, section)
+            if remote_file.path in remote_file_paths:
+                raise ParsingError('two remote files use the same path: %s' % remote_file.path)
+            remote_file_paths.add(remote_file.path)
+            remote_files[remote_file_id] = remote_file
+        return remote_files
+
+    def _create_install_mgr_factories(self, config, sections):
+        install_mgr_factories = {}
+        for section in sections:
+            assert section.startswith('install_')
+            install_mgr_factory_id = section[8:]
+            install_mgr_factory = self._install_mgr_factory_builder.build_install_mgr_factory(config, section)
+            install_mgr_factories[install_mgr_factory_id] = install_mgr_factory
+        return install_mgr_factories
+
+    def _create_pkg(self, config, sections, remote_files, install_mgr_factories):
+        pkgs = {}
+        for section in sections:
+            assert section.startswith('pkg_')
+            pkg_id = section[4:]
+            pkg = self._pkg_builder.build_installable_pkg(config, section, pkg_id, remote_files, install_mgr_factories)
+            pkgs[pkg_id] = pkg
+        return pkgs
+
+    def reload(self):
+        self._load_pkgs()
+
+
+class DefaultInstalledPkgStorage(BasePkgStorage):
+    def __init__(self, db_dir, pretty_printing=False):
+        self._db_dir = db_dir
+        self._json_indent = 4 if pretty_printing else None
+        self._load_pkgs()
+
+    def _add_requirements(self, pkg, pkg_id):
+        for dep_pkg_id in pkg.pkg_info['depends']:
+            self._requirement_map[dep_pkg_id].add(pkg_id)
+
+    def _remove_requirements(self, pkg, pkg_id):
+        for dep_pkg_id in pkg.pkg_info['depends']:
+            self._requirement_map[dep_pkg_id].discard(pkg_id)
+
+    def _load_pkgs(self):
+        pkgs = {}
+        self._requirement_map = collections.defaultdict(set)
+        for pkg_id in os.listdir(self._db_dir):
+            if not pkg_id.startswith('.'):
+                pkg = InstalledPackage(self._load_pkg_info(pkg_id))
+                self._add_requirements(pkg, pkg_id)
+                pkgs[pkg_id] = pkg
+        self._pkgs = pkgs
+
+    def _load_pkg_info(self, pkg_id):
+        filename = os.path.join(self._db_dir, pkg_id)
+        with open(filename) as fobj:
+            # XXX json.load returns string as unicode strings but we are using
+            #     plain string in the rest of the code. Using unicode would be
+            #     great but config parser, used for the installable storage,
+            #     doesn't support unicode...
+            pkg_info = json.load(fobj)
+            return pkg_info
+
+    def insert_pkg(self, installed_pkg):
+        pkg_info = installed_pkg.pkg_info
+        pkg_id = pkg_info['id']
+        if pkg_id in self._pkgs:
+            raise ValueError('package is already installed: %s' % pkg_id)
+        self._write_pkg_info(pkg_id, pkg_info)
+        self._add_requirements(installed_pkg, pkg_id)
+        self._pkgs[pkg_id] = installed_pkg
+
+    def update_pkg(self, installed_pkg):
+        # Note that this is a replace operation
+        pkg_info = installed_pkg.pkg_info
+        pkg_id = pkg_info['id']
+        if pkg_id not in self._pkgs:
+            raise ValueError('package is not installed: %s' % pkg_id)
+        self._remove_requirements(installed_pkg, pkg_id)
+        self._write_pkg_info(pkg_id, pkg_info)
+        self._add_requirements(installed_pkg, pkg_id)
+        self._pkgs[pkg_id] = installed_pkg
+
+    def upsert_pkg(self, installed_pkg):
+        pkg_info = installed_pkg.pkg_info
+        pkg_id = pkg_info['id']
+        if pkg_id in self._pkgs:
+            self._remove_requirements(installed_pkg, pkg_id)
+        self._write_pkg_info(pkg_id, pkg_info)
+        self._add_requirements(installed_pkg, pkg_id)
+        self._pkgs[pkg_id] = installed_pkg
+
+    def _write_pkg_info(self, pkg_id, pkg_info):
+        if os.sep in pkg_id:
+            raise ValueError('invalid pkg id: %s' % pkg_id)
+        filename = os.path.join(self._db_dir, pkg_id)
+        with open(filename, 'w') as fobj:
+            json.dump(pkg_info, fobj, indent=self._json_indent)
+
+    def delete_pkg(self, pkg_id):
+        if pkg_id not in self._pkgs:
+            raise ValueError('package is not installed: %s' % pkg_id)
+        self._remove_requirements(self._pkgs[pkg_id], pkg_id)
+        filename = os.path.join(self._db_dir, pkg_id)
+        os.remove(filename)
+        del self._pkgs[pkg_id]
+
+    def reload(self):
+        self._load_pkgs()
+
+    def get_requisites(self, pkg_id):
+        """Return the set of direct requisites of pkg_id, i.e. the set of
+        package IDs which depends directly on pkg_id.
+
+        """
+        # we check first since we are using a defaultdict and don't want to
+        # create a new instance if pkg_id is not there
+        if pkg_id not in self._pkgs:
+            raise ValueError('package is not installed: %s' % pkg_id)
+        return set(self._requirement_map[pkg_id])
+
+
+def new_installable_pkg_storage(db_dir, cache_dir, downloaders, global_vars):
+    remote_file_builder = DefaultRemoteFileBuilder(cache_dir, downloaders)
+    filter_builder = DefaultFilterBuilder()
+    install_mgr_factory_builder = DefaultInstallMgrFactoryBuilder(filter_builder, global_vars)
+    pkg_builder = DefaultPkgBuilder()
+    return DefaultInstallablePkgStorage(db_dir, remote_file_builder, install_mgr_factory_builder, pkg_builder)
+
+
+def new_installed_pkg_storage(db_dir):
+    return DefaultInstalledPkgStorage(db_dir)
+
+
+def new_pkg_storages(base_db_dir, cache_dir, downloaders, global_vars):
+    # Return a tuple (installable_pkg_storage, installed_pkg_storage) using
+    # base_db_dir as a common base directory for both package storage
+    able_db_dir = os.path.join(base_db_dir, 'installable')
+    ed_db_dir = os.path.join(base_db_dir, 'installed')
+    for dir in [able_db_dir, ed_db_dir]:
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
+    able_storage = new_installable_pkg_storage(able_db_dir, cache_dir, downloaders, global_vars)
+    ed_storage = new_installed_pkg_storage(ed_db_dir)
+    return able_storage, ed_storage
+
+----------------------------------------
+
+File: util.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import errno
+import logging
+import operator
+import os
+import re
+import shutil
+
+logger = logging.getLogger(__name__)
+
+
+class FetchfwError(Exception):
+    pass
+
+
+_APPLY_SUBS_REGEX = re.compile(r'(?<!\\)\$(?:{(\w*)}|(\w*))')
+
+
+def apply_subs(string, variables):
+    r"""Apply and return string with variable substitution applied.
+
+    >>> apply_subs('$FOO', {'FOO': 'foo'})
+    'foo'
+    >>> apply_subs('${FOO}bar', {'FOO': 'foo'})
+    'foobar'
+    >>> apply_subs('${FOO}${BAR}', {'FOO': 'foo', 'BAR': 'bar'})
+    'foobar'
+    >>> apply_subs('$FOO/$BAR', {'FOO': 'foo', 'BAR': 'bar'})
+    'foo/bar'
+    >>> apply_subs('$N\$', {'N': '20'})
+    '20$'
+
+    Raise a KeyError if a substitution is not defined in variables.
+
+    Raise a ValueError if the substitution string is invalid, like
+    using zero-length substitution variables ("a$." for example).
+
+    """
+
+    def aux(m):
+        var_name = m.group(1)
+        if var_name is None:
+            var_name = m.group(2)
+        if not var_name:
+            raise ValueError("invalid zero-length variable: %s" % string)
+        try:
+            var_value = variables[var_name]
+        except KeyError:
+            raise KeyError("undefined substitution '%s'" % var_name)
+        else:
+            # This treat a special case where var_value has the string
+            # "\$" in it, we don't want it to get unescaped at the end
+            return var_value.replace(r'\$', r'\\$')
+
+    interm = _APPLY_SUBS_REGEX.sub(aux, string)
+    return interm.replace(r'\$', '$')
+
+
+def _split_version(raw_version):
+    # Return a tuple (epoch, version_tokens, release) from a version string
+    if ':' in raw_version:
+        epoch, rest = raw_version.split(':', 1)
+        epoch = int(epoch)
+    else:
+        epoch = 0
+        rest = raw_version
+    if '-' in rest:
+        rest, rel = rest.rsplit('-', 1)
+        rel = int(rel)
+    else:
+        rel = 0
+    return epoch, rest.split('.'), rel
+
+
+def cmp(x, y):
+    """
+    Replacement for built-in function cmp that was removed in Python 3
+
+    Compare the two objects x and y and return an integer according to
+    the outcome. The return value is negative if x < y, zero if x == y
+    and strictly positive if x > y.
+    """
+
+    return (x > y) - (x < y)
+
+
+def cmp_version(version1, version2):
+    r"""Compare version1 with version2 and return an integer according to the
+    outcome.
+
+    The return value is negative if version1 < version2, zero if
+    version1 == version2 or positive if version1 > version2.
+
+    The version string must match the following regex, else the behaviour
+    is not defined:
+      ^(\d+:)?(\w+(?:\.\w+)*)(-\d+)?$
+    where
+      the first group is the epoch (missing is equivalent to "0:")
+      the second group is the version
+      the last group is the release (missing is equivalent to "-0")
+
+    """
+    # common case optimization
+    if version1 == version2:
+        return 0
+    v1_epoch, v1_tokens, v1_rel = _split_version(version1)
+    v2_epoch, v2_tokens, v2_rel = _split_version(version2)
+    # compare epoch
+    if v1_epoch != v2_epoch:
+        return v1_epoch - v2_epoch
+    # compare version
+    for v1_token, v2_token in zip(v1_tokens, v2_tokens):
+        v1_is_digit = v1_token.isdigit()
+        v2_is_digit = v2_token.isdigit()
+        if v1_is_digit and v2_is_digit:
+            v1_int_token = int(v1_token)
+            v2_int_token = int(v2_token)
+            if v1_int_token != v2_int_token:
+                return v1_int_token - v2_int_token
+        elif v1_is_digit:
+            assert not v2_is_digit
+            return 1
+        elif v2_is_digit:
+            assert not v1_is_digit
+            return -1
+        else:
+            token_cmp = cmp(v1_token, v2_token)
+            if token_cmp:
+                return token_cmp
+    # check tokens length
+    tokens_len_diff = len(v1_tokens) - len(v2_tokens)
+    if tokens_len_diff:
+        return tokens_len_diff
+    # compare release
+    if v1_rel != v2_rel:
+        return v1_rel - v2_rel
+    # we reach this if we compare "1.0" with "1.00" for example
+    return 0
+
+
+def _recursive_listdir_tuple(directory):
+    # recursive_listdir that yield tuple (abs_path, path) instead
+    directories_stack = []
+    for path in os.listdir(directory):
+        abs_path = os.path.join(directory, path)
+        if os.path.isdir(abs_path):
+            directories_stack.append(path)
+        yield abs_path, path
+    while directories_stack:
+        cur_directory = directories_stack.pop()
+        cur_abs_directory = os.path.join(directory, cur_directory)
+        for path in os.listdir(cur_abs_directory):
+            rel_path = os.path.join(cur_directory, path)
+            abs_path = os.path.join(directory, rel_path)
+            if os.path.isdir(abs_path):
+                directories_stack.append(rel_path)
+            yield abs_path, rel_path
+
+
+def recursive_listdir(directory):
+    """Return an iterator that yield recursively all the files and directories
+    inside the given directory.
+
+    The directories are visited a bit more every time a new element is yielded
+    from the iterator.
+
+    Note that if the given directory doesn't exist, an error will be raised
+    only on the first iteration and not during the function call.
+
+    For example, if:
+    $ mkdir test-dir
+    $ touch test-dir/file1
+    $ mkdir test-dir/dir2
+    $ touch test-dir/dir2/file2
+
+    then:
+    > sorted(recursive_listdir('test-dir'))
+    ['dir2', 'dir2/file2', 'file1']
+
+    """
+    return map(operator.itemgetter(1), _recursive_listdir_tuple(directory))
+
+
+def list_paths(directory):
+    """Return an iterator that yield recursively all the files and directories
+    inside the given directory, adding a one character tag at the end of
+    non-regular files.
+
+    Directories are returned with a '/' character appended.
+
+    Be careful if your directories contains files other than regular files
+    and directories (i.e. symbolic links, block device, etc) i.e. any non
+    "regular files" or directories, since the behaviour is not defined.
+
+    Except than that, the behaviour is the same as recursive_listdir.
+
+    """
+    for abs_path, path in _recursive_listdir_tuple(directory):
+        if os.path.isdir(abs_path):
+            yield path + '/'
+        else:
+            yield path
+
+
+def install_paths(src_directory, dst_directory):
+    """Copy recursively all the files from src_directory to dst_directory,
+    yielding the copied files/directories at the same rate the files are
+    copied.
+
+    Directories are returned with a '/' character appended at the end.
+
+    Note that if directories already exist in dst_directory, no error are
+    raised and the directory is yielded like if it would have been created.
+    Existing files are overriden without warning, so be careful.
+
+    Also, note that both src_directory and dst_directory must already exist or
+    an error will be raised on the first iteration.
+
+    For example, if:
+    $ mkdir test-dir
+    $ touch test-dir/file1
+    $ mkdir test-dir/dir2
+    $ touch test-dir/dir2/file2
+
+    then:
+    > sorted(install_paths('test-dir', 'test-dir2'))
+    ['file1', 'dir2/', 'dir2/file2']
+    > sorted(list_paths('test-dir2'))
+    ['dir2/', 'dir2/file2', 'file1']
+
+    Note that you are looking for trouble if src_directory is the same as
+    dst_directory or if both directories share a same subtree (i.e. one is
+    the parent of the other).
+
+    """
+    for src_abs_path, path in _recursive_listdir_tuple(src_directory):
+        dst_abs_path = os.path.join(dst_directory, path)
+        if os.path.isdir(src_abs_path):
+            try:
+                os.mkdir(dst_abs_path)
+            except OSError as e:
+                if e.errno == errno.EEXIST and os.path.isdir(dst_abs_path):
+                    # dst_abs_path already exist and is a dictionary
+                    pass
+                else:
+                    raise
+            yield path + '/'
+        else:
+            # Do not use shutil.copy since dst must not be a directory
+            shutil.copyfile(src_abs_path, dst_abs_path)
+            shutil.copymode(src_abs_path, dst_abs_path)
+            yield path
+
+
+def remove_paths(paths, directory):
+    """Remove all the given paths from directory, yielding the removed paths
+    at the same rate they are removed.
+
+    paths must be an iterable of relative paths, with directories ending with '/'.
+
+    Note that the function takes care of removing the files inside a directory
+    before trying to remove the directory.
+
+    An exception is not thrown in the following cases and in fact the path
+    will be returned as if the removing was succesful:
+    - removing a non-empty directory
+    - removing a file/directory that doesn't exist
+
+    In any other error case, an exception will be raised.
+
+    For example, if:
+    $ mkdir test-dir
+    $ touch test-dir/file1
+    $ mkdir test-dir/dir2
+    $ touch test-dir/dir2/file2
+
+    then:
+    > sorted(remove_paths(['file1', 'dir2/', 'dir2/file2'], 'test-dir'))
+    ['file1', 'dir2/', 'dir2/file2']
+    > list(list_paths('test-dir'))
+    []
+
+    """
+    non_empty_directories = []
+    for path in sorted(paths, reverse=True):
+        abs_path = os.path.join(directory, path)
+        if abs_path.endswith('/'):
+            # test if 'os.rmdir' will fail, i.e. if removing a child path that
+            # previously failed.
+            for non_empty_directory in non_empty_directories:
+                if non_empty_directory.startswith(abs_path):
+                    logger.debug("Not trying to remove '%s' since removing '%s' failed", abs_path, non_empty_directory)
+                    break
+            else:
+                logger.debug("Deleting '%s' as directory", abs_path)
+                try:
+                    os.rmdir(abs_path)
+                except OSError as e:
+                    if e.errno == errno.ENOTEMPTY:
+                        logger.debug("Could not delete directory '%s' because it is not empty", path)
+                        non_empty_directories.append(abs_path)
+                    elif e.errno == errno.ENOENT:
+                        logger.warning("Could not delete directory '%s' because it does not exist", path)
+                    else:
+                        raise
+        else:
+            logger.debug("Deleting '%s' as file", abs_path)
+            try:
+                os.remove(abs_path)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    logger.warning("Could not delete file '%s' because it does not exist", abs_path)
+                else:
+                    raise
+        yield path
+
+
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod(verbose=True)
+
+----------------------------------------
+
