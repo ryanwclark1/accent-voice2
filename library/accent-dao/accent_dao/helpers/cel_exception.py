@@ -1,7 +1,6 @@
 # helpers/cel_exceptions.py
 # Copyright 2025 Accent Communications
 
-
 class CELException(Exception):
     """Base exception for CEL-related errors."""
 

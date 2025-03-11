@@ -1,5 +1,6 @@
 # helpers/asterisk.py
 # Copyright 2025 Accent Communications
+
 from collections.abc import Iterable
 from typing import Any
 
