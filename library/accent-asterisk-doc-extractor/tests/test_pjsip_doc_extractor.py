@@ -5,7 +5,7 @@ import os
 import unittest
 from xml.etree import ElementTree
 
-from ..main import extract_pjsip_doc
+from accent_asterisk_doc_extractor.main import extract_pjsip_doc
 
 TEST_DIR = os.path.dirname(__file__)
 INPUT_PATH = os.path.join(TEST_DIR, "core-en_US.xml")
