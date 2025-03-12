@@ -1,0 +1,339 @@
+File: __init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/__init__.py
+Please review for update
+
+
+----------------------------------------
+
+File: commands/service.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import uuid
+
+from cliff.command import Command
+
+POLICY_NAME_TPL = '{username}-internal'
+
+
+class ServiceUpdate(Command):
+    "Update or create all users defined in the config file"
+
+    def get_parser(self, *args, **kwargs):
+        parser = super().get_parser(*args, **kwargs)
+        parser.add_argument(
+            '--recreate',
+            help="Delete service before updating it",
+            action='store_true',
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        self.app.LOG.debug('Parsed args: %s', parsed_args)
+
+        for name, values in self.app.services.items():
+            if parsed_args.recreate:
+                self._delete_service(name)
+                self._delete_policy(name)
+                self.app.file_manager.remove(name)
+
+            service_uuid = self._find_service_uuid(name)
+            if not self.app.file_manager.service_exists(name):
+                if service_uuid:
+                    raise RuntimeError(
+                        f"User ({name}) exists but not the file associated. Please use '--recreate' option"
+                    )
+                password = str(uuid.uuid4())
+                service_uuid = self._create_service(name, password)
+                self.app.file_manager.update(name, password)
+            else:
+                if not service_uuid:
+                    raise RuntimeError(
+                        f"File exists but not the user ({name}) associated. Please use '--recreate' option"
+                    )
+
+            self._create_or_update_service_policy(name, service_uuid, values['acl'])
+            self.app.file_manager.update_ownership(name, values['system_user'])
+
+    def _find_service_uuid(self, name):
+        services = self.app.client.users.list(username=name)['items']
+        for service in services:
+            return service['uuid']
+
+    def _delete_service(self, name):
+        service_uuid = self._find_service_uuid(name)
+        if not service_uuid:
+            return
+
+        self.app.client.users.delete(service_uuid)
+
+    def _create_service(self, name, password):
+        service = self.app.client.users.new(username=name, password=password, purpose='internal')
+        return service['uuid']
+
+    def _find_policy(self, name):
+        policies = self.app.client.policies.list(name=name)['items']
+        for policy in policies:
+            return policy
+
+    def _delete_policy(self, username):
+        name = POLICY_NAME_TPL.format(username=username)
+        policy = self._find_policy(name)
+        if not policy:
+            return
+
+        self.app.client.policies.delete(policy['uuid'])
+
+    def _create_or_update_service_policy(self, username, service_uuid, acl):
+        name = POLICY_NAME_TPL.format(username=username)
+        policy = self._find_policy(name)
+        if not policy:
+            policy = self.app.client.policies.new(name, acl=acl)
+            self.app.client.users.add_policy(service_uuid, policy['uuid'])
+            return
+
+        if sorted(policy['acl']) == sorted(acl):
+            return
+        self.app.client.policies.edit(policy['uuid'], name, acl=acl)
+
+
+class ServiceClean(Command):
+    "Clean undefined files"
+
+    def get_parser(self, *args, **kwargs):
+        parser = super().get_parser(*args, **kwargs)
+        parser.add_argument(
+            '--users',
+            help="Delete undefined internal users",
+            action='store_true',
+        )
+        return parser
+
+    def take_action(self, parsed_args):
+        excludes = list(self.app.services.keys())
+        if parsed_args.users:
+            self.app.LOG.debug('Delete all undefined internal users')
+            self._delete_services(excludes)
+
+        self.app.file_manager.clean(excludes=excludes)
+
+    def _delete_services(self, excludes=None):
+        excludes = excludes or []
+        excludes.append('accent-auth-cli')
+        services = self.app.client.users.list(purpose='internal')['items']
+        for service in services:
+            if service['username'] in excludes:
+                continue
+
+            policies = self.app.client.users.get_policies(service['uuid'])['items']
+            for policy in policies:
+                self.app.LOG.debug('Deleting policy: %s', policy['name'])
+                self.app.client.policies.delete(policy['uuid'])
+            self.app.LOG.debug('Deleting user: %s', service['username'])
+            self.app.client.users.delete(service['uuid'])
+
+----------------------------------------
+
+File: config.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import os
+
+from accent_auth_cli.config import _DEFAULT_CONFIG
+from accent.chain_map import ChainMap
+from accent.config_helper import (
+    parse_config_dir,
+    read_config_file_hierarchy_accumulating_list,
+)
+
+SERVICES_CONFIG_FILE = 'config.yml'
+SERVICES_EXTRA_CONFIG = 'conf.d'
+
+
+def _read_user_config(parsed_args):
+    if not parsed_args.accent_auth_cli_config:
+        return {}
+    configs = parse_config_dir(parsed_args.accent_auth_cli_config)
+    return ChainMap(*configs)
+
+
+def build(parsed_args):
+    user_file_config = _read_user_config(parsed_args)
+    system_file_config = read_config_file_hierarchy_accumulating_list(
+        ChainMap(user_file_config, _DEFAULT_CONFIG)
+    )
+    final_config = ChainMap(user_file_config, system_file_config, _DEFAULT_CONFIG)
+    return final_config
+
+
+def load_services(parsed_args):
+    services_dir = parsed_args.config
+    services_config = {
+        'config_file': os.path.join(services_dir, SERVICES_CONFIG_FILE),
+        'extra_config_files': os.path.join(services_dir, SERVICES_EXTRA_CONFIG),
+    }
+    services = read_config_file_hierarchy_accumulating_list(services_config)
+    services.pop('config_file', None)
+    services.pop('extra_config_files', None)
+    return services
+
+----------------------------------------
+
+File: file_manager.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import os
+import pwd
+
+import yaml
+
+DONT_CHANGE = -1
+FILENAME_TPL = '{service_id}-key.yml'
+
+
+class FileManager:
+    def __init__(self, app, base_dir):
+        self.app = app
+        self._base_dir = base_dir
+        self._full_path_tpl = os.path.join(self._base_dir, FILENAME_TPL)
+        self._system_user_map = {pw.pw_name: pw.pw_uid for pw in pwd.getpwall()}
+
+    def update(self, service_id, service_key):
+        full_path = self._full_path_tpl.format(service_id=service_id)
+        self._write_config_file(full_path, service_id, service_key)
+
+    def remove(self, service_id):
+        full_path = self._full_path_tpl.format(service_id=service_id)
+        try:
+            os.remove(full_path)
+        except OSError:
+            self.app.LOG.debug('File does not exist: %s', full_path)
+
+    def update_ownership(self, service_id, system_user):
+        full_path = self._full_path_tpl.format(service_id=service_id)
+        uid = self._system_user_map.get(system_user, DONT_CHANGE)
+        self.app.LOG.debug('Changing ownership %s ...', full_path)
+        os.chown(full_path, uid, DONT_CHANGE)
+        os.chmod(full_path, 0o600)
+
+    def _write_config_file(self, full_path, service_id, service_key):
+        self.app.LOG.debug('Writing %s ...', full_path)
+        os.mknod(full_path)
+        os.chmod(full_path, 0o600)
+        with open(full_path, 'w') as fobj:
+            yaml.safe_dump({'service_id': service_id, 'service_key': service_key}, fobj)
+
+    def service_exists(self, service_id):
+        search = FILENAME_TPL.format(service_id=service_id)
+        filenames = os.listdir(self._base_dir)
+        if search in filenames:
+            return True
+        return False
+
+    def clean(self, excludes=None):
+        excludes = excludes or []
+        directory_filenames = os.listdir(self._base_dir)
+        exclude_filenames = [
+            FILENAME_TPL.format(service_id=service_id) for service_id in excludes
+        ]
+        for filename in directory_filenames:
+            if filename in exclude_filenames:
+                continue
+            full_path = os.path.join(self._base_dir, filename)
+            self.app.LOG.debug('Removing %s ...', full_path)
+            os.remove(full_path)
+
+----------------------------------------
+
+File: main.py
+Please review for update
+
+# Copyright 2023 Accent Communications
+
+import os
+import sys
+
+from cliff.app import App
+from cliff.commandmanager import CommandManager
+from accent_auth_client import Client
+
+from . import config
+from .file_manager import FileManager
+
+
+class AccentAuthKeys(App):
+    DEFAULT_VERBOSE_LEVEL = 0
+
+    def __init__(self):
+        super().__init__(
+            description='A wrapper to accent-auth-cli to manage internal users',
+            command_manager=CommandManager('accent_auth_keys.commands'),
+            version='1.0.0',
+        )
+        self._token = None
+        self._client = None
+
+    def build_option_parser(self, *args, **kwargs):
+        parser = super().build_option_parser(*args, **kwargs)
+        parser.add_argument(
+            '--accent-auth-cli-config',
+            default=os.getenv('ACCENT_AUTH_CLI_CONFIG', '/root/.config/accent-auth-cli'),
+            help='Extra configuration directory to override the accent-auth-cli configuration',
+        )
+        parser.add_argument(
+            '--base-dir',
+            default='/var/lib/accent-auth-keys',
+            help='The base directory of the file keys',
+        )
+        parser.add_argument(
+            '--config',
+            default='/etc/accent-auth-keys',
+            help='The accent-auth-keys configuration directory',
+        )
+        return parser
+
+    @property
+    def client(self):
+        if not self._client:
+            self._client = Client(**self._auth_config)
+
+        if not self._token:
+            self._token = self._client.token.new('accent_user', expiration=600)['token']
+
+        self._client.set_token(self._token)
+        return self._client
+
+    def initialize_app(self, argv):
+        self.LOG.debug('accent-auth-keys')
+        self.LOG.debug('options=%s', self.options)
+
+        conf = config.build(self.options)
+        self.LOG.debug('Starting with config: %s', conf)
+
+        self.LOG.debug('client args: %s', conf['auth'])
+        self._auth_config = dict(conf['auth'])
+
+        self.services = config.load_services(self.options)
+        self.file_manager = FileManager(self, self.options.base_dir)
+
+
+def main(argv=sys.argv[1:]):
+    app = AccentAuthKeys()
+    return app.run(argv)
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
+
+----------------------------------------
+
