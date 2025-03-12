@@ -3,8 +3,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +14,9 @@ from accent_dao.alchemy.queuefeatures import QueueFeatures
 from accent_dao.alchemy.queuemember import QueueMember
 from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.helpers.db_manager import daosession
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class Agent(NamedTuple):
