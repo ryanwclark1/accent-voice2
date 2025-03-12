@@ -1,4 +1,4 @@
-# file: accent_dao/resources/utils/__init__.py
+# file: accent_dao/resources/utils/__init__.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 """Collection of helper methods and classes for resources."""
 
