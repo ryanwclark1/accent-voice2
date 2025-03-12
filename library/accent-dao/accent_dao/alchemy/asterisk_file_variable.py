@@ -1,4 +1,4 @@
-# file: accent_dao/models/asterisk_file_variable.py
+# file: accent_dao/models/asterisk_file_variable.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Index, Integer, String, Text

@@ -1,5 +1,6 @@
 # file: accent_dao/models/asterisk_file_section.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint

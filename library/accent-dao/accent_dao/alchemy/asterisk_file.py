@@ -1,4 +1,4 @@
-# file: accent_dao/models/asterisk_file.py
+# file: accent_dao/models/asterisk_file.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING
