@@ -24,6 +24,7 @@ class ViewSelector:
         Args:
             default: The default view object.
             **views: Keyword arguments representing view names and their corresponding view objects.
+
         """
         self.default = default
         self.views = views
