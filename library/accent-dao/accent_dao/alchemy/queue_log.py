@@ -1,8 +1,6 @@
 # file: accent_dao/models/queue_log.py
 # Copyright 2025 Accent Communications
 
-from datetime import datetime
-
 from sqlalchemy import DateTime, Index, Integer, PrimaryKeyConstraint, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -36,7 +34,7 @@ class QueueLog(Base):
         Index("queue_log__idx_time", "time"),
     )
 
-    time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)
     callid: Mapped[str | None] = mapped_column(String(80), nullable=True)
     queuename: Mapped[str | None] = mapped_column(String(256), nullable=True)
     agent: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,6 +1,5 @@
 # file: accent_dao/models/stat_call_on_queue.py
 # Copyright 2025 Accent Communications
-from datetime import datetime
 from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String
@@ -52,7 +51,7 @@ class StatCallOnQueue(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     callid: Mapped[str] = mapped_column(String(32), nullable=False)
-    time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
     ringtime: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     talktime: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     waittime: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")

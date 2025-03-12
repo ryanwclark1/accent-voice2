@@ -1,6 +1,8 @@
 # file: accent_dao/models/agent_login_status.py
 # Copyright 2025 Accent Communications
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     Boolean,
     DateTime,
@@ -14,6 +16,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .agentfeatures import AgentFeatures
 
 
 class AgentLoginStatus(Base):
@@ -53,7 +58,7 @@ class AgentLoginStatus(Base):
         Boolean, nullable=False, server_default="false"
     )
     paused_reason: Mapped[str | None] = mapped_column(String(80), nullable=True)
-    login_at: Mapped[datetime] = mapped_column(
+    login_at: Mapped[DateTime] = mapped_column(
         DateTime,
         nullable=False,
         server_default=func.timezone("utc", func.current_timestamp()),

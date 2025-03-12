@@ -1,8 +1,6 @@
 # file: accent_dao/models/cel.py
 # Copyright 2025 Accent Communications
 
-from datetime import datetime
-
 from sqlalchemy import DateTime, Index, Integer, Text, UnicodeText
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -49,7 +47,7 @@ class CEL(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
     eventtype: Mapped[str] = mapped_column(Text, nullable=False)
-    eventtime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    eventtime: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
     userdeftype: Mapped[str] = mapped_column(Text, nullable=False)
     cid_name: Mapped[str] = mapped_column(UnicodeText, nullable=False)
     cid_num: Mapped[str] = mapped_column(UnicodeText, nullable=False)

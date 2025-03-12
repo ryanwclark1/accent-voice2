@@ -1,7 +1,6 @@
 # file: accent_dao/models/stat_agent_periodic.py
 # Copyright 2025 Accent Communications
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer
@@ -35,7 +34,7 @@ class StatAgentPeriodic(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
     login_time: Mapped[str] = mapped_column(
         INTERVAL, nullable=False, server_default="0"
     )  # Keep server default

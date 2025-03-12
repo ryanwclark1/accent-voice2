@@ -1,6 +1,5 @@
 # file: accent_dao/models/meeting_authorization.py
 # Copyright 2025 Accent Communications
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, Text, func
@@ -47,7 +46,7 @@ class MeetingAuthorization(Base):
     )
     guest_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         default=utcnow_with_tzinfo,
         server_default=func.now(),

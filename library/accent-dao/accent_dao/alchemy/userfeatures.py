@@ -131,7 +131,8 @@ class UserFeatures(Base):
         rightcallcode: The rightcall code.
         commented: Indicates if the user features are commented out.
         func_key_template_id: The ID of the associated function key template.
-    func_key_private_template_id: The ID of the associated private function key template.
+    func_key_private_template_id: The ID of the associated private 
+                function key template.
         subscription_type: The subscription type.
         created_at: The timestamp when the user features were created.
         webi_lastname: Last name from webi.
@@ -163,11 +164,16 @@ class UserFeatures(Base):
         call_pickup_targets: Relationship to PickupMember (targets).
         rightcall_members: Relationship to RightCallMember.
         call_permissions: Rightcall objects associated.
-    call_pickup_interceptor_pickups: Relationship to Pickup groups that the user intercepts calls from.
-    users_from_call_pickup_user_targets: Users associated with the user's targets through pickup.
-    users_from_call_pickup_group_targets: Users associated with the user's targets through pickup.
-    users_from_call_pickup_group_interceptors_user_targets: Users associated with the group.
-    users_from_call_pickup_group_interceptors_group_targets: Groups associated through pickup.
+    call_pickup_interceptor_pickups: Relationship to Pickup groups that
+        the user intercepts calls from.
+    users_from_call_pickup_user_targets: Users associated with
+        the user's targets through pickup.
+    users_from_call_pickup_group_targets: Users associated with
+        the user's targets through pickup.
+    users_from_call_pickup_group_interceptors_user_targets: Users associated with
+        the group.
+    users_from_call_pickup_group_interceptors_group_targets: Groups associated
+        through pickup.
         func_keys: Relationship to FuncKeyDestUser.
         tenant: Relationship to Tenant.
 
@@ -314,7 +320,7 @@ class UserFeatures(Base):
     subscription_type: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[DateTime] = mapped_column(
         DateTime,
         default=datetime.datetime.utcnow,
         server_default=func.now(),  # Use func.now()
@@ -613,7 +619,7 @@ class UserFeatures(Base):
         return name, (num or default_num)
 
     def fill_caller_id(self) -> None:
-        """Fills in the caller ID if it's empty."""
+        """Fill in the caller ID if it's empty."""
         if self.caller_id is None:
             self.caller_id = f'"{self.fullname}"'
 

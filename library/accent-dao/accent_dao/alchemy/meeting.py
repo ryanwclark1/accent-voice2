@@ -84,7 +84,7 @@ class Meeting(Base):
         unique=True,
         index=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         default=utcnow_with_tzinfo,
         server_default=func.now(),

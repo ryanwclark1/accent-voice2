@@ -1,7 +1,6 @@
 # file: accent_dao/models/stat_queue_periodic.py
 # Copyright 2025 Accent Communications
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, Integer
@@ -40,7 +39,7 @@ class StatQueuePeriodic(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
     answered: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     abandoned: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     total: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")

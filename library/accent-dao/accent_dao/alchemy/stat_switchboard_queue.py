@@ -1,6 +1,6 @@
 # file: accent_dao/models/stat_switchboard_queue.py
 # Copyright 2025 Accent Communications
-from datetime import datetime
+
 from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import DateTime, Enum, Float, ForeignKeyConstraint, Integer
@@ -35,7 +35,7 @@ class StatSwitchboardQueue(Base):
     __tablename__: str = "stat_switchboard_queue"
 
     id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
-    time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    time: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
     end_type: Mapped[StatSwitchboardEndtype] = mapped_column(
         Enum(
             "abandoned",
