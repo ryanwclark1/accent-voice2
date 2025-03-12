@@ -7,7 +7,7 @@ from accent_dao.helpers.db_manager import (
 )
 
 __all__ = [
-    'init_db',
-    'init_db_from_config',
-    'default_config',
+    "default_config",
+    "init_db",
+    "init_db_from_config",
 ]
