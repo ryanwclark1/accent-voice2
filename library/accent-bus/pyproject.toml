@@ -3,16 +3,12 @@ name = "accent-bus"
 version = "0.1.0"
 description = "Library for internal communication"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.11"
 readme = "README.md"
-dependencies = [
-    "amqp>=5.3.1",
-    "kombu>=5.4.2",
-]
+dependencies = ["amqp>=5.3.1", "kombu>=5.4.2"]
 
 [dependency-groups]
-dev = [
-]
+dev = []
 
 [tool.hatch.build.targets.sdist]
 include = ["accent_bus"]

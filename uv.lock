@@ -445,8 +445,8 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "httpx", specifier = ">=0.24.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -2298,8 +2298,8 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "httpx", specifier = ">=0.24.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "stevedore", specifier = ">=5.4.1" },
 ]
 
@@ -3338,7 +3338,7 @@ name = "cffi"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "pycparser" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fc/97/c783634659c2920c3fc70419e3af40972dbaf758daa229a7d6ea6135c90d/cffi-1.17.1.tar.gz", hash = "sha256:1c39c6016c32bc48dd54561950ebd6836e1670f2ae46128f67cf49e789c52824", size = 516621 }
 wheels = [
