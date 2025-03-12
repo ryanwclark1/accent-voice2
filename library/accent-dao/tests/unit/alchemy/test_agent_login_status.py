@@ -2,7 +2,7 @@
 
 from hamcrest import assert_that, equal_to, none
 
-from accent_dao.tests.test_dao import DAOTestCase
+..test_dao import DAOTestCase
 
 
 class TestAgentStatus(DAOTestCase):
