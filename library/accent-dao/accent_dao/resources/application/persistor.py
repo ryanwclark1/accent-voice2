@@ -1,4 +1,4 @@
-# file: accent_dao/resources/application/persistor.py
+# file: accent_dao/resources/application/persistor.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Any
@@ -54,7 +54,7 @@ class ApplicationPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Application]
         return self.build_criteria(query, criteria)
 
     async def _search_query(self):
-        """Create async query"""
+        """Create async query."""
         return select(self.search_system.config.table)
 
     async def search(self, parameters: dict[str, Any]) -> SearchResult:

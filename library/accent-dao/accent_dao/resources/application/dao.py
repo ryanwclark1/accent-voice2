@@ -1,9 +1,13 @@
-# file: accent_dao/resources/application/dao.py
+# file: accent_dao/resources/application/dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_dao.alchemy.application import Application
 from accent_dao.helpers.db_manager import async_daosession
+from accent_dao.resources.utils.search import SearchResult
 
 from .persistor import ApplicationPersistor
 from .search import application_search
@@ -11,10 +15,7 @@ from .search import application_search
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from sqlalchemy.ext.asyncio import AsyncSession
 
-    from accent_dao.alchemy.application import Application
-    from accent_dao.resources.utils.search import SearchResult
 
 
 @async_daosession
@@ -30,6 +31,7 @@ async def search(
 
     Returns:
         SearchResult: The search results.
+
     """
     return await ApplicationPersistor(session, application_search, tenant_uuids).search(
         parameters
@@ -51,6 +53,7 @@ async def get(
 
     Returns:
         Application: The application.
+
     """
     return await ApplicationPersistor(session, application_search, tenant_uuids).get_by(
         {"uuid": application_uuid}
@@ -70,6 +73,7 @@ async def get_by(
 
     Returns:
         Application: The application.
+
     """
     return await ApplicationPersistor(session, application_search, tenant_uuids).get_by(
         criteria
@@ -91,6 +95,7 @@ async def find(
 
     Returns:
         Application | None: The application, or None if not found.
+
     """
     return await ApplicationPersistor(
         session, application_search, tenant_uuids
@@ -110,6 +115,7 @@ async def find_by(
 
     Returns:
         Application | None: The application, or None if not found.
+
     """
     return await ApplicationPersistor(
         session, application_search, tenant_uuids
@@ -129,6 +135,7 @@ async def find_all_by(
 
     Returns:
         list[Application]: A list of applications.
+
     """
     result: Sequence[Application] = await ApplicationPersistor(
         session, application_search, tenant_uuids
