@@ -1,5 +1,6 @@
-# file: accent_dao/resources/access_feature/dao.py  # noqa: ERA001
+# file: accent_dao/resources/access_feature/dao.py
 # Copyright 2025 Accent Communications
+
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -97,7 +98,9 @@ async def find_by(session: AsyncSession, **criteria: dict) -> AccessFeatures | N
 
 
 @async_daosession
-async def find_all_by(session: AsyncSession, **criteria: dict) -> list[AccessFeatures]:
+async def find_all_by(
+    session: AsyncSession, **criteria: dict
+) -> list[AccessFeatures]:  # Corrected return type hint
     """Find all access features by criteria.
 
     Args:
@@ -108,10 +111,9 @@ async def find_all_by(session: AsyncSession, **criteria: dict) -> list[AccessFea
         list[AccessFeatures]: A list of access features.
 
     """
-    result = await AccessFeaturesPersistor(session, access_feature_search).find_all_by(
+    return await AccessFeaturesPersistor(session, access_feature_search).find_all_by(
         criteria
-    )
-    return list(result)
+    )  # No more cast needed
 
 
 @async_daosession

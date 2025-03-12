@@ -1,7 +1,7 @@
 # file: accent_dao/resources/access_feature/persistor.py
 # Copyright 2025 Accent Communications
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,10 @@ from accent_dao.alchemy.accessfeatures import AccessFeatures
 from accent_dao.helpers import errors
 from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 
 
 class AccessFeaturesPersistor(CriteriaBuilderMixin, AsyncBasePersistor):
@@ -74,3 +78,13 @@ class AccessFeaturesPersistor(CriteriaBuilderMixin, AsyncBasePersistor):
         if not model:
             raise errors.NotFoundError("AccessFeature", **criteria)
         return model
+
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[AccessFeatures]:
+        """Find all AccessFeatures by criteria.
+
+        Returns:
+            list of AccessFeatures.
+
+        """
+        result: Sequence[AccessFeatures] = await super().find_all_by(criteria)
+        return list(result)
