@@ -148,7 +148,7 @@ class RightCall(Base):
 
     @hybrid_property
     def password(self) -> str | None:
-        """The password (null if empty)."""
+        """Return the password (null if empty)."""
         if self.passwd == "":
             return None
         return self.passwd
@@ -176,7 +176,7 @@ class RightCall(Base):
 
     @hybrid_property
     def mode(self) -> RightCallMode:
-        """The authorization mode ('allow' or 'deny')."""
+        """Return the authorization mode ('allow' or 'deny')."""
         if self.authorization == 1:
             return "allow"
         return "deny"
@@ -211,7 +211,7 @@ class RightCall(Base):
 
     @hybrid_property
     def enabled(self) -> bool:
-        """Indicates if the rule is enabled."""
+        """Indicate if the rule is enabled."""
         return self.commented == 0
 
     @enabled.setter
