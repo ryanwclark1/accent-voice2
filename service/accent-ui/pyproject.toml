@@ -3,7 +3,7 @@ name = "accent-ui"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "Babel>=2.8.0",
   "cheroot>=8.5.2",
@@ -127,4 +127,3 @@ include = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-

@@ -3,10 +3,10 @@ name = "accent-amid-client"
 version = "0.1.0"
 description = "Client library for the accent-amid HTTP interface"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
-  "httpx>=0.24.0",
-  "pydantic>=2.0.0",
+  "httpx>=0.28.1",
+  "pydantic>=2.10.6",
   "stevedore>=5.4.1",
   "accent-lib-rest-client",
 ]

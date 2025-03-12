@@ -3,7 +3,7 @@ name = "accent-lib-rest-client"
 version = "0.1.0"
 description = "Library for the Accent REST clients"
 authors = [{ name = "Ryan Clark", email = "ryanwclark@yahoo.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 readme = "README.md"
 dependencies = ["httpx>=0.28.1", "pydantic>=2.10.6", "stevedore>=5.4.1"]
 

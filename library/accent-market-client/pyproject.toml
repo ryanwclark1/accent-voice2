@@ -3,7 +3,7 @@ name = "accent-market-client"
 version = "0.1.0"
 description = "Client library for the accent-market HTTP interface"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
   "httpx>=0.28.1",
   "pydantic>=2.10.6",

@@ -3,7 +3,7 @@ name = "accent-debug"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "cliff>=3.10.1",
   "requests>=2.25.1",

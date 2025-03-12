@@ -3,7 +3,7 @@ name = "accent-agentd-cli"
 version = "0.1.0"
 description = "CLI program to interact with a accent-agentd server"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "pyyaml>=6.0",
   "requests>=2.25.1",

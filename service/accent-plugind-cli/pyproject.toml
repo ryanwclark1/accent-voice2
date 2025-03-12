@@ -3,7 +3,7 @@ name = "accent-plugind-cli"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "kombu>=5.0.2",
   "pyyaml>=6.0",

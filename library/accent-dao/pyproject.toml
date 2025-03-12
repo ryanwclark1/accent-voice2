@@ -3,7 +3,7 @@ name = "accent-dao"
 version = "0.1.0"
 description = "Data Access Layer"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "psycopg[binary,pool]",
   "sqlalchemy[asyncio]>=2.0.0",

@@ -3,7 +3,7 @@ name = "accent-auth"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "accent-bus",
   "accent-dao",
@@ -62,11 +62,7 @@ default_external_api = "accent_auth.plugins.metadata.default_external_api:Defaul
 user_admin_status = "accent_auth.plugins.metadata.user_admin_status:UserAdminStatus"
 
 [dependency-groups]
-dev = [
-  "pytest>=8.3.5",
-  "accent-test-helpers",
-  "ruff>=0.9.10",
-]
+dev = ["pytest>=8.3.5", "accent-test-helpers", "ruff>=0.9.10"]
 
 [tool.uv.sources]
 accent-test-helpers = { workspace = true }

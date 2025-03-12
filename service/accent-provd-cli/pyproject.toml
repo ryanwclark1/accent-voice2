@@ -3,7 +3,7 @@ name = "accent-provd-cli"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "accent-lib-rest-client",
   "accent-auth-client",

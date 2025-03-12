@@ -3,7 +3,7 @@ name = "accent-export-import"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryan@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "pyexcel-ods>=0.6.0",
   "cliff>=3.10.1",

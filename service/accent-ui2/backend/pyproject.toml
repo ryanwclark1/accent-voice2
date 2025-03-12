@@ -3,7 +3,7 @@ name = "accent-ui2"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "fastapi[standard]<1.0.0,>=0.114.2",
   "python-multipart<1.0.0,>=0.0.7",
@@ -125,4 +125,3 @@ include = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-

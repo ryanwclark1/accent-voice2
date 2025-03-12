@@ -3,7 +3,7 @@ name = "accent-fetchfw"
 version = "0.1.0"
 description = "Fetch"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = ["progressbar2>=4.0.0", "pydantic>=2.10.6"]
 
 [project.scripts]

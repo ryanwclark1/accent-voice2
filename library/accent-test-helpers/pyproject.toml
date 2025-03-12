@@ -3,7 +3,7 @@ name = "accent-test-helpers"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "docker>=5.0.3",
   "kombu>=5.0.2",

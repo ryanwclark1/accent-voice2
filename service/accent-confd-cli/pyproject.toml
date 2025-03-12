@@ -3,7 +3,7 @@ name = "accent-confd-cli"
 version = "1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "cliff>=3.10.1",
   "pyaml>=21.10.1",

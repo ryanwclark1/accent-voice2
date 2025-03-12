@@ -3,7 +3,7 @@ name = "accent-config"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "Jinja2>=2.11.3",
   "netaddr>=0.8.0",

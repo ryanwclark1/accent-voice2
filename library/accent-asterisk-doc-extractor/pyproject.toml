@@ -3,7 +3,7 @@ name = "accent-asterisk-doc-extractor"
 version = "0.1.0"
 description = "Documentation extraction tool for Asterisk"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 
 [project.scripts]
 accent-asterisk-doc-extractor = "accent_asterisk_doc_extractor.main:main"

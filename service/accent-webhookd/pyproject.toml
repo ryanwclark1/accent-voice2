@@ -3,7 +3,7 @@ name = "accent-webhookd"
 version = "0.1.0"
 description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "alembic>=1.13.0",
   "celery>=5.0.0",
@@ -77,4 +77,3 @@ include = ["accent_webhookd", "accent_webhookd/plugins/*/api.yml"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-

@@ -3,7 +3,7 @@ name = "accent-provd"
 version = "0.1.0"
 description = "Provd"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "cryptography>=3.3.2",
   "jinja2>=2.11.3",

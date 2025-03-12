@@ -3,7 +3,7 @@ name = "accent-deployd-client"
 version = "0.1.0"
 description = "Client library for the accent deployd HTTP interface"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "stevedore>=5.4.1",
   "httpx>=0.28.1",
