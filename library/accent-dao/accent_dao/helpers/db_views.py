@@ -7,14 +7,15 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from sqlalchemy import Table, text
 from sqlalchemy.event import contains, listens_for, remove
 from sqlalchemy.exc import InvalidRequestError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
-from sqlalchemy.orm.unitofwork import UOWTransaction
 
 from accent_dao.helpers.db_manager import Base, SyncSession, get_async_session
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import Session
+    from sqlalchemy.orm.unitofwork import UOWTransaction
 
 
 class MaterializedView(Base):

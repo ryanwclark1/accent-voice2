@@ -4,13 +4,14 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
-from typing import TypeVar
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from typing import TYPE_CHECKING, TypeVar
 
 from accent_dao.helpers import db_manager
 from accent_dao.helpers.db_manager import daosession
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import Session
 
 T = TypeVar("T")
 
@@ -69,7 +70,7 @@ def get_dao_session(session: Session) -> Session:
 
 @contextmanager
 def session_scope(read_only: bool = False) -> Session:
-    """Provides a transactional scope around a series of operations.
+    """Provide a transactional scope around a series of operations.
 
     Args:
         read_only: If True, session will not be committed
@@ -92,13 +93,13 @@ def session_scope(read_only: bool = False) -> Session:
 
 @asynccontextmanager
 async def async_session_scope(read_only: bool = False) -> AsyncSession:
-    """Provides an async transactional scope around a series of operations.
+    """Provide an async transactional scope around a series of operations.
 
     Args:
-        read_only: If True, session will not be committed
+        read_only: If True, session will not be committed.
 
     Yields:
-        AsyncSession: Async database session
+        AsyncSession: Async database session.
 
     """
     async with db_manager.get_async_session() as session:

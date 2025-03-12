@@ -20,7 +20,8 @@ def find_unused_hash(already_exists_predicate: Callable[[str], bool]) -> str:
     that satisfies the condition defined by the already_exists_predicate.
 
     Args:
-        already_exists_predicate: A function that returns True if the hash already exists.
+        already_exists_predicate: A function that returns True
+            if the hash already exists.
 
     Returns:
         str: A unique hash that doesn't already exist.

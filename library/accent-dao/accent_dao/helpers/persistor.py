@@ -11,14 +11,15 @@ from typing import (
 )
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from accent_dao.helpers import errors
 from accent_dao.resources.utils.search import SearchResult
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import Session
 
 T = TypeVar("T")
 ModelType = TypeVar("ModelType")
@@ -207,7 +208,7 @@ class AsyncBasePersistor(Generic[ModelType]):
         search_table: type[ModelType],
         tenant_uuids: list[str] | None = None,
         search_system: Any = None,
-    ):
+    ) -> None:
         """Initialize async base persistor.
 
         Args:
