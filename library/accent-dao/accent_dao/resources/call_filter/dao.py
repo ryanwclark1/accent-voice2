@@ -1,12 +1,11 @@
 # file: accent_dao/resources/call_filter/dao.py  # noqa: ERA001
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy.sql.expression import and_, cast
-from sqlalchemy.types import Integer
+from sqlalchemy import Integer, and_, cast, select
 
 from accent_dao.alchemy.callfilter import Callfilter
 from accent_dao.alchemy.callfiltermember import Callfiltermember
@@ -42,17 +41,16 @@ async def does_secretary_filter_boss(
 
     """
     subquery = (
-        session.query(Callfiltermember.callfilterid)
+        select(Callfiltermember.callfilterid)
         .filter(Callfiltermember.bstype == "boss")
         .filter(Callfiltermember.typeval == str(boss_user_id))
         .subquery()
     )
 
-    query = (
-        session.query(Callfiltermember.id)
-        .filter(Callfiltermember.typeval == str(secretary_user_id))
-        .filter(Callfiltermember.bstype == "secretary")
-        .filter(Callfiltermember.callfilterid.in_(subquery))
+    query = select(Callfiltermember.id).filter(
+        Callfiltermember.typeval == str(secretary_user_id),
+        Callfiltermember.bstype == "secretary",
+        Callfiltermember.callfilterid.in_(subquery),
     )
 
     result = await session.execute(query)
@@ -70,12 +68,13 @@ async def get(
         callfilter_id: The ID of the call filter.
 
     Returns:
-        Sequence[tuple[Callfilter, Callfiltermember]]: A sequence of tuples containing Callfilter and Callfiltermember objects.
+        Sequence[tuple[Callfilter, Callfiltermember]]: A sequence of tuples containing
+            Callfilter and Callfiltermember objects.
 
     """
     query = (
-        session.query(Callfilter, Callfiltermember)
-        .join((Callfiltermember, Callfilter.id == Callfiltermember.callfilterid))
+        select(Callfilter, Callfiltermember)
+        .join(Callfiltermember, Callfilter.id == Callfiltermember.callfilterid)
         .filter(Callfilter.id == callfilter_id)
     )
     result = await session.execute(query)
@@ -97,7 +96,7 @@ async def get_secretaries_id_by_context(
 
     """
     query = (
-        session.query(Callfiltermember.id)
+        select(Callfiltermember.id)
         .join(
             UserLine,
             and_(
@@ -120,11 +119,7 @@ async def get_secretaries_id_by_context(
                 LineExtension.extension_id == ExtensionSchema.id,
             ),
         )
-        .filter(
-            and_(
-                Callfiltermember.type == "user", Callfiltermember.bstype == "secretary"
-            )
-        )
+        .filter(Callfiltermember.type == "user", Callfiltermember.bstype == "secretary")
     )
     result = await session.execute(query)
     return result.scalars().all()
@@ -141,23 +136,20 @@ async def get_secretaries_by_callfiltermember_id(
         callfiltermember_id: The ID of the call filter member.
 
     Returns:
-        Sequence[tuple[Callfiltermember, int]]: A sequence of tuples containing Callfiltermember and UserFeatures.ringseconds.
+        Sequence[tuple[Callfiltermember, int]]: A sequence of tuples containing
+        Callfiltermember and UserFeatures.ringseconds.
 
     """
     query = (
-        session.query(Callfiltermember, UserFeatures.ringseconds)
-        .join((Callfilter, Callfilter.id == Callfiltermember.callfilterid))
+        select(Callfiltermember, UserFeatures.ringseconds)
+        .join(Callfilter, Callfilter.id == Callfiltermember.callfilterid)
         .join(
-            (
-                UserFeatures,
-                UserFeatures.id == cast(Callfiltermember.typeval, Integer),
-            )
+            UserFeatures,
+            UserFeatures.id == cast(Callfiltermember.typeval, Integer),
         )
         .filter(
-            and_(
-                Callfilter.id == callfiltermember_id,
-                Callfiltermember.bstype == "secretary",
-            )
+            Callfilter.id == callfiltermember_id,
+            Callfiltermember.bstype == "secretary",
         )
         .order_by(Callfiltermember.priority.asc())
     )
@@ -179,9 +171,7 @@ async def get_by_callfiltermember_id(
         Callfiltermember | None: The call filter member, or None if not found.
 
     """
-    query = session.query(Callfiltermember).filter(
-        Callfiltermember.id == callfiltermember_id
-    )
+    query = select(Callfiltermember).filter(Callfiltermember.id == callfiltermember_id)
     result = await session.execute(query)
     return result.scalars().first()
 
@@ -195,14 +185,13 @@ async def find_boss(session: AsyncSession, boss_id: int) -> Callfiltermember | N
         boss_id: The ID of the boss.
 
     Returns:
-        Callfiltermember | None: The call filter member representing the boss, or None if not found.
+        Callfiltermember | None: The call filter member representing the boss,
+        or None if not found.
 
     """
-    query = session.query(Callfiltermember).filter(
-        and_(
-            Callfiltermember.typeval == str(boss_id),
-            Callfiltermember.bstype == "boss",
-        )
+    query = select(Callfiltermember).filter(
+        Callfiltermember.typeval == str(boss_id),
+        Callfiltermember.bstype == "boss",
     )
     result = await session.execute(query)
     return result.scalars().first()
@@ -220,7 +209,7 @@ async def find(session: AsyncSession, call_filter_id: int) -> Callfilter | None:
         Callfilter | None: The call filter, or None if not found.
 
     """
-    query = session.query(Callfilter).filter(Callfilter.id == call_filter_id)
+    query = select(Callfilter).filter(Callfilter.id == call_filter_id)
     result = await session.execute(query)
     return result.scalars().first()
 
@@ -309,14 +298,12 @@ async def is_activated_by_callfilter_id(
 
     """
     query = (
-        session.query(Callfiltermember.active)
-        .join((Callfilter, Callfilter.id == Callfiltermember.callfilterid))
+        select(Callfiltermember.active)
+        .join(Callfilter, Callfilter.id == Callfiltermember.callfilterid)
         .filter(
-            and_(
-                Callfiltermember.callfilterid == callfilter_id,
-                Callfiltermember.bstype == "secretary",
-                Callfiltermember.active == 1,
-            )
+            Callfiltermember.callfilterid == callfilter_id,
+            Callfiltermember.bstype == "secretary",
+            Callfiltermember.active == 1,
         )
     )
 
@@ -426,7 +413,6 @@ async def update_fallbacks(
         session: The database session
         call_filter:  The Callfilter instance
         fallbacks: The new fallback actions
-
     """
     await CallFilterPersistor(session, call_filter_search).update_fallbacks(
         call_filter, fallbacks
