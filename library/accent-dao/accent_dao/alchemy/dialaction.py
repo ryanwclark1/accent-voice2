@@ -217,7 +217,7 @@ class Dialaction(Base):
 
     @classmethod
     def new_user_actions(cls, user: "UserFeatures") -> "Dialaction":
-        """Creates default dial actions for a new user."""
+        """Create default dial actions for a new user."""
         for event in cls.USER_EVENTS:
             yield cls(
                 event=event,
