@@ -268,6 +268,7 @@ class SearchSystem:
         """
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)
+
         query = self._filter(query, parameters["search"])
         query = self._filter_exact_match(query, parameters)
         sorted_query = self._sort(query, parameters["order"], parameters["direction"])
@@ -295,17 +296,31 @@ class SearchSystem:
         """
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)
+
         query = self._filter(query, parameters["search"])
         query = self._filter_exact_match(query, parameters)
-        sorted_query = self._sort(query, parameters["order"], parameters["direction"])
-        paginated_query = self._paginate(
-            sorted_query, parameters["limit"], parameters["offset"]
-        )
-        result = await session.execute(paginated_query)
-        count = await session.execute(
-            sa.select(func.count()).select_from(sorted_query.subquery())
-        )
-        return SearchResult(count.scalar_one(), result.scalars().all())
+
+        # Apply sorting
+        sort_column_name = parameters["order"]
+        sort_direction = parameters["direction"]
+        query = self._sort(query, sort_column_name, sort_direction)
+
+        # Apply pagination
+        limit = parameters["limit"]
+        offset = parameters["offset"]
+        query = self._paginate(query, limit, offset)
+
+        # Execute count and fetch queries concurrently using asyncio.gather
+        count_query = sa.select(func.count()).select_from(query.subquery())
+        count_task = session.execute(count_query)
+
+        # Fetch the rows with the limit and offset using await
+        result = await session.execute(query)
+        rows = result.scalars().all()
+
+        total = (await count_task).scalar_one()
+
+        return SearchResult(total, rows)
 
     def _populate_parameters(
         self, parameters: dict[str, Any] | None = None
