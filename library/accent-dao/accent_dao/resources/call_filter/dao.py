@@ -1,11 +1,12 @@
-# file: accent_dao/resources/call_filter/dao.py  # noqa: ERA001
+# file: accent_dao/resources/call_filter/dao.py
 # Copyright 2025 Accent Communications
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, and_, cast, select
+from sqlalchemy import and_, cast, select, Integer
+from sqlalchemy.orm import joinedload
 
 from accent_dao.alchemy.callfilter import Callfilter
 from accent_dao.alchemy.callfiltermember import Callfiltermember
@@ -37,24 +38,26 @@ async def does_secretary_filter_boss(
         secretary_user_id: The ID of the secretary user.
 
     Returns:
-        int: The count of matching call filter members.
+        int: The count of matching call filter members (0 or 1).
 
     """
     subquery = (
         select(Callfiltermember.callfilterid)
         .filter(Callfiltermember.bstype == "boss")
         .filter(Callfiltermember.typeval == str(boss_user_id))
-        .subquery()
     )
 
-    query = select(Callfiltermember.id).filter(
-        Callfiltermember.typeval == str(secretary_user_id),
-        Callfiltermember.bstype == "secretary",
-        Callfiltermember.callfilterid.in_(subquery),
+    # The subquery needs to be made into a selectable for 'in_'
+    query = (
+        select(Callfiltermember.id)
+        .filter(Callfiltermember.typeval == str(secretary_user_id))
+        .filter(Callfiltermember.bstype == "secretary")
+        .filter(Callfiltermember.callfilterid.in_(subquery.scalar_subquery()))
     )
 
     result = await session.execute(query)
-    return len(result.all())
+    # We can't use len(result.all()) directly with async.  Use .scalars() and then count.
+    return len(result.scalars().all())
 
 
 @async_daosession
@@ -68,8 +71,7 @@ async def get(
         callfilter_id: The ID of the call filter.
 
     Returns:
-        Sequence[tuple[Callfilter, Callfiltermember]]: A sequence of tuples containing
-            Callfilter and Callfiltermember objects.
+        Sequence[tuple[Callfilter, Callfiltermember]]: A sequence of tuples.
 
     """
     query = (
@@ -101,15 +103,15 @@ async def get_secretaries_id_by_context(
             UserLine,
             and_(
                 UserLine.user_id == cast(Callfiltermember.typeval, Integer),
-                UserLine.main_user is True,
-                UserLine.main_line is True,
+                UserLine.main_user.is_(True),
+                UserLine.main_line.is_(True),
             ),
         )
         .join(
             LineExtension,
             and_(
                 UserLine.line_id == LineExtension.line_id,
-                LineExtension.main_extension is True,
+                LineExtension.main_extension.is_(True),
             ),
         )
         .join(
@@ -185,8 +187,7 @@ async def find_boss(session: AsyncSession, boss_id: int) -> Callfiltermember | N
         boss_id: The ID of the boss.
 
     Returns:
-        Callfiltermember | None: The call filter member representing the boss,
-        or None if not found.
+        Callfiltermember | None: The call filter member or None if not found.
 
     """
     query = select(Callfiltermember).filter(
@@ -303,12 +304,13 @@ async def is_activated_by_callfilter_id(
         .filter(
             Callfiltermember.callfilterid == callfilter_id,
             Callfiltermember.bstype == "secretary",
-            Callfiltermember.active == 1,
+            Callfiltermember.active.is_(1),  # Correct boolean comparison
         )
     )
 
     result = await session.execute(query)
-    return len(result.all())
+    # scalars() is used to get the values from the result
+    return len(result.scalars().all())
 
 
 @async_daosession
@@ -328,6 +330,7 @@ async def update_callfiltermember_state(
         .where(Callfiltermember.id == callfiltermember_id)
         .values(active=int(new_state))
     )
+    await session.commit()
 
 
 @async_daosession
@@ -405,7 +408,7 @@ async def associate_surrogates(
 
 @async_daosession
 async def update_fallbacks(
-    session: AsyncSession, call_filter: Callfilter, fallbacks
+    session: AsyncSession, call_filter: Callfilter, fallbacks: dict[str, "Dialaction"]
 ) -> None:
     """Updates the fallback dialactions for the call filter.
 
