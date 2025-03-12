@@ -1,8 +1,11 @@
 # helpers/asterisk.py
 # Copyright 2025 Accent Communications
 
-from collections.abc import Iterable
-from typing import Any
+from __future__ import annotations
+
+from collections.abc import Iterable, Sized
+from functools import cached_property
+from typing import Any, ClassVar, Protocol, cast
 
 from accent_dao.helpers import errors
 
@@ -10,7 +13,7 @@ from accent_dao.helpers import errors
 OptionPair = list[str]
 Options = list[OptionPair]
 
-# taken from the definition of the "ast_true" function in Asterisk source code
+# Constants
 _TRUTH_VALUES = [
     "yes",
     "true",
@@ -19,6 +22,8 @@ _TRUTH_VALUES = [
     "1",
     "on",
 ]
+_OPTION_PAIR_LENGTH = 2
+_LIST_OF_PAIR_ERROR = "list of pair of strings"
 
 
 def convert_ast_true_to_int(value: str) -> int:
@@ -49,6 +54,20 @@ def convert_int_to_ast_true(value: int | bool) -> str:
     return "no"
 
 
+class HasTable(Protocol):
+    """Protocol for SQLAlchemy models with a __table__ attribute."""
+
+    @property
+    def __table__(self) -> Any:
+        """Get the SQLAlchemy table metadata.
+
+        Returns:
+            Table metadata object with columns attribute.
+
+        """
+        ...
+
+
 class AsteriskOptionsMixin:
     """Mixin class for handling Asterisk options in SQLAlchemy models.
 
@@ -65,11 +84,16 @@ class AsteriskOptionsMixin:
 
     """
 
-    EXCLUDE_OPTIONS: set[str] = set()
-    EXCLUDE_OPTIONS_CONFD: set[str] = set()
-    AST_TRUE_INTEGER_COLUMNS: set[str] = set()
+    EXCLUDE_OPTIONS: ClassVar[set[str]] = set()
+    EXCLUDE_OPTIONS_CONFD: ClassVar[set[str]] = set()
+    AST_TRUE_INTEGER_COLUMNS: ClassVar[set[str]] = set()
+    _options: list[OptionPair]
 
-    @property
+    def __init__(self) -> None:
+        """Initialize the mixin with empty options list."""
+        self._options = []
+
+    @cached_property
     def options(self) -> Options:
         """Get all options for this object.
 
@@ -78,6 +102,26 @@ class AsteriskOptionsMixin:
 
         """
         return self.all_options(self.EXCLUDE_OPTIONS_CONFD)
+
+    def set_options(self, option_names: set[str], options: list[list[str]]) -> None:
+        """Set multiple options.
+
+        Args:
+            option_names: Set of valid native option names.
+            options: List of option pairs [name, value] to set.
+
+        Raises:
+            InputError: If options is not an iterable or any option is invalid.
+
+        """
+        self.validate_options(options)
+        for option in options:
+            self.validate_option(option)
+            column, value = option
+            if column in option_names:
+                self.set_native_option(column, value)
+            else:
+                self.add_extra_option(column, value)
 
     def all_options(self, exclude: set[str] | None = None) -> Options:
         """Get all options, including both native and extra options.
@@ -92,9 +136,7 @@ class AsteriskOptionsMixin:
         native_options = list(self.native_options(exclude))
         return native_options + self._options
 
-    def native_options(
-        self, exclude: set[str] | None = None
-    ) -> Iterable[OptionPair]:
+    def native_options(self, exclude: set[str] | None = None) -> Iterable[OptionPair]:
         """Get native options mapped to database columns.
 
         Args:
@@ -126,8 +168,7 @@ class AsteriskOptionsMixin:
             return str(value)
         return None
 
-    @options.setter
-    def options(self, options: Options) -> None:
+    def update_options(self, options: Options) -> None:
         """Set the options for this object.
 
         Args:
@@ -154,27 +195,7 @@ class AsteriskOptionsMixin:
             value = defaults.get(column, None)
             setattr(self, self._attribute(column), value)
 
-    def set_options(self, option_names: set[str], options: Options) -> None:
-        """Set multiple options.
-
-        Args:
-            option_names: Set of valid native option names.
-            options: List of option pairs [name, value] to set.
-
-        Raises:
-            InputError: If options is not an iterable or any option is invalid.
-
-        """
-        self.validate_options(options)
-        for option in options:
-            self.validate_option(option)
-            column, value = option
-            if column in option_names:
-                self.set_native_option(column, value)
-            else:
-                self.add_extra_option(column, value)
-
-    def validate_options(self, options: Any) -> None:
+    def validate_options(self, options: list[Any]) -> None:
         """Validate that options is an iterable.
 
         Args:
@@ -184,10 +205,11 @@ class AsteriskOptionsMixin:
             InputError: If options is not an iterable.
 
         """
+        error_msg = _LIST_OF_PAIR_ERROR
         if not isinstance(options, Iterable):
-            raise errors.wrong_type("options", "list of pair of strings")
+            raise errors.wrong_type("options", error_msg)
 
-    def validate_option(self, option: Any) -> None:
+    def validate_option(self, option: list[Any]) -> None:
         """Validate that an option is a pair of strings.
 
         Args:
@@ -197,13 +219,18 @@ class AsteriskOptionsMixin:
             InputError: If option is not a pair of strings.
 
         """
-        if not isinstance(option, Iterable):
-            raise errors.wrong_type("options", "list of pair of strings")
-        if not len(option) == 2:
-            raise errors.wrong_type("options", "list of pair of strings")
+        error_msg = _LIST_OF_PAIR_ERROR
+        if not isinstance(option, list | tuple):
+            raise errors.wrong_type("options", error_msg)
+
+        sized_option = cast(Sized, option)
+        if len(sized_option) != _OPTION_PAIR_LENGTH:
+            raise errors.wrong_type("options", error_msg)
+
         for i in option:
             if not isinstance(i, str):
-                raise errors.wrong_type("options", f"value '{i}' is not a string")
+                not_str_msg = f"value '{i}' is not a string"
+                raise errors.wrong_type("options", not_str_msg)
 
     def set_native_option(self, column: str, value: str) -> None:
         """Set a native option value.
@@ -214,8 +241,10 @@ class AsteriskOptionsMixin:
 
         """
         if column in self.AST_TRUE_INTEGER_COLUMNS:
-            value = convert_ast_true_to_int(value)
-        setattr(self, self._attribute(column), value)
+            int_value = convert_ast_true_to_int(value)
+            setattr(self, self._attribute(column), int_value)
+        else:
+            setattr(self, self._attribute(column), value)
 
     def add_extra_option(self, name: str, value: str) -> None:
         """Add an extra option that is not mapped to a database column.
@@ -237,8 +266,11 @@ class AsteriskOptionsMixin:
             Set of native option names.
 
         """
-        exclude = set(exclude or []).union(self.EXCLUDE_OPTIONS)
-        return {column.name for column in self.__table__.columns} - exclude
+        exclude_set = set(exclude or []).union(self.EXCLUDE_OPTIONS)
+
+        # Need to cast self to HasTable to satisfy mypy
+        table_obj = cast(HasTable, self)
+        return {column.name for column in table_obj.__table__.columns} - exclude_set
 
     def option_defaults(self) -> dict[str, Any]:
         """Get default values for options from column defaults.
@@ -248,7 +280,10 @@ class AsteriskOptionsMixin:
 
         """
         defaults: dict[str, Any] = {}
-        for column in self.__table__.columns:
+
+        # Need to cast self to HasTable to satisfy mypy
+        table_obj = cast(HasTable, self)
+        for column in table_obj.__table__.columns:
             if column.server_default:
                 defaults[column.name] = column.server_default.arg
         return defaults
