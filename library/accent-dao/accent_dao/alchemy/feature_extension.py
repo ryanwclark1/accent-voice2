@@ -1,12 +1,12 @@
 # file: accent_dao/models/feature_extension.py
 # Copyright 2025 Accent Communications
 
+from accent.accent_helpers import clean_extension
 from sqlalchemy import Boolean, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from accent_dao.helpers.db_manager import Base
-from accent_dao.helpers.functions import clean_extension
 
 
 class FeatureExtension(Base):
