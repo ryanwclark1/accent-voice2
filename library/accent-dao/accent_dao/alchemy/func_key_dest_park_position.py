@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .func_key import FuncKey
@@ -86,4 +86,3 @@ class FuncKeyDestParkPosition(Base):
     @position.expression
     def position(cls) -> Mapped[int]:
         return cast(cls.park_position, Integer)
-

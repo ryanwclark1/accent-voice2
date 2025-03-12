@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import select
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .extension import Extension
 
@@ -95,8 +95,7 @@ class ParkingLot(Base):
 
     @exten.setter
     def exten(self, value: str) -> None:
-        """There is no setter, you can't set the extension directly.
-        """
+        """There is no setter, you can't set the extension directly."""
 
     @exten.expression
     def exten(cls) -> Mapped[str | None]:
@@ -116,8 +115,7 @@ class ParkingLot(Base):
 
     @context.setter
     def context(self, value: str) -> None:
-        """There is no setter, you can't set the context directly
-        """
+        """There is no setter, you can't set the context directly"""
 
     @context.expression
     def context(cls) -> Mapped[str | None]:

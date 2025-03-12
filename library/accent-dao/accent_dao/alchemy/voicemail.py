@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, Integer, String, cast, select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers import get_history  # Import the get_history function
 
 from .context import Context

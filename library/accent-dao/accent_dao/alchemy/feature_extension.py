@@ -5,7 +5,7 @@ from sqlalchemy import Boolean, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.functions import clean_extension
 
 

@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import cast, func
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .groupfeatures import GroupFeatures

@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func, select
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .extension import Extension
 
@@ -126,6 +126,7 @@ class Conference(Base):
     @exten.setter
     def exten(self, value: str | None) -> None:
         """There is no setter, you can't set the extension directly."""
+
     # Use a standard property now
     @exten.expression
     def exten(cls) -> Mapped[str]:
@@ -135,4 +136,3 @@ class Conference(Base):
             .where(Extension.typeval == func.cast(cls.id, String))
             .scalar_subquery()
         )
-

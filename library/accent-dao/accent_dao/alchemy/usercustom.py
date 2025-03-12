@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .linefeatures import LineFeatures

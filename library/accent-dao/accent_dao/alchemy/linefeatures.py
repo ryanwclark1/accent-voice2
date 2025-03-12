@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import select
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.exception import InputError
 
 from .context import Context

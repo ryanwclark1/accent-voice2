@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import DateTime, ForeignKey, Index, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .stat_queue import StatQueue

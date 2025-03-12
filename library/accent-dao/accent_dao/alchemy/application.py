@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Index, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .application_dest_node import ApplicationDestNode

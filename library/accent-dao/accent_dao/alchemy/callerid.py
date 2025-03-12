@@ -6,7 +6,7 @@ from typing import Literal
 from sqlalchemy import Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 CalleridMode = Literal["prepend", "overwrite", "append"]
 CalleridType = Literal["callfilter", "incall", "group", "queue"]

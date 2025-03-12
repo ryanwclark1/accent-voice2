@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import case, func
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.exception import InputError
 
 from .rightcallexten import RightCallExten

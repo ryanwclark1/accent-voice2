@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.orm import Mapped
 
 # Removed, as we are handling view creation differently: from sqlalchemy_utils import create_materialized_view
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .endpoint_sip import EndpointSIP, EndpointSIPTemplate
 from .endpoint_sip_section import EndpointSIPSection

@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, Index, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import cast
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .trunkfeatures import TrunkFeatures

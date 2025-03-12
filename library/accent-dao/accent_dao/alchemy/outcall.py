@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .dialpattern import DialPattern
 from .outcalltrunk import OutcallTrunk

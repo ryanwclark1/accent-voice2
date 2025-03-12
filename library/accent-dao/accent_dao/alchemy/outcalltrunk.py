@@ -4,7 +4,7 @@
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 
 class OutcallTrunk(Base):

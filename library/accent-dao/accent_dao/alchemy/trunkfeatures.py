@@ -17,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .endpoint_sip import EndpointSIP
 from .outcalltrunk import OutcallTrunk
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from .staticiax import StaticIAX
 
 TrunkProtocol = Literal["sip", "iax", "sccp", "custom"]
+
 
 class TrunkFeatures(Base):
     """Represents features for a trunk.

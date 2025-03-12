@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Enum
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.exception import InputError
 from accent_dao.models import enum
 

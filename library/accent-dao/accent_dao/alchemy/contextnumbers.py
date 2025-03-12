@@ -5,7 +5,7 @@ from typing import Literal
 from sqlalchemy import ForeignKeyConstraint, Integer, String, case
 from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 ContextnumbersType = Literal["user", "group", "queue", "meetme", "incall"]
 

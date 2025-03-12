@@ -5,7 +5,7 @@ from sqlalchemy import Boolean, Index, Integer, PrimaryKeyConstraint, String, fu
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import case
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 
 class StatAgent(Base):

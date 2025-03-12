@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .paginguser import PagingUser
 
@@ -49,9 +49,7 @@ class Paging(Base):
     """
 
     __tablename__: str = "paging"
-    __table_args__: tuple = (
-        Index("paging__idx__tenant_uuid", "tenant_uuid"),
-    )
+    __table_args__: tuple = (Index("paging__idx__tenant_uuid", "tenant_uuid"),)
 
     id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
     tenant_uuid: Mapped[str] = mapped_column(

@@ -6,7 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, Index, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.datetime import utcnow_with_tzinfo
 
 if TYPE_CHECKING:

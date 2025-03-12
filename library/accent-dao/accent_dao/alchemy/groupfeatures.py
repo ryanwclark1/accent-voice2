@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import cast, select
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .callerid import Callerid
 from .extension import Extension
@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from .pickupmember import PickupMember
     from .queuemember import QueueMember
     from .rightcall import RightCall
+
 
 class GroupFeatures(Base):
     """Represents features for a group.

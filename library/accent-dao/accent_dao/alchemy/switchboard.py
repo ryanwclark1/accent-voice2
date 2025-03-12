@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.uuid import new_uuid
 
 from .dialaction import Dialaction

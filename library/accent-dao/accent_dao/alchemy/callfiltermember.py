@@ -12,7 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 from sqlalchemy.sql import and_, select
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 
 from .callfilter import Callfilter
 

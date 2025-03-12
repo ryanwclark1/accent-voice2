@@ -22,7 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import false
 
-from accent_dao.db_manager import Base
+from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.uuid import new_uuid  # Adjust the import path as necessary
 
 from .rightcallmember import RightCallMember
@@ -131,7 +131,7 @@ class UserFeatures(Base):
         rightcallcode: The rightcall code.
         commented: Indicates if the user features are commented out.
         func_key_template_id: The ID of the associated function key template.
-    func_key_private_template_id: The ID of the associated private 
+    func_key_private_template_id: The ID of the associated private
                 function key template.
         subscription_type: The subscription type.
         created_at: The timestamp when the user features were created.
