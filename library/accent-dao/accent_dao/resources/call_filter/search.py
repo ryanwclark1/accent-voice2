@@ -1,16 +1,18 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/call_filter/search.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-from accent_dao.alchemy.callfilter import Callfilter as CallFilter
+from accent_dao.alchemy.callfilter import Callfilter
 from accent_dao.resources.utils.search import SearchConfig, SearchSystem
 
 config = SearchConfig(
-    table=CallFilter,
+    table=Callfilter,
     columns={
-        'id': CallFilter.id,
-        'name': CallFilter.name,
-        'description': CallFilter.description,
+        "id": Callfilter.id,
+        "name": Callfilter.name,
+        "description": Callfilter.description,
+        "enabled": Callfilter.enabled,
     },
-    default_sort='name',
+    default_sort="name",
 )
 
 call_filter_search = SearchSystem(config)
