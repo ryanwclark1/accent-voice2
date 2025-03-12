@@ -1,11 +1,21 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.sql import literal_column, text
+"""Statistics data access module."""
+
+import datetime
+import logging
+from functools import lru_cache
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 _STR_TIME_FMT = "%Y-%m-%d %H:%M:%S.%f%z"
 
+# Using text() with multiline strings for complex queries
 FILL_ANSWERED_CALL_ON_QUEUE_QUERY = text(
-    '''\n
+    """\n
 INSERT INTO stat_call_on_queue (callid, "time", talktime, waittime, stat_queue_id, stat_agent_id, status)
 (
     WITH
@@ -109,51 +119,109 @@ INSERT INTO stat_call_on_queue (callid, "time", talktime, waittime, stat_queue_i
     ORDER BY
         all_calls.time
 )
-'''
+"""
 )
 
 
-def fill_simple_calls(session, start, end):
-    _run_sql_function_returning_void(
+async def fill_simple_calls(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> None:
+    """Fill simple calls statistics.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    """
+    await _run_sql_function_returning_void(
         session,
         start,
         end,
-        'SELECT 1 AS place_holder FROM fill_simple_calls(:start, :end)',
+        "SELECT 1 AS place_holder FROM fill_simple_calls(:start, :end)",
     )
+    logger.info("Filled simple calls from %s to %s", start, end)
 
 
-def fill_answered_calls(session, start, end):
+async def fill_answered_calls(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> None:
+    """Fill answered calls statistics.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    """
     params = {
-        'start': start.strftime(_STR_TIME_FMT),
-        'end': end.strftime(_STR_TIME_FMT),
+        "start": start.strftime(_STR_TIME_FMT),
+        "end": end.strftime(_STR_TIME_FMT),
     }
 
-    session.execute(FILL_ANSWERED_CALL_ON_QUEUE_QUERY, params)
+    await session.execute(FILL_ANSWERED_CALL_ON_QUEUE_QUERY, params)
+    logger.info("Filled answered calls from %s to %s", start, end)
 
 
-def fill_leaveempty_calls(session, start, end):
-    _run_sql_function_returning_void(
+async def fill_leaveempty_calls(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> None:
+    """Fill leave empty calls statistics.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    """
+    await _run_sql_function_returning_void(
         session,
         start,
         end,
-        'SELECT 1 AS place_holder FROM fill_leaveempty_calls(:start, :end)',
+        "SELECT 1 AS place_holder FROM fill_leaveempty_calls(:start, :end)",
     )
+    logger.info("Filled leave empty calls from %s to %s", start, end)
 
 
-def _run_sql_function_returning_void(session, start, end, function):
-    start = start.strftime(_STR_TIME_FMT)
-    end = end.strftime(_STR_TIME_FMT)
+async def _run_sql_function_returning_void(
+    session: AsyncSession,
+    start: datetime.datetime,
+    end: datetime.datetime,
+    function: str,
+) -> None:
+    """Execute a SQL function that doesn't return a result.
 
-    (
-        session.query(literal_column('place_holder'))
-        .from_statement(text(function))
-        .params(start=start, end=end)
-        .first()
-    )
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+        function: SQL function to execute
+
+    """
+    start_str = start.strftime(_STR_TIME_FMT)
+    end_str = end.strftime(_STR_TIME_FMT)
+
+    # SQLAlchemy 2.0 style query
+    stmt = text(function).bindparams(start=start_str, end=end_str)
+    result = await session.execute(stmt)
+    result_row = await result.first()  # Fix: await the result, not Row
 
 
-def get_pause_intervals_in_range(session, start, end):
-    pause_in_range = '''\
+async def get_pause_intervals_in_range(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime | None]]]:
+    """Get agent pause intervals within a time range.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    Returns:
+        Dictionary mapping agent IDs to lists of (pause_start, pause_end) tuples
+
+    """
+    pause_in_range = """\
 SELECT stat_agent.id AS agent,
        MIN(pauseall) AS pauseall,
        unpauseall
@@ -174,53 +242,79 @@ SELECT stat_agent.id AS agent,
   ) AS pauseall, stat_agent
   WHERE stat_agent.name = agent
   GROUP BY stat_agent.id, unpauseall
-'''
+"""
 
-    start = start.strftime(_STR_TIME_FMT)
-    end = end.strftime(_STR_TIME_FMT)
+    start_str = start.strftime(_STR_TIME_FMT)
+    end_str = end.strftime(_STR_TIME_FMT)
 
-    rows = (
-        session.query(
-            literal_column('agent'),
-            literal_column('pauseall'),
-            literal_column('unpauseall'),
-        )
-        .from_statement(text(pause_in_range))
-        .params(start=start, end=end)
-    )
+    # SQLAlchemy 2.0 style query
+    stmt = text(pause_in_range).bindparams(start=start_str, end=end_str)
+    result = await session.execute(stmt)
+    rows = result.all()
 
-    results = {}
+    results: dict[int, list[tuple[datetime.datetime, datetime.datetime | None]]] = {}
 
-    for row in rows.all():
+    for row in rows:
         agent_id = row.agent
         if agent_id not in results:
             results[agent_id] = []
 
         results[agent_id].append((row.pauseall, row.unpauseall))
 
+    logger.debug("Found %d agents with pause intervals", len(results))
     return results
 
 
-def get_login_intervals_in_range(session, start, end):
-    completed_logins = _get_completed_logins(session, start, end)
-    ongoing_logins = _get_ongoing_logins(session, start, end)
+@lru_cache(maxsize=128)
+async def get_login_intervals_in_range(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """Get agent login intervals within a time range.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    Returns:
+        Dictionary mapping agent IDs to lists of (login_time, logout_time) tuples
+
+    """
+    completed_logins = await _get_completed_logins(session, start, end)
+    ongoing_logins = await _get_ongoing_logins(session, start, end)
 
     results = _merge_agent_statistics(
         completed_logins,
         ongoing_logins,
     )
 
-    unique_result = {}
+    unique_result: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = {}
 
-    for agent, logins in results.items():
-        logins = _pick_longest_with_same_end(logins)
-        unique_result[agent] = sorted(list(set(logins)))
+    for agent, agent_logins in results.items():
+        filtered_logins = _pick_longest_with_same_end(
+            agent_logins
+        )  # Fixed variable name
+        unique_result[agent] = sorted(
+            set(filtered_logins)
+        )  # Removed unnecessary list()
 
+    logger.debug("Found login intervals for %d agents", len(unique_result))
     return unique_result
 
 
-def _merge_agent_statistics(*args):
-    result = {}
+def _merge_agent_statistics(
+    *args: dict[int, list[tuple[datetime.datetime, datetime.datetime]]],
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """Merge multiple agent statistics dictionaries.
+
+    Args:
+        *args: Agent statistics dictionaries to merge
+
+    Returns:
+        Merged dictionary with filtered overlapping intervals
+
+    """
+    result: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = {}
 
     for stat in args:
         for agent, logins in stat.items():
@@ -236,11 +330,25 @@ def _merge_agent_statistics(*args):
     return result
 
 
-def _filter_overlap(items):
-    starts = []
-    ends = []
-    result = []
-    stack = []
+def _filter_overlap(
+    items: list[tuple[datetime.datetime, datetime.datetime]],
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """Filter overlapping time intervals.
+
+    Args:
+        items: List of (start, end) time tuples
+
+    Returns:
+        Filtered list with non-overlapping intervals
+
+    """
+    if not items:
+        return []
+
+    starts: list[datetime.datetime] = []
+    ends: list[datetime.datetime] = []
+    result: list[tuple[datetime.datetime, datetime.datetime]] = []
+    stack: list[datetime.datetime] = []
 
     for item in items:
         starts.append(item[0])
@@ -258,32 +366,55 @@ def _filter_overlap(items):
             stack.append(start)
         else:
             end = ends.pop()
-            start = stack.pop()
-            if not stack:
+            start = stack.pop() if stack else None
+            if start is not None and not stack:
                 result.append((start, end))
 
     return result
 
 
-def _pick_longest_with_same_end(logins):
+def _pick_longest_with_same_end(
+    logins: list[tuple[datetime.datetime, datetime.datetime]],
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """Pick longest intervals with the same end time.
+
+    Workaround a bug in chan_agent.so where an agent could log multiple times.
+
+    Args:
+        logins: List of (login_time, logout_time) tuples
+
+    Returns:
+        Filtered list with longest intervals for each end time
+
     """
-    Workaround a bug in chan_agent.so where an agent could log multiple times
-    """
-    end_time_map = {}
+    end_time_map: dict[datetime.datetime, list[datetime.datetime]] = {}
     for start, end in logins:
         if end not in end_time_map:
             end_time_map[end] = []
         end_time_map[end].append(start)
 
-    res = []
+    res: list[tuple[datetime.datetime, datetime.datetime]] = []
     for end, starts in end_time_map.items():
         res.append((min(starts), end))
 
     return res
 
 
-def _get_completed_logins(session, start, end):
-    completed_logins_query = '''\
+async def _get_completed_logins(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """Get completed agent logins within a time range.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    Returns:
+        Dictionary mapping agent IDs to lists of (login_time, logout_time) tuples
+
+    """
+    completed_logins_query = """\
 WITH agent_logins AS (
 SELECT
     agent,
@@ -311,51 +442,65 @@ FROM
         ON agent_logins.agent = stat_agent.name AND agent_logins.tenant_uuid = stat_agent.tenant_uuid
 ORDER BY
     agent_logins.agent, agent_logins.logout_timestamp
-'''
+"""
 
     formatted_start = start.strftime(_STR_TIME_FMT)
     formatted_end = end.strftime(_STR_TIME_FMT)
 
-    rows = (
-        session.query(
-            literal_column('agent'),
-            literal_column('login_timestamp'),
-            literal_column('logout_timestamp'),
-        )
-        .from_statement(text(completed_logins_query))
-        .params(start=formatted_start, end=formatted_end)
+    # SQLAlchemy 2.0 style query
+    stmt = text(completed_logins_query).bindparams(
+        start=formatted_start, end=formatted_end
     )
+    result = await session.execute(stmt)
+    rows = result.all()
 
-    results = {}
+    results: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = {}
 
-    for row in rows.all():
+    for row in rows:
         if row.agent not in results:
             results[row.agent] = []
-        login = row.login_timestamp if row.login_timestamp > start else start
-        logout = row.logout_timestamp if row.logout_timestamp < end else end
+        login = max(start, row.login_timestamp)
+        logout = min(end, row.logout_timestamp)
         results[row.agent].append((login, logout))
 
     return results
 
 
-def _get_ongoing_logins(session, start, end):
-    last_logins, last_logouts = _get_last_logins_and_logouts(session, start, end)
+async def _get_ongoing_logins(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """Get ongoing agent logins within a time range.
 
-    def filter_ended_logins(logins, logouts):
-        filtered_logins = {}
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    Returns:
+        Dictionary mapping agent IDs to lists of (login_time, end_time) tuples
+
+    """
+    last_logins, last_logouts = await _get_last_logins_and_logouts(session, start, end)
+
+    def filter_ended_logins(
+        logins: dict[int, datetime.datetime | None],
+        logouts: dict[int, datetime.datetime | None],
+    ) -> dict[int, datetime.datetime]:
+        filtered_logins: dict[int, datetime.datetime] = {}
         for agent, login in logins.items():
             if not login:
                 continue
 
-            logout = logouts[agent]
+            logout = logouts.get(agent)
             if not logout or logout < login:
-                filtered_logins[agent] = login if login > start else start
+                # Use max() to ensure we have a datetime, not Optional[datetime]
+                filtered_logins[agent] = max(login, start)
 
         return filtered_logins
 
     filtered_logins = filter_ended_logins(last_logins, last_logouts)
 
-    results = {}
+    results: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = {}
 
     for agent, login in filtered_logins.items():
         if agent not in results:
@@ -365,8 +510,23 @@ def _get_ongoing_logins(session, start, end):
     return results
 
 
-def _get_last_logins_and_logouts(session, start, end):
-    query = '''\
+async def _get_last_logins_and_logouts(
+    session: AsyncSession, start: datetime.datetime, end: datetime.datetime
+) -> tuple[
+    dict[int, datetime.datetime | None], dict[int, datetime.datetime | None]
+]:
+    """Get the last login and logout times for each agent.
+
+    Args:
+        session: The database session
+        start: Start time for data range
+        end: End time for data range
+
+    Returns:
+        Tuple of (login_dict, logout_dict) where each dict maps agent IDs to timestamps
+
+    """
+    query = """\
 SELECT
   stat_agent.id AS agent,
   MAX(case when event = 'AGENTCALLBACKLOGIN' then time end) AS login,
@@ -381,23 +541,18 @@ GROUP BY
   stat_agent.id
 HAVING
   MAX(case when event = 'AGENTCALLBACKLOGIN' then time end) < :end
-'''
+"""
 
-    start = start.strftime(_STR_TIME_FMT)
-    end = end.strftime(_STR_TIME_FMT)
+    start_str = start.strftime(_STR_TIME_FMT)
+    end_str = end.strftime(_STR_TIME_FMT)
 
-    rows = (
-        session.query(
-            literal_column('agent'),
-            literal_column('login'),
-            literal_column('logout'),
-        )
-        .from_statement(text(query))
-        .params(start=start, end=end)
-    )
+    # SQLAlchemy 2.0 style query
+    stmt = text(query).bindparams(start=start_str, end=end_str)
+    result = await session.execute(stmt)
+    rows = result.all()
 
-    agent_last_logins = {}
-    agent_last_logouts = {}
+    agent_last_logins: dict[int, datetime.datetime | None] = {}
+    agent_last_logouts: dict[int, datetime.datetime | None] = {}
 
     for row in rows:
         agent = row.agent
