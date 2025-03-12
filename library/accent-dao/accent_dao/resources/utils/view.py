@@ -1,7 +1,12 @@
-# file: accent_dao/resources/utils/view.py
+# file: accent_dao/resources/utils/view.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import abc
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from accent_dao.helpers import errors
 
@@ -18,18 +23,19 @@ class ViewSelector:
 
     """
 
-    def __init__(self, default, **views):
+    def __init__(self, default: "View", **views: "View") -> None:
         """Initialize a ViewSelector.
 
         Args:
             default: The default view object.
-            **views: Keyword arguments representing view names and their corresponding view objects.
+            **views: Keyword arguments representing view names and their
+                corresponding view objects.
 
         """
         self.default = default
         self.views = views
 
-    def select(self, name=None):
+    def select(self, name: str | None = None) -> "View":
         """Select a view by name.
 
         Args:
@@ -45,7 +51,7 @@ class ViewSelector:
         if name is None:
             return self.default
         if name not in self.views:
-            raise errors.invalid_view(name)
+            raise errors.InputError(f"Invalid view name: {name}")
         return self.views[name]
 
 
@@ -57,11 +63,11 @@ class View(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def query(self, session):
+    def query(self, session: Session | AsyncSession) -> Any:  # Use Any for query
         """Define the query for the view.
 
         Args:
-            session: The database session
+            session: The database session (can be sync or async).
 
         Returns:
             The query object.
@@ -70,11 +76,11 @@ class View(metaclass=abc.ABCMeta):
         ...
 
     @abc.abstractmethod
-    def convert(self, row):
+    def convert(self, row: Any) -> Any:  # Use Any; row type is DB-specific
         """Convert a database row to the desired view format.
 
         Args:
-            row: Row data from database
+            row: Row data from database.
 
         Returns:
             The converted output.
@@ -82,20 +88,20 @@ class View(metaclass=abc.ABCMeta):
         """
         ...
 
-    def convert_list(self, rows):
+    def convert_list(self, rows: Sequence[Any]) -> list[Any]:  # More specific type
         """Convert a list of rows to the desired view format.
 
         Args:
-            rows: A list of database row.
+            rows: A list of database rows.
 
         Returns:
-            list: A list of the converted output.
+            A list of the converted output.
 
         """
         return [self.convert(row) for row in rows]
 
 
-class ModelView(View):
+class ModelView("View"):
     """A view that converts database rows to model instances.
 
     Attributes:
@@ -106,17 +112,17 @@ class ModelView(View):
 
     @property
     @abc.abstractmethod
-    def table(self):
+    def table(self) -> Any:  # Use Any; specific table type not known here
         """Return table property."""
         ...
 
     @property
     @abc.abstractmethod
-    def db_converter(self):
+    def db_converter(self) -> Any:  # Use Any; converter type not known here.
         """Return a database converter."""
         ...
 
-    def query(self, session):
+    def query(self, session: Session | AsyncSession) -> Any:  # Use Any for query
         """Define the query for the view.
 
         Args:
@@ -128,7 +134,7 @@ class ModelView(View):
         """
         return session.query(self.table)
 
-    def convert(self, row):
+    def convert(self, row: Any) -> Any:  # Use Any for row
         """Convert a database row to a model instance.
 
         Args:
