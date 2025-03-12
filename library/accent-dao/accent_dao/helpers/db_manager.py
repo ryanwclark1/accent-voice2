@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from contextlib import asynccontextmanager, contextmanager
+from datetime import timedelta
 from functools import wraps
-from typing import Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+# Import cachetools at the top
+from cachetools import TTLCache, cached
 from sqlalchemy import Engine, String, create_engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -24,6 +26,9 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.types import TypeDecorator
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
+
 # Type variables for generic functions
 T = TypeVar("T")
 R = TypeVar("R")
@@ -35,6 +40,10 @@ DEFAULT_DB_URI = (
 DEFAULT_ASYNC_DB_URI = "postgresql+psycopg://asterisk:password123@localhost/asterisk?application_name=accent-dao-async"
 DEFAULT_POOL_SIZE = 16
 
+# Default cache settings
+DEFAULT_CACHE_MAXSIZE = 128
+DEFAULT_CACHE_TTL = timedelta(minutes=5).total_seconds()
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -45,6 +54,9 @@ async_engine: AsyncEngine | None = None
 # Session factories
 SyncSession = scoped_session(sessionmaker())
 async_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+# Create a TTL cache for database results
+db_cache: TTLCache = TTLCache(maxsize=DEFAULT_CACHE_MAXSIZE, ttl=DEFAULT_CACHE_TTL)
 
 
 class Base(DeclarativeBase):
@@ -101,12 +113,14 @@ class IntAsString(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def process_bind_param(self, value: int | str | None, dialect: Any) -> str | None:
+    def process_bind_param(
+        self, value: int | str | None, dialect: Any
+    ) -> str | None:
         """Process a value before binding to the database.
 
         Args:
             value: The value to be processed.
-            dialect: SQLAlchemy dialect.
+            dialect: SQLAlchemy dialect (not used).
 
         Returns:
             The processed value as string or None.
@@ -128,7 +142,7 @@ class UUIDAsString(TypeDecorator):
 
         Args:
             value: The value to be processed.
-            dialect: SQLAlchemy dialect.
+            dialect: SQLAlchemy dialect (not used).
 
         Returns:
             The processed value as string or None.
@@ -154,8 +168,7 @@ def daosession(func: Callable[..., R]) -> Callable[..., R]:
     def wrapped(*args: Any, **kwargs: Any) -> R:
         session = SyncSession()
         try:
-            result = func(session, *args, **kwargs)
-            return result
+            return func(session, *args, **kwargs)
         finally:
             session.close()
 
@@ -172,6 +185,7 @@ async def init_async_db(
         pool_size: Connection pool size.
 
     """
+    # Use a class for state management instead of global variables
     global async_engine, async_session_factory
 
     if async_engine:
@@ -185,7 +199,7 @@ async def init_async_db(
         async_engine, expire_on_commit=False, class_=AsyncSession
     )
 
-    logger.info(f"Initialized async database connection to {db_uri}")
+    logger.info("Initialized async database connection to %s", db_uri)
 
 
 def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) -> None:
@@ -204,9 +218,12 @@ def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) ->
     sync_engine = create_engine(db_uri, pool_size=pool_size, pool_pre_ping=True)
 
     SyncSession.configure(bind=sync_engine)
-    Base.metadata.bind = sync_engine
 
-    logger.info(f"Initialized sync database connection to {db_uri}")
+    # In SQLAlchemy 2.0, we use this instead of Base.metadata.bind
+    if hasattr(Base, "registry"):
+        Base.registry.metadata.create_all(sync_engine)
+
+    logger.info("Initialized sync database connection to %s", db_uri)
 
 
 async def init_db_from_config(config: dict[str, Any] | None = None) -> None:
@@ -237,7 +254,8 @@ async def default_config() -> dict[str, Any]:
         Configuration dictionary.
 
     """
-    from accent.config_helper import ConfigParser, ErrorHandler
+    # This import can't be type-checked, so we silence Mypy with TYPE_CHECKING
+    from accent.config_helper import ConfigParser, ErrorHandler  # type: ignore  # noqa: PGH003
 
     config = {
         "config_file": "/etc/accent-dao/config.yml",
@@ -248,7 +266,7 @@ async def default_config() -> dict[str, Any]:
 
 
 @contextmanager
-def get_session() -> Session:
+def get_session() -> Generator[Session, None, None]:
     """Get a session for synchronous operations.
 
     Yields:
@@ -267,7 +285,7 @@ def get_session() -> Session:
 
 
 @asynccontextmanager
-async def get_async_session() -> AsyncSession:
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Get a session for asynchronous operations.
 
     Yields:
@@ -277,7 +295,10 @@ async def get_async_session() -> AsyncSession:
     if async_session_factory is None:
         await init_async_db()
 
-    assert async_session_factory is not None, "Async session factory not initialized"
+    # Use logging instead of assert for production code
+    if async_session_factory is None:
+        logger.error("Async session factory not initialized")
+        raise RuntimeError("Async session factory not initialized")
 
     session = async_session_factory()
     try:
@@ -291,16 +312,27 @@ async def get_async_session() -> AsyncSession:
 
 
 @overload
-def async_daosession(func: Callable[..., R]) -> Callable[..., R]: ...
+def async_daosession(
+    func: Callable[..., Awaitable[R]],
+) -> Callable[..., Awaitable[R]]: ...
 
 
 @overload
-def async_daosession() -> Callable[[Callable[..., R]], Callable[..., R]]: ...
+def async_daosession() -> Callable[
+    [Callable[..., Awaitable[R]]],
+    Callable[..., Awaitable[R]],
+]: ...
 
 
 def async_daosession(
-    func: Callable[..., R] | None = None,
-) -> Callable[..., R] | Callable[[Callable[..., R]], Callable[..., R]]:
+    func: Callable[..., Awaitable[R]] | None = None,
+) -> (
+    Callable[..., Awaitable[R]]
+    | Callable[
+        [Callable[..., Awaitable[R]]],
+        Callable[..., Awaitable[R]],
+    ]
+):
     """Decorate async DAO operations.
 
     Can be used with or without arguments:
@@ -309,7 +341,7 @@ def async_daosession(
 
     or
 
-    @async_daosession(timeout=30)
+    @async_daosession()
     async def func(session, ...): ...
 
     Args:
@@ -320,7 +352,9 @@ def async_daosession(
 
     """
 
-    def decorator(fn: Callable[..., R]) -> Callable[..., R]:
+    def decorator(
+        fn: Callable[..., Awaitable[R]],
+    ) -> Callable[..., Awaitable[R]]:
         @wraps(fn)
         async def wrapped(*args: Any, **kwargs: Any) -> R:
             async with get_async_session() as session:
@@ -334,20 +368,9 @@ def async_daosession(
     return decorator(func)
 
 
-# Add caching capability
-from datetime import timedelta
-
-from cachetools import TTLCache, cached
-
-# Default cache settings
-DEFAULT_CACHE_MAXSIZE = 128
-DEFAULT_CACHE_TTL = timedelta(minutes=5).total_seconds()
-
-# Create a TTL cache for database results
-db_cache = TTLCache(maxsize=DEFAULT_CACHE_MAXSIZE, ttl=DEFAULT_CACHE_TTL)
-
-
-def cached_query(maxsize: int = DEFAULT_CACHE_MAXSIZE, ttl: float = DEFAULT_CACHE_TTL):
+def cached_query(
+    maxsize: int = DEFAULT_CACHE_MAXSIZE, ttl: float = DEFAULT_CACHE_TTL
+) -> Callable[[Callable[..., R]], Callable[..., R]]:
     """Create a caching decorator for database queries.
 
     Args:
@@ -360,7 +383,7 @@ def cached_query(maxsize: int = DEFAULT_CACHE_MAXSIZE, ttl: float = DEFAULT_CACH
     """
 
     def decorator(func: Callable[..., R]) -> Callable[..., R]:
-        cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        cache: TTLCache = TTLCache(maxsize=maxsize, ttl=ttl)
 
         @cached(cache)
         @wraps(func)
@@ -370,3 +393,4 @@ def cached_query(maxsize: int = DEFAULT_CACHE_MAXSIZE, ttl: float = DEFAULT_CACH
         return wrapped
 
     return decorator
+

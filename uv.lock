@@ -1523,6 +1523,7 @@ version = "0.1.0"
 source = { editable = "library/accent-dao" }
 dependencies = [
     { name = "accent" },
+    { name = "cachetools" },
     { name = "greenlet" },
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -1538,6 +1539,7 @@ dev = [
     { name = "refurb" },
     { name = "ruff" },
     { name = "tox" },
+    { name = "types-cachetools" },
 ]
 test = [
     { name = "coverage" },
@@ -1550,6 +1552,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "accent", editable = "library/accent-lib-python" },
+    { name = "cachetools", specifier = ">=5.5.2" },
     { name = "greenlet", specifier = ">=3.1.1" },
     { name = "psycopg", extras = ["binary", "pool"] },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
@@ -1565,6 +1568,7 @@ dev = [
     { name = "refurb", specifier = ">=2.0.0" },
     { name = "ruff", specifier = ">=0.9.10" },
     { name = "tox", specifier = ">=4.24.2" },
+    { name = "types-cachetools", specifier = ">=5.5.0.20240820" },
 ]
 test = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
@@ -5715,6 +5719,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/77/1c/e07af0df31229250ab58a943077e4adbd5e227d9f2ac826920416b3e5fa2/twisted-24.11.0.tar.gz", hash = "sha256:695d0556d5ec579dcc464d2856b634880ed1319f45b10d19043f2b57eb0115b5", size = 3526722 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/70/53/a50654eb9c63da0df2b5dca8ec27656a88b7edd798de5ffad55353203874/twisted-24.11.0-py3-none-any.whl", hash = "sha256:fe403076c71f04d5d2d789a755b687c5637ec3bcd3b2b8252d76f2ba65f54261", size = 3188667 },
+]
+
+[[package]]
+name = "types-cachetools"
+version = "5.5.0.20240820"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c2/7e/ad6ba4a56b2a994e0f0a04a61a50466b60ee88a13d10a18c83ac14a66c61/types-cachetools-5.5.0.20240820.tar.gz", hash = "sha256:b888ab5c1a48116f7799cd5004b18474cd82b5463acb5ffb2db2fc9c7b053bc0", size = 4198 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/4d/fd7cc050e2d236d5570c4d92531c0396573a1e14b31735870e849351c717/types_cachetools-5.5.0.20240820-py3-none-any.whl", hash = "sha256:efb2ed8bf27a4b9d3ed70d33849f536362603a90b8090a328acf0cd42fda82e2", size = 4149 },
 ]
 
 [[package]]
