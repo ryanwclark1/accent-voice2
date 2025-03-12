@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from sqlalchemy import and_, select
 
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
+    from sqlalchemy.sql.elements import BinaryExpression
 
 
 class Agent(NamedTuple):
@@ -115,7 +116,8 @@ def agent_with_user_uuid(
 
     agent_row = query.first()
     if agent_row is None:
-        raise LookupError(f"no agent found for user {user_uuid}")
+        error_message = f"no agent found for user {user_uuid}"
+        raise LookupError(error_message)
     agent = Agent(
         agent_row.id,
         agent_row.tenant_uuid,
@@ -127,15 +129,20 @@ def agent_with_user_uuid(
     return agent
 
 
+
+
 def _get_agent(
-    session: Session, whereclause: Any, tenant_uuids: list[str] | None = None
+    session: Session,
+    whereclause: BinaryExpression,
+    tenant_uuids: list[str] | None = None
 ) -> Agent:
     query = session.query(AgentFeatures).filter(whereclause)
     if tenant_uuids is not None:
         query = query.filter(AgentFeatures.tenant_uuid.in_(tenant_uuids))
     agent = query.first()
     if agent is None:
-        raise LookupError(f"no agent matching clause {whereclause.compile().params}")
+        error_message = f"no agent matching clause {whereclause.compile().params}"
+        raise LookupError(error_message)
     return Agent(
         agent.id, agent.tenant_uuid, agent.number, [], [user.id for user in agent.users]
     )
@@ -285,7 +292,8 @@ async def async_agent_with_user_uuid(
     agent_row = result.scalar_one_or_none()
 
     if agent_row is None:
-        raise LookupError(f"no agent found for user {user_uuid}")
+        error_message = f"no agent found for user {user_uuid}"
+        raise LookupError(error_message)
 
     agent = Agent(
         agent_row.id,
@@ -299,7 +307,9 @@ async def async_agent_with_user_uuid(
 
 
 async def async_get_agent(
-    session: AsyncSession, whereclause: Any, tenant_uuids: list[str] | None = None
+    session: AsyncSession,
+    whereclause: BinaryExpression,
+    tenant_uuids: list[str] | None = None
 ) -> Agent:
     """Get agent by where clause (async version).
 
@@ -323,7 +333,8 @@ async def async_get_agent(
     agent = result.scalar_one_or_none()
 
     if agent is None:
-        raise LookupError(f"no agent matching clause {whereclause}")
+        error_message = f"no agent matching clause {whereclause}"
+        raise LookupError(error_message)
 
     return Agent(
         agent.id, agent.tenant_uuid, agent.number, [], [user.id for user in agent.users]

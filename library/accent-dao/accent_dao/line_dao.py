@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
 
@@ -61,7 +61,8 @@ def get_interface_from_exten_and_context(
             return interface
 
     if not interface:
-        raise LookupError(f"no line with extension {extension} and context {context}")
+        error_message = f"no line with extension {extension} and context {context}"
+        raise LookupError(error_message)
 
     return interface
 
@@ -110,7 +111,8 @@ async def async_get_interface_from_exten_and_context(
             return interface
 
     if not interface:
-        raise LookupError(f"no line with extension {extension} and context {context}")
+        error_message = f"no line with extension {extension} and context {context}"
+        raise LookupError(error_message)
 
     return interface
 
@@ -140,7 +142,8 @@ def get_interface_from_line_id(session: Session, line_id: int) -> str:
     line_row = query.first()
 
     if not line_row:
-        raise LookupError(f"no line with id {line_id}")
+        error_message = f"no line with id {line_id}"
+        raise LookupError(error_message)
 
     return _format_interface(line_row)
 
@@ -170,13 +173,16 @@ async def async_get_interface_from_line_id(session: AsyncSession, line_id: int) 
     line_row = result.first()
 
     if not line_row:
-        raise LookupError(f"no line with id {line_id}")
+        error_message = f"no line with id {line_id}"
+        raise LookupError(error_message)
 
     return _format_interface(line_row)
 
 
 @daosession
-def get_main_extension_context_from_line_id(session: Session, line_id: int) -> tuple[str, str] | None:
+def get_main_extension_context_from_line_id(
+    session: Session, line_id: int
+) -> tuple[str, str] | None:
     """Get main extension and context from line ID.
 
     Args:
@@ -194,8 +200,7 @@ def get_main_extension_context_from_line_id(session: Session, line_id: int) -> t
         .filter(LineExtension.main_extension.is_(True))
     )
 
-    line_row = query.first()
-    return line_row
+    return query.first()
 
 
 async def async_get_main_extension_context_from_line_id(

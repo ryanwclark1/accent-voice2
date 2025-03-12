@@ -506,7 +506,7 @@ class AgentLoginData:
 
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         agent_id: int,
         agent_number: str,
@@ -535,7 +535,7 @@ class AgentLoginData:
 
 
 @daosession
-def log_in_agent(
+def log_in_agent(  # noqa: PLR0913
     session: Session,
     agent_id: int,
     agent_number: str,

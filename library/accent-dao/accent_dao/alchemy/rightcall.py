@@ -1,6 +1,6 @@
 # file: accent_dao/alchemy/rightcall.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, TypeVar
 
 from sqlalchemy import (
     Boolean,
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from .rightcallmember import RightCallMember
 
 RightCallMode = Literal["allow", "deny"]
+T = TypeVar("T")
 
 
 class RightCall(Base):
@@ -146,6 +147,7 @@ class RightCall(Base):
         """
         return [rcu for rcu in self.rightcall_users if rcu.user]
 
+    # Define password property
     @hybrid_property
     def password(self) -> str | None:
         """Return the password (null if empty)."""
@@ -153,16 +155,16 @@ class RightCall(Base):
             return None
         return self.passwd
 
-    @password.setter
-    def password(self, value: str | None) -> None:
+    @password.setter  # type: ignore  # noqa: PGH003
+    def set_password(self, value: str | None) -> None:
         """Set the password."""
         if value is None:
             self.passwd = ""
         else:
             self.passwd = value
 
-    @password.expression
-    def password(self) -> ClauseElement:
+    @password.expression  # type: ignore  # noqa: PGH003
+    def get_password_expr(self) -> ClauseElement:
         """Return the password if it is not an empty string, otherwise return None.
 
         Compare the password attribute of the class with an empty string. If they
@@ -174,6 +176,7 @@ class RightCall(Base):
         """
         return func.nullif(self.passwd, "")
 
+    # Define mode property
     @hybrid_property
     def mode(self) -> RightCallMode:
         """Return the authorization mode ('allow' or 'deny')."""
@@ -181,8 +184,8 @@ class RightCall(Base):
             return "allow"
         return "deny"
 
-    @mode.setter
-    def mode(self, value: RightCallMode) -> None:
+    @mode.setter  # type: ignore  # noqa: PGH003
+    def set_mode(self, value: RightCallMode) -> None:
         """Set the authorization mode."""
         if value == "allow":
             self.authorization = 1
@@ -194,8 +197,8 @@ class RightCall(Base):
             )
             raise InputError(error_msg)
 
-    @mode.expression
-    def mode(self) -> ClauseElement:
+    @mode.expression  # type: ignore  # noqa: PGH003
+    def get_mode_expr(self) -> ClauseElement:
         """Determine the mode of the RightCall based on the authorization status.
 
         Returns:
@@ -209,18 +212,19 @@ class RightCall(Base):
             "deny",
         )
 
+    # Define enabled property
     @hybrid_property
     def enabled(self) -> bool:
         """Indicate if the rule is enabled."""
         return self.commented == 0
 
-    @enabled.setter
-    def enabled(self, value: bool) -> None:
+    @enabled.setter  # type: ignore  # noqa: PGH003
+    def set_enabled(self, value: bool) -> None:  # noqa: FBT001
         """Enable or disables the rule."""
         self.commented = int(not value)
 
-    @enabled.expression
-    def enabled(self) -> ClauseElement:
+    @enabled.expression  # type: ignore  # noqa: PGH003
+    def get_enabled_expr(self) -> ClauseElement:
         """Determine if the instance is enabled based on the 'commented' attribute.
 
         Returns:
