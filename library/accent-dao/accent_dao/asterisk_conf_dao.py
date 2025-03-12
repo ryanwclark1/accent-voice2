@@ -4,16 +4,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Generator
 from typing import (
+    TYPE_CHECKING,
     Any,
     NamedTuple,
 )
 
 from sqlalchemy import and_, func, literal, or_, select
 from sqlalchemy import cast as sql_cast
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 from sqlalchemy.types import Integer
 
 from accent_dao.alchemy.extension import Extension
@@ -35,6 +33,12 @@ from accent_dao.alchemy.user_line import UserLine
 from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.alchemy.voicemail import Voicemail
 from accent_dao.helpers.db_manager import daosession
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import Session
 
 
 class Member(NamedTuple):
