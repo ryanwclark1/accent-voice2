@@ -1,4 +1,4 @@
-# file: accent_dao/models/stat_queue_periodic.py
+# file: accent_dao/models/stat_queue_periodic.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING

@@ -255,7 +255,10 @@ async def default_config() -> dict[str, Any]:
 
     """
     # This import can't be type-checked, so we silence Mypy with TYPE_CHECKING
-    from accent.config_helper import ConfigParser, ErrorHandler  # type: ignore  # noqa: PGH003
+    from accent.config_helper import (  # type: ignore  # noqa: PGH003
+        ConfigParser,
+        ErrorHandler,
+    )
 
     config = {
         "config_file": "/etc/accent-dao/config.yml",
@@ -298,7 +301,8 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     # Use logging instead of assert for production code
     if async_session_factory is None:
         logger.error("Async session factory not initialized")
-        raise RuntimeError("Async session factory not initialized")
+        msg = "Async session factory not initialized"
+        raise RuntimeError(msg)
 
     session = async_session_factory()
     try:
