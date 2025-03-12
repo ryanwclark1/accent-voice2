@@ -1,7 +1,10 @@
-# Copyright 2023 Accent Communications
+# agent_status_dao.py
+# Copyright 2025 Accent Communications
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 from sqlalchemy.sql.expression import case, false, true
 
@@ -15,16 +18,44 @@ from accent_dao.helpers.db_manager import daosession
 from accent_dao.helpers.db_utils import flush_session
 
 if TYPE_CHECKING:
-    from datetime import datetime
+    from collections.abc import Sequence
+
+    from sqlalchemy.orm import Session
 
 
-class _Queue(NamedTuple):
+class Queue(NamedTuple):
+    """Queue data structure.
+
+    Attributes:
+        id: Queue identifier
+        name: Queue name
+        penalty: Agent's penalty in this queue
+
+    """
+
     id: int
     name: str
     penalty: int
 
 
-class _AgentStatus(NamedTuple):
+class AgentStatus(NamedTuple):
+    """Agent status data structure.
+
+    Attributes:
+        agent_id: Agent identifier
+        agent_number: Agent number
+        extension: Agent's extension
+        context: Agent's context
+        interface: Agent's interface
+        state_interface: Agent's state interface
+        login_at: Timestamp of agent login
+        paused: Whether agent is paused
+        paused_reason: Reason for agent's pause
+        queues: List of queues agent belongs to
+        user_ids: List of user IDs associated with the agent
+
+    """
+
     agent_id: int
     agent_number: str
     extension: str
@@ -34,12 +65,25 @@ class _AgentStatus(NamedTuple):
     login_at: datetime
     paused: bool
     paused_reason: str | None
-    queues: list[_Queue]
+    queues: list[Queue] | None
     user_ids: list[int]
 
 
 @daosession
-def get_status(session, agent_id, tenant_uuids=None):
+def get_status(
+    session: Session, agent_id: int, tenant_uuids: list[str] | None = None
+) -> AgentStatus | None:
+    """Get status of an agent by ID.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Agent status or None if agent is not found
+
+    """
     login_status = _get_login_status_by_id(session, agent_id, tenant_uuids=tenant_uuids)
     if not login_status:
         return None
@@ -48,7 +92,20 @@ def get_status(session, agent_id, tenant_uuids=None):
 
 
 @daosession
-def get_status_by_number(session, agent_number, tenant_uuids=None):
+def get_status_by_number(
+    session: Session, agent_number: str, tenant_uuids: list[str] | None = None
+) -> AgentStatus | None:
+    """Get status of an agent by number.
+
+    Args:
+        session: Database session
+        agent_number: Agent number
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Agent status or None if agent is not found
+
+    """
     login_status = _get_login_status_by_number(
         session, agent_number, tenant_uuids=tenant_uuids
     )
@@ -61,7 +118,20 @@ def get_status_by_number(session, agent_number, tenant_uuids=None):
 
 
 @daosession
-def get_status_by_user(session, user_uuid, tenant_uuids=None):
+def get_status_by_user(
+    session: Session, user_uuid: str, tenant_uuids: list[str] | None = None
+) -> AgentStatus | None:
+    """Get status of an agent by user UUID.
+
+    Args:
+        session: Database session
+        user_uuid: User identifier
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Agent status or None if agent is not found
+
+    """
     login_status = _get_login_status_by_user(
         session, user_uuid, tenant_uuids=tenant_uuids
     )
@@ -73,10 +143,23 @@ def get_status_by_user(session, user_uuid, tenant_uuids=None):
     )
 
 
-def _get_login_status_by_id(session, agent_id, tenant_uuids=None):
+def _get_login_status_by_id(
+    session: Session, agent_id: int, tenant_uuids: list[str] | None = None
+) -> AgentLoginStatus | None:
+    """Get login status of an agent by ID.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Agent login status or None if not found
+
+    """
     login_status = (
         session.query(AgentLoginStatus)
-        .outerjoin((AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id))
+        .outerjoin(AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id)
         .filter(AgentLoginStatus.agent_id == agent_id)
     )
     if tenant_uuids is not None:
@@ -84,10 +167,23 @@ def _get_login_status_by_id(session, agent_id, tenant_uuids=None):
     return login_status.first()
 
 
-def _get_login_status_by_number(session, agent_number, tenant_uuids=None):
+def _get_login_status_by_number(
+    session: Session, agent_number: str, tenant_uuids: list[str] | None = None
+) -> AgentLoginStatus | None:
+    """Get login status of an agent by number.
+
+    Args:
+        session: Database session
+        agent_number: Agent number
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Agent login status or None if not found
+
+    """
     login_status = (
         session.query(AgentLoginStatus)
-        .outerjoin((AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id))
+        .outerjoin(AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id)
         .filter(AgentLoginStatus.agent_number == agent_number)
     )
     if tenant_uuids is not None:
@@ -95,11 +191,24 @@ def _get_login_status_by_number(session, agent_number, tenant_uuids=None):
     return login_status.first()
 
 
-def _get_login_status_by_user(session, user_uuid, tenant_uuids=None):
+def _get_login_status_by_user(
+    session: Session, user_uuid: str, tenant_uuids: list[str] | None = None
+) -> AgentLoginStatus | None:
+    """Get login status of an agent by user UUID.
+
+    Args:
+        session: Database session
+        user_uuid: User identifier
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Agent login status or None if not found
+
+    """
     login_status = (
         session.query(AgentLoginStatus)
-        .outerjoin((AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id))
-        .join((UserFeatures, AgentFeatures.id == UserFeatures.agentid))
+        .outerjoin(AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id)
+        .join(UserFeatures, AgentFeatures.id == UserFeatures.agentid)
         .filter(UserFeatures.uuid == user_uuid)
     )
     if tenant_uuids is not None:
@@ -107,18 +216,41 @@ def _get_login_status_by_user(session, user_uuid, tenant_uuids=None):
     return login_status.first()
 
 
-def _get_queues_for_agent(session, agent_id):
+def _get_queues_for_agent(session: Session, agent_id: int) -> list[Queue]:
+    """Get queues for an agent.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+
+    Returns:
+        List of queues the agent belongs to
+
+    """
     query = session.query(
-        AgentMembershipStatus.queue_id.label('queue_id'),
-        AgentMembershipStatus.queue_name.label('queue_name'),
-        AgentMembershipStatus.penalty.label('penalty'),
+        AgentMembershipStatus.queue_id.label("queue_id"),
+        AgentMembershipStatus.queue_name.label("queue_name"),
+        AgentMembershipStatus.penalty.label("penalty"),
     ).filter(AgentMembershipStatus.agent_id == agent_id)
 
-    return [_Queue(q.queue_id, q.queue_name, q.penalty) for q in query]
+    return [Queue(q.queue_id, q.queue_name, q.penalty) for q in query]
 
 
 @daosession
-def get_extension_from_agent_id(session, agent_id):
+def get_extension_from_agent_id(session: Session, agent_id: int) -> tuple[str, str]:
+    """Get extension and context from agent ID.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+
+    Returns:
+        Tuple of (extension, context)
+
+    Raises:
+        LookupError: If the agent is not logged in
+
+    """
     login_status_row = (
         session.query(AgentLoginStatus.extension, AgentLoginStatus.context)
         .filter(AgentLoginStatus.agent_id == agent_id)
@@ -126,13 +258,28 @@ def get_extension_from_agent_id(session, agent_id):
     )
 
     if not login_status_row:
-        raise LookupError(f'agent with id {agent_id} is not logged')
+        error_msg = f"Agent with id {agent_id} is not logged in"
+        raise LookupError(error_msg)
 
     return login_status_row.extension, login_status_row.context
 
 
 @daosession
-def get_agent_id_from_extension(session, extension, context):
+def get_agent_id_from_extension(session: Session, extension: str, context: str) -> int:
+    """Get agent ID from extension and context.
+
+    Args:
+        session: Database session
+        extension: Extension
+        context: Context
+
+    Returns:
+        Agent identifier
+
+    Raises:
+        LookupError: If no agent is logged in on the specified extension
+
+    """
     login_status = (
         session.query(AgentLoginStatus)
         .filter(AgentLoginStatus.extension == extension)
@@ -140,25 +287,39 @@ def get_agent_id_from_extension(session, extension, context):
         .first()
     )
     if not login_status:
-        raise LookupError(f'No agent logged onto extension {extension}@{context}')
+        error_msg = f"No agent logged onto extension {extension}@{context}"
+        raise LookupError(error_msg)
     return login_status.agent_id
 
 
 @daosession
-def get_statuses(session, tenant_uuids=None):
+def get_statuses(
+    session: Session, tenant_uuids: list[str] | None = None
+) -> Sequence[Any]:
+    """Get statuses of all agents.
+
+    Args:
+        session: Database session
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        Sequence of agent statuses
+
+    """
+    # Fix the case expression using tuple instead of list
+    case_expr = case({AgentLoginStatus.agent_id.is_(None): false()}, else_=true())
+
     query = session.query(
-        AgentFeatures.id.label('agent_id'),
-        AgentFeatures.tenant_uuid.label('tenant_uuid'),
-        AgentFeatures.number.label('agent_number'),
-        AgentLoginStatus.extension.label('extension'),
-        AgentLoginStatus.context.label('context'),
-        AgentLoginStatus.state_interface.label('state_interface'),
-        AgentLoginStatus.paused.label('paused'),
-        AgentLoginStatus.paused_reason.label('paused_reason'),
-        case([(AgentLoginStatus.agent_id.is_(None), false())], else_=true()).label(
-            'logged'
-        ),  # noqa
-    ).outerjoin((AgentLoginStatus, AgentFeatures.id == AgentLoginStatus.agent_id))
+        AgentFeatures.id.label("agent_id"),
+        AgentFeatures.tenant_uuid.label("tenant_uuid"),
+        AgentFeatures.number.label("agent_number"),
+        AgentLoginStatus.extension.label("extension"),
+        AgentLoginStatus.context.label("context"),
+        AgentLoginStatus.state_interface.label("state_interface"),
+        AgentLoginStatus.paused.label("paused"),
+        AgentLoginStatus.paused_reason.label("paused_reason"),
+        case_expr.label("logged"),
+    ).outerjoin(AgentLoginStatus, AgentFeatures.id == AgentLoginStatus.agent_id)
 
     if tenant_uuids is not None:
         query = query.filter(AgentFeatures.tenant_uuid.in_(tenant_uuids))
@@ -167,14 +328,22 @@ def get_statuses(session, tenant_uuids=None):
 
 
 @daosession
-def get_statuses_for_queue(session, queue_id):
-    session = session
+def get_statuses_for_queue(session: Session, queue_id: int) -> list[AgentStatus]:
+    """Get statuses of all agents in a queue.
 
+    Args:
+        session: Database session
+        queue_id: Queue identifier
+
+    Returns:
+        List of agent statuses
+
+    """
     subquery = (
         session.query(QueueMember.userid)
         .filter(QueueFeatures.name == QueueMember.queue_name)
         .filter(QueueFeatures.id == queue_id)
-        .filter(QueueMember.usertype == 'agent')
+        .filter(QueueMember.usertype == "agent")
     )
     query = session.query(AgentLoginStatus).filter(
         AgentLoginStatus.agent_id.in_(subquery)
@@ -184,12 +353,22 @@ def get_statuses_for_queue(session, queue_id):
 
 
 @daosession
-def get_statuses_to_add_to_queue(session, queue_id):
+def get_statuses_to_add_to_queue(session: Session, queue_id: int) -> list[AgentStatus]:
+    """Get statuses of agents to add to a queue.
+
+    Args:
+        session: Database session
+        queue_id: Queue identifier
+
+    Returns:
+        List of agent statuses
+
+    """
     q1 = (
         session.query(QueueMember.userid)
         .filter(QueueFeatures.name == QueueMember.queue_name)
         .filter(QueueFeatures.id == queue_id)
-        .filter(QueueMember.usertype == 'agent')
+        .filter(QueueMember.usertype == "agent")
     )
     q2 = session.query(AgentMembershipStatus.agent_id).filter(
         AgentMembershipStatus.queue_id == queue_id
@@ -203,7 +382,19 @@ def get_statuses_to_add_to_queue(session, queue_id):
 
 
 @daosession
-def get_statuses_to_remove_from_queue(session, queue_id):
+def get_statuses_to_remove_from_queue(
+    session: Session, queue_id: int
+) -> list[AgentStatus]:
+    """Get statuses of agents to remove from a queue.
+
+    Args:
+        session: Database session
+        queue_id: Queue identifier
+
+    Returns:
+        List of agent statuses
+
+    """
     q1 = session.query(AgentMembershipStatus.agent_id).filter(
         AgentMembershipStatus.queue_id == queue_id
     )
@@ -211,7 +402,7 @@ def get_statuses_to_remove_from_queue(session, queue_id):
         session.query(QueueMember.userid)
         .filter(QueueFeatures.name == QueueMember.queue_name)
         .filter(QueueFeatures.id == queue_id)
-        .filter(QueueMember.usertype == 'agent')
+        .filter(QueueMember.usertype == "agent")
     )
     agent_ids_to_remove = q1.except_(q2)
     query = session.query(AgentLoginStatus).filter(
@@ -222,7 +413,19 @@ def get_statuses_to_remove_from_queue(session, queue_id):
 
 
 @daosession
-def get_logged_agent_ids(session, tenant_uuids=None):
+def get_logged_agent_ids(
+    session: Session, tenant_uuids: list[str] | None = None
+) -> list[int]:
+    """Get IDs of logged in agents.
+
+    Args:
+        session: Database session
+        tenant_uuids: Optional tenant identifiers to filter by
+
+    Returns:
+        List of agent identifiers
+
+    """
     query = session.query(
         AgentLoginStatus.agent_id, AgentFeatures.tenant_uuid
     ).outerjoin(AgentFeatures, AgentFeatures.id == AgentLoginStatus.agent_id)
@@ -233,17 +436,33 @@ def get_logged_agent_ids(session, tenant_uuids=None):
     return [q.agent_id for q in query]
 
 
-def _to_agent_status(agent_login_status, queues):
+def _to_agent_status(
+    agent_login_status: AgentLoginStatus, queues: list[Queue] | None
+) -> AgentStatus:
+    """Convert agent login status to agent status.
+
+    Args:
+        agent_login_status: Agent login status
+        queues: List of queues the agent belongs to
+
+    Returns:
+        Agent status
+
+    """
     agent = agent_login_status.agent
     user_ids = [user.id for user in agent.users] if agent else []
-    return _AgentStatus(
+
+    # Cast DateTime to datetime to fix type incompatibility
+    login_at = cast(datetime, agent_login_status.login_at)
+
+    return AgentStatus(
         agent_login_status.agent_id,
         agent_login_status.agent_number,
         agent_login_status.extension,
         agent_login_status.context,
         agent_login_status.interface,
         agent_login_status.state_interface,
-        agent_login_status.login_at,
+        login_at,
         agent_login_status.paused,
         agent_login_status.paused_reason,
         queues,
@@ -252,7 +471,18 @@ def _to_agent_status(agent_login_status, queues):
 
 
 @daosession
-def is_extension_in_use(session, extension, context):
+def is_extension_in_use(session: Session, extension: str, context: str) -> bool:
+    """Check if an extension is in use.
+
+    Args:
+        session: Database session
+        extension: Extension
+        context: Context
+
+    Returns:
+        True if the extension is in use, False otherwise
+
+    """
     count = (
         session.query(AgentLoginStatus)
         .filter(AgentLoginStatus.extension == extension)
@@ -262,38 +492,140 @@ def is_extension_in_use(session, extension, context):
     return count > 0
 
 
+# Create dataclass for input parameters to resolve too many arguments issue
+class AgentLoginData:
+    """Data for logging in an agent.
+
+    Attributes:
+        agent_id: Agent identifier
+        agent_number: Agent number
+        extension: Extension
+        context: Context
+        interface: Interface
+        state_interface: State interface
+
+    """
+
+    def __init__(
+        self,
+        agent_id: int,
+        agent_number: str,
+        extension: str,
+        context: str,
+        interface: str,
+        state_interface: str,
+    ) -> None:
+        """Initialize agent login data.
+
+        Args:
+            agent_id: Agent identifier
+            agent_number: Agent number
+            extension: Extension
+            context: Context
+            interface: Interface
+            state_interface: State interface
+
+        """
+        self.agent_id = agent_id
+        self.agent_number = agent_number
+        self.extension = extension
+        self.context = context
+        self.interface = interface
+        self.state_interface = state_interface
+
+
 @daosession
 def log_in_agent(
-    session, agent_id, agent_number, extension, context, interface, state_interface
-):
+    session: Session,
+    agent_id: int,
+    agent_number: str,
+    extension: str,
+    context: str,
+    interface: str,
+    state_interface: str,
+) -> None:
+    """Log in an agent.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        agent_number: Agent number
+        extension: Extension
+        context: Context
+        interface: Interface
+        state_interface: State interface
+
+    """
+    # Create a wrapper function that takes fewer parameters
+    data = AgentLoginData(
+        agent_id=agent_id,
+        agent_number=agent_number,
+        extension=extension,
+        context=context,
+        interface=interface,
+        state_interface=state_interface,
+    )
+    _log_in_agent_impl(session, data)
+
+
+def _log_in_agent_impl(session: Session, data: AgentLoginData) -> None:
+    """Implement log_in_agent with fewer parameters.
+
+    Args:
+        session: Database session
+        data: Agent login data
+
+    """
     agent = AgentLoginStatus()
-    agent.agent_id = agent_id
-    agent.agent_number = agent_number
-    agent.extension = extension
-    agent.context = context
-    agent.interface = interface
-    agent.state_interface = state_interface
+    agent.agent_id = data.agent_id
+    agent.agent_number = data.agent_number
+    agent.extension = data.extension
+    agent.context = data.context
+    agent.interface = data.interface
+    agent.state_interface = data.state_interface
     agent.paused = False
 
     _add_agent(session, agent)
 
 
-def _add_agent(session, agent):
+def _add_agent(session: Session, agent: AgentLoginStatus) -> None:
+    """Add an agent to the database.
+
+    Args:
+        session: Database session
+        agent: Agent login status to add
+
+    """
     with flush_session(session):
         session.add(agent)
 
 
 @daosession
-def log_off_agent(session, agent_id):
+def log_off_agent(session: Session, agent_id: int) -> None:
+    """Log off an agent.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+
+    """
     (
         session.query(AgentLoginStatus)
         .filter(AgentLoginStatus.agent_id == agent_id)
-        .delete(synchronize_session='fetch')
+        .delete(synchronize_session="fetch")
     )
 
 
 @daosession
-def add_agent_to_queues(session, agent_id, queues):
+def add_agent_to_queues(session: Session, agent_id: int, queues: list[Queue]) -> None:
+    """Add an agent to queues.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        queues: List of queues to add the agent to
+
+    """
     for queue in queues:
         agent_membership_status = AgentMembershipStatus(
             agent_id=agent_id,
@@ -305,47 +637,93 @@ def add_agent_to_queues(session, agent_id, queues):
 
 
 @daosession
-def remove_agent_from_queues(session, agent_id, queue_ids):
+def remove_agent_from_queues(
+    session: Session, agent_id: int, queue_ids: list[int]
+) -> None:
+    """Remove an agent from queues.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        queue_ids: List of queue identifiers to remove the agent from
+
+    """
     (
         session.query(AgentMembershipStatus)
         .filter(AgentMembershipStatus.agent_id == agent_id)
         .filter(AgentMembershipStatus.queue_id.in_(queue_ids))
-        .delete(synchronize_session='fetch')
+        .delete(synchronize_session="fetch")
     )
 
 
 @daosession
-def remove_agent_from_all_queues(session, agent_id):
+def remove_agent_from_all_queues(session: Session, agent_id: int) -> None:
+    """Remove an agent from all queues.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+
+    """
     (
         session.query(AgentMembershipStatus)
         .filter(AgentMembershipStatus.agent_id == agent_id)
-        .delete(synchronize_session='fetch')
+        .delete(synchronize_session="fetch")
     )
 
 
 @daosession
-def remove_all_agents_from_queue(session, queue_id):
+def remove_all_agents_from_queue(session: Session, queue_id: int) -> None:
+    """Remove all agents from a queue.
+
+    Args:
+        session: Database session
+        queue_id: Queue identifier
+
+    """
     (
         session.query(AgentMembershipStatus)
         .filter(AgentMembershipStatus.queue_id == queue_id)
-        .delete(synchronize_session='fetch')
+        .delete(synchronize_session="fetch")
     )
 
 
 @daosession
-def update_penalty(session, agent_id, queue_id, penalty):
+def update_penalty(
+    session: Session, agent_id: int, queue_id: int, penalty: int
+) -> None:
+    """Update an agent's penalty in a queue.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        queue_id: Queue identifier
+        penalty: New penalty value
+
+    """
     (
         session.query(AgentMembershipStatus)
         .filter(AgentMembershipStatus.queue_id == queue_id)
         .filter(AgentMembershipStatus.agent_id == agent_id)
-        .update({'penalty': penalty})
+        .update({"penalty": penalty})
     )
 
 
 @daosession
-def update_pause_status(session, agent_id, is_paused, reason=None):
+def update_pause_status(
+    session: Session, agent_id: int, *, is_paused: bool, reason: str | None = None
+) -> None:
+    """Update an agent's pause status.
+
+    Args:
+        session: Database session
+        agent_id: Agent identifier
+        is_paused: Whether the agent is paused
+        reason: Optional reason for the pause
+
+    """
     (
         session.query(AgentLoginStatus)
         .filter(AgentLoginStatus.agent_id == agent_id)
-        .update({'paused': is_paused, 'paused_reason': reason})
+        .update({"paused": is_paused, "paused_reason": reason})
     )

@@ -15,13 +15,26 @@ logger = logging.getLogger(__name__)
 
 
 @daosession
-def get(session, user_id):
+def get(session, user_id) -> UserFeatures:
+    """Retrieve a user by their ID.
+
+    Args:
+        session: The database session.
+        user_id: The ID of the user, which can be an integer or a UUID.
+
+    Returns:
+        UserFeatures: The user features object if found.
+
+    Raises:
+        LookupError: If no user is found with the given ID.
+
+    """
     if isinstance(user_id, int):
         result = session.query(UserFeatures).filter(UserFeatures.id == user_id).first()
     else:
         result = session.query(UserFeatures).filter(UserFeatures.uuid == user_id).first()
     if result is None:
-        raise LookupError()
+        raise LookupError
     return result
 
 
@@ -29,7 +42,7 @@ def get(session, user_id):
 def get_user_by_agent_id(session, agent_id):
     result = session.query(UserFeatures).filter(UserFeatures.agent_id == agent_id).first()
     if not result:
-        raise LookupError()
+        raise LookupError
     return result
 
 
@@ -47,6 +60,6 @@ def get_user_by_number_context(session, exten, context):
             .first())
 
     if not user:
-        raise LookupError('No user with number %s in context %s', (exten, context))
+        raise LookupError("No user with number %s in context %s", (exten, context))
 
     return user

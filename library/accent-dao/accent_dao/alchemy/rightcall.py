@@ -1,4 +1,4 @@
-# file: accent_dao/models/rightcall.py
+# file: accent_dao/alchemy/rightcall.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
@@ -11,8 +11,11 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import case, func
+from sqlalchemy.sql.elements import ClauseElement
+from sqlalchemy.sql.expression import cast as sql_cast
 
 from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.exception import InputError
@@ -94,7 +97,14 @@ class RightCall(Base):
 
     @property
     def outcalls(self) -> list["RightCallMember"]:
-        return [rco.outcall for rco in self.rightcall_outcalls if rco.outcall]
+        """Retrieve a list of RightCallMember instances associated with this RightCall.
+
+        Returns:
+            list[RightCallMember]: A list of RightCallMember instances that are
+            associated with this RightCall.
+
+        """
+        return [rco for rco in self.rightcall_outcalls if rco.outcall]
 
     rightcall_groups: Mapped[list["RightCallMember"]] = relationship(
         "RightCallMember",
@@ -108,7 +118,13 @@ class RightCall(Base):
 
     @property
     def groups(self) -> list["RightCallMember"]:
-        return [rcg.group for rcg in self.rightcall_groups if rcg.group]
+        """Retrieve a list of RightCallMember groups associated with this instance.
+
+        Returns:
+            list[RightCallMember]: A list of RightCallMember groups.
+
+        """
+        return [rcg for rcg in self.rightcall_groups if rcg.group]
 
     rightcall_users: Mapped[list["RightCallMember"]] = relationship(
         "RightCallMember",
@@ -122,9 +138,15 @@ class RightCall(Base):
 
     @property
     def users(self) -> list["RightCallMember"]:
-        return [rcu.user for rcu in self.rightcall_users if rcu.user]
+        """Retrieve a list of RightCallMember users associated with this instance.
 
-    @property
+        Returns:
+            list[RightCallMember]: A list of RightCallMember users.
+
+        """
+        return [rcu for rcu in self.rightcall_users if rcu.user]
+
+    @hybrid_property
     def password(self) -> str | None:
         """The password (null if empty)."""
         if self.passwd == "":
@@ -140,10 +162,19 @@ class RightCall(Base):
             self.passwd = value
 
     @password.expression
-    def password(cls) -> Mapped[str | None]:
-        return func.nullif(cls.passwd, "")
+    def password(self) -> ClauseElement:
+        """Return the password if it is not an empty string, otherwise return None.
 
-    @property
+        Compare the password attribute of the class with an empty string. If they
+        are equal, it returns None; otherwise, it returns the password.
+
+        Returns:
+            ClauseElement: SQL expression representing the password logic
+
+        """
+        return func.nullif(self.passwd, "")
+
+    @hybrid_property
     def mode(self) -> RightCallMode:
         """The authorization mode ('allow' or 'deny')."""
         if self.authorization == 1:
@@ -158,18 +189,27 @@ class RightCall(Base):
         elif value == "deny":
             self.authorization = 0
         else:
-            raise InputError(
+            error_msg = (
                 f"cannot set mode to {value}. Only 'allow' or 'deny' are authorized"
-            )  # Use InputError
+            )
+            raise InputError(error_msg)
 
     @mode.expression
-    def mode(cls) -> Mapped[RightCallMode]:
+    def mode(self) -> ClauseElement:
+        """Determine the mode of the RightCall based on the authorization status.
+
+        Returns:
+            ClauseElement: SQL expression representing the mode logic
+
+        """
+        # Create a dictionary mapping for the case expression
+        case_dict = {self.authorization == 1: "allow"}
         return func.coalesce(
-            case((cls.authorization == 1, "allow"), else_="deny"),
+            case(case_dict, else_="deny"),
             "deny",
         )
 
-    @property
+    @hybrid_property
     def enabled(self) -> bool:
         """Indicates if the rule is enabled."""
         return self.commented == 0
@@ -180,8 +220,14 @@ class RightCall(Base):
         self.commented = int(not value)
 
     @enabled.expression
-    def enabled(cls) -> Mapped[bool]:
-        return func.not_(cast(cls.commented, Boolean))
+    def enabled(self) -> ClauseElement:
+        """Determine if the instance is enabled based on the 'commented' attribute.
+
+        Returns:
+            ClauseElement: SQL expression representing the enabled logic
+
+        """
+        return sql_cast(self.commented == 0, Boolean)
 
     @property
     def extensions(self) -> list[str]:
