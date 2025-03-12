@@ -7,13 +7,14 @@ import logging
 from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar
 
 import sqlalchemy as sa
-from sqlalchemy import func, text
+from sqlalchemy import func, sql, text
 from sqlalchemy.sql.functions import ReturnTypeFromArgs
 from sqlalchemy.types import Integer, String
 from unidecode import unidecode
 
-if TYPE_CHECKING:
+from accent_dao.helpers import errors  # Import errors
 
+if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
 
@@ -283,6 +284,7 @@ class SearchSystem:
         """Async Perform a search starting from an existing query.
 
         Args:
+            session: SQLAlchemy AsyncSession object.
             query: SQLAlchemy query object.
             parameters: Dictionary of search parameters.
 
@@ -331,7 +333,7 @@ class SearchSystem:
             InputError: If any parameter is invalid.
 
         """
-        if parameters["offset"] < 0:  # type: ignore
+        if parameters["offset"] < 0:  # type: ignore[operator]
             raise errors.wrong_type("offset", "positive number")
 
         if parameters["limit"] is not None and parameters["limit"] <= 0:
