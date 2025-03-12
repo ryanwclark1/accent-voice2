@@ -1,36 +1,61 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/func_key_dest_queue.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint
-from sqlalchemy.types import Integer
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Integer,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy.func_key import FuncKey
-from accent_dao.alchemy.queuefeatures import QueueFeatures
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .func_key import FuncKey
+    from .queuefeatures import QueueFeatures
 
 
 class FuncKeyDestQueue(Base):
-    DESTINATION_TYPE_ID = 3
+    """Represents a function key destination for a queue.
 
-    __tablename__ = 'func_key_dest_queue'
-    __table_args__ = (
+    Attributes:
+        func_key_id: The ID of the associated function key.
+        destination_type_id: The ID of the destination type (fixed to 3).
+        queue_id: The ID of the associated queue.
+        type: The type of destination ('queue').
+        func_key: Relationship to FuncKey.
+        queue: Relationship to QueueFeatures.
+
+    """
+
+    DESTINATION_TYPE_ID: int = 3
+
+    __tablename__: str = "func_key_dest_queue"
+    __table_args__: tuple = (
         ForeignKeyConstraint(
-            ('func_key_id', 'destination_type_id'),
-            ('func_key.id', 'func_key.destination_type_id'),
+            ("func_key_id", "destination_type_id"),
+            ("func_key.id", "func_key.destination_type_id"),
         ),
-        CheckConstraint(f'destination_type_id = {DESTINATION_TYPE_ID}'),
+        CheckConstraint(f"destination_type_id = {DESTINATION_TYPE_ID}"),
     )
 
-    func_key_id = Column(Integer, primary_key=True)
-    destination_type_id = Column(
-        Integer, primary_key=True, server_default=f"{DESTINATION_TYPE_ID}"
+    func_key_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    destination_type_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, server_default=str(DESTINATION_TYPE_ID)
     )
-    queue_id = Column(Integer, ForeignKey('queuefeatures.id'), primary_key=True)
+    queue_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("queuefeatures.id"), primary_key=True
+    )
 
-    type = 'queue'
+    type: str = "queue"
 
-    func_key = relationship(FuncKey, cascade='all,delete-orphan', single_parent=True)
-    queue = relationship(QueueFeatures)
+    func_key: Mapped["FuncKey"] = relationship(
+        "FuncKey", cascade="all,delete-orphan", single_parent=True
+    )
+    queue: Mapped["QueueFeatures"] = relationship("QueueFeatures")
 
-    def to_tuple(self):
-        return (('queue_id', self.queue_id),)
+    def to_tuple(self) -> tuple[tuple[str, int]]:
+        """Return a tuple representation of the destination."""
+        return (("queue_id", self.queue_id),)

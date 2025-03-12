@@ -1,74 +1,115 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/contextnumbers.py
+# Copyright 2025 Accent Communications
+from typing import Literal
 
-from sqlalchemy import ForeignKeyConstraint
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.schema import Column
-from sqlalchemy.sql import case
-from sqlalchemy.types import Enum, Integer, String
+from sqlalchemy import ForeignKeyConstraint, Integer, String, case
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+ContextnumbersType = Literal["user", "group", "queue", "meetme", "incall"]
 
 
 class ContextNumbers(Base):
+    """Represents number ranges within a context.
 
-    __tablename__ = 'contextnumbers'
-    __table_args__ = (
+    Attributes:
+        context: The name of the context.
+        type: The type of number range ('user', 'group', 'queue', 'meetme', 'incall').
+        numberbeg: The beginning of the number range.
+        numberend: The end of the number range.
+        didlength: The length of the DID (Direct Inward Dialing) number.
+        start: The starting number of the range.
+        end: The ending number of the range.
+        did_length: The length of the DID.
+
+    """
+
+    __tablename__: str = "contextnumbers"
+    __table_args__: tuple = (
         ForeignKeyConstraint(
-            ('context',),
-            ('context.name',),
-            ondelete='CASCADE',
+            ("context",),
+            ("context.name",),
+            ondelete="CASCADE",
         ),
     )
 
-    context = Column(String(79), primary_key=True)
-    type = Column(Enum('user', 'group', 'queue', 'meetme', 'incall',
-                       name='contextnumbers_type',
-                       metadata=Base.metadata),
-                  primary_key=True)
-    numberbeg = Column(String(16), server_default='', primary_key=True)
-    numberend = Column(String(16), server_default='', primary_key=True)
-    didlength = Column(Integer, nullable=False, server_default='0')
+    context: Mapped[str] = mapped_column(String(79), primary_key=True)
+    type: Mapped[ContextnumbersType] = mapped_column(
+        # Removed Enum and used string literals
+        String,
+        primary_key=True,
+    )
+    numberbeg: Mapped[str] = mapped_column(
+        String(16), server_default="", primary_key=True
+    )
+    numberend: Mapped[str] = mapped_column(
+        String(16), server_default="", primary_key=True
+    )
+    didlength: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
-    @hybrid_property
-    def start(self):
+    @property
+    def start(self) -> str:
+        """The starting number of the range."""
         return self.numberbeg
 
     @start.setter
-    def start(self, value):
+    def start(self, value: str) -> None:
+        """Set the starting number of the range."""
         self.numberbeg = value
 
-    @hybrid_property
-    def end(self):
-        if self.numberend == '':
+    @property
+    def end(self) -> str:
+        """The ending number of the range."""
+        if self.numberend == "":
             return self.numberbeg
         return self.numberend
 
-    @end.expression
-    def end(cls):
-        return case([(cls.numberend == '', cls.numberbeg)], else_=cls.numberend)
-
     @end.setter
-    def end(self, value):
+    def end(self, value: str) -> None:
+        """Set the ending number of the range."""
         self.numberend = value
 
-    @hybrid_property
-    def did_length(self):
+    @end.expression
+    def end(cls) -> Mapped[str]:
+        return case((cls.numberend == "", cls.numberbeg), else_=cls.numberend)
+
+    @property
+    def did_length(self) -> int:
+        """The length of the DID."""
         return self.didlength
 
     @did_length.setter
-    def did_length(self, value):
+    def did_length(self, value: int) -> None:
+        """Set the length of the DID."""
         self.didlength = value
 
-    def in_range(self, exten):
+    def in_range(self, exten: str | int) -> bool:
+        """Check if an extension is within the number range.
+
+        Args:
+            exten: The extension to check.
+
+        Returns:
+            True if the extension is in range, False otherwise.
+
+        """
         exten = int(exten)
         start = self._convert_limit(self.start)
         end = self._convert_limit(self.end)
 
-        if start == end and exten == start:
-            return True
-        elif start <= exten <= end:
+        if (start == end and exten == start) or start <= exten <= end:
             return True
         return False
 
-    def _convert_limit(self, limit):
-        return int(limit[-self.did_length:])
+    def _convert_limit(self, limit: str) -> int:
+        """Convert a number limit to an integer, considering the DID length.
+
+        Args:
+            limit: The number limit as a string.
+
+        Returns:
+            The converted integer.
+
+        """
+        return int(limit[-self.did_length :])

@@ -1,16 +1,26 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/agentglobalparams.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import Column
-from sqlalchemy.types import Integer, String
+from sqlalchemy import Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class AgentGlobalParams(Base):
+    """Represents global parameters for agents.
 
-    __tablename__ = 'agentglobalparams'
+    Attributes:
+        id: The unique identifier for the parameter.
+        category: The category of the parameter.
+        option_name: The name of the option.
+        option_value: The value of the option.
 
-    id = Column(Integer, primary_key=True)
-    category = Column(String(128), nullable=False)
-    option_name = Column(String(255), nullable=False)
-    option_value = Column(String(255))
+    """
+
+    __tablename__: str = "agentglobalparams"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category: Mapped[str] = mapped_column(String(128), nullable=False)
+    option_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    option_value: Mapped[str | None] = mapped_column(String(255), nullable=True)

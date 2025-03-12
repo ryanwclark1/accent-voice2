@@ -1,77 +1,115 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/func_key_dest_features.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import (
+from sqlalchemy import (
     CheckConstraint,
-    Column,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     PrimaryKeyConstraint,
 )
-from sqlalchemy.types import Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy.features import Features
-from accent_dao.alchemy.func_key import FuncKey
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .features import Features
+    from .func_key import FuncKey
 
 
 class FuncKeyDestFeatures(Base):
-    DESTINATION_TYPE_ID = 8
+    """Represents a function key destination for a feature.
 
-    __tablename__ = 'func_key_dest_features'
-    __table_args__ = (
-        PrimaryKeyConstraint('func_key_id', 'destination_type_id', 'features_id'),
+    Attributes:
+        func_key_id: The ID of the associated function key.
+        destination_type_id: The ID of the destination type (fixed to 8).
+        features_id: The ID of the associated feature.
+        func_key: Relationship to FuncKey.
+        features: Relationship to Features.
+        feature_id: The ID of the feature (same as features_id).
+
+    """
+
+    DESTINATION_TYPE_ID: int = 8
+
+    __tablename__: str = "func_key_dest_features"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("func_key_id", "destination_type_id", "features_id"),
         ForeignKeyConstraint(
-            ('func_key_id', 'destination_type_id'),
-            ('func_key.id', 'func_key.destination_type_id'),
+            ("func_key_id", "destination_type_id"),
+            ("func_key.id", "func_key.destination_type_id"),
         ),
-        CheckConstraint(f'destination_type_id = {DESTINATION_TYPE_ID}'),
-        Index('func_key_dest_features__idx__features_id', 'features_id'),
+        CheckConstraint(f"destination_type_id = {DESTINATION_TYPE_ID}"),
+        Index("func_key_dest_features__idx__features_id", "features_id"),
     )
 
-    func_key_id = Column(Integer)
-    destination_type_id = Column(Integer, server_default=f"{DESTINATION_TYPE_ID}")
-    features_id = Column(Integer, ForeignKey('features.id'))
+    func_key_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    destination_type_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, server_default=str(DESTINATION_TYPE_ID)
+    )
+    features_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("features.id"), primary_key=True
+    )
 
-    func_key = relationship(FuncKey, cascade='all,delete-orphan', single_parent=True)
-    features = relationship(Features)
+    func_key: Mapped["FuncKey"] = relationship(
+        "FuncKey", cascade="all,delete-orphan", single_parent=True
+    )
+    features: Mapped["Features"] = relationship("Features")
 
-    @hybrid_property
-    def feature_id(self):
+    @property
+    def feature_id(self) -> int:
+        """The ID of the feature."""
         return self.features_id
 
     @feature_id.setter
-    def feature_id(self, value):
+    def feature_id(self, value: int) -> None:
+        """Set the ID of the feature."""
         self.features_id = value
 
 
 # These tables don't exist in database
 class _FuncKeyDestFeaturesWithoutBaseDeclarative:
-    def __init__(self, **kwargs):
-        self._func_key_dest_features = FuncKeyDestFeatures(**kwargs)
-        self._func_key_dest_features.type = self.type
+    """Helper base class for function key destinations without base declarative mapping."""
 
-    def __getattr__(self, attr):
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize a new instance."""
+        self._func_key_dest_features = FuncKeyDestFeatures(**kwargs)
+        self._func_key_dest_features.type = self.type  # type: ignore
+
+    def __getattr__(self, attr: str) -> any:  # type: ignore
+        """Delegate attribute access to the underlying FuncKeyDestFeatures object."""
         return getattr(self._func_key_dest_features, attr)
 
 
 class FuncKeyDestOnlineRecording(_FuncKeyDestFeaturesWithoutBaseDeclarative):
-    type = 'onlinerec'
+    """Represents a function key destination for online recording."""
 
-    def to_tuple(self):
-        return (('feature', 'onlinerec'),)
+    type: str = "onlinerec"
+
+    def to_tuple(self) -> tuple[tuple[str, str]]:
+        """Return a tuple representation of the destination."""
+        return (("feature", "onlinerec"),)
 
 
 class FuncKeyDestTransfer(_FuncKeyDestFeaturesWithoutBaseDeclarative):
-    type = 'transfer'
+    """Represents a function key destination for call transfer.
 
-    def __init__(self, **kwargs):
-        transfer = kwargs.pop('transfer', None)
+    Attributes:
+        transfer: The transfer setting.
+
+    """
+
+    type: str = "transfer"
+
+    def __init__(self, **kwargs: dict) -> None:
+        """Initialize with an optional transfer setting."""
+        transfer = kwargs.pop("transfer", None)
         super().__init__(**kwargs)
         if transfer:
             self._func_key_dest_features.transfer = transfer
 
-    def to_tuple(self):
-        return (('transfer', self.transfer),)
+    def to_tuple(self) -> tuple[tuple[str, str | None]]:
+        """Return a tuple representation of the destination."""
+        return (("transfer", self.transfer),)  # type: ignore

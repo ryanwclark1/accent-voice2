@@ -1,44 +1,74 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/user_line.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, ForeignKey, Index, PrimaryKeyConstraint
-from sqlalchemy.types import Boolean, Integer
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, PrimaryKeyConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .linefeatures import LineFeatures
+    from .userfeatures import UserFeatures
 
 
 class UserLine(Base):
-    __tablename__ = 'user_line'
-    __table_args__ = (
-        PrimaryKeyConstraint('user_id', 'line_id'),
-        Index('user_line__idx__user_id', 'user_id'),
-        Index('user_line__idx__line_id', 'line_id'),
+    """Represents a relationship between a user and a line.
+
+    Attributes:
+        user_id: The ID of the associated user.
+        line_id: The ID of the associated line.
+        main_user: Indicates if this is the main user for the line.
+        main_line: Indicates if this is the main line for the user.
+        line: Relationship to LineFeatures.
+        user: Relationship to UserFeatures.
+        main_user_rel: Relationship to UserFeatures (main user only).
+        main_line_rel: Relationship to LineFeatures (main line only).
+
+    """
+
+    __tablename__: str = "user_line"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("user_id", "line_id"),
+        Index("user_line__idx__user_id", "user_id"),
+        Index("user_line__idx__line_id", "line_id"),
     )
 
-    user_id = Column(
-        Integer, ForeignKey('userfeatures.id', ondelete='CASCADE'), nullable=False
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("userfeatures.id", ondelete="CASCADE"), primary_key=True
     )
-    line_id = Column(
-        Integer, ForeignKey('linefeatures.id', ondelete='CASCADE'), nullable=False
+    line_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("linefeatures.id", ondelete="CASCADE"), primary_key=True
     )
-    main_user = Column(Boolean, nullable=False)
-    main_line = Column(Boolean, nullable=False)
+    main_user: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    main_line: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    linefeatures = relationship("LineFeatures")
-    userfeatures = relationship("UserFeatures")
+    # These are redundant, and can cause issues. Replaced by back_populates.
+    # linefeatures = relationship("LineFeatures")
+    # userfeatures = relationship("UserFeatures")
 
-    main_user_rel = relationship(
+    main_user_rel: Mapped["UserFeatures"] = relationship(
         "UserFeatures",
-        primaryjoin="""and_(UserLine.user_id == UserFeatures.id,
-                            UserLine.main_user == True)""",
+        primaryjoin="""and_(
+            UserLine.user_id == UserFeatures.id,
+            UserLine.main_user == True
+        )""",  # Keep join condition as a string.
+        viewonly=True,
     )
 
-    main_line_rel = relationship(
+    main_line_rel: Mapped["LineFeatures"] = relationship(
         "LineFeatures",
-        primaryjoin="""and_(UserLine.line_id == LineFeatures.id,
-                            UserLine.main_line == True)""",
+        primaryjoin="""and_(
+            UserLine.line_id == LineFeatures.id,
+            UserLine.main_line == True
+        )""",  # Keep join condition as a string.
+        viewonly=True,
     )
 
-    user = relationship('UserFeatures', back_populates='user_lines')
+    line: Mapped["LineFeatures"] = relationship(
+        "LineFeatures", back_populates="user_lines"
+    )
 
-    line = relationship('LineFeatures', back_populates='user_lines')
+    user: Mapped["UserFeatures"] = relationship(
+        "UserFeatures", back_populates="user_lines"
+    )

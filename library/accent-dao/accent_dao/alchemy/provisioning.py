@@ -1,17 +1,30 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/provisioning.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import Column, PrimaryKeyConstraint
-from sqlalchemy.types import Integer, String
+from sqlalchemy import Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class Provisioning(Base):
-    __tablename__ = 'provisioning'
-    __table_args__ = (PrimaryKeyConstraint('id'),)
+    """Represents provisioning settings.
 
-    id = Column(Integer, nullable=False)
-    net4_ip = Column(String(39))
-    http_base_url = Column(String(255))
-    dhcp_integration = Column(Integer, nullable=False, server_default='0')
-    http_port = Column(Integer, nullable=False)
+    Attributes:
+        id: The unique identifier for the provisioning settings.
+        net4_ip: The IPv4 network address.
+        http_base_url: The base URL for HTTP provisioning.
+        dhcp_integration: Indicates if DHCP integration is enabled.
+        http_port: The HTTP port for provisioning.
+
+    """
+
+    __tablename__: str = "provisioning"
+
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    net4_ip: Mapped[str | None] = mapped_column(String(39), nullable=True)
+    http_base_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    dhcp_integration: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )  # Integer representation
+    http_port: Mapped[int] = mapped_column(Integer, nullable=False)

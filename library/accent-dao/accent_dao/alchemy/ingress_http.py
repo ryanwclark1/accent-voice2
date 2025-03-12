@@ -1,26 +1,35 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/ingress_http.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy import Column, text
+from sqlalchemy import ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.schema import ForeignKey, Index
-from sqlalchemy.types import String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class IngressHTTP(Base):
-    __tablename__ = 'ingress_http'
-    __table_args__ = (Index('ingress_http__idx__tenant_uuid', 'tenant_uuid'),)
+    """Represents an HTTP ingress configuration.
 
-    uuid = Column(
+    Attributes:
+        uuid: The unique identifier for the HTTP ingress.
+        uri: The URI for the ingress.
+        tenant_uuid: The UUID of the tenant the ingress belongs to.
+
+    """
+
+    __tablename__: str = "ingress_http"
+    __table_args__: tuple = (Index("ingress_http__idx__tenant_uuid", "tenant_uuid"),)
+
+    uuid: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-        server_default=text('uuid_generate_v4()'),
+        server_default=func.uuid_generate_v4(),
         primary_key=True,
     )
-    uri = Column(Text, nullable=False)
-    tenant_uuid = Column(
+    uri: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_uuid: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey('tenant.uuid', ondelete='CASCADE'),
+        ForeignKey("tenant.uuid", ondelete="CASCADE"),
         unique=True,
         nullable=False,
     )

@@ -1,42 +1,63 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/outcalltrunk.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, ForeignKey, Index, PrimaryKeyConstraint
-from sqlalchemy.types import Integer
+from sqlalchemy import ForeignKey, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class OutcallTrunk(Base):
-    __tablename__ = 'outcalltrunk'
-    __table_args__ = (
-        PrimaryKeyConstraint('outcallid', 'trunkfeaturesid'),
-        Index('outcalltrunk__idx__priority', 'priority'),
+    """Represents a trunk associated with an outcall route.
+
+    Attributes:
+        outcallid: The ID of the associated outcall route.
+        trunkfeaturesid: The ID of the associated trunk features.
+        priority: The priority of the trunk.
+        trunk: Relationship to TrunkFeatures.
+        outcall: Relationship to Outcall.
+        outcall_id: The ID of the outcall route (same as outcallid).
+        trunk_id: The ID of the trunk (same as trunkfeaturesid).
+
+    """
+
+    __tablename__: str = "outcalltrunk"
+
+    outcallid: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("outcall.id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    trunkfeaturesid: Mapped[int] = mapped_column(
+        Integer, ForeignKey("trunkfeatures.id"), nullable=False, primary_key=True
+    )
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+
+    trunk: Mapped["TrunkFeatures"] = relationship(
+        "TrunkFeatures", back_populates="outcall_trunks"
     )
 
-    outcallid = Column(
-        Integer, ForeignKey('outcall.id', ondelete='CASCADE'), nullable=False
+    outcall: Mapped["Outcall"] = relationship(
+        "Outcall", back_populates="outcall_trunks"
     )
-    trunkfeaturesid = Column(Integer, ForeignKey('trunkfeatures.id'), nullable=False)
-    priority = Column(Integer, nullable=False, server_default='0')
 
-    trunk = relationship('TrunkFeatures', back_populates='outcall_trunks')
-
-    outcall = relationship('Outcall', back_populates='outcall_trunks')
-
-    @hybrid_property
-    def outcall_id(self):
+    @property
+    def outcall_id(self) -> int:
+        """The ID of the outcall route."""
         return self.outcallid
 
     @outcall_id.setter
-    def outcall_id(self, value):
+    def outcall_id(self, value: int) -> None:
+        """Set the ID of the outcall route."""
         self.outcallid = value
 
-    @hybrid_property
-    def trunk_id(self):
+    @property
+    def trunk_id(self) -> int:
+        """The ID of the trunk."""
         return self.trunkfeaturesid
 
     @trunk_id.setter
-    def trunk_id(self, value):
+    def trunk_id(self, value: int) -> None:
+        """Set the ID of the trunk."""
         self.trunkfeaturesid = value

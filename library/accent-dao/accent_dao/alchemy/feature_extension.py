@@ -1,28 +1,43 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/feature_extension.py
+# Copyright 2025 Accent Communications
 
-from accent.accent_helpers import clean_extension
-from sqlalchemy import text
+from sqlalchemy import Boolean, String, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.schema import Column, PrimaryKeyConstraint, UniqueConstraint
-from sqlalchemy.types import Boolean, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+from accent_dao.helpers.functions import clean_extension
 
 
 class FeatureExtension(Base):
-    __tablename__ = 'feature_extension'
-    __table_args__ = (
-        PrimaryKeyConstraint('uuid'),
-        UniqueConstraint('exten'),
+    """Represents a feature extension.
+
+    Attributes:
+        uuid: The unique identifier for the feature extension.
+        enabled: Indicates if the feature extension is enabled.
+        exten: The extension number.
+        feature: The feature associated with the extension.
+
+    """
+
+    __tablename__: str = "feature_extension"
+
+    uuid: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True),
+        server_default=func.uuid_generate_v4(),
+        primary_key=True,
+        unique=True,
     )
+    enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=func.true()
+    )
+    exten: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    feature: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    uuid = Column(UUID(as_uuid=True), server_default=text('uuid_generate_v4()'))
-    enabled = Column(Boolean, nullable=False, server_default='true')
-    exten = Column(String(40), nullable=False)
-    feature = Column(String(255), nullable=False)
+    def is_pattern(self) -> bool:
+        """Check if extension pattern starts underscore."""
+        return self.exten.startswith("_")
 
-    def is_pattern(self):
-        return self.exten.startswith('_')
-
-    def clean_exten(self):
+    def clean_exten(self) -> str:
+        """Clean the extension number."""
         return clean_extension(self.exten)

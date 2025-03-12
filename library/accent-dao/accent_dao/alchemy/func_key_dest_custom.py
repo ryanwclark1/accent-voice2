@@ -1,33 +1,58 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/func_key_dest_custom.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import CheckConstraint, Column, ForeignKeyConstraint, PrimaryKeyConstraint
-from sqlalchemy.types import Integer, String
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKeyConstraint,
+    Integer,
+    PrimaryKeyConstraint,
+    String,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy.func_key import FuncKey
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .func_key import FuncKey
 
 
 class FuncKeyDestCustom(Base):
-    DESTINATION_TYPE_ID = 10
+    """Represents a function key destination for a custom extension.
 
-    __tablename__ = 'func_key_dest_custom'
-    __table_args__ = (
-        PrimaryKeyConstraint('func_key_id', 'destination_type_id'),
+    Attributes:
+        func_key_id: The ID of the associated function key.
+        destination_type_id: The ID of the destination type (fixed to 10).
+        exten: The custom extension.
+        type: The type of destination ('custom').
+        func_key: Relationship to FuncKey.
+
+    """
+
+    DESTINATION_TYPE_ID: int = 10
+
+    __tablename__: str = "func_key_dest_custom"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("func_key_id", "destination_type_id"),
         ForeignKeyConstraint(
-            ('func_key_id', 'destination_type_id'),
-            ('func_key.id', 'func_key.destination_type_id'),
+            ("func_key_id", "destination_type_id"),
+            ("func_key.id", "func_key.destination_type_id"),
         ),
-        CheckConstraint(f'destination_type_id = {DESTINATION_TYPE_ID}'),
+        CheckConstraint(f"destination_type_id = {DESTINATION_TYPE_ID}"),
     )
 
-    func_key_id = Column(Integer)
-    destination_type_id = Column(Integer, server_default=f"{DESTINATION_TYPE_ID}")
-    exten = Column(String(40), nullable=False)
+    func_key_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    destination_type_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, server_default=str(DESTINATION_TYPE_ID)
+    )  # Kept server default
+    exten: Mapped[str] = mapped_column(String(40), nullable=False)
 
-    type = 'custom'
+    type: str = "custom"
 
-    func_key = relationship(FuncKey, cascade='all,delete-orphan', single_parent=True)
+    func_key: Mapped["FuncKey"] = relationship(
+        "FuncKey", cascade="all,delete-orphan", single_parent=True
+    )
 
-    def to_tuple(self):
-        return (('exten', self.exten),)
+    def to_tuple(self) -> tuple[tuple[str, str]]:
+        """Return a tuple representation of the destination."""
+        return (("exten", self.exten),)

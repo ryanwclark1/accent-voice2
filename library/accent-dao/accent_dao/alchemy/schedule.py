@@ -1,256 +1,374 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/schedule.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING, Literal
 
-from accent import dialaction
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, Index, PrimaryKeyConstraint
-from sqlalchemy.sql import cast, not_
-from sqlalchemy.sql.schema import ForeignKey
-from sqlalchemy.types import Boolean, Integer, String, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import cast, func, not_
 
-from accent_dao.helpers.db_manager import Base, IntAsString
+from accent_dao.db_manager import Base
+from . import enum  # Import the local enum
 
-from . import enum
+if TYPE_CHECKING:
+    from .application import Application
+    from .conference import Conference
+    from .dialaction import Dialaction
+    from .groupfeatures import GroupFeatures
+    from .incall import Incall
+    from .ivr import IVR
+    from .queuefeatures import QueueFeatures
+    from .schedule_time import ScheduleTime
+    from .schedulepath import SchedulePath
+    from .switchboard import Switchboard
+    from .userfeatures import UserFeatures
+    from .voicemail import Voicemail
+    from .tenant import Tenant
+
+DialactionAction = Literal[
+    "none",
+    "endcall:busy",
+    "endcall:congestion",
+    "endcall:hangup",
+    "user",
+    "group",
+    "queue",
+    "voicemail",
+    "extension",
+    "outcall",
+    "application:callbackdisa",
+    "application:disa",
+    "application:directory",
+    "application:faxtomail",
+    "application:voicemailmain",
+    "application:password",
+    "sound",
+    "custom",
+    "ivr",
+    "conference",
+    "switchboard",
+    "application:custom",
+]
 
 
 class Schedule(Base):
-    __tablename__ = 'schedule'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        Index('schedule__idx__tenant_uuid', 'tenant_uuid'),
-    )
+    """Represents a schedule.
 
-    id = Column(Integer, nullable=False)
-    tenant_uuid = Column(
+    Attributes:
+        id: The unique identifier for the schedule.
+        tenant_uuid: The UUID of the tenant the schedule belongs to.
+        name: The name of the schedule.
+        timezone: The timezone for the schedule.
+        fallback_action: The fallback action to take if no time periods match.
+        fallback_actionid: The ID of the entity for the fallback action.
+        fallback_actionargs: Additional arguments for the fallback action.
+        description: A description of the schedule.
+        commented: Indicates if the schedule is commented out.
+        periods: Relationship to ScheduleTime.
+        schedule_paths: Relationship to SchedulePath.
+        schedule_incalls: Relationship to SchedulePath for incall paths.
+        incalls: Inbound call routes associated with the schedule.
+        schedule_users: Relationship to SchedulePath for user paths.
+        users: Users associated with the schedule.
+        schedule_groups: Relationship to SchedulePath for group paths.
+        groups: Groups associated with the schedule.
+        schedule_outcalls: Relationship to SchedulePath for outcall paths.
+        outcalls: Outbound call routes associated with the schedule.
+        schedule_queues: Relationship to SchedulePath for queue paths.
+        queues: Queues associated with the schedule.
+        conference: Relationship to Conference (for fallback action).
+        group: Relationship to GroupFeatures (for fallback action).
+        user: Relationship to UserFeatures (for fallback action).
+        ivr: Relationship to IVR (for fallback action).
+        switchboard: Relationship to Switchboard (for fallback action).
+        voicemail: Relationship to Voicemail (for fallback action).
+        application: Relationship to Application (for fallback action).
+        queue: Relationship to QueueFeatures (for fallback action).
+        open_periods: Time periods when the schedule is open.
+        exceptional_periods: Time periods when the schedule is closed (exceptions).
+        closed_destination: The destination for calls when the schedule is closed.
+        type: The type of the fallback action.
+        subtype: The subtype of the fallback action.
+        actionarg1: The first argument for the fallback action.
+        actionarg2: The second argument for the fallback action.
+        enabled: Indicates if the schedule is enabled.
+    """
+
+    __tablename__: str = "schedule"
+    __table_args__: tuple = (Index("schedule__idx__tenant_uuid", "tenant_uuid"),)
+
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    tenant_uuid: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey('tenant.uuid', ondelete='CASCADE'),
+        ForeignKey("tenant.uuid", ondelete="CASCADE"),
         nullable=False,
     )
-    name = Column(String(255))
-    timezone = Column(String(128))
-    fallback_action = Column(
-        enum.dialaction_action, nullable=False, server_default='none'
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    fallback_action: Mapped[DialactionAction] = mapped_column(
+        String,
+        nullable=False,
+        server_default="none",
     )
-    fallback_actionid = Column(IntAsString(255))
-    fallback_actionargs = Column(String(255))
-    description = Column(Text)
-    commented = Column(Integer, nullable=False, server_default='0')
+    fallback_actionid: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    fallback_actionargs: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    commented: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
-    periods = relationship(
-        'ScheduleTime',
-        primaryjoin='ScheduleTime.schedule_id == Schedule.id',
-        foreign_keys='ScheduleTime.schedule_id',
-        cascade='all, delete-orphan',
+    periods: Mapped[list["ScheduleTime"]] = relationship(
+        "ScheduleTime",
+        primaryjoin="ScheduleTime.schedule_id == Schedule.id",
+        foreign_keys="ScheduleTime.schedule_id",
+        cascade="all, delete-orphan",
     )
 
-    schedule_paths = relationship('SchedulePath', cascade='all, delete-orphan')
+    schedule_paths: Mapped[list["SchedulePath"]] = relationship(
+        "SchedulePath", cascade="all, delete-orphan"
+    )
 
-    schedule_incalls = relationship(
-        'SchedulePath',
+    schedule_incalls: Mapped[list["SchedulePath"]] = relationship(
+        "SchedulePath",
         primaryjoin="""and_(
             SchedulePath.schedule_id == Schedule.id,
             SchedulePath.path == 'incall'
         )""",
         viewonly=True,
     )
-    incalls = association_proxy('schedule_incalls', 'incall')
 
-    schedule_users = relationship(
-        'SchedulePath',
+    @property
+    def incalls(self) -> list["SchedulePath"]:
+        return [si.incall for si in self.schedule_incalls if si.incall]
+
+    schedule_users: Mapped[list["SchedulePath"]] = relationship(
+        "SchedulePath",
         primaryjoin="""and_(
             SchedulePath.schedule_id == Schedule.id,
             SchedulePath.path == 'user'
         )""",
         viewonly=True,
     )
-    users = association_proxy('schedule_users', 'user')
 
-    schedule_groups = relationship(
-        'SchedulePath',
+    @property
+    def users(self) -> list["SchedulePath"]:
+        return [su.user for su in self.schedule_users if su.user]
+
+    schedule_groups: Mapped[list["SchedulePath"]] = relationship(
+        "SchedulePath",
         primaryjoin="""and_(
             SchedulePath.schedule_id == Schedule.id,
             SchedulePath.path == 'group'
         )""",
         viewonly=True,
     )
-    groups = association_proxy('schedule_groups', 'group')
 
-    schedule_outcalls = relationship(
-        'SchedulePath',
+    @property
+    def groups(self) -> list["SchedulePath"]:
+        return [sg.group for sg in self.schedule_groups if sg.group]
+
+    schedule_outcalls: Mapped[list["SchedulePath"]] = relationship(
+        "SchedulePath",
         primaryjoin="""and_(
             SchedulePath.schedule_id == Schedule.id,
             SchedulePath.path == 'outcall'
         )""",
         viewonly=True,
     )
-    outcalls = association_proxy('schedule_outcalls', 'outcall')
 
-    schedule_queues = relationship(
-        'SchedulePath',
+    @property
+    def outcalls(self) -> list["SchedulePath"]:
+        return [so.outcall for so in self.schedule_outcalls if so.outcall]
+
+    schedule_queues: Mapped[list["SchedulePath"]] = relationship(
+        "SchedulePath",
         primaryjoin="""and_(
             SchedulePath.schedule_id == Schedule.id,
             SchedulePath.path == 'queue'
         )""",
         viewonly=True,
     )
-    queues = association_proxy('schedule_queues', 'queue')
+
+    @property
+    def queues(self) -> list["SchedulePath"]:
+        return [sq.queue for sq in self.schedule_queues if sq.queue]
 
     # Begin definitions for fallback destination
-    conference = relationship(
-        'Conference',
+    conference: Mapped["Conference"] = relationship(
+        "Conference",
         primaryjoin="""and_(
             Schedule.fallback_action == 'conference',
             Schedule.fallback_actionid == cast(Conference.id, String)
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    group = relationship(
-        'GroupFeatures',
+    group: Mapped["GroupFeatures"] = relationship(
+        "GroupFeatures",
         primaryjoin="""and_(
             Schedule.fallback_action == 'group',
             Schedule.fallback_actionid == cast(GroupFeatures.id, String)
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    user = relationship(
-        'UserFeatures',
+    user: Mapped["UserFeatures"] = relationship(
+        "UserFeatures",
         primaryjoin="""and_(
             Schedule.fallback_action == 'user',
             Schedule.fallback_actionid == cast(UserFeatures.id, String)
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    ivr = relationship(
-        'IVR',
+    ivr: Mapped["IVR"] = relationship(
+        "IVR",
         primaryjoin="""and_(
             Schedule.fallback_action == 'ivr',
             Schedule.fallback_actionid == cast(IVR.id, String)
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    switchboard = relationship(
-        'Switchboard',
+    switchboard: Mapped["Switchboard"] = relationship(
+        "Switchboard",
         primaryjoin="""and_(
             Schedule.fallback_action == 'switchboard',
             Schedule.fallback_actionid == Switchboard.uuid
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    voicemail = relationship(
-        'Voicemail',
+    voicemail: Mapped["Voicemail"] = relationship(
+        "Voicemail",
         primaryjoin="""and_(
             Schedule.fallback_action == 'voicemail',
             Schedule.fallback_actionid == cast(Voicemail.id, String)
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    application = relationship(
-        'Application',
+    application: Mapped["Application"] = relationship(
+        "Application",
         primaryjoin="""and_(
             Schedule.fallback_action == 'application:custom',
             Schedule.fallback_actionid == Application.uuid
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
 
-    queue = relationship(
-        'QueueFeatures',
+    queue: Mapped["QueueFeatures"] = relationship(
+        "QueueFeatures",
         primaryjoin="""and_(
             Schedule.fallback_action == 'queue',
             Schedule.fallback_actionid == cast(QueueFeatures.id, String)
         )""",
-        foreign_keys='Schedule.fallback_actionid',
+        foreign_keys="Schedule.fallback_actionid",
         viewonly=True,
     )
     # End definitions for fallback destination
 
     @property
-    def open_periods(self):
-        return self._get_periods('opened')
+    def open_periods(self) -> list["ScheduleTime"]:
+        """Time periods when the schedule is open."""
+        return self._get_periods("opened")
 
     @open_periods.setter
-    def open_periods(self, value):
-        self._set_periods('opened', value)
+    def open_periods(self, value: list["ScheduleTime"]) -> None:
+        """Set the open time periods."""
+        self._set_periods("opened", value)
 
     @property
-    def exceptional_periods(self):
-        return self._get_periods('closed')
+    def exceptional_periods(self) -> list["ScheduleTime"]:
+        """Time periods when the schedule is closed (exceptions)."""
+        return self._get_periods("closed")
 
     @exceptional_periods.setter
-    def exceptional_periods(self, value):
-        self._set_periods('closed', value)
+    def exceptional_periods(self, value: list["ScheduleTime"]) -> None:
+        """Set the exceptional (closed) time periods."""
+        self._set_periods("closed", value)
 
-    def _get_periods(self, mode):
+    def _get_periods(self, mode: str) -> list["ScheduleTime"]:
+        """Helper method to get periods by mode."""
         return [period for period in self.periods if period.mode == mode]
 
-    def _set_periods(self, mode, periods):
+    def _set_periods(self, mode: str, periods: list["ScheduleTime"]) -> None:
+        """Helper method to set periods by mode."""
         self.periods = [period for period in self.periods if period.mode != mode]
         for period in periods:
             period.mode = mode
             self.periods.append(period)
 
     @property
-    def closed_destination(self):
+    def closed_destination(self) -> "Schedule":
+        """The destination for calls when the schedule is closed."""
         return self
 
     @property
-    def type(self):
-        return dialaction.action_type(self.fallback_action)
+    def type(self) -> str:
+        """The type of the fallback action."""
+        return self.fallback_action.split(":")[0]
 
     @type.setter
-    def type(self, value):
-        self.fallback_action = dialaction.action(type_=value, subtype=self.subtype)
+    def type(self, value: str) -> None:
+        """Set the type of the fallback action."""
+        self.fallback_action = (
+            f"{value}:{self.subtype}" if self.subtype else value  # type: ignore
+        )
 
     @property
-    def subtype(self):
-        return dialaction.action_subtype(self.fallback_action)
+    def subtype(self) -> str | None:
+        """The subtype of the fallback action."""
+        if ":" not in self.fallback_action:
+            return None
+        return self.fallback_action.split(":")[1]
 
     @subtype.setter
-    def subtype(self, value):
-        self.fallback_action = dialaction.action(type_=self.type, subtype=value)
+    def subtype(self, value: str | None) -> None:
+        """Set the subtype of the fallback action."""
+        if value is None:
+            self.fallback_action = self.type  # type: ignore
+        else:
+            self.fallback_action = f"{self.type}:{value}"  # type: ignore
 
-    @hybrid_property
-    def actionarg1(self):
-        if self.fallback_actionid == '':
+    @property
+    def actionarg1(self) -> str | None:
+        """The first argument for the fallback action."""
+        if self.fallback_actionid == "":
             return None
         return self.fallback_actionid
 
     @actionarg1.setter
-    def actionarg1(self, value):
+    def actionarg1(self, value: str | None) -> None:
+        """Set the first argument for the fallback action."""
         self.fallback_actionid = value
 
-    @hybrid_property
-    def actionarg2(self):
-        if self.fallback_actionargs == '':
+    @property
+    def actionarg2(self) -> str | None:
+        """The second argument for the fallback action."""
+        if self.fallback_actionargs == "":
             return None
         return self.fallback_actionargs
 
     @actionarg2.setter
-    def actionarg2(self, value):
+    def actionarg2(self, value: str | None) -> None:
+        """Set the second argument for the fallback action."""
         self.fallback_actionargs = value
 
-    @hybrid_property
-    def enabled(self):
+    @property
+    def enabled(self) -> bool:
+        """Indicates if the schedule is enabled."""
         return self.commented == 0
 
-    @enabled.expression
-    def enabled(cls):
-        return not_(cast(cls.commented, Boolean))
-
     @enabled.setter
-    def enabled(self, value):
-        self.commented = int(value is False)
+    def enabled(self, value: bool) -> None:
+        """Enable or disables the schedule."""
+        self.commented = int(not value)
+
+    @enabled.expression
+    def enabled(cls) -> Mapped[bool]:
+        return func.not_(cast(cls.commented, Boolean))

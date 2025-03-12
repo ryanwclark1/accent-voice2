@@ -1,37 +1,55 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/endpoint_sip_section_option.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy import text
+from sqlalchemy import ForeignKey, Index, Text, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.schema import Column, ForeignKey, Index
-from sqlalchemy.types import Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class EndpointSIPSectionOption(Base):
-    __tablename__ = 'endpoint_sip_section_option'
-    __table_args__ = (
+    """Represents an option within a SIP endpoint section.
+
+    Attributes:
+        uuid: The unique identifier for the option.
+        key: The name of the option.
+        value: The value of the option.
+        endpoint_sip_section_uuid: The UUID of the associated SIP endpoint section.
+        option: A computed property representing the key-value pair.
+
+    """
+
+    __tablename__: str = "endpoint_sip_section_option"
+    __table_args__: tuple = (
         Index(
-            'endpoint_sip_section_option__idx__endpoint_sip_section_uuid',
-            'endpoint_sip_section_uuid',
+            "endpoint_sip_section_option__idx__endpoint_sip_section_uuid",
+            "endpoint_sip_section_uuid",
         ),
     )
 
-    uuid = Column(
-        UUID(as_uuid=True), server_default=text('uuid_generate_v4()'), primary_key=True
+    uuid: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), server_default=func.uuid_generate_v4(), primary_key=True
     )
-    key = Column(Text, nullable=False)
-    value = Column(Text, nullable=False)
-    endpoint_sip_section_uuid = Column(
+    key: Mapped[str] = mapped_column(Text, nullable=False)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    endpoint_sip_section_uuid: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey('endpoint_sip_section.uuid', ondelete='CASCADE'),
+        ForeignKey("endpoint_sip_section.uuid", ondelete="CASCADE"),
         nullable=False,
     )
 
     @property
-    def option(self):
+    def option(self) -> list[str]:
+        """A list containing the key and value of the option."""
         return [self.key, self.value]
 
     @option.setter
-    def option(self, option):
+    def option(self, option: list[str]) -> None:
+        """Set the key and value of the option.
+
+        Args:
+            option: A list containing the key and value.
+
+        """
         self.key, self.value = option

@@ -1,41 +1,63 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/line_extension.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import (
-    Column,
-    ForeignKey,
-    Index,
-    PrimaryKeyConstraint,
-)
-from sqlalchemy.types import Boolean, Integer
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, PrimaryKeyConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .extension import Extension
+    from .linefeatures import LineFeatures
 
 
 class LineExtension(Base):
-    __tablename__ = 'line_extension'
-    __table_args__ = (
-        PrimaryKeyConstraint('line_id', 'extension_id'),
-        Index('line_extension__idx__line_id', 'line_id'),
-        Index('line_extension__idx__extension_id', 'extension_id'),
+    """Represents a relationship between a line and an extension.
+
+    Attributes:
+        line_id: The ID of the associated line.
+        extension_id: The ID of the associated extension.
+        main_extension: Indicates if this is the main extension for the line.
+        line: Relationship to LineFeatures.
+        extension: Relationship to Extension.
+        main_extension_rel: Relationship to Extension (main extension only).
+
+    """
+
+    __tablename__: str = "line_extension"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("line_id", "extension_id"),
+        Index("line_extension__idx__line_id", "line_id"),
+        Index("line_extension__idx__extension_id", "extension_id"),
     )
 
-    line_id = Column(
-        Integer, ForeignKey('linefeatures.id', ondelete='CASCADE'), nullable=False
+    line_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("linefeatures.id", ondelete="CASCADE"), primary_key=True
     )
-    extension_id = Column(
-        Integer, ForeignKey('extensions.id', ondelete='CASCADE'), nullable=False
+    extension_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("extensions.id", ondelete="CASCADE"), primary_key=True
     )
-    main_extension = Column(Boolean, nullable=False)
+    main_extension: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    linefeatures = relationship("LineFeatures")
-    extensions = relationship("Extension")
+    # These are redundant, and can cause issues with SQLAlchemy's
+    # relationship management. They're replaced by back_populates below.
+    # linefeatures = relationship("LineFeatures")
+    # extensions = relationship("Extension")
 
-    main_extension_rel = relationship(
+    main_extension_rel: Mapped["Extension"] = relationship(
         "Extension",
-        primaryjoin="and_(LineExtension.extension_id == Extension.id, LineExtension.main_extension == True)",
+        primaryjoin="""and_(
+            LineExtension.extension_id == Extension.id,
+            LineExtension.main_extension == True
+        )""",  # Keep the join condition as a string
+        viewonly=True,
     )
 
-    line = relationship('LineFeatures', back_populates='line_extensions')
+    line: Mapped["LineFeatures"] = relationship(
+        "LineFeatures", back_populates="line_extensions"
+    )
 
-    extension = relationship('Extension')
+    extension: Mapped["Extension"] = relationship(
+        "Extension", back_populates="line_extensions"
+    )

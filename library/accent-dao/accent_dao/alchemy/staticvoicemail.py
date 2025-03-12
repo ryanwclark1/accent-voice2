@@ -1,23 +1,35 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/staticvoicemail.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import Column, Index, PrimaryKeyConstraint
-from sqlalchemy.types import Integer, String, Text
+from sqlalchemy import Index, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class StaticVoicemail(Base):
-    __tablename__ = 'staticvoicemail'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        Index('staticvoicemail__idx__category', 'category')
-    )
+    """Represents a static voicemail configuration entry.
 
-    id = Column(Integer, nullable=False)
-    cat_metric = Column(Integer, nullable=False, server_default='0')
-    var_metric = Column(Integer, nullable=False, server_default='0')
-    commented = Column(Integer, nullable=False, server_default='0')
-    filename = Column(String(128), nullable=False)
-    category = Column(String(128), nullable=False)
-    var_name = Column(String(128), nullable=False)
-    var_val = Column(Text)
+    Attributes:
+        id: The unique identifier for the static voicemail entry.
+        cat_metric: The category metric.
+        var_metric: The variable metric.
+        commented: Indicates if the entry is commented out.
+        filename: The filename associated with the entry.
+        category: The category of the entry.
+        var_name: The variable name.
+        var_val: The variable value.
+
+    """
+
+    __tablename__: str = "staticvoicemail"
+    __table_args__: tuple = (Index("staticvoicemail__idx__category", "category"),)
+
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    cat_metric: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    var_metric: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    commented: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    filename: Mapped[str] = mapped_column(String(128), nullable=False)
+    category: Mapped[str] = mapped_column(String(128), nullable=False)
+    var_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    var_val: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,35 +1,43 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/moh.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import (
-    Column,
-    ForeignKey,
-    Index,
-    PrimaryKeyConstraint,
-    UniqueConstraint,
-)
-from sqlalchemy.types import String, Text
+from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 from accent_dao.helpers.uuid import new_uuid
 
 
 class MOH(Base):
+    """Represents Music on Hold (MOH) settings.
 
-    __tablename__ = 'moh'
-    __table_args__ = (
-        PrimaryKeyConstraint('uuid'),
-        UniqueConstraint('name'),
-        Index('moh__idx__tenant_uuid', 'tenant_uuid'),
+    Attributes:
+        uuid: The unique identifier for the MOH setting.
+        tenant_uuid: The UUID of the tenant the MOH setting belongs to.
+        name: The name of the MOH setting.
+        label: A label for the MOH setting.
+        mode: The mode of the MOH setting.
+        application: The application associated with the MOH setting.
+        sort: The sorting order.
+
+    """
+
+    __tablename__: str = "moh"
+    __table_args__: tuple = (
+        UniqueConstraint("name"),
+        Index("moh__idx__tenant_uuid", "tenant_uuid"),
     )
 
-    uuid = Column(String(38), nullable=False, default=new_uuid)
-    tenant_uuid = Column(
+    uuid: Mapped[str] = mapped_column(
+        String(38), nullable=False, default=new_uuid, primary_key=True
+    )
+    tenant_uuid: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey('tenant.uuid', ondelete='CASCADE'),
+        ForeignKey("tenant.uuid", ondelete="CASCADE"),
         nullable=False,
     )
-    name = Column(Text, nullable=False)
-    label = Column(Text, nullable=False)
-    mode = Column(Text, nullable=False)
-    application = Column(Text)
-    sort = Column(Text)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False)
+    mode: Mapped[str] = mapped_column(Text, nullable=False)
+    application: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sort: Mapped[str | None] = mapped_column(Text, nullable=True)

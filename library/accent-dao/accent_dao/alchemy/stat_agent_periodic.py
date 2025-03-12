@@ -1,26 +1,54 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/stat_agent_periodic.py
+# Copyright 2025 Accent Communications
 
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, Index, Integer
 from sqlalchemy.dialects.postgresql import INTERVAL
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, ForeignKey, Index
-from sqlalchemy.types import DateTime, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy.stat_agent import StatAgent
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .stat_agent import StatAgent
 
 
 class StatAgentPeriodic(Base):
-    __tablename__ = 'stat_agent_periodic'
-    __table_args__ = (
-        Index('stat_agent_periodic__idx__stat_agent_id', 'stat_agent_id'),
-        Index('stat_agent_periodic__idx__time', 'time'),
+    """Represents periodic statistics for an agent.
+
+    Attributes:
+        id: The unique identifier for the periodic statistics entry.
+        time: The timestamp for the statistics.
+        login_time: The total login time during the period.
+        pause_time: The total pause time during the period.
+        wrapup_time: The total wrap-up time during the period.
+        stat_agent_id: The ID of the associated StatAgent.
+        stat_agent: Relationship to StatAgent.
+
+    """
+
+    __tablename__: str = "stat_agent_periodic"
+    __table_args__: tuple = (
+        Index("stat_agent_periodic__idx__stat_agent_id", "stat_agent_id"),
+        Index("stat_agent_periodic__idx__time", "time"),
     )
 
-    id = Column(Integer, primary_key=True)
-    time = Column(DateTime(timezone=True), nullable=False)
-    login_time = Column(INTERVAL, nullable=False, server_default='0')
-    pause_time = Column(INTERVAL, nullable=False, server_default='0')
-    wrapup_time = Column(INTERVAL, nullable=False, server_default='0')
-    stat_agent_id = Column(Integer, ForeignKey("stat_agent.id"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    login_time: Mapped[str] = mapped_column(
+        INTERVAL, nullable=False, server_default="0"
+    )  # Keep server default
+    pause_time: Mapped[str] = mapped_column(
+        INTERVAL, nullable=False, server_default="0"
+    )  # Keep server default
+    wrapup_time: Mapped[str] = mapped_column(
+        INTERVAL, nullable=False, server_default="0"
+    )  # Keep server default
+    stat_agent_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("stat_agent.id"), nullable=True
+    )
 
-    stat_agent = relationship(StatAgent, foreign_keys=stat_agent_id)
+    stat_agent: Mapped["StatAgent"] = relationship(
+        "StatAgent", foreign_keys=stat_agent_id
+    )

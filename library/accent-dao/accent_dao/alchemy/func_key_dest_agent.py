@@ -1,87 +1,117 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/func_key_dest_agent.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import (
+from sqlalchemy import (
     CheckConstraint,
-    Column,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     PrimaryKeyConstraint,
     UniqueConstraint,
 )
-from sqlalchemy.types import Integer
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy.agentfeatures import AgentFeatures
-from accent_dao.alchemy.feature_extension import FeatureExtension
-from accent_dao.alchemy.func_key import FuncKey
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+from .feature_extension import FeatureExtension
+
+if TYPE_CHECKING:
+    from .agentfeatures import AgentFeatures
+    from .func_key import FuncKey
 
 
 class FuncKeyDestAgent(Base):
-    DESTINATION_TYPE_ID = 11
+    """Represents a function key destination for an agent.
 
-    __tablename__ = 'func_key_dest_agent'
-    __table_args__ = (
-        PrimaryKeyConstraint('func_key_id', 'destination_type_id'),
+    Attributes:
+        func_key_id: The ID of the associated function key.
+        destination_type_id: The ID of the destination type (fixed to 11).
+        agent_id: The ID of the associated agent.
+        feature_extension_uuid: The UUID of the associated feature extension.
+        func_key: Relationship to FuncKey.
+        agent: Relationship to AgentFeatures.
+        feature_extension: Relationship to FeatureExtension.
+        feature_extension_feature: The feature associated with the feature extension.
+        action: The action associated with the function key ('login', 'logout', 'toggle').
+        type: String for type oftype: String for type of object.
+
+    """
+
+    DESTINATION_TYPE_ID: int = 11
+
+    __tablename__: str = "func_key_dest_agent"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("func_key_id", "destination_type_id"),
         ForeignKeyConstraint(
-            ('func_key_id', 'destination_type_id'),
-            ('func_key.id', 'func_key.destination_type_id'),
+            ("func_key_id", "destination_type_id"),
+            ("func_key.id", "func_key.destination_type_id"),
         ),
-        UniqueConstraint('agent_id', 'feature_extension_uuid'),
-        CheckConstraint(f'destination_type_id = {DESTINATION_TYPE_ID}'),
-        Index('func_key_dest_agent__idx__agent_id', 'agent_id'),
+        UniqueConstraint("agent_id", "feature_extension_uuid"),
+        CheckConstraint(f"destination_type_id = {DESTINATION_TYPE_ID}"),
+        Index("func_key_dest_agent__idx__agent_id", "agent_id"),
     )
 
-    func_key_id = Column(Integer)
-    destination_type_id = Column(Integer, server_default=f"{DESTINATION_TYPE_ID}")
-    agent_id = Column(Integer, ForeignKey('agentfeatures.id'), nullable=False)
-    feature_extension_uuid = Column(
-        UUID(as_uuid=True), ForeignKey('feature_extension.uuid'), nullable=False
+    func_key_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    destination_type_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, server_default=str(DESTINATION_TYPE_ID)
+    )  # Keep server default.
+    agent_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("agentfeatures.id"), nullable=False
+    )
+    feature_extension_uuid: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("feature_extension.uuid"), nullable=False
     )
 
-    type = 'agent'
+    type: str = "agent"  # Added Type
 
-    func_key = relationship(FuncKey, cascade='all,delete-orphan', single_parent=True)
-    agent = relationship(AgentFeatures)
+    func_key: Mapped["FuncKey"] = relationship(
+        "FuncKey", cascade="all,delete-orphan", single_parent=True
+    )
+    agent: Mapped["AgentFeatures"] = relationship("AgentFeatures")
 
-    feature_extension = relationship(FeatureExtension, viewonly=True)
-    feature_extension_feature = association_proxy(
-        'feature_extension',
-        'feature',
-        # Only to keep value persistent in the instance
-        creator=lambda _feature: FeatureExtension(feature=_feature),
+    feature_extension: Mapped["FeatureExtension"] = relationship(
+        "FeatureExtension", viewonly=True
     )
 
-    def to_tuple(self):
+    @property
+    def feature_extension_feature(self) -> str:
+        return self.feature_extension.feature
+
+    @feature_extension_feature.setter
+    def feature_extension_feature(self, feature: str) -> None:
+        if self.feature_extension:
+            self.feature_extension.feature = feature
+        else:
+            self.feature_extension = FeatureExtension(feature=feature, exten=feature)
+
+    def to_tuple(self) -> tuple[tuple[str, str], tuple[str, int]]:
+        """Return a tuple representation of the destination."""
         return (
-            ('action', self.action),
-            ('agent_id', self.agent_id),
+            ("action", self.action),
+            ("agent_id", self.agent_id),
         )
 
-    @hybrid_property
-    def action(self):
-        ACTIONS = {
-            'agentstaticlogin': 'login',
-            'agentstaticlogoff': 'logout',
-            'agentstaticlogtoggle': 'toggle',
+    @property
+    def action(self) -> str:
+        """The action associated with the function key."""
+        ACTIONS: dict[str, str] = {
+            "agentstaticlogin": "login",
+            "agentstaticlogoff": "logout",
+            "agentstaticlogtoggle": "toggle",
         }
         return ACTIONS.get(
             self.feature_extension_feature, self.feature_extension_feature
         )
 
-    @action.expression
-    def action(cls):
-        return cls.feature_extension_feature  # only used to pass test
-
     @action.setter
-    def action(self, value):
-        TYPEVALS = {
-            'login': 'agentstaticlogin',
-            'logout': 'agentstaticlogoff',
-            'toggle': 'agentstaticlogtoggle',
+    def action(self, value: str) -> None:
+        """Set the action associated with the function key."""
+        TYPEVALS: dict[str, str] = {
+            "login": "agentstaticlogin",
+            "logout": "agentstaticlogoff",
+            "toggle": "agentstaticlogtoggle",
         }
         self.feature_extension_feature = TYPEVALS.get(value, value)

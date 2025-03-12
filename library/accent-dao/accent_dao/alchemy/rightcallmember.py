@@ -1,85 +1,117 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/rightcallmember.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING, Literal
 
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import (
-    CheckConstraint,
-    Column,
-    PrimaryKeyConstraint,
-    UniqueConstraint,
-)
-from sqlalchemy.sql import case, cast
-from sqlalchemy.types import Integer, String
+from sqlalchemy import CheckConstraint, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .groupfeatures import GroupFeatures
+    from .outcall import Outcall
+    from .rightcall import RightCall
+    from .userfeatures import UserFeatures
+
+RightCallMemberType = Literal["group", "outcall", "user"]
 
 
 class RightCallMember(Base):
-    __tablename__ = 'rightcallmember'
+    """Represents a member of a rightcall rule.
 
-    id = Column(Integer, nullable=False)
-    rightcallid = Column(Integer, nullable=False, server_default='0')
-    type = Column(String(64), nullable=False)
-    typeval = Column(String(128), nullable=False, server_default='0')
+    Attributes:
+        id: The unique identifier for the rightcall member.
+        rightcallid: The ID of the associated rightcall rule.
+        type: The type of member ('group', 'outcall', 'user').
+        typeval: The ID of the associated entity (group, outcall, or user).
+        group: Relationship to GroupFeatures (if type is 'group').
+        outcall: Relationship to Outcall (if type is 'outcall').
+        user: Relationship to UserFeatures (if type is 'user').
+        rightcall: Relationship to RightCall.
+        call_permission_id: The ID of the rightcall rule (same as rightcallid).
+        user_id: The ID of the user (if type is 'user').
 
-    group = relationship(
-        'GroupFeatures',
-        primaryjoin="""and_(RightCallMember.type == 'group',
-                            RightCallMember.typeval == cast(GroupFeatures.id, String))""",
-        foreign_keys='RightCallMember.typeval',
-        viewonly=True,
-    )
+    """
 
-    outcall = relationship(
-        'Outcall',
-        primaryjoin="""and_(RightCallMember.type == 'outcall',
-                            RightCallMember.typeval == cast(Outcall.id, String))""",
-        foreign_keys='RightCallMember.typeval',
-        viewonly=True,
-    )
-
-    user = relationship(
-        'UserFeatures',
-        primaryjoin="""and_(RightCallMember.type == 'user',
-                            RightCallMember.typeval == cast(UserFeatures.id, String))""",
-        foreign_keys='RightCallMember.typeval',
-        viewonly=True,
-    )
-
-    rightcall = relationship(
-        'RightCall',
-        primaryjoin='RightCall.id == RightCallMember.rightcallid',
-        foreign_keys='RightCallMember.rightcallid',
-        back_populates='rightcall_members',
-    )
-
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        UniqueConstraint('rightcallid', 'type', 'typeval'),
+    __tablename__: str = "rightcallmember"
+    __table_args__: tuple = (
         CheckConstraint(
-            type.in_(['group', 'outcall', 'user']), name='rightcallmember_type_check'
+            "type IN ('group', 'outcall', 'user')", name="rightcallmember_type_check"
         ),
     )
 
-    @hybrid_property
-    def call_permission_id(self):
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    rightcallid: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )  # keep
+    type: Mapped[RightCallMemberType] = mapped_column(String(64), nullable=False)
+    typeval: Mapped[str] = mapped_column(
+        String(128), nullable=False, server_default="0"
+    )
+
+    group: Mapped["GroupFeatures"] = relationship(
+        "GroupFeatures",
+        primaryjoin="""and_(
+            RightCallMember.type == 'group',
+            RightCallMember.typeval == cast(GroupFeatures.id, String)
+        )""",
+        foreign_keys="RightCallMember.typeval",
+        viewonly=True,
+    )
+
+    outcall: Mapped["Outcall"] = relationship(
+        "Outcall",
+        primaryjoin="""and_(
+            RightCallMember.type == 'outcall',
+            RightCallMember.typeval == cast(Outcall.id, String)
+        )""",
+        foreign_keys="RightCallMember.typeval",
+        viewonly=True,
+    )
+
+    user: Mapped["UserFeatures"] = relationship(
+        "UserFeatures",
+        primaryjoin="""and_(
+            RightCallMember.type == 'user',
+            RightCallMember.typeval == cast(UserFeatures.id, String)
+        )""",
+        foreign_keys="RightCallMember.typeval",
+        viewonly=True,
+    )
+
+    rightcall: Mapped["RightCall"] = relationship(
+        "RightCall",
+        primaryjoin="RightCall.id == RightCallMember.rightcallid",
+        foreign_keys="RightCallMember.rightcallid",
+        back_populates="rightcall_members",
+    )
+
+    @property
+    def call_permission_id(self) -> int:
+        """The ID of the rightcall rule."""
         return self.rightcallid
 
     @call_permission_id.setter
-    def call_permission_id(self, value):
+    def call_permission_id(self, value: int) -> None:
+        """Set the ID of the rightcall rule."""
         self.rightcallid = value
 
-    @hybrid_property
-    def user_id(self):
-        if self.type == 'user':
+    @property
+    def user_id(self) -> int | None:
+        """The ID of the user (if type is 'user')."""
+        if self.type == "user":
             return int(self.typeval)
         return None
 
     @user_id.expression
-    def user_id(cls):
-        return case([(cls.type == 'user', cast(cls.typeval, Integer))], else_=None)
+    def user_id(cls) -> Mapped[int | None]:
+        return func.coalesce(
+            case((cls.type == "user", func.cast(cls.typeval, Integer)), else_=None),
+            None,
+        )
 
     @user_id.setter
-    def user_id(self, value):
-        self.type = 'user'
+    def user_id(self, value: int) -> None:
+        """Set the ID of the user."""
+        self.type = "user"
         self.typeval = str(value)

@@ -1,18 +1,24 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/sccpgeneralsettings.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import Column, PrimaryKeyConstraint
-from sqlalchemy.types import Integer, String
+from sqlalchemy import Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class SCCPGeneralSettings(Base):
+    """Represents general settings for SCCP.
 
-    __tablename__ = 'sccpgeneralsettings'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-    )
+    Attributes:
+        id: The unique identifier for the setting.
+        option_name: The name of the option.
+        option_value: The value of the option.
 
-    id = Column(Integer)
-    option_name = Column(String(80), nullable=False)
-    option_value = Column(String(80), nullable=False)
+    """
+
+    __tablename__: str = "sccpgeneralsettings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    option_name: Mapped[str] = mapped_column(String(80), nullable=False)
+    option_value: Mapped[str] = mapped_column(String(80), nullable=False)

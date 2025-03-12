@@ -1,21 +1,33 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/session.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import Column, Index, PrimaryKeyConstraint
-from sqlalchemy.types import Integer, String, Text
+from sqlalchemy import Index, Integer, PrimaryKeyConstraint, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
-class Session(Base):
-    __tablename__ = 'session'
-    __table_args__ = (
-        PrimaryKeyConstraint('sessid'),
-        Index('session__idx__expire', 'expire'),
-        Index('session__idx__identifier', 'identifier'),
+class Session(Base):  # Note: Naming conflict with sqlalchemy.orm.Session
+    """Represents a user session.
+
+    Attributes:
+        sessid: The unique session ID.
+        start: The start timestamp of the session.
+        expire: The expiration timestamp of the session.
+        identifier: An identifier associated with the session.
+        data: Session data (as text).
+
+    """
+
+    __tablename__: str = "session"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("sessid"),
+        Index("session__idx__expire", "expire"),
+        Index("session__idx__identifier", "identifier"),
     )
 
-    sessid = Column(String(32), nullable=False)
-    start = Column(Integer, nullable=False)
-    expire = Column(Integer, nullable=False)
-    identifier = Column(String(255), nullable=False)
-    data = Column(Text, nullable=False)
+    sessid: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
+    start: Mapped[int] = mapped_column(Integer, nullable=False)
+    expire: Mapped[int] = mapped_column(Integer, nullable=False)
+    identifier: Mapped[str] = mapped_column(String(255), nullable=False)
+    data: Mapped[str] = mapped_column(Text, nullable=False)

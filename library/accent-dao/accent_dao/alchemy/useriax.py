@@ -1,173 +1,217 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/useriax.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING, Literal
 
-from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import (
-    Column,
+from sqlalchemy import (
+    Enum,
     ForeignKey,
     Index,
-    PrimaryKeyConstraint,
-    UniqueConstraint,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.types import Enum, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from accent_dao.db_manager import Base
 from accent_dao.helpers.asterisk import AsteriskOptionsMixin
-from accent_dao.helpers.db_manager import Base
 
-from . import enum
+if TYPE_CHECKING:
+    from .trunkfeatures import TrunkFeatures
+
+UseriaxType = Literal["friend", "peer", "user"]
+UseriaxAuth = Literal[
+    "plaintext",
+    "md5",
+    "rsa",
+    "plaintext,md5",
+    "plaintext,rsa",
+    "md5,rsa",
+    "plaintext,md5,rsa",
+]
+UseriaxEncryption = Literal["no", "yes", "aes128"]
+UseriaxTransfer = Literal["no", "yes", "mediaonly"]
+UseriaxCodecpriority = Literal["disabled", "host", "caller", "reqonly"]
+UseriaxAmaflags = Literal["default", "omit", "billing", "documentation"]
+UseriaxCategory = Literal["user", "trunk"]
 
 
 class UserIAX(Base, AsteriskOptionsMixin):
-    EXCLUDE_OPTIONS = {  # noqa: RUF012
-        'id',
-        'commented',
-        'options',
-        'tenant_uuid',
+    """Represents an IAX user configuration.
+
+    Inherits from AsteriskOptionsMixin for managing Asterisk options.
+
+    Attributes:
+    ... (All IAX user attributes)
+        trunk_rel: Relationship to TrunkFeatures.
+        options: A list of key-value pairs representing Asterisk options (from mixin).
+
+    """
+
+    EXCLUDE_OPTIONS: set[str] = {  # noqa: RUF012
+        "id",
+        "commented",
+        "options",
+        "tenant_uuid",
     }
-    EXCLUDE_OPTIONS_CONFD = {  # noqa: RUF012
-        'name',
-        'type',
-        'host',
-        'context',
-        'category',
-        'protocol',
+    EXCLUDE_OPTIONS_CONFD: set[str] = {  # noqa: RUF012
+        "name",
+        "type",
+        "host",
+        "context",
+        "category",
+        "protocol",
     }
-    AST_TRUE_INTEGER_COLUMNS = {  # noqa: RUF012
-        'trunk',
-        'adsi',
-        'jitterbuffer',
-        'forcejitterbuffer',
-        'sendani',
-        'qualifysmoothing',
-        'immediate',
-        'keyrotate',
+    AST_TRUE_INTEGER_COLUMNS: set[str] = {  # noqa: RUF012
+        "trunk",
+        "adsi",
+        "jitterbuffer",
+        "forcejitterbuffer",
+        "sendani",
+        "qualifysmoothing",
+        "immediate",
+        "keyrotate",
     }
 
-    __tablename__ = 'useriax'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        UniqueConstraint('name'),
-        Index('useriax__idx__category', 'category'),
-        Index('useriax__idx__mailbox', 'mailbox'),
-        Index('useriax__idx__tenant_uuid', 'tenant_uuid'),
+    __tablename__: str = "useriax"
+    __table_args__: tuple = (
+        Index("useriax__idx__category", "category"),
+        Index("useriax__idx__mailbox", "mailbox"),
+        Index("useriax__idx__tenant_uuid", "tenant_uuid"),
     )
 
-    id = Column(Integer, nullable=False)
-    tenant_uuid = Column(
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    tenant_uuid: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey('tenant.uuid', ondelete='CASCADE'),
+        ForeignKey("tenant.uuid", ondelete="CASCADE"),
         nullable=False,
     )
-    name = Column(String(40), nullable=False)
-    type = Column(
-        Enum('friend', 'peer', 'user', name='useriax_type', metadata=Base.metadata),
+    name: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    type: Mapped[UseriaxType] = mapped_column(
+        Enum("friend", "peer", "user", name="useriax_type"),
         nullable=False,
     )
-    username = Column(String(80))
-    secret = Column(String(80), nullable=False, server_default='')
-    dbsecret = Column(String(255), nullable=False, server_default='')
-    context = Column(String(79))
-    language = Column(String(20))
-    accountcode = Column(String(20))
-    amaflags = Column(
+    username: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    secret: Mapped[str] = mapped_column(String(80), nullable=False, server_default="")
+    dbsecret: Mapped[str] = mapped_column(
+        String(255), nullable=False, server_default=""
+    )
+    context: Mapped[str | None] = mapped_column(String(79), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    accountcode: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    amaflags: Mapped[str | None] = mapped_column(
         Enum(
-            'default',
-            'omit',
-            'billing',
-            'documentation',
-            name='useriax_amaflags',
-            metadata=Base.metadata,
+            "default",
+            "omit",
+            "billing",
+            "documentation",
+            name="useriax_amaflags",
         ),
-        server_default='default',
+        server_default="default",
+        nullable=True,
     )
-    mailbox = Column(String(80))
-    callerid = Column(String(160))
-    fullname = Column(String(80))
-    cid_number = Column(String(80))
-    trunk = Column(Integer, nullable=False, server_default='0')
-    auth = Column(
+    mailbox: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    callerid: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    fullname: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    cid_number: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    trunk: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    auth: Mapped[UseriaxAuth] = mapped_column(
         Enum(
-            'plaintext',
-            'md5',
-            'rsa',
-            'plaintext,md5',
-            'plaintext,rsa',
-            'md5,rsa',
-            'plaintext,md5,rsa',
-            name='useriax_auth',
-            metadata=Base.metadata,
+            "plaintext",
+            "md5",
+            "rsa",
+            "plaintext,md5",
+            "plaintext,rsa",
+            "md5,rsa",
+            "plaintext,md5,rsa",
+            name="useriax_auth",
         ),
         nullable=False,
-        server_default='plaintext,md5',
+        server_default="plaintext,md5",
     )
-    encryption = Column(
-        Enum('no', 'yes', 'aes128', name='useriax_encryption', metadata=Base.metadata)
+    encryption: Mapped[UseriaxEncryption | None] = mapped_column(
+        Enum("no", "yes", "aes128", name="useriax_encryption"), nullable=True
     )
-    forceencryption = Column(
-        Enum('no', 'yes', 'aes128', name='useriax_encryption', metadata=Base.metadata)
+    forceencryption: Mapped[UseriaxEncryption | None] = mapped_column(
+        Enum("no", "yes", "aes128", name="useriax_encryption"), nullable=True
+    )  # Fixed duplicate name
+    maxauthreq: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    inkeys: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    outkey: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    adsi: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    transfer: Mapped[UseriaxTransfer | None] = mapped_column(
+        Enum("no", "yes", "mediaonly", name="useriax_transfer"), nullable=True
     )
-    maxauthreq = Column(Integer)
-    inkeys = Column(String(80))
-    outkey = Column(String(80))
-    adsi = Column(Integer)
-    transfer = Column(
-        Enum('no', 'yes', 'mediaonly', name='useriax_transfer', metadata=Base.metadata)
-    )
-    codecpriority = Column(
+    codecpriority: Mapped[UseriaxCodecpriority | None] = mapped_column(
         Enum(
-            'disabled',
-            'host',
-            'caller',
-            'reqonly',
-            name='useriax_codecpriority',
-            metadata=Base.metadata,
-        )
+            "disabled",
+            "host",
+            "caller",
+            "reqonly",
+            name="useriax_codecpriority",
+        ),
+        nullable=True,
     )
-    jitterbuffer = Column(Integer)
-    forcejitterbuffer = Column(Integer)
-    sendani = Column(Integer, nullable=False, server_default='0')
-    qualify = Column(String(4), nullable=False, server_default='no')
-    qualifysmoothing = Column(Integer, nullable=False, server_default='0')
-    qualifyfreqok = Column(Integer, nullable=False, server_default='60000')
-    qualifyfreqnotok = Column(Integer, nullable=False, server_default='10000')
-    timezone = Column(String(80))
-    disallow = Column(String(100))
-    allow = Column(Text)
-    mohinterpret = Column(String(80))
-    mohsuggest = Column(String(80))
-    deny = Column(String(31))
-    permit = Column(String(31))
-    defaultip = Column(String(255))
-    sourceaddress = Column(String(255))
-    setvar = Column(String(100), nullable=False, server_default='')
-    host = Column(String(255), nullable=False, server_default='dynamic')
-    port = Column(Integer)
-    mask = Column(String(15))
-    regexten = Column(String(80))
-    peercontext = Column(String(80))
-    immediate = Column(Integer)
-    keyrotate = Column(Integer)
-    parkinglot = Column(Integer)
-    protocol = Column(enum.trunk_protocol, nullable=False, server_default='iax')
-    category = Column(
-        Enum('user', 'trunk', name='useriax_category', metadata=Base.metadata),
+    jitterbuffer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    forcejitterbuffer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sendani: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    qualify: Mapped[str] = mapped_column(String(4), nullable=False, server_default="no")
+    qualifysmoothing: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0"
+    )
+    qualifyfreqok: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="60000"
+    )
+    qualifyfreqnotok: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="10000"
+    )
+    timezone: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    disallow: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    allow: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mohinterpret: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    mohsuggest: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    deny: Mapped[str | None] = mapped_column(String(31), nullable=True)
+    permit: Mapped[str | None] = mapped_column(String(31), nullable=True)
+    defaultip: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sourceaddress: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    setvar: Mapped[str] = mapped_column(String(100), nullable=False, server_default="")
+    host: Mapped[str] = mapped_column(
+        String(255), nullable=False, server_default="dynamic"
+    )
+    port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    mask: Mapped[str | None] = mapped_column(String(15), nullable=True)
+    regexten: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    peercontext: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    immediate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    keyrotate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    parkinglot: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    protocol: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="iax"
+    )  # Assuming 'iax' is the default
+    category: Mapped[UseriaxCategory] = mapped_column(
+        Enum("user", "trunk", name="useriax_category"),
         nullable=False,
     )
-    commented = Column(Integer, nullable=False, server_default='0')
-    requirecalltoken = Column(String(4), nullable=False, server_default='no')
-    _options = Column(
+    commented: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    requirecalltoken: Mapped[str] = mapped_column(
+        String(4), nullable=False, server_default="no"
+    )  # Fixed length
+    _options: Mapped[list[list[str]]] = mapped_column(
         "options",
         ARRAY(String, dimensions=2),
         nullable=False,
         default=list,
-        server_default='{}',
+        server_default="{}",
     )
 
-    trunk_rel = relationship('TrunkFeatures', uselist=False, viewonly=True)
+    trunk_rel: Mapped["TrunkFeatures"] = relationship(
+        "TrunkFeatures", uselist=False, viewonly=True
+    )
 
-    def endpoint_protocol(self):
-        return 'iax'
+    def endpoint_protocol(self) -> str:
+        """Returns the protocol used by the endpoint (always 'iax')."""
+        return "iax"
 
-    def same_protocol(self, protocol, id):
-        return protocol == 'iax' and self.id == id
-
+    def same_protocol(self, protocol: str, protocolid: str | int) -> bool:
+        """Checks if the protocol and ID match."""
+        return protocol == "iax" and self.id == int(protocolid)

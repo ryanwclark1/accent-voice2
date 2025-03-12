@@ -1,148 +1,184 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/pickup.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import (
-    Column,
-    Index,
-    PrimaryKeyConstraint,
-    UniqueConstraint,
-)
-from sqlalchemy.sql import cast, not_
-from sqlalchemy.sql.schema import ForeignKey
-from sqlalchemy.types import Boolean, Integer, String, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import cast, func
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
-from .pickupmember import PickupMember
+if TYPE_CHECKING:
+    from .groupfeatures import GroupFeatures
+    from .pickupmember import PickupMember
+    from .userfeatures import UserFeatures
 
 
 class Pickup(Base):
-    __tablename__ = 'pickup'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        UniqueConstraint('name'),
-        Index('pickup__idx__tenant_uuid', 'tenant_uuid'),
-    )
+    """Represents a call pickup group.
 
-    id = Column(Integer, nullable=False, autoincrement=False)
-    tenant_uuid = Column(
+    Attributes:
+        id: The unique identifier for the pickup group.
+        tenant_uuid: The UUID of the tenant the pickup group belongs to.
+        name: The name of the pickup group.
+        commented: Indicates if the pickup group is commented out.
+        description: A description of the pickup group.
+        pickupmember_user_targets: Relationship to PickupMember (user targets).
+        user_targets: Users who are targets for call pickup.
+    pickupmember_group_targets: Relationship to PickupMember (group targets).
+        group_targets: Groups that are targets for call pickup.
+    users_from_group_targets: Users from groups that are targets for call pickup.
+    pickupmember_user_interceptors: Relationship to PickupMember (user interceptors).
+        user_interceptors: Users who can intercept calls.
+    pickupmember_group_interceptors: Relationship to PickupMember (group interceptors).
+        group_interceptors: Groups that can intercept calls.
+        pickupmember_queue_targets: Relationship to PickupMember (queue targets).
+        pickupmember_queue_interceptors: Relationship to PickupMember (queue interceptors).
+        enabled: Indicates if the pickup group is enabled.
+
+    """
+
+    __tablename__: str = "pickup"
+    __table_args__: tuple = (Index("pickup__idx__tenant_uuid", "tenant_uuid"),)
+
+    id: Mapped[int] = mapped_column(
+        Integer, nullable=False, autoincrement=False, primary_key=True
+    )
+    tenant_uuid: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey('tenant.uuid', ondelete='CASCADE'),
+        ForeignKey("tenant.uuid", ondelete="CASCADE"),
         nullable=False,
     )
-    name = Column(String(128), nullable=False)
-    commented = Column(Integer, nullable=False, server_default='0')
-    description = Column(Text)
+    name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    commented: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    pickupmember_user_targets = relationship(
-        'PickupMember',
+    pickupmember_user_targets: Mapped[list["PickupMember"]] = relationship(
+        "PickupMember",
         primaryjoin="""and_(
             PickupMember.pickupid == Pickup.id,
             PickupMember.category == 'pickup',
             PickupMember.membertype == 'user'
         )""",
-        foreign_keys='PickupMember.pickupid',
-        cascade='all, delete-orphan',
-    )
-    user_targets = association_proxy(
-        'pickupmember_user_targets',
-        'user',
-        creator=lambda _user: PickupMember(
-            user=_user, category='pickup', membertype='user'
-        ),
+        foreign_keys="PickupMember.pickupid",
+        cascade="all, delete-orphan",
     )
 
-    pickupmember_group_targets = relationship(
-        'PickupMember',
+    @property
+    def user_targets(self) -> list["PickupMember"]:
+        return [ptu.user for ptu in self.pickupmember_user_targets if ptu.user]
+
+    @user_targets.setter
+    def user_targets(self, value: list["UserFeatures"]) -> None:
+        self.pickupmember_user_targets = [
+            PickupMember(user=user, category="pickup", membertype="user")
+            for user in value
+        ]
+
+    pickupmember_group_targets: Mapped[list["PickupMember"]] = relationship(
+        "PickupMember",
         primaryjoin="""and_(
             PickupMember.pickupid == Pickup.id,
             PickupMember.category == 'pickup',
             PickupMember.membertype == 'group'
         )""",
-        foreign_keys='PickupMember.pickupid',
-        cascade='all, delete-orphan',
-    )
-    group_targets = association_proxy(
-        'pickupmember_group_targets',
-        'group',
-        creator=lambda _group: PickupMember(
-            group=_group, category='pickup', membertype='group'
-        ),
-    )
-    users_from_group_targets = association_proxy(
-        'pickupmember_group_targets', 'users_from_group'
+        foreign_keys="PickupMember.pickupid",
+        cascade="all, delete-orphan",
     )
 
-    pickupmember_user_interceptors = relationship(
-        'PickupMember',
+    @property
+    def group_targets(self) -> list["PickupMember"]:
+        return [ptg.group for ptg in self.pickupmember_group_targets if ptg.group]
+
+    @group_targets.setter
+    def group_targets(self, value: list["GroupFeatures"]) -> None:
+        self.pickupmember_group_targets = [
+            PickupMember(group=group, category="pickup", membertype="group")
+            for group in value
+        ]
+
+    @property
+    def users_from_group_targets(self) -> list["GroupFeatures"]:
+        return [gt.users for gt in self.group_targets if gt.users]
+
+    pickupmember_user_interceptors: Mapped[list["PickupMember"]] = relationship(
+        "PickupMember",
         primaryjoin="""and_(
             PickupMember.pickupid == Pickup.id,
             PickupMember.category == 'member',
             PickupMember.membertype == 'user'
         )""",
-        foreign_keys='PickupMember.pickupid',
-        cascade='all, delete-orphan',
-    )
-    user_interceptors = association_proxy(
-        'pickupmember_user_interceptors',
-        'user',
-        creator=lambda _user: PickupMember(
-            user=_user, category='member', membertype='user'
-        ),
+        foreign_keys="PickupMember.pickupid",
+        cascade="all, delete-orphan",
     )
 
-    pickupmember_group_interceptors = relationship(
-        'PickupMember',
+    @property
+    def user_interceptors(self) -> list["PickupMember"]:
+        return [ptu.user for ptu in self.pickupmember_user_interceptors if ptu.user]
+
+    @user_interceptors.setter
+    def user_interceptors(self, value: list["UserFeatures"]) -> None:
+        self.pickupmember_user_interceptors = [
+            PickupMember(user=user, category="member", membertype="user")
+            for user in value
+        ]
+
+    pickupmember_group_interceptors: Mapped[list["PickupMember"]] = relationship(
+        "PickupMember",
         primaryjoin="""and_(
             PickupMember.pickupid == Pickup.id,
             PickupMember.category == 'member',
             PickupMember.membertype == 'group'
         )""",
-        foreign_keys='PickupMember.pickupid',
-        cascade='all, delete-orphan',
-    )
-    group_interceptors = association_proxy(
-        'pickupmember_group_interceptors',
-        'group',
-        creator=lambda _group: PickupMember(
-            group=_group, category='member', membertype='group'
-        ),
+        foreign_keys="PickupMember.pickupid",
+        cascade="all, delete-orphan",
     )
 
-    pickupmember_queue_targets = relationship(
-        'PickupMember',
+    @property
+    def group_interceptors(self) -> list["PickupMember"]:
+        return [ptg.group for ptg in self.pickupmember_group_interceptors if ptg.group]
+
+    @group_interceptors.setter
+    def group_interceptors(self, value: list["GroupFeatures"]) -> None:
+        self.pickupmember_group_interceptors = [
+            PickupMember(group=group, category="member", membertype="group")
+            for group in value
+        ]
+
+    pickupmember_queue_targets: Mapped[list["PickupMember"]] = relationship(
+        "PickupMember",
         primaryjoin="""and_(
             PickupMember.pickupid == Pickup.id,
             PickupMember.category == 'pickup',
             PickupMember.membertype == 'queue'
         )""",
-        foreign_keys='PickupMember.pickupid',
-        cascade='all, delete-orphan',
+        foreign_keys="PickupMember.pickupid",
+        cascade="all, delete-orphan",
     )
 
-    pickupmember_queue_interceptors = relationship(
-        'PickupMember',
+    pickupmember_queue_interceptors: Mapped[list["PickupMember"]] = relationship(
+        "PickupMember",
         primaryjoin="""and_(
             PickupMember.pickupid == Pickup.id,
             PickupMember.category == 'member',
             PickupMember.membertype == 'queue'
         )""",
-        foreign_keys='PickupMember.pickupid',
-        cascade='all, delete-orphan',
+        foreign_keys="PickupMember.pickupid",
+        cascade="all, delete-orphan",
     )
 
-    @hybrid_property
-    def enabled(self):
+    @property
+    def enabled(self) -> bool | None:
+        """Indicates if the pickup group is enabled."""
         if self.commented is None:
             return None
         return self.commented == 0
 
-    @enabled.expression
-    def enabled(cls):
-        return not_(cast(cls.commented, Boolean))
-
     @enabled.setter
-    def enabled(self, value):
-        self.commented = int(value is False)
+    def enabled(self, value: bool | None) -> None:
+        """Enable or disables the pickup group."""
+        self.commented = int(not value) if value is not None else None
+
+    @enabled.expression
+    def enabled(cls) -> Mapped[bool]:
+        return func.not_(cast(cls.commented, Boolean))

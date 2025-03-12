@@ -1,31 +1,59 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/stat_switchboard_queue.py
+# Copyright 2025 Accent Communications
+from datetime import datetime
+from typing import TYPE_CHECKING, Literal
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, ForeignKeyConstraint, Index, PrimaryKeyConstraint
-from sqlalchemy.types import DateTime, Float, Integer
+from sqlalchemy import DateTime, Enum, Float, ForeignKeyConstraint, Integer
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy.enum import stat_switchboard_endtype
-from accent_dao.alchemy.queuefeatures import QueueFeatures
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .queuefeatures import QueueFeatures
+
+StatSwitchboardEndtype = Literal[
+    "abandoned",
+    "completed",
+    "forwarded",
+    "transferred",
+]
 
 
 class StatSwitchboardQueue(Base):
-    __tablename__ = 'stat_switchboard_queue'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        ForeignKeyConstraint(
-            ('queue_id',),
-            ('queuefeatures.id',),
-            ondelete='CASCADE'
+    """Represents statistics for a switchboard queue.
+
+    Attributes:
+        id: The unique identifier for the switchboard queue statistics entry.
+        time: The timestamp of the event.
+        end_type: The type of call ending ('abandoned', 'completed', 'forwarded', 'transferred').
+        wait_time: The wait time.
+        queue_id: The ID of the associated QueueFeatures.
+        queue: Relationship to QueueFeatures.
+
+    """
+
+    __tablename__: str = "stat_switchboard_queue"
+
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end_type: Mapped[StatSwitchboardEndtype] = mapped_column(
+        Enum(
+            "abandoned",
+            "completed",
+            "forwarded",
+            "transferred",
+            name="stat_switchboard_endtype",
         ),
-        Index('stat_switchboard_queue__idx__queue_id', 'queue_id'),
-        Index('stat_switchboard_queue__idx__time', 'time'),
+        nullable=False,
     )
+    wait_time: Mapped[float] = mapped_column(Float, nullable=False)
+    queue_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    id = Column(Integer, nullable=False)
-    time = Column(DateTime, nullable=False)
-    end_type = Column(stat_switchboard_endtype, nullable=False)
-    wait_time = Column(Float, nullable=False)
-    queue_id = Column(Integer, nullable=False)
-
-    queue = relationship(QueueFeatures)
+    queue: Mapped["QueueFeatures"] = relationship(
+        "QueueFeatures",
+        primaryjoin="QueueFeatures.id == StatSwitchboardQueue.queue_id",
+        foreign_keys=[queue_id],
+    )
+    __table_args__ = (
+        ForeignKeyConstraint(("queue_id",), ("queuefeatures.id",), ondelete="CASCADE"),
+    )

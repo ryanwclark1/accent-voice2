@@ -1,24 +1,94 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/dialaction.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING, Literal
 
-from accent import dialaction
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, Index, PrimaryKeyConstraint
-from sqlalchemy.sql import func
-from sqlalchemy.types import String
+from sqlalchemy import Index, PrimaryKeyConstraint, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.alchemy import enum
-from accent_dao.helpers.db_manager import Base, IntAsString
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .application import Application
+    from .conference import Conference
+    from .groupfeatures import GroupFeatures
+    from .incall import Incall
+    from .ivr import IVR
+    from .ivr_choice import IVRChoice
+    from .queuefeatures import QueueFeatures
+    from .switchboard import Switchboard
+    from .userfeatures import UserFeatures
+    from .voicemail import Voicemail
+
+DialactionCategory = Literal[
+    "callfilter",
+    "group",
+    "incall",
+    "queue",
+    "user",
+    "ivr",
+    "ivr_choice",
+    "switchboard",
+]
+
+DialactionAction = Literal[
+    "none",
+    "endcall:busy",
+    "endcall:congestion",
+    "endcall:hangup",
+    "user",
+    "group",
+    "queue",
+    "voicemail",
+    "extension",
+    "outcall",
+    "application:callbackdisa",
+    "application:disa",
+    "application:directory",
+    "application:faxtomail",
+    "application:voicemailmain",
+    "application:password",
+    "sound",
+    "custom",
+    "ivr",
+    "conference",
+    "switchboard",
+    "application:custom",
+]
 
 
 class Dialaction(Base):
-    USER_EVENTS = ('noanswer', 'busy', 'congestion', 'chanunavail')
+    """Represents a dial action.
 
-    __tablename__ = 'dialaction'
-    __table_args__ = (
-        PrimaryKeyConstraint('event', 'category', 'categoryval'),
-        Index('dialaction__idx__action_actionarg1', 'action', 'actionarg1'),
-        Index('dialaction__idx__categoryval', 'categoryval'),
+    Attributes:
+        event: The event that triggers the dial action.
+        category: The category of the dial action.
+        categoryval: The ID of the associated entity.
+        action: The action to perform.
+        actionarg1: The first argument for the action.
+        actionarg2: The second argument for the action.
+        conference: Relationship to Conference.
+        group: Relationship to GroupFeatures.
+        user: Relationship to UserFeatures.
+        ivr: Relationship to IVR.
+        ivr_choice: Relationship to IVRChoice.
+        switchboard: Relationship to Switchboard.
+        voicemail: Relationship to Voicemail.
+        incall: Relationship to Incall.
+        application: Relationship to Application.
+        queue: Relationship to QueueFeatures.
+        type: The type of the dial action.
+        subtype: The subtype of the dial action.
+        gosub_args: Arguments for gosub.
+
+    """
+
+    USER_EVENTS: tuple[str, ...] = ("noanswer", "busy", "congestion", "chanunavail")
+
+    __tablename__: str = "dialaction"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("event", "category", "categoryval"),
+        Index("dialaction__idx__action_actionarg1", "action", "actionarg1"),
+        Index("dialaction__idx__categoryval", "categoryval"),
     )
 
     # Remove the following warning:
@@ -27,154 +97,164 @@ class Dialaction(Base):
     # When child try to delete parent and the parent try delete child,
     # then the same row expecte to be removed twice.
     # This is the case of ivr_choice
-    __mapper_args__ = {'confirm_deleted_rows': False}
+    __mapper_args__: dict = {"confirm_deleted_rows": False}
 
-    event = Column(String(40))
-    category = Column(enum.dialaction_category)
-    categoryval = Column(IntAsString(128), server_default='')
-    action = Column(enum.dialaction_action, nullable=False)
-    actionarg1 = Column(IntAsString(255))
-    actionarg2 = Column(String(255))
+    event: Mapped[str] = mapped_column(String(40), primary_key=True)
+    category: Mapped[DialactionCategory] = mapped_column(
+        String,
+        primary_key=True,
+    )
+    categoryval: Mapped[str] = mapped_column(
+        String(128), server_default="", primary_key=True
+    )
+    action: Mapped[DialactionAction] = mapped_column(
+        String,
+        nullable=False,
+    )
+    actionarg1: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    actionarg2: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    conference = relationship(
-        'Conference',
+    conference: Mapped["Conference"] = relationship(
+        "Conference",
         primaryjoin="""and_(
             Dialaction.action == 'conference',
             Dialaction.actionarg1 == cast(Conference.id, String)
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    group = relationship(
-        'GroupFeatures',
+    group: Mapped["GroupFeatures"] = relationship(
+        "GroupFeatures",
         primaryjoin="""and_(
             Dialaction.action == 'group',
             Dialaction.actionarg1 == cast(GroupFeatures.id, String)
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    user = relationship(
-        'UserFeatures',
+    user: Mapped["UserFeatures"] = relationship(
+        "UserFeatures",
         primaryjoin="""and_(
             Dialaction.action == 'user',
             Dialaction.actionarg1 == cast(UserFeatures.id, String)
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    ivr = relationship(
-        'IVR',
+    ivr: Mapped["IVR"] = relationship(
+        "IVR",
         primaryjoin="""and_(
             Dialaction.action == 'ivr',
             Dialaction.actionarg1 == cast(IVR.id, String)
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    ivr_choice = relationship(
-        'IVRChoice',
+    ivr_choice: Mapped["IVRChoice"] = relationship(
+        "IVRChoice",
         primaryjoin="""and_(
             Dialaction.category == 'ivr_choice',
             Dialaction.categoryval == cast(IVRChoice.id, String)
         )""",
-        foreign_keys='Dialaction.categoryval',
-        cascade='delete',
-        back_populates='dialaction',
+        foreign_keys="Dialaction.categoryval",
+        cascade="all, delete-orphan",  # Correct cascade for deletion
+        back_populates="dialaction",  # Correct back-population
     )
 
-    switchboard = relationship(
-        'Switchboard',
+    switchboard: Mapped["Switchboard"] = relationship(
+        "Switchboard",
         primaryjoin="""and_(
             Dialaction.action == 'switchboard',
             Dialaction.actionarg1 == Switchboard.uuid
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    voicemail = relationship(
-        'Voicemail',
+    voicemail: Mapped["Voicemail"] = relationship(
+        "Voicemail",
         primaryjoin="""and_(
             Dialaction.action == 'voicemail',
             Dialaction.actionarg1 == cast(Voicemail.id, String)
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    incall = relationship(
-        'Incall',
+    incall: Mapped["Incall"] = relationship(
+        "Incall",
         primaryjoin="""and_(
             Dialaction.category == 'incall',
             Dialaction.categoryval == cast(Incall.id, String)
         )""",
-        foreign_keys='Dialaction.categoryval',
+        foreign_keys="Dialaction.categoryval",
         viewonly=True,
     )
 
-    application = relationship(
-        'Application',
+    application: Mapped["Application"] = relationship(
+        "Application",
         primaryjoin="""and_(
             Dialaction.action == 'application:custom',
             Dialaction.actionarg1 == Application.uuid
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
-    queue = relationship(
-        'QueueFeatures',
+    queue: Mapped["QueueFeatures"] = relationship(
+        "QueueFeatures",
         primaryjoin="""and_(
             Dialaction.action == 'queue',
             Dialaction.actionarg1 == cast(QueueFeatures.id, String)
         )""",
-        foreign_keys='Dialaction.actionarg1',
+        foreign_keys="Dialaction.actionarg1",
         viewonly=True,
     )
 
     @classmethod
-    def new_user_actions(cls, user):
+    def new_user_actions(cls, user: "UserFeatures") -> "Dialaction":
+        """Creates default dial actions for a new user."""
         for event in cls.USER_EVENTS:
             yield cls(
                 event=event,
-                category='user',
+                category="user",
                 categoryval=str(user.id),
-                action='none',
+                action="none",
                 actionarg1=None,
                 actionarg2=None,
             )
 
-    @hybrid_property
-    def type(self):
-        return dialaction.action_type(self.action)
-
-    @type.expression
-    def type(cls):
-        return func.split_part(cls.action, ':', 1)
+    @property
+    def type(self) -> str:
+        """The type of the dial action."""
+        return self.action.split(":")[0]
 
     @type.setter
-    def type(self, value):
-        self.action = dialaction.action(type_=value, subtype=self.subtype)
-
-    @hybrid_property
-    def subtype(self):
-        return dialaction.action_subtype(self.action)
-
-    @subtype.expression
-    def subtype(cls):
-        return func.split_part(cls.action, ':', 2)
-
-    @subtype.setter
-    def subtype(self, value):
-        self.action = dialaction.action(type_=self.type, subtype=value)
+    def type(self, value: str) -> None:
+        """Set the type of the dial action."""
+        self.action = f"{value}:{self.subtype}" if self.subtype else value  # type: ignore
 
     @property
-    def gosub_args(self):
-        return ','.join(
-            item or '' for item in (self.action, self.actionarg1, self.actionarg2)
+    def subtype(self) -> str | None:
+        """The subtype of the dial action."""
+        if ":" not in self.action:
+            return None
+        return self.action.split(":")[1]
+
+    @subtype.setter
+    def subtype(self, value: str | None) -> None:
+        """Set the subtype of the dial action."""
+        self.action = (  # type: ignore
+            f"{self.type}:{value}" if value is not None else self.type
+        )
+
+    @property
+    def gosub_args(self) -> str:
+        """Arguments for gosub."""
+        return ",".join(
+            item or "" for item in (self.action, self.actionarg1, self.actionarg2)
         )

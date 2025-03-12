@@ -1,28 +1,48 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/agentqueueskill.py
+# Copyright 2025 Accent Communications
+from typing import TYPE_CHECKING
 
-from sqlalchemy.orm import relationship
-from sqlalchemy.schema import Column, PrimaryKeyConstraint
-from sqlalchemy.types import Integer
+from sqlalchemy import Integer, PrimaryKeyConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
+
+if TYPE_CHECKING:
+    from .agentfeatures import AgentFeatures
+    from .queueskill import QueueSkill
 
 
 class AgentQueueSkill(Base):
-    __tablename__ = 'agentqueueskill'
-    __table_args__ = (PrimaryKeyConstraint('agentid', 'skillid'),)
+    """Represents the skill level of an agent for a specific queue.
 
-    agentid = Column(Integer, nullable=False, autoincrement=False)
-    skillid = Column(Integer, nullable=False, autoincrement=False)
-    weight = Column(Integer, nullable=False, server_default='0')
+    Attributes:
+        agentid: The ID of the agent.
+        skillid: The ID of the skill.
+        weight: The weight (priority) of the agent's skill.
+        agent: Relationship to the AgentFeatures model.
+        skill: Relationship to the QueueSkill model.
 
-    agent = relationship(
-        'AgentFeatures',
-        primaryjoin='AgentQueueSkill.agentid == AgentFeatures.id',
-        foreign_keys='AgentQueueSkill.agentid',
+    """
+
+    __tablename__: str = "agentqueueskill"
+    __table_args__: tuple = (PrimaryKeyConstraint("agentid", "skillid"),)
+
+    agentid: Mapped[int] = mapped_column(
+        Integer, nullable=False, autoincrement=False, primary_key=True
+    )
+    skillid: Mapped[int] = mapped_column(
+        Integer, nullable=False, autoincrement=False, primary_key=True
+    )
+    weight: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+
+    agent: Mapped["AgentFeatures"] = relationship(
+        "AgentFeatures",
+        primaryjoin="AgentQueueSkill.agentid == AgentFeatures.id",
+        foreign_keys="AgentQueueSkill.agentid",
     )
 
-    skill = relationship(
-        'QueueSkill',
-        primaryjoin='AgentQueueSkill.skillid == QueueSkill.id',
-        foreign_keys='AgentQueueSkill.skillid',
+    skill: Mapped["QueueSkill"] = relationship(
+        "QueueSkill",
+        primaryjoin="AgentQueueSkill.skillid == QueueSkill.id",
+        foreign_keys="AgentQueueSkill.skillid",
     )

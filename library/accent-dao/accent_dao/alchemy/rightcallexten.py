@@ -1,23 +1,35 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/rightcallexten.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.schema import Column, ForeignKey, PrimaryKeyConstraint, UniqueConstraint
-from sqlalchemy.types import Integer, String
+from sqlalchemy import (
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column
 
-from accent_dao.helpers.db_manager import Base
+from accent_dao.db_manager import Base
 
 
 class RightCallExten(Base):
-    __tablename__ = 'rightcallexten'
-    __table_args__ = (
-        PrimaryKeyConstraint('id'),
-        UniqueConstraint('rightcallid', 'exten'),
-    )
+    """Represents an extension associated with a rightcall rule.
 
-    id = Column(Integer, nullable=False)
-    rightcallid = Column(
+    Attributes:
+        id: The unique identifier for the rightcall extension.
+        rightcallid: The ID of the associated rightcall rule.
+        exten: The extension number.
+
+    """
+
+    __tablename__: str = "rightcallexten"
+    __table_args__: tuple = (UniqueConstraint("rightcallid", "exten"),)
+
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    rightcallid: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey('rightcall.id', ondelete='CASCADE'),
+        ForeignKey("rightcall.id", ondelete="CASCADE"),
         nullable=False,
-        server_default='0',
+        server_default="0",
     )
-    exten = Column(String(40), nullable=False, server_default='')
+    exten: Mapped[str] = mapped_column(String(40), nullable=False, server_default="")

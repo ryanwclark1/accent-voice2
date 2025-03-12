@@ -1,47 +1,62 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/models/callerid.py
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.schema import Column, PrimaryKeyConstraint
-from sqlalchemy.types import Enum, Integer, String
+from typing import Literal
 
-from accent_dao.helpers.db_manager import Base
+from sqlalchemy import Enum, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from accent_dao.db_manager import Base
+
+CalleridMode = Literal["prepend", "overwrite", "append"]
+CalleridType = Literal["callfilter", "incall", "group", "queue"]
 
 
 class Callerid(Base):
-    __tablename__ = 'callerid'
-    __table_args__ = (PrimaryKeyConstraint('type', 'typeval'),)
+    """Represents caller ID information.
 
-    mode = Column(
-        Enum(
-            'prepend',
-            'overwrite',
-            'append',
-            name='callerid_mode',
-            metadata=Base.metadata,
-        )
-    )
-    callerdisplay = Column(String(80), nullable=False, server_default='')
-    type = Column(
-        Enum(
-            'callfilter',
-            'incall',
-            'group',
-            'queue',
-            name='callerid_type',
-            metadata=Base.metadata,
-        )
-    )
-    typeval = Column(Integer, nullable=False, autoincrement=False)
+    Attributes:
+        mode: The mode of caller ID modification ('prepend', 'overwrite', 'append').
+        callerdisplay: The display name for the caller ID.
+        type: The type of entity the caller ID is associated with.
+        typeval: The ID of the associated entity.
+        name: A computed property for the caller display name (None if empty).
 
-    @hybrid_property
-    def name(self):
-        if self.callerdisplay == '':
+    """
+
+    __tablename__: str = "callerid"
+
+    # Removed the primary key constraint here.  SQLA is unhappy otherwise
+    # __table_args__ = (PrimaryKeyConstraint('type', 'typeval'),)
+
+    mode: Mapped[CalleridMode | None] = mapped_column(
+        Enum("prepend", "overwrite", "append", name="callerid_mode"), nullable=True
+    )
+    callerdisplay: Mapped[str] = mapped_column(
+        String(80), nullable=False, server_default=""
+    )
+    type: Mapped[CalleridType] = mapped_column(
+        Enum("callfilter", "incall", "group", "queue", name="callerid_type"),
+        primary_key=True,  # Added as part of a composite primary key.
+    )
+    typeval: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        autoincrement=False,
+        primary_key=True,  # Added as part of a composite primary key
+    )
+
+    @property
+    def name(self) -> str | None:
+        """The caller display name, or None if it's empty."""
+        if self.callerdisplay == "":
             return None
         return self.callerdisplay
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str | None) -> None:
+        """Set the caller display name."""
         if value is None:
-            self.callerdisplay = ''
+            self.callerdisplay = ""
         else:
             self.callerdisplay = value
