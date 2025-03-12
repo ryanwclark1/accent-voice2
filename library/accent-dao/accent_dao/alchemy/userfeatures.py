@@ -3,8 +3,8 @@
 
 # Import the new_uuid function
 # TODO: call_record_outgoing_external_enabled
-from datetime import datetime
 import re
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -65,7 +65,16 @@ caller_id_regex = re.compile(
 
 
 def ordering_main_line(index: int, collection: list) -> bool:  # type: ignore
-    """Simple ordering function, putting True first."""
+    """Order the main line first.
+
+    Args:
+        index: The index of the item in the collection.
+        collection: The list of items to order.
+
+    Returns:
+        True if the item is the main line, otherwise False.
+
+    """
     return True if index == 0 else False
 
 
