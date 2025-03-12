@@ -4,9 +4,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from contextlib import asynccontextmanager, contextmanager
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, overload
 
 from sqlalchemy import Engine, String, create_engine
 from sqlalchemy.ext.asyncio import (
@@ -53,13 +54,10 @@ class Base(DeclarativeBase):
     """
 
     def __repr__(self) -> str:
-        """Represent the model instance with its primary key values.
-
-        Args:
-            None
+        """Generate string representation of the model instance.
 
         Returns:
-            str: String representation of the model instance.
+            String representation with primary key values.
 
         """
         attrs = {
@@ -77,7 +75,7 @@ class Base(DeclarativeBase):
             exclude: Optional list of fields to exclude.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the model.
+            Dictionary representation of the model.
 
         """
         exclude = exclude or []
@@ -92,7 +90,7 @@ class Base(DeclarativeBase):
 
 # Type decorators for string conversions
 class IntAsString(TypeDecorator):
-    """Coerce integer->string type.
+    """Coerce integer to string type.
 
     This is needed only if the relationship() from
     string to int is writable, as SQLAlchemy will copy
@@ -111,7 +109,7 @@ class IntAsString(TypeDecorator):
             dialect: SQLAlchemy dialect.
 
         Returns:
-            str | None: The processed value.
+            The processed value as string or None.
 
         """
         if value is not None:
@@ -133,7 +131,7 @@ class UUIDAsString(TypeDecorator):
             dialect: SQLAlchemy dialect.
 
         Returns:
-            str | None: The processed value.
+            The processed value as string or None.
 
         """
         if value is not None:
@@ -141,14 +139,14 @@ class UUIDAsString(TypeDecorator):
         return value
 
 
-def daosession(func: callable[..., R]) -> callable[..., R]:
-    """Decorator that passes a session to the decorated function.
+def daosession(func: Callable[..., R]) -> Callable[..., R]:
+    """Pass a session to the decorated function.
 
     Args:
         func: The function to decorate.
 
     Returns:
-        callable: The decorated function.
+        The decorated function with session handling.
 
     """
 
@@ -180,7 +178,7 @@ async def init_async_db(
         await async_engine.dispose()
 
     async_engine = create_async_engine(
-        db_uri, pool_size=pool_size, pool_pre_ping=True, echo=False, future=True
+        db_uri, pool_size=pool_size, pool_pre_ping=True, echo=False
     )
 
     async_session_factory = async_sessionmaker(
@@ -203,9 +201,7 @@ def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) ->
     if sync_engine:
         sync_engine.dispose()
 
-    sync_engine = create_engine(
-        db_uri, pool_size=pool_size, pool_pre_ping=True, future=True
-    )
+    sync_engine = create_engine(db_uri, pool_size=pool_size, pool_pre_ping=True)
 
     SyncSession.configure(bind=sync_engine)
     Base.metadata.bind = sync_engine
@@ -213,14 +209,14 @@ def init_db(db_uri: str = DEFAULT_DB_URI, pool_size: int = DEFAULT_POOL_SIZE) ->
     logger.info(f"Initialized sync database connection to {db_uri}")
 
 
-def init_db_from_config(config: dict[str, Any] | None = None) -> None:
+async def init_db_from_config(config: dict[str, Any] | None = None) -> None:
     """Initialize database from configuration.
 
     Args:
         config: Configuration dictionary, will be loaded from default if None.
 
     """
-    config = config or default_config()
+    config = config or await default_config()
     url = config.get("db_uri", DEFAULT_DB_URI)
     async_url = config.get("async_db_uri", DEFAULT_ASYNC_DB_URI)
 
@@ -230,15 +226,15 @@ def init_db_from_config(config: dict[str, Any] | None = None) -> None:
         pool_size = DEFAULT_POOL_SIZE
 
     init_db(url, pool_size=pool_size)
-    # Note: async_db init should be handled separately with await
+    await init_async_db(async_url, pool_size=pool_size)
     logger.info("Initialized database connections from config")
 
 
-def default_config() -> dict[str, Any]:
+async def default_config() -> dict[str, Any]:
     """Load default configuration.
 
     Returns:
-        dict[str, Any]: Configuration dictionary.
+        Configuration dictionary.
 
     """
     from accent.config_helper import ConfigParser, ErrorHandler
@@ -248,7 +244,7 @@ def default_config() -> dict[str, Any]:
         "extra_config_files": "/etc/accent-dao/conf.d",
     }
     config_parser = ConfigParser(ErrorHandler())
-    return config_parser.read_config_file_hierarchy(config)
+    return await config_parser.read_config_file_hierarchy_async(config)
 
 
 @contextmanager
@@ -256,12 +252,16 @@ def get_session() -> Session:
     """Get a session for synchronous operations.
 
     Yields:
-        Session: Database session.
+        Database session.
 
     """
     session = SyncSession()
     try:
         yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
         session.close()
 
@@ -271,7 +271,7 @@ async def get_async_session() -> AsyncSession:
     """Get a session for asynchronous operations.
 
     Yields:
-        AsyncSession: Async database session.
+        Async database session.
 
     """
     if async_session_factory is None:
@@ -282,24 +282,91 @@ async def get_async_session() -> AsyncSession:
     session = async_session_factory()
     try:
         yield session
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
     finally:
         await session.close()
 
 
-def async_daosession(func: callable[..., R]) -> callable[..., R]:
-    """Decorator for async DAO operations.
+@overload
+def async_daosession(func: Callable[..., R]) -> Callable[..., R]: ...
+
+
+@overload
+def async_daosession() -> Callable[[Callable[..., R]], Callable[..., R]]: ...
+
+
+def async_daosession(
+    func: Callable[..., R] | None = None,
+) -> Callable[..., R] | Callable[[Callable[..., R]], Callable[..., R]]:
+    """Decorate async DAO operations.
+
+    Can be used with or without arguments:
+    @async_daosession
+    async def func(session, ...): ...
+
+    or
+
+    @async_daosession(timeout=30)
+    async def func(session, ...): ...
 
     Args:
         func: Function to decorate.
 
     Returns:
-        callable: Decorated function with session automatically provided.
+        Decorated function with session automatically provided.
 
     """
 
-    @wraps(func)
-    async def wrapped(*args: Any, **kwargs: Any) -> R:
-        async with get_async_session() as session:
-            return await func(session, *args, **kwargs)
+    def decorator(fn: Callable[..., R]) -> Callable[..., R]:
+        @wraps(fn)
+        async def wrapped(*args: Any, **kwargs: Any) -> R:
+            async with get_async_session() as session:
+                return await fn(session, *args, **kwargs)
 
-    return wrapped
+        return wrapped
+
+    if func is None:
+        return decorator
+
+    return decorator(func)
+
+
+# Add caching capability
+from datetime import timedelta
+
+from cachetools import TTLCache, cached
+
+# Default cache settings
+DEFAULT_CACHE_MAXSIZE = 128
+DEFAULT_CACHE_TTL = timedelta(minutes=5).total_seconds()
+
+# Create a TTL cache for database results
+db_cache = TTLCache(maxsize=DEFAULT_CACHE_MAXSIZE, ttl=DEFAULT_CACHE_TTL)
+
+
+def cached_query(maxsize: int = DEFAULT_CACHE_MAXSIZE, ttl: float = DEFAULT_CACHE_TTL):
+    """Create a caching decorator for database queries.
+
+    Args:
+        maxsize: Maximum size of the cache.
+        ttl: Time-to-live for cache entries in seconds.
+
+    Returns:
+        A decorator that caches function results.
+
+    """
+
+    def decorator(func: Callable[..., R]) -> Callable[..., R]:
+        cache = TTLCache(maxsize=maxsize, ttl=ttl)
+
+        @cached(cache)
+        @wraps(func)
+        def wrapped(*args: Any, **kwargs: Any) -> R:
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
