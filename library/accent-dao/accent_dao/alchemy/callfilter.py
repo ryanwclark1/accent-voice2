@@ -1,5 +1,6 @@
 # file: accent_dao/models/callfilter.py
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import (
@@ -18,6 +19,7 @@ from sqlalchemy.sql import and_, select
 
 from accent_dao.helpers.db_manager import Base
 
+from .callerid import Callerid
 from .feature_extension import FeatureExtension
 
 # Add these for clarity and type safety
@@ -32,7 +34,6 @@ CallfilterBosssecretary = Literal[
 CallfilterCallfrom = Literal["internal", "external", "all"]
 
 if TYPE_CHECKING:
-    from .callerid import Callerid
     from .callfiltermember import Callfiltermember
     from .dialaction import Dialaction
 

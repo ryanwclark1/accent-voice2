@@ -4,7 +4,7 @@
 # Import the new_uuid function
 # TODO: call_record_outgoing_external_enabled
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from .func_key_dest_user import FuncKeyDestUser
     from .func_key_template import FuncKeyTemplate
     from .linefeatures import LineFeatures  # For caller ID extrapolation
+    from .paginguser import PagingUser  # Import the PagingUser class
     from .pickup import Pickup
     from .pickupmember import PickupMember
     from .queuemember import QueueMember
@@ -322,8 +323,8 @@ class UserFeatures(Base):
     )
     created_at: Mapped[DateTime] = mapped_column(
         DateTime,
-        default=datetime.datetime.utcnow,
-        server_default=func.now(),  # Use func.now()
+        default=datetime.now(timezone.utc),
+        server_default=func.now(),
     )
 
     webi_lastname: Mapped[str] = mapped_column(
@@ -399,6 +400,7 @@ class UserFeatures(Base):
 
     @property
     def incalls(self) -> list["Dialaction"]:
+        """Return a list of incall Dialaction objects associated with the user."""
         return [d.incall for d in self.incall_dialactions if d.incall]
 
     # Removed collection_class
@@ -439,7 +441,8 @@ class UserFeatures(Base):
     )
 
     @property
-    def queues(self) -> list["QueueMember"]:
+    def queues(self) -> list[QueueMember]:
+        """Return a list of queue members associated with the user."""
         return [qm.queue for qm in self.queue_members if qm.queue]
 
     paging_users: Mapped[list["PagingUser"]] = relationship(
@@ -476,10 +479,16 @@ class UserFeatures(Base):
 
     @property
     def schedules(self) -> list["SchedulePath"]:
+        """Return a list of schedule paths associated with the user."""
         return [sp.schedule for sp in self.schedule_paths]
 
     @schedules.setter
     def schedules(self, value: list["SchedulePath"]) -> None:
+        """Set the schedule paths for the user.
+
+        Args:
+            value: A list of SchedulePath objects to associate with the user.
+        """
         self.schedule_paths = [
             SchedulePath(path="user", schedule_id=schedule.id, schedule=schedule)
             for schedule in value
@@ -565,6 +574,7 @@ class UserFeatures(Base):
 
     @property
     def users_from_call_pickup_user_targets(self):
+        """Return a list of user targets associated with call pickup interceptors."""
         return [
             p.user_targets
             for p in self.call_pickup_interceptor_pickups
@@ -573,6 +583,7 @@ class UserFeatures(Base):
 
     @property
     def users_from_call_pickup_group_targets(self):
+        """Return a list of group targets associated with call pickup interceptors."""
         return [
             p.users_from_group_targets
             for p in self.call_pickup_interceptor_pickups
@@ -581,6 +592,7 @@ class UserFeatures(Base):
 
     @property
     def users_from_call_pickup_group_interceptors_user_targets(self):
+        """Return a list of user targets associated with group interceptors."""
         return [
             gm.users_from_call_pickup_group_interceptor_user_targets
             for gm in self.group_members
@@ -589,6 +601,7 @@ class UserFeatures(Base):
 
     @property
     def users_from_call_pickup_group_interceptors_group_targets(self):
+        """Return a list of group targets associated with group interceptors."""
         return [
             gm.users_from_call_pickup_group_interceptor_group_targets
             for gm in self.group_members
@@ -603,14 +616,13 @@ class UserFeatures(Base):
     def extrapolate_caller_id(
         self, extension: "Extension" | None = None
     ) -> tuple[str | None, str | None]:
-        """Extrapolates the caller ID name and number.
+        """Extrapolate the caller ID name and number.
 
         Args:
             extension: The extension to use for the number (optional).
 
         Returns:
             A tuple containing the caller ID name and number.
-
         """
         default_num = extension.exten if extension else None
         user_match = caller_id_regex.match(self.callerid or "")  # Handle None
@@ -619,7 +631,10 @@ class UserFeatures(Base):
         return name, (num or default_num)
 
     def fill_caller_id(self) -> None:
-        """Fill in the caller ID if it's empty."""
+        """Fill in the caller ID if it's empty.
+
+        This method sets the caller ID to the user's full name if the caller ID is currently None.
+        """
         if self.caller_id is None:
             self.caller_id = f'"{self.fullname}"'
 

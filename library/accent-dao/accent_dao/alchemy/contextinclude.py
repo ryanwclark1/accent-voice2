@@ -19,6 +19,7 @@ class ContextInclude(Base):
         include: The name of the context to include.
         priority: The priority of the inclusion.
         included_context: Relationship to the included Context.
+
     """
 
     __tablename__: str = "contextinclude"

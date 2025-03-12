@@ -17,7 +17,7 @@ from .endpoint_sip_section_option import EndpointSIPSectionOption
 
 
 def _generate_selectable() -> Any:  # Added Any Type
-    """Generates the selectable for the materialized view."""
+    """Generate the selectable for the materialized view."""
     cte = select(
         EndpointSIP.uuid.label("uuid"),
         literal(0).label("level"),
@@ -122,7 +122,7 @@ class EndpointSIPOptionsView:
     def get_option_value(
         cls, options: Mapped[dict[str, str]], option: str
     ) -> str | None:  # Added Options
-        """Gets the value of a specific option from the options dictionary.
+        """Retrieve the value of a specific option from the options dictionary.
 
         Args:
             option: The name of the option.

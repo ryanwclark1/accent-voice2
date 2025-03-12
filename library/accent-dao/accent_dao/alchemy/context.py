@@ -1,5 +1,6 @@
 # file: accent_dao/models/context.py
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -17,8 +18,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from accent_dao.helpers.db_manager import Base
 
+from .contextinclude import ContextInclude
+
 if TYPE_CHECKING:
-    from .contextinclude import ContextInclude
     from .contextnumbers import ContextNumbers
     from .tenant import Tenant
 
@@ -38,7 +40,8 @@ class Context(Base):
         context_numbers_user: Relationship to ContextNumbers for user ranges.
         context_numbers_group: Relationship to ContextNumbers for group ranges.
         context_numbers_queue: Relationship to ContextNumbers for queue ranges.
-        context_numbers_meetme: Relationship to ContextNumbers for conference room ranges.
+        context_numbers_meetme: Relationship to ContextNumbers for
+            conference room ranges.
         context_numbers_incall: Relationship to ContextNumbers for incall ranges.
         context_includes_children: Relationship to child ContextIncludes.
         context_include_parents: Relationship to parent ContextIncludes.

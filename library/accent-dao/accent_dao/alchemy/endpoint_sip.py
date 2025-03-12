@@ -89,7 +89,8 @@ class EndpointSIP(Base):
         _auth_section: Relationship to AuthSection.
         _endpoint_section: Relationship to EndpointSection.
         _registration_section: Relationship to RegistrationSection.
-    _registration_outbound_auth_section: Relationship to RegistrationOutboundAuthSection.
+    _registration_outbound_auth_section: Relationship to
+        RegistrationOutboundAuthSection.
         _identify_section: Relationship to IdentifySection.
         _outbound_auth_section: Relationship to OutboundAuthSection.
         aor_section_options: Options for the AOR section.
@@ -97,20 +98,28 @@ class EndpointSIP(Base):
         endpoint_section_options: Options for the endpoint section.
     combined_aor_section_options: Combined AOR options from templates and endpoint.
     combined_auth_section_options: Combined auth options from templates and endpoint.
-    combined_endpoint_section_options: Combined endpoint options from templates and endpoint.
-    combined_registration_section_options: Combined registration options from templates and endpoint.
-    combined_registration_outbound_auth_section_options: Combined registration outbound auth options.
-    combined_identify_section_options: Combined identify options from templates and endpoint.
+    combined_endpoint_section_options: Combined endpoint options from
+        templates and endpoint.
+    combined_registration_section_options: Combined registration options from
+        templates and endpoint.
+    combined_registration_outbound_auth_section_options: Combined
+        registration outbound auth options.
+    combined_identify_section_options: Combined identify options from
+        templates and endpoint.
     combined_outbound_auth_section_options: Combined outbound auth options.
     inherited_aor_section_options: Inherited AOR options from templates.
     inherited_auth_section_options: Inherited auth options from templates.
     inherited_endpoint_section_options: Inherited endpoint options from templates.
-    inherited_registration_section_options: Inherited registration options from templates.
-    inherited_registration_outbound_auth_section_options: Inherited registration outbound auth options.
+    inherited_registration_section_options: Inherited registration options
+    from templates.
+    inherited_registration_outbound_auth_section_options: Inherited
+        registration outbound auth options.
     inherited_identify_section_options: Inherited identify options from templates.
-    inherited_outbound_auth_section_options: Inherited outbound auth options from templates.
+    inherited_outbound_auth_section_options: Inherited outbound auth options
+    from templates.
         registration_section_options: Options for the registration section.
-    registration_outbound_auth_section_options: Options for the registration outbound auth section.
+    registration_outbound_auth_section_options: Options for the
+        registration outbound auth section.
         identify_section_options: Options for the identify section.
         outbound_auth_section_options: Options for the outbound auth section.
         line: Relationship to LineFeatures.
@@ -573,7 +582,15 @@ class EndpointSIP(Base):
         return None
 
     def get_option_value(self, option: str) -> str | None:
-        """Gets the value of a specific option."""
+        """Retrieve the value of a specific option.
+
+        Args:
+            option: The name of the option.
+
+        Returns:
+            The value of the option, or None if the option is not found.
+
+        """
         if not self._options:
             return None
         return self._options.get(option, None)

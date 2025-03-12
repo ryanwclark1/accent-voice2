@@ -1,6 +1,7 @@
 # file: accent_dao/models/endpoint_sip_section.py
 # Copyright 2025 Accent Communications
-from typing import TYPE_CHECKING, Literal
+
+from typing import Literal
 
 from sqlalchemy import Enum, ForeignKey, Index, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -8,8 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from accent_dao.helpers.db_manager import Base
 
-if TYPE_CHECKING:
-    from .endpoint_sip_section_option import EndpointSIPSectionOption
+from .endpoint_sip_section_option import EndpointSIPSectionOption
 
 EndpointSipSectionType = Literal[
     "aor",
@@ -83,7 +83,7 @@ class EndpointSIPSection(Base):
 
     @options.setter
     def options(self, options: list[list[str]]) -> None:
-        """Set the section options
+        """Set the section options.
 
         Args:
             options: New options to be set.
@@ -112,13 +112,13 @@ class EndpointSIPSection(Base):
         self._options = updated_options
 
     def find(self, term: str) -> list[tuple[str, str]]:
-        """Finds options matching a given term."""
+        """Find options matching a given term."""
         return [
             (option.key, option.value) for option in self._options if option.key == term
         ]
 
     def add_or_replace(self, option_name: str, value: str) -> None:
-        """Adds a new option or replaces an existing one."""
+        """Add a new option or replaces an existing one."""
         for option in self._options:
             if option.key == option_name:
                 option.value = value

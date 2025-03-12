@@ -1,5 +1,6 @@
 # file: accent_dao/models/callfiltermember.py
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import (

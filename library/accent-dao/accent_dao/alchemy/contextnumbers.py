@@ -1,5 +1,6 @@
 # file: accent_dao/models/contextnumbers.py
 # Copyright 2025 Accent Communications
+
 from typing import Literal
 
 from sqlalchemy import ForeignKeyConstraint, Integer, String, case
