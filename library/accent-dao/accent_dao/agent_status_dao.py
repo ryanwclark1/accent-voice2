@@ -1,8 +1,7 @@
 # Copyright 2023 Accent Communications
 from __future__ import annotations
 
-from datetime import datetime
-from typing import NamedTuple, Union
+from typing import TYPE_CHECKING, NamedTuple
 
 from sqlalchemy.sql.expression import case, false, true
 
@@ -14,6 +13,9 @@ from accent_dao.alchemy.queuemember import QueueMember
 from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.helpers.db_manager import daosession
 from accent_dao.helpers.db_utils import flush_session
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class _Queue(NamedTuple):
@@ -31,7 +33,7 @@ class _AgentStatus(NamedTuple):
     state_interface: str
     login_at: datetime
     paused: bool
-    paused_reason: Union[str, None]
+    paused_reason: str | None
     queues: list[_Queue]
     user_ids: list[int]
 
