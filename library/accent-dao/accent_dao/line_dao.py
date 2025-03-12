@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from accent_dao.alchemy.extension import Extension as ExtensionTable
 from accent_dao.alchemy.line_extension import LineExtension
@@ -14,9 +14,17 @@ from accent_dao.alchemy.user_line import UserLine
 from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.helpers.db_manager import daosession
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import Session
+
 
 @daosession
-def get_interface_from_exten_and_context(session: Session, extension: str, context: str) -> str:
+def get_interface_from_exten_and_context(
+    session: Session,
+    extension: str,
+    context: str
+) -> str:
     """Get interface from extension and context.
 
     Args:
@@ -58,7 +66,11 @@ def get_interface_from_exten_and_context(session: Session, extension: str, conte
     return interface
 
 
-async def async_get_interface_from_exten_and_context(session: AsyncSession, extension: str, context: str) -> str:
+async def async_get_interface_from_exten_and_context(
+    session: AsyncSession,
+    extension: str,
+    context: str
+) -> str:
     """Get interface from extension and context (async version).
 
     Args:
@@ -186,7 +198,10 @@ def get_main_extension_context_from_line_id(session: Session, line_id: int) -> t
     return line_row
 
 
-async def async_get_main_extension_context_from_line_id(session: AsyncSession, line_id: int) -> tuple[str, str] | None:
+async def async_get_main_extension_context_from_line_id(
+session: AsyncSession,
+line_id: int
+) -> tuple[str, str] | None:
     """Get main extension and context from line ID (async version).
 
     Args:
