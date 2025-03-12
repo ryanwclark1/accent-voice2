@@ -1,14 +1,28 @@
-# file: accent_dao/resources/utils/view.py  # noqa: ERA001
+# file: accent_dao/resources/utils/view.py
 # Copyright 2025 Accent Communications
 
 import abc
+from typing import TYPE_CHECKING, Any, TypeVar
+
+from sqlalchemy import select
+
+from accent_dao.helpers import errors
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm.strategy_options import LoaderOption
+
+    QueryOptions = tuple[LoaderOption, ...]
+    SyncQuery = Any  # Replace with the actual type if you have a specific Query type
+    AsyncQuery = (
+        Any  # Replace with the actual type if you have a specific AsyncQuery type
+    )
+
 from collections.abc import Sequence
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from accent_dao.helpers import errors
+_T = TypeVar("_T")
 
 
 class ViewSelector:
@@ -63,7 +77,7 @@ class View(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def query(self, session: Session | AsyncSession) -> Any:  # Use Any for query
+    async def query(self, session: Session | AsyncSession) -> Any:  # Changed to async
         """Define the query for the view.
 
         Args:
@@ -76,7 +90,7 @@ class View(metaclass=abc.ABCMeta):
         ...
 
     @abc.abstractmethod
-    def convert(self, row: Any) -> Any:  # Use Any; row type is DB-specific
+    def convert(self, row: Any) -> Any:  # Use Any for row
         """Convert a database row to the desired view format.
 
         Args:
@@ -101,7 +115,7 @@ class View(metaclass=abc.ABCMeta):
         return [self.convert(row) for row in rows]
 
 
-class ModelView("View"):
+class ModelView(View):
     """A view that converts database rows to model instances.
 
     Attributes:
@@ -132,7 +146,11 @@ class ModelView("View"):
             The SQLAlchemy query object.
 
         """
-        return session.query(self.table)
+        # Adapt based on session type (sync or async)
+        if isinstance(session, AsyncSession):
+            return select(self.table)  # Use select for async
+        else:
+            return session.query(self.table)  # type: ignore
 
     def convert(self, row: Any) -> Any:  # Use Any for row
         """Convert a database row to a model instance.
