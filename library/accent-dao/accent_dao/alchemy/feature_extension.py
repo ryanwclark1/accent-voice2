@@ -1,4 +1,4 @@
-# file: accent_dao/models/feature_extension.py
+# file: accent_dao/models/feature_extension.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from accent.accent_helpers import clean_extension

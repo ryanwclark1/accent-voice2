@@ -1,4 +1,4 @@
-# file: accent_dao/models/endpoint_sip.py
+# file: accent_dao/models/endpoint_sip.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import logging

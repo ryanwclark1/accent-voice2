@@ -1,4 +1,4 @@
-# file: accent_dao/models/func_key_dest_agent.py
+# file: accent_dao/models/func_key_dest_agent.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

@@ -1,4 +1,4 @@
-# file: accent_dao/models/enum.py
+# file: accent_dao/models/enum.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 # This will be used in the same way as the SQLAlchemy Enum
