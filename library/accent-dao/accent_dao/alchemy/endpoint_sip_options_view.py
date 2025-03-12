@@ -1,4 +1,4 @@
-# file: accent_dao/models/endpoint_sip_options_view.py
+# file: accent_dao/models/endpoint_sip_options_view.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 # TODO: Update materialized view

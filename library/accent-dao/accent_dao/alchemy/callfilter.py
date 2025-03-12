@@ -1,7 +1,7 @@
 # file: accent_dao/alchemy/callfilter.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, get_args
 
 from sqlalchemy import (
     Enum,
@@ -36,6 +36,22 @@ CallfilterCallfrom = Literal["internal", "external", "all"]
 if TYPE_CHECKING:
     from .callfiltermember import Callfiltermember
     from .dialaction import Dialaction
+
+
+def _convert_to_bosssecretary(value: str) -> CallfilterBosssecretary | str:
+    """Convert a string to a CallfilterBosssecretary enum member, if possible.
+
+    Args:
+        value: The string value to convert.
+
+    Returns:
+        CallfilterBosssecretary | str: The enum member if valid, or
+        the original string if not.
+
+    """
+    if value in get_args(CallfilterBosssecretary):
+        return value  # type: ignore #  mypy is confused, but this is correct.
+    return value
 
 
 class Callfilter(Base):
@@ -135,7 +151,7 @@ class Callfilter(Base):
 
     # These are now regular properties, setting attributes.
     @property
-    def caller_id_mode(self) -> str | None:
+    def caller_id_mode(self) -> str | None:  # noqa: D102
         return self.caller_id.mode if self.caller_id else None
 
     @caller_id_mode.setter
@@ -147,6 +163,13 @@ class Callfilter(Base):
 
     @property
     def caller_id_name(self) -> str | None:
+        """Retrieves the caller ID name.
+
+        Returns:
+            str | None: The name associated with the caller ID if it exists,
+                otherwise None.
+
+        """
         return self.caller_id.name if self.caller_id else None
 
     @caller_id_name.setter
@@ -188,6 +211,9 @@ class Callfilter(Base):
     @property
     def strategy(self) -> str:
         """Get the call filter strategy."""
+        # Handle the case where bosssecretary is a string
+        if isinstance(self.bosssecretary, str):
+            return self.bosssecretary
         if self.bosssecretary == "bossfirst-serial":
             return "all-recipients-then-linear-surrogates"
         if self.bosssecretary == "bossfirst-simult":
@@ -206,16 +232,7 @@ class Callfilter(Base):
             value: strategy name
 
         """
-        if value == "all-recipients-then-linear-surrogates":
-            self.bosssecretary = "bossfirst-serial"
-        elif value == "all-recipients-then-all-surrogates":
-            self.bosssecretary = "bossfirst-simult"
-        elif value == "linear-surrogates-then-all-recipients":
-            self.bosssecretary = "secretary-serial"
-        elif value == "all-surrogates-then-all-recipients":
-            self.bosssecretary = "secretary-simult"
-        else:
-            self.bosssecretary = value
+        self.bosssecretary = _convert_to_bosssecretary(value)
 
     @property
     def surrogates_timeout(self) -> int | None:

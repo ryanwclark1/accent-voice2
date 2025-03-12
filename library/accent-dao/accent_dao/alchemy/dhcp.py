@@ -1,4 +1,4 @@
-# file: accent_dao/models/dhcp.py
+# file: accent_dao/models/dhcp.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String

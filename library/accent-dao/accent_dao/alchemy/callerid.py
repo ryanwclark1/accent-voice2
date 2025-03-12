@@ -1,4 +1,4 @@
-# file: accent_dao/models/callerid.py
+# file: accent_dao/models/callerid.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import Literal

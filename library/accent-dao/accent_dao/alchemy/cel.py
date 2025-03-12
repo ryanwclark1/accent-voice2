@@ -1,4 +1,4 @@
-# file: accent_dao/models/cel.py
+# file: accent_dao/models/cel.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import DateTime, Index, Integer, Text, UnicodeText

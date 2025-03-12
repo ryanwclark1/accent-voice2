@@ -1,4 +1,4 @@
-# file: accent_dao/models/contextmember.py
+# file: accent_dao/models/contextmember.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKeyConstraint, Index, PrimaryKeyConstraint, String

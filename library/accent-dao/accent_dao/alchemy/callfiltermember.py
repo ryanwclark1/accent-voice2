@@ -1,4 +1,4 @@
-# file: accent_dao/models/callfiltermember.py
+# file: accent_dao/models/callfiltermember.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal

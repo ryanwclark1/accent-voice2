@@ -1,4 +1,4 @@
-# file: accent_dao/models/conference.py
+# file: accent_dao/models/conference.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING
