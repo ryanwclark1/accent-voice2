@@ -1,4 +1,4 @@
-# file: accent_dao/models/callfilter.py
+# file: accent_dao/alchemy/callfilter.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal
@@ -19,7 +19,7 @@ from sqlalchemy.sql import and_, select
 
 from accent_dao.helpers.db_manager import Base
 
-from .callerid import Callerid
+from .callerid import Callerid, CalleridMode
 from .feature_extension import FeatureExtension
 
 # Add these for clarity and type safety
@@ -105,7 +105,7 @@ class Callfilter(Base):
         .where(
             and_(
                 FeatureExtension.feature == "bsfilter",
-                FeatureExtension.enabled == true(),
+                FeatureExtension.enabled.is_(True),  # Use SQLAlchemy's is_()
             )
         )
         .scalar_subquery()
@@ -139,7 +139,7 @@ class Callfilter(Base):
         return self.caller_id.mode if self.caller_id else None
 
     @caller_id_mode.setter
-    def caller_id_mode(self, value: str) -> None:
+    def caller_id_mode(self, value: CalleridMode) -> None:  # Correct type hint
         if self.caller_id:
             self.caller_id.mode = value
         else:
@@ -150,11 +150,11 @@ class Callfilter(Base):
         return self.caller_id.name if self.caller_id else None
 
     @caller_id_name.setter
-    def caller_id_name(self, value: str) -> None:
+    def caller_id_name(self, value: str | None) -> None:
         if self.caller_id:
             self.caller_id.name = value
         else:
-            self.caller_id = Callerid(type="callfilter", name=value)
+            self.caller_id = Callerid(type="callfilter", name=value)  # type: ignore
 
     recipients: Mapped[list["Callfiltermember"]] = relationship(
         "Callfiltermember",
@@ -182,12 +182,12 @@ class Callfilter(Base):
 
     @property
     def fallbacks(self) -> dict[str, "Dialaction"]:
-        """The fallback dialactions for the call filter."""
+        """Get the fallback dialactions for the call filter."""
         return self.callfilter_dialactions
 
     @property
     def strategy(self) -> str:
-        """The call filter strategy."""
+        """Get the call filter strategy."""
         if self.bosssecretary == "bossfirst-serial":
             return "all-recipients-then-linear-surrogates"
         if self.bosssecretary == "bossfirst-simult":
@@ -200,7 +200,12 @@ class Callfilter(Base):
 
     @strategy.setter
     def strategy(self, value: str) -> None:
-        """Set the call filter strategy."""
+        """Set the call filter strategy.
+
+        Args:
+            value: strategy name
+
+        """
         if value == "all-recipients-then-linear-surrogates":
             self.bosssecretary = "bossfirst-serial"
         elif value == "all-recipients-then-all-surrogates":
@@ -214,14 +219,19 @@ class Callfilter(Base):
 
     @property
     def surrogates_timeout(self) -> int | None:
-        """The timeout for surrogates (in seconds)."""
+        """Get the timeout for surrogates (in seconds)."""
         if self.ringseconds == 0:
             return None
         return self.ringseconds
 
     @surrogates_timeout.setter
     def surrogates_timeout(self, value: int | None) -> None:
-        """Set the timeout for surrogates."""
+        """Set the timeout for surrogates.
+
+        Args:
+            value: int or None
+
+        """
         if value is None:
             self.ringseconds = 0
         else:
@@ -229,7 +239,7 @@ class Callfilter(Base):
 
     @property
     def enabled(self) -> bool:
-        """Indicates if the call filter is enabled."""
+        """Indicate if the call filter is enabled."""
         return self.commented == 0
 
     @enabled.setter
