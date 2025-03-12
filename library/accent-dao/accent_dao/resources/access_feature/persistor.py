@@ -25,7 +25,7 @@ class AccessFeaturesPersistor(CriteriaBuilderMixin, AsyncBasePersistor):
             access_feature_search: Search system for access features.
 
         """
-        super().__init__(session)
+        super().__init__(session, self._search_table)
         self.access_feature_search = access_feature_search
         self.session = session  # Keep this for now
 
