@@ -1,5 +1,6 @@
 # file: accent_dao/models/useriax.py
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import (
@@ -13,8 +14,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.asterisk import AsteriskOptionsMixin
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .trunkfeatures import TrunkFeatures

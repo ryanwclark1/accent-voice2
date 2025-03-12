@@ -1,13 +1,14 @@
 # file: accent_dao/models/voicemail.py
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Integer, String, cast, select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers import get_history  # Import the get_history function
+from accent_dao.helpers.db_manager import Base
 
 from .context import Context
 
@@ -96,6 +97,15 @@ class Voicemail(Base):
         foreign_keys="Voicemail.context",
         viewonly=True,
     )
+
+    def __init__(self, **kwargs):
+        """Initialize a Voicemail instance.
+
+        Args:
+            **kwargs: Keyword arguments to initialize the Voicemail attributes.
+
+        """
+        super().__init__(**kwargs)
 
     def get_old_number_context(self) -> tuple[str, str]:
         """Retrieve the old number and context before an update.

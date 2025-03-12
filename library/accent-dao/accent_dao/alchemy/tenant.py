@@ -1,5 +1,6 @@
 # file: accent_dao/models/tenant.py
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Index, String, func
