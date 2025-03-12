@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import contextvars
 import logging
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar
+from contextlib import asynccontextmanager, contextmanager
+from typing import TYPE_CHECKING, Any, Generic, NamedTuple, TypeVar
 
 import sqlalchemy as sa
 from sqlalchemy import func, sql, text
@@ -15,8 +17,16 @@ from unidecode import unidecode
 from accent_dao.helpers import errors  # Import errors
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Generator
+
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
+    from sqlalchemy.orm.strategy_options import LoaderOption
+
+    QueryOptions = tuple[LoaderOption, ...]
+    # More precise types, if you have a specific Query class use it.
+    SyncQuery = Any  # Replace with the actual type if have a specific Query type
+    AsyncQuery = Any  # Replace with the actual type if have a specific AsyncQuery type
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -430,4 +440,76 @@ class SearchSystem:
         if limit:
             query = query.limit(limit)
 
+        return query
+
+class QueryOptionsMixin(Generic[_T]):
+    """Mixin class for adding support for SQLAlchemy query options.
+
+    This mixin allows subclasses to temporarily set query options
+    using a context manager, making it convenient to apply options
+    like `joinedload` or `selectinload` for specific queries.
+
+    Attributes:
+        _query_options: A class-level ContextVar to store query options.
+
+    """
+
+    _query_options: contextvars.ContextVar[QueryOptions | None] = (
+        contextvars.ContextVar("query_options", default=None)
+    )
+
+    @classmethod
+    @contextmanager
+    def context_query_options(
+        cls, *options: LoaderOption
+    ) -> Generator[None, None, None]:
+        """Context manager for temporarily setting query options.
+
+        Args:
+            *options: SQLAlchemy loader options (e.g., joinedload, selectinload).
+
+        Yields:
+            None
+
+        """
+        token = cls._query_options.set(options)
+        try:
+            yield
+        finally:
+            cls._query_options.reset(token)
+
+    @classmethod
+    @asynccontextmanager
+    async def async_context_query_options(
+        cls, *options: LoaderOption
+    ) -> AsyncGenerator[None, None]:
+        """Async context manager for temporarily setting query options.
+
+        Args:
+            *options: SQLAlchemy loader options (e.g., joinedload, selectinload).
+
+        Yields:
+            None
+
+        """
+        token = cls._query_options.set(options)
+        try:
+            yield
+        finally:
+            cls._query_options.reset(token)
+
+    def _apply_query_options(
+        self, query: SyncQuery | AsyncQuery
+    ) -> SyncQuery | AsyncQuery:
+        """Apply the current query options to the given query.
+
+        Args:
+            query: The SQLAlchemy query object.
+
+        Returns:
+            The query with options applied.
+
+        """
+        if options := self._query_options.get():
+            return query.options(*options)
         return query
