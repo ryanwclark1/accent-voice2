@@ -1,4 +1,4 @@
-# file: accent_dao/models/accessfeatures.py
+# file: accent_dao/models/accessfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import CheckConstraint, Integer, String, UniqueConstraint

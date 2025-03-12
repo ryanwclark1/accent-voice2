@@ -1,4 +1,4 @@
-# file: accent_dao/models/agent_membership_status.py
+# file: accent_dao/models/agent_membership_status.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, PrimaryKeyConstraint, String
