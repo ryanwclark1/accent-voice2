@@ -1,4 +1,4 @@
-# file: accent_dao/resources/access_feature/dao.py
+# file: accent_dao/resources/access_feature/dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy.ext.asyncio import AsyncSession
