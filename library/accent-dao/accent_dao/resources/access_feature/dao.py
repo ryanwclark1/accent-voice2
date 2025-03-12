@@ -108,9 +108,10 @@ async def find_all_by(session: AsyncSession, **criteria: dict) -> list[AccessFea
         list[AccessFeatures]: A list of access features.
 
     """
-    return await AccessFeaturesPersistor(session, access_feature_search).find_all_by(
+    result = await AccessFeaturesPersistor(session, access_feature_search).find_all_by(
         criteria
     )
+    return list(result)
 
 
 @async_daosession
