@@ -7,14 +7,13 @@ import logging
 from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar
 
 import sqlalchemy as sa
-from sqlalchemy import func, or_, text
+from sqlalchemy import func, select, sql, text  # Corrected import: added select
 from sqlalchemy.sql.functions import ReturnTypeFromArgs
 from sqlalchemy.types import Integer, String
 from unidecode import unidecode
 
+# add the errors to the type checking.
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
 
@@ -38,7 +37,7 @@ class SearchResult(NamedTuple):
     items: list[Any]
 
 
-class unaccent(ReturnTypeFromArgs):  # type: ignore
+class unaccent(ReturnTypeFromArgs):  # noqa: N801
     """Custom SQL function for unaccenting strings."""
 
     cache_ok = True
@@ -250,8 +249,8 @@ class SearchSystem:
             SearchResult: NamedTuple containing total count and items.
 
         """
-        query = session.query(self.config.table)
-        return await self.async_search_from_query(query, parameters)
+        query = select(self.config.table)  # Use select for async
+        return await self.async_search_from_query(session, query, parameters)
 
     def search_from_query(
         self, query: Any, parameters: dict[str, Any] | None = None
@@ -268,14 +267,12 @@ class SearchSystem:
         """
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)
-
         query = self._filter(query, parameters["search"])
         query = self._filter_exact_match(query, parameters)
         sorted_query = self._sort(query, parameters["order"], parameters["direction"])
         paginated_query = self._paginate(
             sorted_query, parameters["limit"], parameters["offset"]
         )
-
         return SearchResult(sorted_query.count(), paginated_query.all())
 
     async def async_search_from_query(
@@ -296,7 +293,6 @@ class SearchSystem:
         """
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)
-
         query = self._filter(query, parameters["search"])
         query = self._filter_exact_match(query, parameters)
 
@@ -349,7 +345,7 @@ class SearchSystem:
             InputError: If any parameter is invalid.
 
         """
-        if parameters["offset"] < 0:  # type: ignore
+        if parameters["offset"] < 0:  # type: ignore[operator]
             raise errors.wrong_type("offset", "positive number")
 
         if parameters["limit"] is not None and parameters["limit"] <= 0:
