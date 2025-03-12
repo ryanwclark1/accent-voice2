@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Protocol,
     TypeVar,
 )
 
@@ -19,10 +20,34 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from sqlalchemy.ext.asyncio import AsyncSession
-    from sqlalchemy.orm import Session
+    from sqlalchemy.orm import Query, Session
+    from sqlalchemy.sql import Select
+
+
+class HasTenantUUID(Protocol):
+    """Protocol for models with tenant_uuid attribute."""
+
+    tenant_uuid: Any
+
 
 T = TypeVar("T")
-ModelType = TypeVar("ModelType")
+ModelType = TypeVar("ModelType", bound=HasTenantUUID)
+
+
+class SearchSystem(Protocol):
+    """Protocol for search system."""
+
+    def search_from_query(
+        self, query: Query, parameters: dict[str, Any]
+    ) -> tuple[list[Any], int]:
+        """Search using a query."""
+        ...
+
+    async def async_search_from_query(
+        self, session: AsyncSession, stmt: Select, parameters: dict[str, Any]
+    ) -> tuple[list[Any], int]:
+        """Search asynchronously using a statement."""
+        ...
 
 
 class BasePersistor(Generic[ModelType]):
@@ -33,8 +58,8 @@ class BasePersistor(Generic[ModelType]):
         session: Session,
         search_table: type[ModelType],
         tenant_uuids: list[str] | None = None,
-        search_system: Any = None,
-    ):
+        search_system: SearchSystem | None = None,
+    ) -> None:
         """Initialize base persistor.
 
         Args:
@@ -123,7 +148,8 @@ class BasePersistor(Generic[ModelType]):
         """
         model = self.find_by(criteria)
         if not model:
-            resource_name = self._search_table.__mapper__.class_.__name__
+            # Get class name for error message
+            resource_name = self._search_table.__name__
             raise errors.not_found(resource_name, **criteria)
         return model
 
@@ -148,12 +174,15 @@ class BasePersistor(Generic[ModelType]):
             Search result
 
         """
+        if self.search_system is None:
+            raise ValueError("Search system is required for search operations")
+
         query = self._search_query()
         query = self._filter_tenant_uuid(query)
         rows, total = self.search_system.search_from_query(query, parameters)
         return SearchResult(total, rows)
 
-    def _find_query(self, criteria: dict[str, Any]) -> Any:
+    def _find_query(self, criteria: dict[str, Any]) -> Query:
         """Create a query for finding records.
 
         Args:
@@ -168,7 +197,7 @@ class BasePersistor(Generic[ModelType]):
         """
         raise NotImplementedError
 
-    def _search_query(self) -> Any:
+    def _search_query(self) -> Query:
         """Create a query for searching records.
 
         Returns:
@@ -180,7 +209,7 @@ class BasePersistor(Generic[ModelType]):
         """
         raise NotImplementedError
 
-    def _filter_tenant_uuid(self, query: Any) -> Any:
+    def _filter_tenant_uuid(self, query: Query) -> Query:
         """Filter query by tenant UUID.
 
         Args:
@@ -196,7 +225,9 @@ class BasePersistor(Generic[ModelType]):
         if not self.tenant_uuids:
             return query.filter(text("false"))
 
-        return query.filter(self._search_table.tenant_uuid.in_(self.tenant_uuids))
+        # Access tenant_uuid through class attribute on the model class
+        model_class = self._search_table
+        return query.filter(model_class.tenant_uuid.in_(self.tenant_uuids))
 
 
 class AsyncBasePersistor(Generic[ModelType]):
@@ -207,7 +238,7 @@ class AsyncBasePersistor(Generic[ModelType]):
         session: AsyncSession,
         search_table: type[ModelType],
         tenant_uuids: list[str] | None = None,
-        search_system: Any = None,
+        search_system: SearchSystem | None = None,
     ) -> None:
         """Initialize async base persistor.
 
@@ -324,6 +355,9 @@ class AsyncBasePersistor(Generic[ModelType]):
             Search result
 
         """
+        if self.search_system is None:
+            raise ValueError("Search system is required for search operations")
+
         stmt = await self._search_stmt()
         stmt = await self._filter_tenant_uuid(stmt)
         rows, total = await self.search_system.async_search_from_query(
@@ -331,7 +365,7 @@ class AsyncBasePersistor(Generic[ModelType]):
         )
         return SearchResult(total, rows)
 
-    async def _find_stmt(self, criteria: dict[str, Any]) -> Any:
+    async def _find_stmt(self, criteria: dict[str, Any]) -> Select:
         """Create a statement for finding records.
 
         Args:
@@ -346,7 +380,7 @@ class AsyncBasePersistor(Generic[ModelType]):
         """
         raise NotImplementedError
 
-    async def _search_stmt(self) -> Any:
+    async def _search_stmt(self) -> Select:
         """Create a statement for searching records.
 
         Returns:
@@ -358,7 +392,7 @@ class AsyncBasePersistor(Generic[ModelType]):
         """
         raise NotImplementedError
 
-    async def _filter_tenant_uuid(self, stmt: Any) -> Any:
+    async def _filter_tenant_uuid(self, stmt: Select) -> Select:
         """Filter statement by tenant UUID.
 
         Args:
@@ -374,4 +408,6 @@ class AsyncBasePersistor(Generic[ModelType]):
         if not self.tenant_uuids:
             return stmt.filter(text("false"))
 
-        return stmt.filter(self._search_table.tenant_uuid.in_(self.tenant_uuids))
+        # Access tenant_uuid through class attribute on the model class
+        model_class = self._search_table
+        return stmt.filter(model_class.tenant_uuid.in_(self.tenant_uuids))
