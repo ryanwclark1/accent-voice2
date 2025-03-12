@@ -5,8 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, cast, select, Integer
-from sqlalchemy.orm import joinedload
+from sqlalchemy import Integer, and_, cast, select
 
 from accent_dao.alchemy.callfilter import Callfilter
 from accent_dao.alchemy.callfiltermember import Callfiltermember
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
+    from accent_dao.alchemy.dialaction import Dialaction  # Import Dialaction
     from accent_dao.resources.utils.search import SearchResult
 
 
@@ -45,18 +45,18 @@ async def does_secretary_filter_boss(
         select(Callfiltermember.callfilterid)
         .filter(Callfiltermember.bstype == "boss")
         .filter(Callfiltermember.typeval == str(boss_user_id))
+        .subquery()
     )
 
-    # The subquery needs to be made into a selectable for 'in_'
     query = (
         select(Callfiltermember.id)
         .filter(Callfiltermember.typeval == str(secretary_user_id))
         .filter(Callfiltermember.bstype == "secretary")
-        .filter(Callfiltermember.callfilterid.in_(subquery.scalar_subquery()))
+        .filter(Callfiltermember.callfilterid.in_(select(subquery.c.callfilterid)))
     )
 
     result = await session.execute(query)
-    # We can't use len(result.all()) directly with async.  Use .scalars() and then count.
+    # We can't use len(result.all()) directly with async. Use .scalars() and then count.
     return len(result.scalars().all())
 
 
@@ -138,8 +138,7 @@ async def get_secretaries_by_callfiltermember_id(
         callfiltermember_id: The ID of the call filter member.
 
     Returns:
-        Sequence[tuple[Callfiltermember, int]]: A sequence of tuples containing
-        Callfiltermember and UserFeatures.ringseconds.
+       Sequence[tuple[Callfiltermember, int]]: A sequence of tuples.
 
     """
     query = (
@@ -242,9 +241,9 @@ async def find_all_by(session: AsyncSession, **criteria: dict) -> list[Callfilte
         list[Callfilter]: A list of call filters.
 
     """
-    result = await CallFilterPersistor(session, call_filter_search).find_all_by(
-        criteria
-    )
+    result: Sequence[Callfilter] = await CallFilterPersistor(
+        session, call_filter_search
+    ).find_all_by(criteria)
 
     return list(result)
 
@@ -304,7 +303,7 @@ async def is_activated_by_callfilter_id(
         .filter(
             Callfiltermember.callfilterid == callfilter_id,
             Callfiltermember.bstype == "secretary",
-            Callfiltermember.active.is_(1),  # Correct boolean comparison
+            Callfiltermember.active.is_(True),  # Correct boolean comparison
         )
     )
 
@@ -325,11 +324,12 @@ async def update_callfiltermember_state(
         new_state: The new state (True for active, False for inactive).
 
     """
-    await session.execute(
+    stmt = (
         Callfiltermember.__table__.update()
         .where(Callfiltermember.id == callfiltermember_id)
         .values(active=int(new_state))
     )
+    await session.execute(stmt)
     await session.commit()
 
 
@@ -374,14 +374,14 @@ async def delete(session: AsyncSession, call_filter: Callfilter) -> None:
 
 @async_daosession
 async def associate_recipients(
-    session: AsyncSession, call_filter: Callfilter, recipients
+    session: AsyncSession, call_filter: Callfilter, recipients: list[Callfiltermember]
 ) -> None:
     """Associates a list of recipients with the call filter.
 
     Args:
-        session: The database session
-        call_filter: The Callfilter instance
-        recipients: The list of Callfiltermember instances
+        session: The database session.
+        call_filter: The Callfilter instance.
+        recipients: The list of Callfiltermember instances.
 
     """
     await CallFilterPersistor(session, call_filter_search).associate_recipients(
@@ -391,14 +391,14 @@ async def associate_recipients(
 
 @async_daosession
 async def associate_surrogates(
-    session: AsyncSession, call_filter: Callfilter, surrogates
+    session: AsyncSession, call_filter: Callfilter, surrogates: list[Callfiltermember]
 ) -> None:
     """Associates a list of surrogates with the call filter.
 
     Args:
-        session: The database session
-        call_filter: The Callfilter instance
-        surrogates: The list of Callfiltermember instances
+        session: The database session.
+        call_filter: The Callfilter instance.
+        surrogates: The list of Callfiltermember instances.
 
     """
     await CallFilterPersistor(session, call_filter_search).associate_surrogates(
@@ -408,14 +408,15 @@ async def associate_surrogates(
 
 @async_daosession
 async def update_fallbacks(
-    session: AsyncSession, call_filter: Callfilter, fallbacks: dict[str, "Dialaction"]
+    session: AsyncSession, call_filter: Callfilter, fallbacks: dict[str, Dialaction]
 ) -> None:
-    """Updates the fallback dialactions for the call filter.
+    """Update the fallback dialactions for the call filter.
 
     Args:
-        session: The database session
-        call_filter:  The Callfilter instance
-        fallbacks: The new fallback actions
+        session: The database session.
+        call_filter: The Callfilter instance.
+        fallbacks: The new fallback actions.
+
     """
     await CallFilterPersistor(session, call_filter_search).update_fallbacks(
         call_filter, fallbacks
