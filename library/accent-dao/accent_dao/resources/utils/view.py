@@ -1,4 +1,4 @@
-# file: accent_dao/resources/utils/view.py
+# file: accent_dao/resources/utils/view.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import abc
