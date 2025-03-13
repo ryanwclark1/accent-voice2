@@ -1,8 +1,7 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/endpoint_sip/search.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-import uuid
-
-from sqlalchemy.sql import text
+from sqlalchemy import func, select
 
 from accent_dao.alchemy.endpoint_sip import EndpointSIP
 from accent_dao.resources.utils.search import SearchConfig, SearchSystem
@@ -10,36 +9,50 @@ from accent_dao.resources.utils.search import SearchConfig, SearchSystem
 config = SearchConfig(
     table=EndpointSIP,
     columns={
-        'name': EndpointSIP.name,
-        'asterisk_id': EndpointSIP.asterisk_id,
-        'label': EndpointSIP.label,
-        'template': EndpointSIP.template,
+        "name": EndpointSIP.name,
+        "asterisk_id": EndpointSIP.asterisk_id,
+        "label": EndpointSIP.label,
+        "template": EndpointSIP.template,
+        "caller_id": EndpointSIP.caller_id,
+        "username": EndpointSIP.username,
+        "password": EndpointSIP.password,
     },
-    default_sort='label',
+    default_sort="label",
 )
 
 
-class EndpointSIPSearchSystem(SearchSystem):
-    def search_from_query(self, query, parameters=None):
-        if isinstance(parameters, dict):
-            if uuid_param := parameters.pop('uuid', None):
-                uuids = [uuid for uuid in uuid_param.split(',') if is_valid_uuid(uuid)]
-                query = self._filter_exact_match_uuids(query, uuids)
-            return super().search_from_query(query, parameters)
+class AsyncSearchSystem(SearchSystem):
+    """Extend SearchSystem to add async support and handle materialised view."""
 
-    def _filter_exact_match_uuids(self, query, uuids):
-        if not uuids:
-            return query.filter(text('false'))
-        else:
-            return query.filter(EndpointSIP.uuid.in_(uuids))
+    async def async_search_from_query(self, session, query, parameters=None):
+        """Asynchronously perform a search starting from an existing query."""
+        parameters = self._populate_parameters(parameters)
+        self._validate_parameters(parameters)
+
+        query = self._filter(query, parameters["search"])
+        query = self._filter_exact_match(query, parameters)
+
+        # Apply sorting
+        sort_column_name = parameters["order"]
+        sort_direction = parameters["direction"]
+        query = self._sort(query, sort_column_name, sort_direction)
+
+        # Apply pagination
+        limit = parameters["limit"]
+        offset = parameters["offset"]
+        query = self._paginate(query, limit, offset)
+
+        # Execute count and fetch queries concurrently using asyncio.gather
+        count_query = select(func.count()).select_from(query.subquery())
+        count_task = session.execute(count_query)
+
+        # Fetch the rows with the limit and offset using await
+        result = await session.execute(query)
+        rows = result.scalars().all()
+
+        total = (await count_task).scalar_one()
+
+        return total, rows
 
 
-def is_valid_uuid(input):
-    try:
-        uuid.UUID(input)
-        return True
-    except ValueError:
-        return False
-
-
-sip_search = EndpointSIPSearchSystem(config)
+sip_search = AsyncSearchSystem(config)
