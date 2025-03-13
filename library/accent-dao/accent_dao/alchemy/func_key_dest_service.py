@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_dest_service.py
+# file: accent_dao/alchemy/func_key_dest_service.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -69,6 +69,12 @@ class FuncKeyDestService(Base):
 
     @property
     def feature_extension_feature(self) -> str:
+        """Retrieves the feature attribute from the feature_extension object.
+
+        Returns:
+            str: The feature attribute of the feature_extension object.
+
+        """
         return self.feature_extension.feature
 
     @feature_extension_feature.setter

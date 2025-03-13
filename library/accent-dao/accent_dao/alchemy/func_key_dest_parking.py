@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_dest_parking.py
+# file: accent_dao/alchemy/func_key_dest_parking.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
+    PrimaryKeyConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

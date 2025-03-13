@@ -35,7 +35,8 @@ class FuncKeyDestAgent(Base):
         agent: Relationship to AgentFeatures.
         feature_extension: Relationship to FeatureExtension.
         feature_extension_feature: The feature associated with the feature extension.
-        action: The action associated with the function key ('login', 'logout', 'toggle').
+        action: The action associated with the function key
+            ('login', 'logout', 'toggle').
         type: String for type oftype: String for type of object.
 
     """
@@ -78,6 +79,12 @@ class FuncKeyDestAgent(Base):
 
     @property
     def feature_extension_feature(self) -> str:
+        """Retrieves the feature attribute from the feature_extension object.
+
+        Returns:
+            str: The feature attribute of the feature_extension object.
+
+        """
         return self.feature_extension.feature
 
     @feature_extension_feature.setter

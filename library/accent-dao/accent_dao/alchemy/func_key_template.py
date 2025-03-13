@@ -43,10 +43,12 @@ class FuncKeyTemplate(Base):
 
     keys: Mapped[dict[int, "FuncKeyMapping"]]
 
-    def __init__(self, keys: dict = {}, **kwargs: dict) -> None:
+    def __init__(self, keys: dict | None = None, **kwargs: dict) -> None:
         """Initialize with a set of function key mappings."""
         # keys should probably be retrieved by relationship
         # but that implies to convert FuncKeyMapping.destination as relationship
+        if keys is None:
+            keys = {}
         self.keys = keys
         super().__init__(**kwargs)
 
@@ -64,8 +66,9 @@ class FuncKeyTemplate(Base):
 
         """
         if position not in self.keys:
+            msg = "FuncKey"
             raise NotFoundError(
-                "FuncKey", template_id=self.id, position=position
+                msg, template_id=self.id, position=position
             )  # Use your NotFoundError
         return self.keys[position]
 

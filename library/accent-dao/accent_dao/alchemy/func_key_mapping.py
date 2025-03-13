@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_mapping.py
+# file: accent_dao/alchemy/func_key_mapping.py # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Any
@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Integer,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -66,6 +67,12 @@ class FuncKeyMapping(Base):
 
     @property
     def destination_type_name(self) -> str:
+        """Retrieves the name of the destination type.
+
+        Returns:
+            str: The name of the destination type.
+
+        """
         return self.func_key.destination_type_name
 
     func_key_template: Mapped["FuncKeyTemplate"] = relationship(
@@ -74,6 +81,12 @@ class FuncKeyMapping(Base):
 
     @property
     def func_key_template_private(self) -> bool:
+        """Checks if the function key template is private.
+
+        Returns:
+            bool: True if the function key template is private, False otherwise.
+
+        """
         return self.func_key_template.private
 
     @func_key_template_private.setter

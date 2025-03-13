@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_dest_group_member.py
+# file: accent_dao/alchemy/func_key_dest_group_member.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -78,6 +78,12 @@ class FuncKeyDestGroupMember(Base):
 
     @property
     def feature_extension_feature(self) -> str:
+        """Retrieves the feature attribute from the feature_extension object.
+
+        Returns:
+            str: The feature attribute of the feature_extension object.
+
+        """
         return self.feature_extension.feature
 
     @feature_extension_feature.setter

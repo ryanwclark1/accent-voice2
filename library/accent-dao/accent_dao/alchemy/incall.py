@@ -1,6 +1,5 @@
-# file: accent_dao/alchemy/incall.py
+# file: accent_dao/alchemy/incall.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -8,8 +7,10 @@ from sqlalchemy import (
     Index,
     Integer,
     PrimaryKeyConstraint,
+    ScalarSelect,
     String,
     Text,
+    cast,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,11 +18,10 @@ from sqlalchemy.sql import select
 
 from accent_dao.helpers.db_manager import Base
 
-if TYPE_CHECKING:
-    from .callerid import Callerid
-    from .dialaction import Dialaction
-    from .extension import Extension
-    from .schedulepath import SchedulePath
+from .callerid import Callerid
+from .dialaction import Dialaction
+from .extension import Extension
+from .schedulepath import SchedulePath
 
 
 class Incall(Base):
@@ -82,6 +82,12 @@ class Incall(Base):
 
     @property
     def caller_id_mode(self) -> str | None:
+        """Retrieve the mode of the caller ID.
+
+        Returns:
+            str | None: The mode of the caller ID if it exists, otherwise None.
+
+        """
         return self.caller_id.mode if self.caller_id else None
 
     @caller_id_mode.setter
@@ -93,6 +99,13 @@ class Incall(Base):
 
     @property
     def caller_id_name(self) -> str | None:
+        """Retrieves the caller ID name.
+
+        Returns:
+            str | None: The name associated with the caller ID if it exists,
+                otherwise None.
+
+        """
         return self.caller_id.name if self.caller_id else None
 
     @caller_id_name.setter
@@ -135,7 +148,13 @@ class Incall(Base):
 
     @property
     def schedules(self) -> list["SchedulePath"]:
-        return [sp.schedule for sp in self.schedule_paths]
+        """Get the schedules associated with the route.
+
+        Returns:
+            list[SchedulePath]: A list of SchedulePath objects.
+
+        """
+        return self.schedule_paths
 
     @schedules.setter
     def schedules(self, value: list["SchedulePath"]) -> None:
@@ -156,7 +175,7 @@ class Incall(Base):
         return self.dialaction
 
     @destination.setter
-    def destination(self, destination: "Dialaction" | None) -> None:
+    def destination(self, destination: Dialaction | None) -> None:
         """Set the destination for the inbound call."""
         if destination is None:
             self.dialaction = None
@@ -179,7 +198,20 @@ class Incall(Base):
         return None
 
     @user_id.expression
-    def user_id(cls) -> Mapped[int | None]:
+    def user_id(cls) -> ScalarSelect[int | None]:
+        """Retrieve the user ID associated with the current instance.
+
+        This method constructs a SQLAlchemy query to select the `actionarg1` field
+        from the `Dialaction` table, casting it to an integer. The query filters
+        the results to include only rows where the `action` is "user", the `category`
+        is "incall", and the `categoryval` matches the string representation of the
+        current instance's ID.
+
+        Returns:
+            ScalarSelect[int | None]: A scalar subquery that can be used to retrieve
+                the user ID if found, otherwise None.
+
+        """
         return (
             select(cast(Dialaction.actionarg1, Integer))
             .where(Dialaction.action == "user")
@@ -197,10 +229,20 @@ class Incall(Base):
 
     @exten.setter
     def exten(self, value: str) -> None:
-        """There is no setter, you can't set the extension directly"""
+        """There is no setter, you can't set the extension directly."""
 
     @exten.expression
-    def exten(cls) -> Mapped[str | None]:
+    def exten(cls) -> ScalarSelect[str]:
+        """Retrieve the extension value for the current class instance.
+
+        This method constructs a SQL query to select the `exten` field from the
+        `Extension` table where the `type` is "incall" and the `typeval` matches
+        the string representation of the class instance's `id`.
+
+        Returns:
+            ScalarSelect[str]: The extension value if found
+
+        """
         return (
             select(Extension.exten)
             .where(Extension.type == "incall")

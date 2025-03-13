@@ -1,8 +1,9 @@
-# file: accent_dao/alchemy/func_key_dest_park_position.py
+# file: accent_dao/alchemy/func_key_dest_park_position.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Cast,
     CheckConstraint,
     ForeignKey,
     ForeignKeyConstraint,
@@ -78,11 +79,19 @@ class FuncKeyDestParkPosition(Base):
         """The parking position (as an integer)."""
         return int(self.park_position)
 
+    @position.expression
+    def position(cls) -> Cast[int]:
+        """Return the park position of the given class as an integer.
+
+        Returns:
+            int: The park position of the class.
+
+        """
+        return cast(cls.park_position, Integer)
+
     @position.setter
     def position(self, value: int | str) -> None:
         """Set the parking position."""
         self.park_position = str(value)  # Ensure string
 
-    @position.expression
-    def position(cls) -> Mapped[int]:
-        return cast(cls.park_position, Integer)
+

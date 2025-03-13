@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_dest_user.py
+# file: accent_dao/alchemy/func_key_dest_user.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -59,8 +59,7 @@ class FuncKeyDestUser(Base):
     @classmethod
     def for_user(cls, func_key: "FuncKey", user: "UserFeatures") -> "FuncKeyDestUser":
         """Create a new FuncKeyDestUser for a given function key and user."""
-        destination = cls(func_key=func_key, userfeatures=user)
-        return destination
+        return cls(func_key=func_key, userfeatures=user)
 
     def to_tuple(self) -> tuple[tuple[str, int]]:
         """Return a tuple representation of the destination."""

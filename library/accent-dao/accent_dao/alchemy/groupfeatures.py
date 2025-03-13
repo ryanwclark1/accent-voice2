@@ -1,13 +1,14 @@
 # file: accent_dao/alchemy/groupfeatures.py
 # Copyright 2025 Accent Communications
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
     PrimaryKeyConstraint,
+    ScalarSelect,
     String,
     Text,
     func,
@@ -25,6 +26,9 @@ from .rightcallmember import RightCallMember
 from .schedulepath import SchedulePath
 
 if TYPE_CHECKING:
+    from accent_dao.alchemy.func_key_dest_group import FuncKeyDestGroup
+    from accent_dao.alchemy.func_key_dest_group_member import FuncKeyDestGroupMember
+
     from .dialaction import Dialaction
     from .pickup import Pickup
     from .pickupmember import PickupMember
@@ -76,7 +80,8 @@ class GroupFeatures(Base):
         call_permissions: Call permissions for the group.
     call_pickup_interceptors: Relationship to users that can intercept call pickups.
     call_pickup_targets: Relationship to users that can be the targets for call pickups.
-    call_pickup_interceptor_pickups: Relationship to pickup groups that the users are interceptors for.
+    call_pickup_interceptor_pickups: Relationship to pickup groups that the users
+        are interceptors for.
     users_from_call_pickup_user_targets:
     users_from_call_pickup_group_targets:
         fallbacks: The fallback dialactions.
@@ -136,6 +141,12 @@ class GroupFeatures(Base):
 
     @property
     def caller_id_mode(self) -> str | None:
+        """Retrieve the mode of the caller ID.
+
+        Returns:
+            str | None: The mode of the caller ID if it exists, otherwise None.
+
+        """
         return self.caller_id.mode if self.caller_id else None
 
     @caller_id_mode.setter
@@ -147,6 +158,12 @@ class GroupFeatures(Base):
 
     @property
     def caller_id_name(self) -> str | None:
+        """Retrieves the caller ID name.
+
+        Returns:
+            str | None: The name of the caller ID if it exists, otherwise None.
+
+        """
         return self.caller_id.name if self.caller_id else None
 
     @caller_id_name.setter
@@ -208,6 +225,12 @@ class GroupFeatures(Base):
 
     @property
     def users(self) -> list["QueueMember"]:
+        """Retrieve a list of users from the user queue members.
+
+        Returns:
+            list[QueueMember]: A list of users who are members of the user queue.
+
+        """
         return [m.user for m in self.user_queue_members if m.user]
 
     extension_queue_members: Mapped[list["QueueMember"]] = relationship(
@@ -248,30 +271,80 @@ class GroupFeatures(Base):
     # These all now use properties to access the attributes of the queue object.
     @property
     def enabled(self) -> bool | None:
+        """Check if the queue is enabled.
+
+        Returns:
+            bool | None: True if the queue is enabled, False if it is disabled,
+                         or None if the queue does not exist.
+
+        """
         return self.queue.enabled if self.queue else None
 
     @property
     def music_on_hold(self) -> str | None:
+        """Retrieve the music on hold class for the queue.
+
+        Returns:
+            str | None: The music class if the queue exists, otherwise None.
+
+        """
         return self.queue.musicclass if self.queue else None
 
     @property
     def retry_delay(self) -> int | None:
+        """Returns the retry delay for the queue.
+
+        If the queue is available, it returns the retry delay value.
+        Otherwise, it returns None.
+
+        Returns:
+            int | None: The retry delay value if the queue is available, otherwise None.
+
+        """
         return self.queue.retry if self.queue else None
 
     @property
     def ring_in_use(self) -> int:
+        """Returns the number of rings currently in use.
+
+        If the queue is not available, it returns 0.
+
+        Returns:
+            int: The number of rings in use or 0 if the queue is not available.
+
+        """
         return self.queue.ringinuse if self.queue else 0
 
     @property
     def ring_strategy(self) -> str | None:
+        """Returns the ring strategy of the queue.
+
+        If the queue is not set, returns None.
+
+        Returns:
+            str | None: The ring strategy of the queue if available, otherwise None.
+
+        """
         return self.queue.strategy if self.queue else None
 
     @property
     def user_timeout(self) -> int | None:
+        """Retrieve the timeout value for the user from the queue.
+
+        Returns:
+            int | None: The timeout value if the queue exists, otherwise None.
+
+        """
         return self.queue.timeout if self.queue else None
 
     @property
     def max_calls(self) -> int | None:
+        """Returns the maximum number of calls that can be stored in the queue.
+
+        Returns:
+            int | None: The maximum length of the queue if it exists, otherwise None.
+
+        """
         return self.queue.maxlen if self.queue else None
 
     func_keys_group: Mapped[list["FuncKeyDestGroup"]] = relationship(
@@ -294,6 +367,12 @@ class GroupFeatures(Base):
 
     @property
     def schedules(self) -> list[SchedulePath]:
+        """Retrieve a list of schedules from the schedule paths.
+
+        Returns:
+            list[SchedulePath]: A list of SchedulePath objects.
+
+        """
         return [sp.schedule for sp in self.schedule_paths]
 
     @schedules.setter
@@ -315,6 +394,13 @@ class GroupFeatures(Base):
 
     @property
     def call_permissions(self) -> list["RightCallMember"]:
+        """Retrieve list of RightCallMember instances associated with current object.
+
+        Returns:
+            list[RightCallMember]: A list of RightCallMember instances where the
+                rightcall attribute is not None.
+
+        """
         return [m.rightcall for m in self.rightcall_members if m.rightcall]
 
     @call_permissions.setter
@@ -362,7 +448,8 @@ class GroupFeatures(Base):
     )
 
     @property
-    def users_from_call_pickup_user_targets(self):
+    def users_from_call_pickup_user_targets(self) -> list:
+        """Retrieve users from call pickup user targets."""
         return [
             p.user_targets
             for p in self.call_pickup_interceptor_pickups
@@ -370,15 +457,16 @@ class GroupFeatures(Base):
         ]
 
     @property
-    def users_from_call_pickup_group_targets(self):
+    def users_from_call_pickup_group_targets(self) -> list:
+        """Retrieve users from call pickup group targets."""
         return [
             p.users_from_group_targets
             for p in self.call_pickup_interceptor_pickups
             if p.users_from_group_targets
         ]
 
-    def __init__(self, **kwargs: Any) -> None:  # type: ignore
-        """Initialize the GroupFeatures object, creating a Queue if one doesn't exist."""
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the GroupFeatures object, creating Queue if one doesn't exist."""
         retry = kwargs.pop("retry_delay", 5)
         ring_in_use = kwargs.pop("ring_in_use", True)
         strategy = kwargs.pop("ring_strategy", "ringall")
@@ -462,7 +550,17 @@ class GroupFeatures(Base):
         return None
 
     @exten.expression
-    def exten(cls) -> Mapped[str | None]:
+    def exten(cls) -> ScalarSelect[str]:
+        """Retrieve the extension value for a given class instance.
+
+        This method constructs a SQLAlchemy query to select the `exten` field from
+        the `Extension` table where the `type` is "group" and the `typeval` matches
+        the string representation of the class instance's `id`.
+
+        Returns:
+            Mapped[str | None]: The extension value if found, otherwise None.
+
+        """
         return (
             select(Extension.exten)
             .where(Extension.type == "group")

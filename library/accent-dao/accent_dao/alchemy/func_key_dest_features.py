@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_dest_features.py
+# file: accent_dao/alchemy/func_key_dest_features.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -71,14 +71,14 @@ class FuncKeyDestFeatures(Base):
 
 # These tables don't exist in database
 class _FuncKeyDestFeaturesWithoutBaseDeclarative:
-    """Helper base class for function key destinations without base declarative mapping."""
+    """Helper base class for func key destinations without base declarative mapping."""
 
     def __init__(self, **kwargs: dict) -> None:
         """Initialize a new instance."""
         self._func_key_dest_features = FuncKeyDestFeatures(**kwargs)
-        self._func_key_dest_features.type = self.type  # type: ignore
+        self._func_key_dest_features.type = self.type
 
-    def __getattr__(self, attr: str) -> any:  # type: ignore
+    def __getattr__(self, attr: str) -> any:
         """Delegate attribute access to the underlying FuncKeyDestFeatures object."""
         return getattr(self._func_key_dest_features, attr)
 
@@ -112,4 +112,4 @@ class FuncKeyDestTransfer(_FuncKeyDestFeaturesWithoutBaseDeclarative):
 
     def to_tuple(self) -> tuple[tuple[str, str | None]]:
         """Return a tuple representation of the destination."""
-        return (("transfer", self.transfer),)  # type: ignore
+        return (("transfer", self.transfer),)

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key.py
+# file: accent_dao/alchemy/func_key.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -49,6 +49,10 @@ class FuncKey(Base):
 
     @property
     def destination_type_name(self) -> str:
+        """Returns the name of the destination type.
+
+        return: The name of the destination type.
+        """
         return self.destination_type.name
 
     func_key_mapping: Mapped[list["FuncKeyMapping"]] = relationship(

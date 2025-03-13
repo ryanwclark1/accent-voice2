@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/func_key_dest_conference.py
+# file: accent_dao/alchemy/func_key_dest_conference.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
