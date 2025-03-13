@@ -1,9 +1,10 @@
 # file: accent_dao/alchemy/dialaction.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Generator
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from sqlalchemy import Index, PrimaryKeyConstraint, String, func
-from sqlalchemy.ext.hybrid import hybrid_property  # Correct import
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import case
 
@@ -84,7 +85,12 @@ class Dialaction(Base):
 
     """
 
-    USER_EVENTS: tuple[str, ...] = ("noanswer", "busy", "congestion", "chanunavail")
+    USER_EVENTS: ClassVar[tuple[str, ...]] = (
+        "noanswer",
+        "busy",
+        "congestion",
+        "chanunavail",
+    )
 
     __tablename__: str = "dialaction"
     __table_args__: tuple = (
@@ -93,14 +99,6 @@ class Dialaction(Base):
         Index("dialaction__idx__categoryval", "categoryval"),
     )
 
-    # Remove the following warning:
-    #   SAWarning: DELETE statement on table 'dialaction'
-    # expected to delete 2 row(s); 1 were matched.
-    #   Please set confirm_deleted_rows=False within the mapper
-    # onfiguration to prevent this warning.
-    # When child try to delete parent and the parent try delete child,
-    # then the same row expecte to be removed twice.
-    # This is the case of ivr_choice
     __mapper_args__: dict = {"confirm_deleted_rows": False}
 
     event: Mapped[str] = mapped_column(String(40), primary_key=True)
@@ -220,7 +218,9 @@ class Dialaction(Base):
     )
 
     @classmethod
-    def new_user_actions(cls, user: "UserFeatures") -> "Dialaction":
+    def new_user_actions(
+        cls, user: "UserFeatures"
+    ) -> Generator["Dialaction", None, None]:
         """Create default dial actions for a new user."""
         for event in cls.USER_EVENTS:
             yield cls(
