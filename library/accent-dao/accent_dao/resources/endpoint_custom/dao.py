@@ -1,42 +1,122 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/endpoint_custom/dao.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-from accent_dao.helpers.db_manager import Session
-from accent_dao.helpers.db_utils import flush_session
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
+from accent_dao.helpers.db_manager import async_daosession
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from accent_dao.alchemy.usercustom import UserCustom
+    from accent_dao.resources.utils.search import SearchResult
 
 from .persistor import CustomPersistor
 from .search import custom_search
 
-
-def persistor(tenant_uuids=None):
-    return CustomPersistor(Session, custom_search, tenant_uuids)
-
-
-def get(custom_id, tenant_uuids=None):
-    return persistor(tenant_uuids).get(custom_id)
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
-def find_by(tenant_uuids=None, **criteria):
-    return persistor(tenant_uuids).find_by(criteria)
+@async_daosession
+async def async_get(session: AsyncSession, custom_id: int) -> UserCustom:
+    """Get a custom endpoint by ID.
+
+    Args:
+        session: The database session.
+        custom_id: The ID of the custom endpoint.
+
+    Returns:
+        The custom endpoint.
+
+    """
+    return await CustomPersistor(session, custom_search).get_by({"id": custom_id})
 
 
-def find_all_by(tenant_uuids=None, **criteria):
-    return persistor(tenant_uuids).find_all_by(criteria)
+@async_daosession
+async def async_find_by(session: AsyncSession, **criteria: dict) -> UserCustom | None:
+    """Find a custom endpoint by criteria.
+
+    Args:
+        session: The database session.
+        **criteria: Keyword arguments for filtering.
+
+    Returns:
+        The custom endpoint object, or None if not found.
+
+    """
+    return await CustomPersistor(session, custom_search).find_by(criteria)
 
 
-def search(tenant_uuids=None, **parameters):
-    return persistor(tenant_uuids).search(parameters)
+@async_daosession
+async def async_find_all_by(
+    session: AsyncSession, **criteria: dict
+) -> list[UserCustom]:
+    """Find all custom endpoints by criteria.
+
+    Args:
+        session: The database session.
+        **criteria: Keyword arguments for filtering.
+
+    Returns:
+        A list of custom endpoint objects.
+
+    """
+    return await CustomPersistor(session, custom_search).find_all_by(criteria)
 
 
-def create(custom):
-    with flush_session(Session):
-        return persistor().create(custom)
+@async_daosession
+async def async_search(session: AsyncSession, **parameters: dict) -> SearchResult:
+    """Search for custom endpoints.
+
+    Args:
+        session: The database session.
+        **parameters: Keyword arguments for search parameters.
+
+    Returns:
+        A SearchResult object containing the total count and the list of items.
+
+    """
+    return await CustomPersistor(session, custom_search).search(parameters)
 
 
-def edit(custom):
-    with flush_session(Session):
-        return persistor().edit(custom)
+@async_daosession
+async def async_create(session: AsyncSession, custom: UserCustom) -> UserCustom:
+    """Create a new custom endpoint.
+
+    Args:
+        session: The database session.
+        custom: The custom endpoint object to create.
+
+    Returns:
+        The created custom endpoint object.
+
+    """
+    return await CustomPersistor(session, custom_search).create(custom)
 
 
-def delete(custom):
-    with flush_session(Session):
-        return persistor().delete(custom)
+@async_daosession
+async def async_edit(session: AsyncSession, custom: UserCustom) -> None:
+    """Edit an existing custom endpoint.
+
+    Args:
+        session: The database session.
+        custom: The custom endpoint object to edit.
+
+    """
+    await CustomPersistor(session, custom_search).edit(custom)
+
+
+@async_daosession
+async def async_delete(session: AsyncSession, custom: UserCustom) -> None:
+    """Delete a custom endpoint.
+
+    Args:
+        session: The database session.
+        custom: The custom endpoint object to delete.
+
+    """
+    await CustomPersistor(session, custom_search).delete(custom)
