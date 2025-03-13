@@ -4,6 +4,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Boolean,
     ForeignKeyConstraint,
     Index,
     Integer,
@@ -14,8 +15,11 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import cast, not_
 
 from accent_dao.helpers.db_manager import Base
 
@@ -146,21 +150,15 @@ class Context(Base):
         cascade="all, delete-orphan",
     )
 
-    @property
-    def contexts(self) -> list[str]:
-        """Returns a list of included contexts."""
-        return [p.include for p in self.context_include_parents]
-
-    @contexts.setter
-    def contexts(self, value: list[str]) -> None:
-        """Set the included contexts."""
-        self.context_include_parents = [
-            ContextInclude(included_context=v) for v in value
-        ]
+    contexts = association_proxy(
+        "context_include_parents",
+        "included_context",
+        creator=lambda _context: ContextInclude(included_context=_context),
+    )
 
     tenant: Mapped["Tenant"] = relationship("Tenant", viewonly=True)
 
-    @property
+    @hybrid_property
     def label(self) -> str | None:
         """The label (display name) of the context."""
         return self.displayname
@@ -170,7 +168,7 @@ class Context(Base):
         """Set the label (display name) of the context."""
         self.displayname = value
 
-    @property
+    @hybrid_property
     def type(self) -> str:
         """The type of the context."""
         return self.contexttype
@@ -180,7 +178,7 @@ class Context(Base):
         """Set the type of the context."""
         self.contexttype = value
 
-    @property
+    @hybrid_property
     def enabled(self) -> bool:
         """Indicates if the context is enabled."""
         return self.commented == 0
@@ -190,7 +188,12 @@ class Context(Base):
         """Enable or disables the context."""
         self.commented = int(not value)
 
-    @property
+    @enabled.expression  # type: ignore
+    def enabled(cls) -> Mapped[bool]:
+        """Calculate boolean value to enable or disable the context."""
+        return not_(cast(cls.commented, Boolean))
+
+    @hybrid_property
     def user_ranges(self) -> list["ContextNumbers"]:
         """The user number ranges."""
         return self.context_numbers_user
@@ -202,7 +205,7 @@ class Context(Base):
             user_range.type = "user"
         self.context_numbers_user = user_ranges
 
-    @property
+    @hybrid_property
     def group_ranges(self) -> list["ContextNumbers"]:
         """The group number ranges."""
         return self.context_numbers_group
@@ -214,7 +217,7 @@ class Context(Base):
             group_range.type = "group"
         self.context_numbers_group = group_ranges
 
-    @property
+    @hybrid_property
     def queue_ranges(self) -> list["ContextNumbers"]:
         """The queue number ranges."""
         return self.context_numbers_queue
@@ -226,7 +229,7 @@ class Context(Base):
             queue_range.type = "queue"
         self.context_numbers_queue = queue_ranges
 
-    @property
+    @hybrid_property
     def conference_room_ranges(self) -> list["ContextNumbers"]:
         """The conference room number ranges."""
         return self.context_numbers_meetme
@@ -240,7 +243,7 @@ class Context(Base):
             conference_room_range.type = "meetme"
         self.context_numbers_meetme = conference_room_ranges
 
-    @property
+    @hybrid_property
     def incall_ranges(self) -> list["ContextNumbers"]:
         """The incall number ranges."""
         return self.context_numbers_incall
