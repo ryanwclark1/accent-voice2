@@ -4,6 +4,7 @@
 from typing import Literal
 
 from sqlalchemy import ForeignKeyConstraint, Integer, String, case
+from sqlalchemy.ext.hybrid import hybrid_property  # Correct import
 from sqlalchemy.orm import Mapped, mapped_column
 
 from accent_dao.helpers.db_manager import Base
@@ -49,7 +50,7 @@ class ContextNumbers(Base):
     )
     didlength: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
-    @property
+    @hybrid_property
     def start(self) -> str:
         """The starting number of the range."""
         return self.numberbeg
@@ -59,7 +60,7 @@ class ContextNumbers(Base):
         """Set the starting number of the range."""
         self.numberbeg = value
 
-    @property
+    @hybrid_property
     def end(self) -> str:
         """The ending number of the range."""
         if self.numberend == "":
@@ -71,7 +72,7 @@ class ContextNumbers(Base):
         """Set the ending number of the range."""
         self.numberend = value
 
-    @end.expression
+    @end.expression  # type: ignore
     def end(cls) -> Mapped[str]:
         """Determine the end number for the context.
 
@@ -79,9 +80,9 @@ class ContextNumbers(Base):
             Mapped[str]: The end number if it exists, otherwise the beginning number.
 
         """
-        return case((cls.numberend == "", cls.numberbeg), else_=cls.numberend)
+        return case({cls.numberend == "": cls.numberbeg}, else_=cls.numberend)
 
-    @property
+    @hybrid_property
     def did_length(self) -> int:
         """The length of the DID."""
         return self.didlength
@@ -105,7 +106,9 @@ class ContextNumbers(Base):
         start = self._convert_limit(self.start)
         end = self._convert_limit(self.end)
 
-        return bool((start == end and exten == start) or start <= exten <= end)
+        if (start == end and exten == start) or start <= exten <= end:
+            return True
+        return False
 
     def _convert_limit(self, limit: str) -> int:
         """Convert a number limit to an integer, considering the DID length.
