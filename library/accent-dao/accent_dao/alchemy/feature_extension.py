@@ -1,11 +1,11 @@
 # file: accent_dao/alchemy/feature_extension.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from accent.accent_helpers import clean_extension
-from sqlalchemy import Boolean, String, func
+from sqlalchemy import Boolean, PrimaryKeyConstraint, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from accent_dao.helpers.accent_helpers import clean_extension
 from accent_dao.helpers.db_manager import Base
 
 
@@ -21,6 +21,10 @@ class FeatureExtension(Base):
     """
 
     __tablename__: str = "feature_extension"
+    __table_args__: tuple = (
+        PrimaryKeyConstraint("uuid"),
+        UniqueConstraint("exten"),
+    )
 
     uuid: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
