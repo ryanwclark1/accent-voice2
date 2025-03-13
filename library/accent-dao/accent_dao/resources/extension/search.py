@@ -1,8 +1,7 @@
 # file: accent_dao/resources/extension/search.py
 # Copyright 2025 Accent Communications
 
-from sqlalchemy import or_, func, select
-from sqlalchemy.types import String
+from sqlalchemy import func, select
 
 from accent_dao.alchemy.extension import Extension
 from accent_dao.resources.utils.search import SearchConfig, SearchSystem
@@ -24,7 +23,7 @@ config = SearchConfig(
 class AsyncSearchSystem(SearchSystem):
     """Extend SearchSystem to add async support."""
 
-    async def async_search_from_query(self, session, query, parameters=None):
+    async def search_from_query(self, session, query, parameters=None):
         """Asynchronously perform a search starting from an existing query.
 
         Args:
@@ -34,6 +33,7 @@ class AsyncSearchSystem(SearchSystem):
 
         Returns:
             SearchResult: NamedTuple containing total count and items.
+
         """
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)

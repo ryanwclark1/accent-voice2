@@ -1,15 +1,45 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from accent_dao.helpers.db_manager import daosession
+import logging
+from typing import TYPE_CHECKING
 
-from .persistor import QueueGeneralPersistor
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_dao.alchemy.staticqueue import StaticQueue
+from accent_dao.helpers.db_manager import async_daosession
+from accent_dao.resources.queue_general.persistor import QueueGeneralPersistor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+logger = logging.getLogger(__name__)
 
 
-@daosession
-def find_all(session):
-    return QueueGeneralPersistor(session).find_all()
+@async_daosession
+async def find_all(session: AsyncSession) -> list[StaticQueue]:
+    """Retrieve all static queue general settings.
+
+    Args:
+        session: The database session.
+
+    Returns:
+        A list of StaticQueue objects representing the settings.
+
+    """
+    persistor = QueueGeneralPersistor(session)
+    return await persistor.find_all()
 
 
-@daosession
-def edit_all(session, queue_general):
-    QueueGeneralPersistor(session).edit_all(queue_general)
+@async_daosession
+async def edit_all(session: AsyncSession, queue_general: Sequence[StaticQueue]) -> None:
+    """Edit all static queue general settings.
+
+    This will replace the existing settings with the provided ones.
+
+    Args:
+        session: The database session.
+        queue_general: A sequence of StaticQueue objects representing the new settings.
+
+    """
+    persistor = QueueGeneralPersistor(session)
+    await persistor.edit_all(queue_general)

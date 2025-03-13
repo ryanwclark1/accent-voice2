@@ -1,55 +1,83 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from accent_dao.helpers.db_manager import daosession
+from typing import TYPE_CHECKING, Any
 
-from .persistor import PagingPersistor
-from .search import paging_search
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from accent_dao.alchemy.paging import Paging
+from accent_dao.helpers import errors
+from accent_dao.helpers.persistor import AsyncBasePersistor
+from accent_dao.resources.utils.search import CriteriaBuilderMixin
 
-@daosession
-def search(session, tenant_uuids=None, **parameters):
-    return PagingPersistor(session, paging_search, tenant_uuids).search(parameters)
-
-
-@daosession
-def get(session, paging_id, tenant_uuids=None):
-    return PagingPersistor(session, paging_search, tenant_uuids).get_by(
-        {'id': paging_id}
-    )
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
-@daosession
-def get_by(session, tenant_uuids=None, **criteria):
-    return PagingPersistor(session, paging_search, tenant_uuids).get_by(criteria)
+class PagingPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Paging]):
+    """Persistor class for Paging model."""
 
+    _search_table = Paging
 
-@daosession
-def find(session, paging_id, tenant_uuids=None):
-    return PagingPersistor(session, paging_search, tenant_uuids).find_by(
-        {'id': paging_id}
-    )
+    def __init__(
+        self,
+        session: AsyncSession,
+        paging_search: Any,
+        tenant_uuids: list[str] | None = None,
+    ) -> None:
+        """Initialize PagingPersistor.
 
+        Args:
+            session: Async database session.
+            paging_search: Search system for paging groups.
+            tenant_uuids: Optional list of tenant UUIDs to filter by.
 
-@daosession
-def find_by(session, tenant_uuids=None, **criteria):
-    return PagingPersistor(session, paging_search, tenant_uuids).find_by(criteria)
+        """
+        super().__init__(session, self._search_table, tenant_uuids)
+        self.search_system = paging_search
 
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find paging groups based on criteria.
 
-@daosession
-def find_all_by(session, tenant_uuids=None, **criteria):
-    return PagingPersistor(session, paging_search, tenant_uuids).find_all_by(criteria)
+        Args:
+            criteria: Dictionary of criteria.
 
+        Returns:
+            SQLAlchemy query object.
 
-@daosession
-def create(session, paging):
-    return PagingPersistor(session, paging_search).create(paging)
+        """
+        query = select(Paging)
+        query = self._filter_tenant_uuid(query)
+        return self.build_criteria(query, criteria)
 
+    async def _search_query(self) -> Any:
+        """Create a query for searching paging groups."""
+        return select(self.search_system.config.table)
 
-@daosession
-def edit(session, paging):
-    PagingPersistor(session, paging_search).edit(paging)
+    async def get_by(self, criteria: dict[str, Any]) -> Paging:
+        """Retrieve a single paging group by criteria.
 
+        Args:
+            criteria: Dictionary of criteria.
 
-@daosession
-def delete(session, paging):
-    PagingPersistor(session, paging_search).delete(paging)
+        Returns:
+            Paging: The found paging group.
+
+        Raises:
+            NotFoundError: If no paging group is found.
+
+        """
+        paging = await self.find_by(criteria)
+        if not paging:
+            raise errors.NotFoundError("Paging", **criteria)
+        return paging
+
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[Paging]:
+        """Find all Paging by criteria.
+
+        Returns:
+            list of Paging.
+
+        """
+        result: Sequence[Paging] = await super().find_all_by(criteria)
+        return list(result)

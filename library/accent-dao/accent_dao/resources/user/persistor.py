@@ -150,7 +150,7 @@ class UserPersistor(CriteriaBuilderMixin, AsyncBasePersistor[User]):
         if self.tenant_uuids is not None:
             query = query.filter(User.tenant_uuid.in_(self.tenant_uuids))
 
-        return await self.search_system.async_search_from_query(
+        return await self.search_system.search_from_query(
             self.session, query, parameters
         )
 
@@ -167,7 +167,7 @@ class UserPersistor(CriteriaBuilderMixin, AsyncBasePersistor[User]):
         query = self.view.query(self.session)
         if self.tenant_uuids is not None:
             query = query.filter(User.tenant_uuid.in_(self.tenant_uuids))
-        return await self.search_system.async_search_from_query_collated(
+        return await self.search_system.search_from_query_collated(
             self.session, query, parameters
         )
 

@@ -85,7 +85,7 @@ class AgentPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Agent]):
         query = select(Agent)  # Use select for async
         if self.tenant_uuids is not None:
             query = query.filter(Agent.tenant_uuid.in_(self.tenant_uuids))
-        return await self.search_system.async_search_from_query(
+        return await self.search_system.search_from_query(
             self.session, query, parameters
         )
 

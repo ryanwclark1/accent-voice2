@@ -1,19 +1,11 @@
 # file: accent_dao/resources/features/search.py
 # Copyright 2025 Accent Communications
 
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func
 from sqlalchemy.sql.expression import select
 
 from accent_dao.alchemy.features import Features
 from accent_dao.resources.utils.search import SearchConfig, SearchSystem
-from accent_dao.alchemy.func_key_dest_features import FuncKeyDestFeatures
-from accent_dao.alchemy.func_key_dest_forward import FuncKeyDestForward
-from accent_dao.alchemy.func_key_dest_service import FuncKeyDestService
-from accent_dao.alchemy.func_key_dest_agent import FuncKeyDestAgent
-from accent_dao.alchemy.func_key_dest_group_member import (
-    FuncKeyDestGroupMember,
-)
-from accent_dao.alchemy.func_key_dest_bsfilter import FuncKeyDestBSFilter
 
 FUNC_KEY_FEATUREMAP_FOREIGN_KEY = ["blindxfer", "atxfer"]
 FUNC_KEY_APPLICATIONMAP_FOREIGN_KEY = ["togglerecord"]
@@ -22,7 +14,7 @@ FUNC_KEY_APPLICATIONMAP_FOREIGN_KEY = ["togglerecord"]
 class AsyncSearchSystem(SearchSystem):
     """Extend SearchSystem to add async support."""
 
-    async def async_search_from_query(self, session, query, parameters=None):
+    async def search_from_query(self, session, query, parameters=None):
         """Asynchronously perform a search starting from an existing query.
 
         Args:
@@ -32,6 +24,7 @@ class AsyncSearchSystem(SearchSystem):
 
         Returns:
             SearchResult: NamedTuple containing total count and items.
+
         """
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)

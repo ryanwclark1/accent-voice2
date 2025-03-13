@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-
 class CallFilterPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Callfilter]):
     """Persistor class for Callfilter model."""
 
@@ -87,7 +86,7 @@ class CallFilterPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Callfilter]):
         """
         query = select(self.call_filter_search.config.table)
         query = self._filter_tenant_uuid(query)
-        return await self.call_filter_search.async_search_from_query(
+        return await self.call_filter_search.search_from_query(
             self.session, query, parameters
         )
 

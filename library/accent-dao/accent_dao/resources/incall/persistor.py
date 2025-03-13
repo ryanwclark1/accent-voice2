@@ -11,8 +11,9 @@ from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
 
 if TYPE_CHECKING:
-    from accent_dao.alchemy.dialaction import Dialaction
     from collections.abc import Sequence
+
+    from accent_dao.alchemy.dialaction import Dialaction
 
 
 class IncallPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Incall]):
@@ -85,7 +86,7 @@ class IncallPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Incall]):
         """
         query = await self._search_query()
         query = self._filter_tenant_uuid(query)
-        rows, total = await self.search_system.async_search_from_query(
+        rows, total = await self.search_system.search_from_query(
             self.session, query, parameters
         )
         return SearchResult(total, rows)

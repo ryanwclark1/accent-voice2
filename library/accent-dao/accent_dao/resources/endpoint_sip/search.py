@@ -24,7 +24,7 @@ config = SearchConfig(
 class AsyncSearchSystem(SearchSystem):
     """Extend SearchSystem to add async support and handle materialised view."""
 
-    async def async_search_from_query(self, session, query, parameters=None):
+    async def search_from_query(self, session, query, parameters=None):
         """Asynchronously perform a search starting from an existing query."""
         parameters = self._populate_parameters(parameters)
         self._validate_parameters(parameters)

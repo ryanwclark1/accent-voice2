@@ -31,7 +31,7 @@ config = SearchConfig(
 class AsyncSearchSystem(SearchSystem):
     """Extend SearchSystem to add async support."""
 
-    async def async_search_from_query(self, session, query, parameters=None):
+    async def search_from_query(self, session, query, parameters=None):
         """Asynchronously perform a search starting from an existing query.
 
         Args:

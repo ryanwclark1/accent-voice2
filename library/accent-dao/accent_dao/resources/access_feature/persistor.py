@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-
 class AccessFeaturesPersistor(CriteriaBuilderMixin, AsyncBasePersistor):
     """Persistor class for AccessFeatures model."""
 
@@ -57,7 +56,7 @@ class AccessFeaturesPersistor(CriteriaBuilderMixin, AsyncBasePersistor):
 
         """
         query = select(self.access_feature_search.config.table)
-        return await self.access_feature_search.async_search_from_query(
+        return await self.access_feature_search.search_from_query(
             self.session, query, parameters
         )
 

@@ -1,19 +1,24 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+from sqlalchemy import and_
 
 from accent_dao.alchemy.staticiax import StaticIAX as RegisterIAX
 from accent_dao.resources.utils.search import SearchConfig, SearchSystem
 
-config = SearchConfig(
-    table=RegisterIAX, columns={'id': RegisterIAX.id}, default_sort='id'
-)
-
 
 class RegisterIAXSearchSystem(SearchSystem):
-    def search(self, session, parameters=None):
-        query = session.query(self.config.table).filter(
-            RegisterIAX.var_name == 'register'
-        )
-        return self.search_from_query(query, parameters)
+    """Search system for RegisterIAX, to find only register type."""
 
+    def search_from_query(self, query, parameters=None):
+        """Perform search for register entries with var_name filter."""
+        query = query.filter(RegisterIAX.var_name == "register")
+        return super().search_from_query(query, parameters)
+
+
+config = SearchConfig(
+    table=RegisterIAX,
+    columns={"id": RegisterIAX.id},
+    default_sort="id",
+)
 
 register_iax_search = RegisterIAXSearchSystem(config)

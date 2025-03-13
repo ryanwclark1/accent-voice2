@@ -6,13 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.groupfeatures import GroupFeatures as Group
-from accent_dao.alchemy.rightcallmember import RightCallMember
 from accent_dao.helpers import errors
 from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
     from accent_dao.alchemy.queuemember import QueueMember
     from accent_dao.alchemy.rightcall import RightCall
 
@@ -88,7 +88,7 @@ class GroupPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Group]):
         """
         query = await self._search_query()
         query = self._filter_tenant_uuid(query)
-        rows, total = await self.search_system.async_search_from_query(
+        rows, total = await self.search_system.search_from_query(
             self.session, query, parameters
         )
         return SearchResult(total, rows)

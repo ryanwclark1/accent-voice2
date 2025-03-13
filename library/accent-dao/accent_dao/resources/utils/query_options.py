@@ -259,7 +259,7 @@ class SearchSystem:
 
         """
         query = session.query(self.config.table)
-        return self.async_search_from_query(query, parameters)
+        return self.search_from_query(query, parameters)
 
     def search_from_query(
         self, query: Any, parameters: dict[str, Any] | None = None
@@ -285,7 +285,7 @@ class SearchSystem:
 
         return SearchResult(sorted_query.count(), paginated_query.all())
 
-    async def async_search_from_query(
+    async def search_from_query(
         self,
         session: AsyncSession,
         query: Any,
@@ -441,6 +441,7 @@ class SearchSystem:
             query = query.limit(limit)
 
         return query
+
 
 class QueryOptionsMixin(Generic[_T]):
     """Mixin class for adding support for SQLAlchemy query options.

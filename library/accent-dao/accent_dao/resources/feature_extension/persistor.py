@@ -86,7 +86,7 @@ class FeatureExtensionPersistor(
 
         """
         query = await self._search_query()
-        rows, total = await feature_extension_search.async_search_from_query(
+        rows, total = await feature_extension_search.search_from_query(
             self.session, query, parameters
         )
         return SearchResult(total, rows)

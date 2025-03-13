@@ -69,7 +69,7 @@ class ApplicationPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Application]
         """
         query = await self._search_query()
         query = self._filter_tenant_uuid(query)
-        return await self.search_system.async_search_from_query(
+        return await self.search_system.search_from_query(
             self.session, query, parameters
         )
 

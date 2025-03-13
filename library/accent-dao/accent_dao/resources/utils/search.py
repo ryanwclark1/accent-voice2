@@ -250,7 +250,7 @@ class SearchSystem:
 
         """
         query = select(self.config.table)  # Use select for async
-        return await self.async_search_from_query(session, query, parameters)
+        return await self.search_from_query(session, query, parameters)
 
     def search_from_query(
         self, query: Any, parameters: dict[str, Any] | None = None
@@ -275,7 +275,7 @@ class SearchSystem:
         )
         return SearchResult(sorted_query.count(), paginated_query.all())
 
-    async def async_search_from_query(
+    async def search_from_query(
         self,
         session: AsyncSession,
         query: Any,

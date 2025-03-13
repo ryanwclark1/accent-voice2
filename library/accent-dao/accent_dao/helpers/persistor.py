@@ -37,13 +37,7 @@ ModelType = TypeVar("ModelType", bound=HasTenantUUID)
 class SearchSystem(Protocol):
     """Protocol for search system."""
 
-    def search_from_query(
-        self, query: Query, parameters: dict[str, Any]
-    ) -> tuple[list[Any], int]:
-        """Search using a query."""
-        ...
-
-    async def async_search_from_query(
+    async def search_from_query(
         self, session: AsyncSession, stmt: Select, parameters: dict[str, Any]
     ) -> tuple[list[Any], int]:
         """Search asynchronously using a statement."""
@@ -362,7 +356,7 @@ class AsyncBasePersistor(Generic[ModelType]):
 
         stmt = await self._search_stmt()
         stmt = await self._filter_tenant_uuid(stmt)
-        rows, total = await self.search_system.async_search_from_query(
+        rows, total = await self.search_system.search_from_query(
             self.session, stmt, parameters
         )
         return SearchResult(total, rows)

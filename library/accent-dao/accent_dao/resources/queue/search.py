@@ -1,19 +1,19 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
 from accent_dao.alchemy.queuefeatures import QueueFeatures
-from accent_dao.resources.utils.search import SearchSystem, SearchConfig
-
+from accent_dao.resources.utils.search import SearchConfig, SearchSystem
 
 config = SearchConfig(
     table=QueueFeatures,
     columns={
-        'id': QueueFeatures.id,
-        'name': QueueFeatures.name,
-        'label': QueueFeatures.label,
-        'preprocess_subroutine': QueueFeatures.preprocess_subroutine,
-        'exten': QueueFeatures.exten,
+        "id": QueueFeatures.id,
+        "name": QueueFeatures.name,
+        "label": QueueFeatures.label,
+        "preprocess_subroutine": QueueFeatures.preprocess_subroutine,
+        "exten": QueueFeatures.exten,
     },
-    default_sort='id',
+    search=["name", "label", "exten"],
+    default_sort="name",
 )
 
 queue_search = SearchSystem(config)

@@ -17,7 +17,6 @@ from accent_dao.helpers.db_manager import async_daosession
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
-    from sqlalchemy.orm import Session
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -116,7 +115,7 @@ async def get_interface_from_line_id(session: AsyncSession, line_id: int) -> str
 
 
 @async_daosession
-async def async_get_main_extension_context_from_line_id(
+async def get_main_extension_context_from_line_id(
     session: AsyncSession, line_id: int
 ) -> tuple[str, str] | None:
     """Get main extension and context from line ID (async version).

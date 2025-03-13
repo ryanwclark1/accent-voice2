@@ -1,108 +1,203 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.orm import joinedload
+from typing import TYPE_CHECKING, Any
 
-from accent_dao.alchemy.contextmember import ContextMember
-from accent_dao.alchemy.queuefeatures import QueueFeatures as Queue
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_dao.alchemy.queuefeatures import QueueFeatures
+from accent_dao.alchemy.schedulepath import SchedulePath
 from accent_dao.helpers import errors
-from accent_dao.helpers.db_manager import Session
-from accent_dao.helpers.persistor import BasePersistor
+from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
-class QueuePersistor(CriteriaBuilderMixin, BasePersistor):
-    _search_table = Queue
+    from accent_dao.alchemy.queuemember import QueueMember
+    from accent_dao.alchemy.schedule import Schedule
 
-    def __init__(self, session, queue_search, tenant_uuids=None):
-        self.session = session
+
+class QueuePersistor(CriteriaBuilderMixin, AsyncBasePersistor[QueueFeatures]):
+    """Persistor class for QueueFeatures model."""
+
+    _search_table = QueueFeatures
+
+    def __init__(
+        self,
+        session: AsyncSession,
+        queue_search: Any,
+        tenant_uuids: list[str] | None = None,
+    ) -> None:
+        """Initialize QueuePersistor.
+
+        Args:
+            session: Async database session.
+            queue_search: Search system for queues.
+            tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+        """
+        super().__init__(session, self._search_table, tenant_uuids)
         self.search_system = queue_search
-        self.tenant_uuids = tenant_uuids
 
-    def _find_query(self, criteria):
-        query = self._joinedload_query()
-        query = self.build_criteria(query, criteria)
-        if self.tenant_uuids is not None:
-            query = query.filter(Queue.tenant_uuid.in_(self.tenant_uuids))
-        return query
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find queues based on criteria.
 
-    def get_by(self, criteria):
-        model = self.find_by(criteria)
-        if not model:
-            raise errors.not_found('Queue', **criteria)
-        return model
+        Args:
+            criteria: Dictionary of criteria.
 
-    def _search_query(self):
-        return self._joinedload_query()
+        Returns:
+            SQLAlchemy query object.
 
-    def _joinedload_query(self):
-        return (
-            self.session.query(Queue)
-            .options(joinedload('_queue'))
-            .options(joinedload('extensions'))
-            .options(joinedload('caller_id'))
-            .options(joinedload('queue_dialactions'))
-            .options(joinedload('schedule_paths').joinedload('schedule'))
+        """
+        query = select(QueueFeatures)
+        query = self._filter_tenant_uuid(query)
+        return self.build_criteria(query, criteria)
+
+    async def get_by(self, criteria: dict[str, Any]) -> QueueFeatures:
+        """Retrieve a single queue by criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            QueueFeatures: The found queue.
+
+        Raises:
+            NotFoundError: If no queue is found.
+
+        """
+        queue = await self.find_by(criteria)
+        if not queue:
+            raise errors.NotFoundError("Queue", **criteria)
+        return queue
+
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[QueueFeatures]:
+        """Find all QueueFeatures by criteria.
+
+        Returns:
+            list of QueueFeatures.
+
+        """
+        result: Sequence[QueueFeatures] = await super().find_all_by(criteria)
+        return list(result)
+
+    async def associate_schedule(
+        self, queue: QueueFeatures, schedule: "Schedule"
+    ) -> None:
+        """Associate a schedule with a queue.
+
+        Args:
+            queue: The queue object.
+            schedule: The schedule object.
+
+        """
+        for path in queue.schedule_paths:
+            if path.schedule_id == schedule.id:
+                return
+
+        schedule_path = SchedulePath(
+            path="queue", schedule_id=schedule.id, pathid=queue.id, schedule=schedule
         )
+        queue.schedule_paths.append(schedule_path)
+        await self.session.flush()
 
-    def delete(self, queue):
-        self._delete_associations(queue)
-        self.session.delete(queue)
-        self.session.flush()
+    async def dissociate_schedule(
+        self, queue: QueueFeatures, schedule: "Schedule"
+    ) -> None:
+        """Dissociate a schedule from a queue.
 
-    def _delete_associations(self, queue):
-        (
-            self.session.query(ContextMember)
-            .filter(ContextMember.type == 'queue')
-            .filter(ContextMember.typeval == str(queue.id))
-            .delete()
-        )
+        Args:
+            queue: The queue object.
+            schedule: The schedule object.
 
-        for extension in queue.extensions:
-            extension.type = 'user'
-            extension.typeval = '0'
+        """
+        for path in queue.schedule_paths:
+            if path.schedule_id == schedule.id:
+                queue.schedule_paths.remove(path)
+                break
+        await self.session.flush()
 
-    def associate_schedule(self, queue, schedule):
-        queue.schedules = [schedule]
-        self.session.flush()
+    async def associate_member_user(
+        self, queue: QueueFeatures, member: "QueueMember"
+    ) -> None:
+        """Associate a user member with a queue.
 
-    def dissociate_schedule(self, queue, schedule):
-        queue.schedules = []
-        self.session.flush()
+        Args:
+            queue: The queue object.
+            member: The user member object to associate.
 
-    def associate_member_user(self, queue, member):
-        if member not in queue.user_queue_members:
-            with Session.no_autoflush:
-                self._fill_user_queue_member_default_values(member)
-                queue.user_queue_members.append(member)
-                member.fix()
-        self.session.flush()
+        """
+        for existing_member in queue.user_queue_members:
+            if existing_member.userid == member.userid:
+                return
 
-    def _fill_user_queue_member_default_values(self, member):
-        member.category = 'queue'
-        member.usertype = 'user'
+        self._fill_user_queue_member_default_values(member)
+        queue.user_queue_members.append(member)
+        await self.session.flush()
 
-    def dissociate_member_user(self, queue, member):
-        try:
+    def _fill_user_queue_member_default_values(self, member: "QueueMember") -> None:
+        """Fill the default values for the membership.
+
+        Args:
+            member: queue member to set default
+
+        """
+        member.category = "queue"
+        member.usertype = "user"
+
+    async def dissociate_member_user(
+        self, queue: QueueFeatures, member: "QueueMember"
+    ) -> None:
+        """Dissociate a user member from a queue.
+
+        Args:
+            queue: The queue object.
+            member: The user member object to dissociate.
+
+        """
+        if member in queue.user_queue_members:
             queue.user_queue_members.remove(member)
-            self.session.flush()
-        except ValueError:
-            pass
+            await self.session.flush()
 
-    def associate_member_agent(self, queue, member):
-        if member not in queue.agent_queue_members:
-            with Session.no_autoflush:
-                self._fill_agent_queue_member_default_values(member)
-                queue.agent_queue_members.append(member)
-                member.fix()
-        self.session.flush()
+    async def associate_member_agent(
+        self, queue: QueueFeatures, member: "QueueMember"
+    ) -> None:
+        """Associate an agent member with a queue.
 
-    def _fill_agent_queue_member_default_values(self, member):
-        member.category = 'queue'
-        member.usertype = 'agent'
+        Args:
+            queue: The queue object.
+            member: The agent member object to associate.
 
-    def dissociate_member_agent(self, queue, member):
-        try:
+        """
+        for existing_member in queue.agent_queue_members:
+            if existing_member.userid == member.userid:
+                return
+
+        self._fill_agent_queue_member_default_values(member)
+        queue.agent_queue_members.append(member)
+        await self.session.flush()
+
+    def _fill_agent_queue_member_default_values(self, member: "QueueMember") -> None:
+        """Fill in default values for agent queue members.
+
+        Args:
+            member: The queue member object.
+
+        """
+        member.category = "queue"
+        member.usertype = "agent"
+
+    async def dissociate_member_agent(
+        self, queue: QueueFeatures, member: "QueueMember"
+    ) -> None:
+        """Dissociate an agent member from a queue.
+
+        Args:
+            queue: The queue object.
+            member: The agent member object to dissociate.
+
+        """
+        if member in queue.agent_queue_members:
             queue.agent_queue_members.remove(member)
-            self.session.flush()
-        except ValueError:
-            pass
+            await self.session.flush()
