@@ -105,9 +105,7 @@ class ContextNumbers(Base):
         start = self._convert_limit(self.start)
         end = self._convert_limit(self.end)
 
-        if (start == end and exten == start) or start <= exten <= end:
-            return True
-        return False
+        return bool((start == end and exten == start) or start <= exten <= end)
 
     def _convert_limit(self, limit: str) -> int:
         """Convert a number limit to an integer, considering the DID length.
