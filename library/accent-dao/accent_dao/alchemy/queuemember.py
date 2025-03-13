@@ -1,4 +1,4 @@
-# file: accent_dao/models/queuemember.py
+# file: accent_dao/alchemy/queuemember.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import re
@@ -52,6 +52,7 @@ class QueueMember(Base):
         exten: The extension associated with the member (extracted from interface).
         context: The context associated with the member (extracted from interface).
         extension: The extension associated with the member.
+
     """
 
     __tablename__: str = "queuemember"
@@ -116,11 +117,18 @@ class QueueMember(Base):
     )
 
     @property
-    def users_from_call_pickup_group_interceptor_user_targets(self):
+    def users_from_call_pickup_group_interceptor_user_targets(
+        self
+    ) -> list["UserFeatures"]:
+        """Returns the user targets from the call pickup group interceptor."""
+        """Returns the user targets from the call pickup group interceptor."""
         return self.group.users_from_call_pickup_user_targets if self.group else []
 
     @property
-    def users_from_call_pickup_group_interceptor_group_targets(self):
+    def users_from_call_pickup_group_interceptor_group_targets(
+        self
+    ) -> list["GroupFeatures"]:
+        """Returns the group targets from the call pickup group interceptor."""
         return self.group.users_from_call_pickup_group_targets if self.group else []
 
     queue: Mapped["QueueFeatures"] = relationship(
@@ -131,6 +139,19 @@ class QueueMember(Base):
     )
 
     def fix(self) -> None:
+        """Update the channel and interface based on user/agent/local type.
+
+        This method checks if the instance has a user, agent, or neither, and
+        calls the appropriate method to update the channel and interface.
+
+        - If `self.user` is present, `_fix_user` is called with `self.user`.
+        - If `self.agent` is present, `_fix_agent` is called with `self.agent`.
+        - If neither `self.user` nor `self.agent` is present, `_fix_local` is called.
+
+        Returns:
+            None
+
+        """
         """Updates the channel and interface based on user/agent/local type."""
         if self.user:
             self._fix_user(self.user)
@@ -140,6 +161,19 @@ class QueueMember(Base):
             self._fix_local()
 
     def _fix_user(self, user: "UserFeatures") -> None:
+        """Update channel and interface for user members.
+
+        This method checks the user's lines and updates the channel and interface
+        attributes based on the type of endpoint associated with the main line.
+
+        Args:
+            user (UserFeatures): The user whose channel and interface need to be
+            updated.
+
+        Returns:
+            None
+
+        """
         """Updates channel and interface for user members."""
         if not user.lines:
             return
@@ -158,12 +192,22 @@ class QueueMember(Base):
             self.interface = main_line.endpoint_custom.interface
 
     def _fix_agent(self, agent: "AgentFeatures") -> None:
+        """Update channel and interface for agent members.
+
+        Args:
+            agent (AgentFeatures): An instance of AgentFeatures containing
+            agent details.
+
+        Returns:
+            None
+
+        """
         """Updates channel and interface for agent members."""
         self.channel = "Agent"
         self.interface = f"{self.channel}/{agent.number}"
 
     def _fix_local(self) -> None:
-        """Updates channel and interface for local members."""
+        """Update channel and interface for local members."""
         self.channel = "Local"
         self.interface = f"{self.channel}/{self.exten}@{self.context}"
 
@@ -181,7 +225,7 @@ class QueueMember(Base):
     def exten(self) -> str | None:
         """The extension associated with the member (extracted from interface)."""
         if hasattr(self, "_exten"):
-            return self._exten  # type: ignore
+            return self._exten  # type: ignore[attr-defined]
 
         match = re.search(interface_regex, self.interface or "")
         if match:
@@ -197,7 +241,7 @@ class QueueMember(Base):
     def context(self) -> str | None:
         """The context associated with the member (extracted from interface)."""
         if hasattr(self, "_context"):
-            return self._context  # type: ignore
+            return self._context  # type: ignore[attr-defined]
 
         match = re.search(interface_regex, self.interface or "")
         if match:
@@ -210,12 +254,12 @@ class QueueMember(Base):
         self._context = value  # Stores it in a private attribute
 
     @property
-    def extension(self) -> "QueueMember":  # type: ignore
+    def extension(self) -> "QueueMember":  # type: ignore[return-value]
         """Returns the QueueMember object itself (for compatibility)."""
         return self
 
     @extension.setter
-    def extension(self, extension: "Extension") -> None:  # type: ignore
+    def extension(self, extension: "Extension") -> None:  # type: ignore[assignment]
         """Set the extension associated with the member."""
         self.exten = extension.exten
         self.context = extension.context

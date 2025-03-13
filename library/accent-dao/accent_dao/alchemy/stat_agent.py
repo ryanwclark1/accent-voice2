@@ -1,4 +1,4 @@
-# file: accent_dao/models/stat_agent.py
+# file: accent_dao/models/stat_agent.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Boolean, Index, Integer, PrimaryKeyConstraint, String, func
@@ -45,6 +45,15 @@ class StatAgent(Base):
 
     @number.expression
     def number(cls) -> Mapped[str | None]:
+        """Extract and return the substring of `cls.name` starting from the 7th char.
+
+        If the first 6 characters of `cls.name` match "Agent/", return the substring.
+        If the condition is not met, return None.
+
+        Returns:
+            Mapped[str | None]: The extracted substring or None.
+
+        """
         return func.coalesce(
             case(
                 (func.substr(cls.name, 0, 7) == "Agent/", func.substr(cls.name, 7)),

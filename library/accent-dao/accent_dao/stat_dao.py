@@ -1,3 +1,4 @@
+# file: accent_dao/daos/stat_dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 """Statistics data access module."""
@@ -5,6 +6,7 @@
 import datetime
 import logging
 from functools import lru_cache
+from typing import TypedDict
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -123,6 +125,14 @@ INSERT INTO stat_call_on_queue (callid, "time", talktime, waittime, stat_queue_i
 )
 
 
+class PauseInterval(TypedDict):
+    """Type definition for pause intervals."""
+
+    agent: int
+    pauseall: datetime.datetime
+    unpauseall: datetime.datetime | None
+
+
 async def fill_simple_calls(
     session: AsyncSession, start: datetime.datetime, end: datetime.datetime
 ) -> None:
@@ -204,7 +214,7 @@ async def _run_sql_function_returning_void(
     # SQLAlchemy 2.0 style query
     stmt = text(function).bindparams(start=start_str, end=end_str)
     result = await session.execute(stmt)
-    result_row = await result.first()  # Fix: await the result, not Row
+    await result.first()  # Await the result
 
 
 async def get_pause_intervals_in_range(
@@ -291,12 +301,8 @@ async def get_login_intervals_in_range(
     unique_result: dict[int, list[tuple[datetime.datetime, datetime.datetime]]] = {}
 
     for agent, agent_logins in results.items():
-        filtered_logins = _pick_longest_with_same_end(
-            agent_logins
-        )  # Fixed variable name
-        unique_result[agent] = sorted(
-            set(filtered_logins)
-        )  # Removed unnecessary list()
+        filtered_logins = _pick_longest_with_same_end(agent_logins)
+        unique_result[agent] = sorted(set(filtered_logins))
 
     logger.debug("Found login intervals for %d agents", len(unique_result))
     return unique_result
