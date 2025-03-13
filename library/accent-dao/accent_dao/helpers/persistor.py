@@ -175,7 +175,8 @@ class BasePersistor(Generic[ModelType]):
 
         """
         if self.search_system is None:
-            raise ValueError("Search system is required for search operations")
+            msg = "Search system is required for search operations"
+            raise ValueError(msg)
 
         query = self._search_query()
         query = self._filter_tenant_uuid(query)
@@ -356,7 +357,8 @@ class AsyncBasePersistor(Generic[ModelType]):
 
         """
         if self.search_system is None:
-            raise ValueError("Search system is required for search operations")
+            msg = "Search system is required for search operations"
+            raise ValueError(msg)
 
         stmt = await self._search_stmt()
         stmt = await self._filter_tenant_uuid(stmt)

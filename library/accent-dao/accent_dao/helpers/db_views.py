@@ -71,20 +71,21 @@ class MaterializedView(Base):
                         # Cannot call `refresh_materialized_view` as it will try to
                         # flush again.
                         try:
+                            # Use __tablename__ instead of __table__.key
+                            table_name = cls.__tablename__
                             session.execute(
                                 text(
                                     f"REFRESH MATERIALIZED VIEW CONCURRENTLY "
-                                    f"{cls.__table__.key}"
+                                    f"{table_name}"
                                 )
                             )
-                            logger.debug(
-                                "Refreshed materialized view: %s", cls.__table__.key
-                            )
+                            logger.debug("Refreshed materialized view: %s", table_name)
                             return
                         except Exception:
+                            # Use __tablename__ instead of __table__.key
                             logger.exception(
                                 "Error refreshing materialized view: %s",
-                                cls.__table__.key,
+                                cls.__tablename__,
                             )
                             # Don't reraise, as this is an event handler
 
@@ -105,25 +106,24 @@ class MaterializedView(Base):
             True if autorefresh is enabled.
 
         """
-        if handler := cls._view_dependencies_handler:
+        handler = cls._view_dependencies_handler
+        if handler is not None:
             return contains(SyncSession, "after_flush", handler)
         return False
 
     @classmethod
     def enable_autorefresh(cls) -> None:
         """Enable auto-refreshing of the materialized view."""
-        if handler := cls._view_dependencies_handler and not contains(
-            SyncSession, "after_flush", handler
-        ):
+        handler = cls._view_dependencies_handler
+        if handler is not None and not contains(SyncSession, "after_flush", handler):
             listens_for(SyncSession, "after_flush")(handler)
             logger.info("Enabled autorefresh for %s", cls.__name__)
 
     @classmethod
     def disable_autorefresh(cls) -> None:
         """Disable auto-refreshing of the materialized view."""
-        if handler := cls._view_dependencies_handler and contains(
-            SyncSession, "after_flush", handler
-        ):
+        handler = cls._view_dependencies_handler
+        if handler is not None and contains(SyncSession, "after_flush", handler):
             remove(SyncSession, "after_flush", handler)
             logger.info("Disabled autorefresh for %s", cls.__name__)
 
@@ -137,18 +137,20 @@ class MaterializedView(Base):
         """
         with SyncSession() as session:
             try:
+                # Use __tablename__ instead of __table__.key
+                table_name = cls.__tablename__
                 refresh_stmt = text(
                     f"REFRESH MATERIALIZED VIEW "
                     f"{'CONCURRENTLY ' if concurrently else ''}"
-                    f"{cls.__table__.key}"
+                    f"{table_name}"
                 )
                 session.execute(refresh_stmt)
                 session.commit()
-                logger.info("Refreshed materialized view: %s", cls.__table__.key)
+                logger.info("Refreshed materialized view: %s", table_name)
             except Exception:
                 session.rollback()
                 logger.exception(
-                    "Error refreshing materialized view %s", cls.__table__.key
+                    "Error refreshing materialized view %s", cls.__tablename__
                 )
                 raise
 
@@ -162,18 +164,20 @@ class MaterializedView(Base):
         """
         async with get_async_session() as session:
             try:
+                # Use __tablename__ instead of __table__.key
+                table_name = cls.__tablename__
                 refresh_stmt = text(
                     f"REFRESH MATERIALIZED VIEW "
                     f"{'CONCURRENTLY ' if concurrently else ''}"
-                    f"{cls.__table__.key}"
+                    f"{table_name}"
                 )
                 await session.execute(refresh_stmt)
                 await session.commit()
-                logger.info("Async refreshed materialized view: %s", cls.__table__.key)
+                logger.info("Async refreshed materialized view: %s", table_name)
             except Exception:
                 await session.rollback()
                 logger.exception(
-                    "Error async refreshing materialized view %s", cls.__table__.key
+                    "Error async refreshing materialized view %s", cls.__tablename__
                 )
                 raise
 
