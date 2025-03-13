@@ -159,6 +159,8 @@ async def async_get_by_name(
     return queue
 
 
+@cached_query()
+@async_daosession
 async def async_get_all(
     tenant_uuids: list[str] | str | None = None,
 ) -> list[QueueFeatures]:

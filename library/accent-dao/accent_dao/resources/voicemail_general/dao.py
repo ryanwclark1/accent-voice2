@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_find_all(session: AsyncSession) -> list[StaticVoicemail]:
+async def find_all(session: AsyncSession) -> list[StaticVoicemail]:
     """Find all static voicemail general settings.
 
     Args:
@@ -35,7 +35,7 @@ async def async_find_all(session: AsyncSession) -> list[StaticVoicemail]:
 
 
 @async_daosession
-async def async_edit_all(
+async def edit_all(
     session: AsyncSession, voicemail_general: list[StaticVoicemail]
 ) -> None:
     """Edit all static voicemail general settings.

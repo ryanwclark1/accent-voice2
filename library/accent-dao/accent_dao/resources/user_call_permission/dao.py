@@ -9,13 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from accent_dao.alchemy.rightcallmember import RightCallMember as UserCallPermission
 from accent_dao.helpers.db_manager import async_daosession
 from accent_dao.helpers.exception import InputError
+from accent_dao.resources.user_call_permission.persistor import UserCallPermissionPersistor
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get_by(session: AsyncSession, **criteria: dict) -> UserCallPermission:
+async def get_by(session: AsyncSession, **criteria: dict) -> UserCallPermission:
     """Get a user call permission by criteria.
 
     Args:
@@ -33,7 +34,7 @@ async def async_get_by(session: AsyncSession, **criteria: dict) -> UserCallPermi
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, **criteria: dict
 ) -> UserCallPermission | None:
     """Find a user call permission by criteria.
@@ -50,7 +51,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, **criteria: dict
 ) -> list[UserCallPermission]:
     """Find all user call permissions by criteria.
@@ -67,7 +68,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_associate(
+async def associate(
     session: AsyncSession, user: Any, call_permission: Any
 ) -> UserCallPermission:
     """Associate a user with a call permission.
@@ -87,7 +88,7 @@ async def async_associate(
 
 
 @async_daosession
-async def async_dissociate(
+async def dissociate(
     session: AsyncSession, user: Any, call_permission: Any
 ) -> None:
     """Dissociate a user from a call permission.
@@ -104,7 +105,7 @@ async def async_dissociate(
 
 
 @async_daosession
-async def async_dissociate_all_by_user(session: AsyncSession, user: Any) -> None:
+async def dissociate_all_by_user(session: AsyncSession, user: Any) -> None:
     """Dissociate all call permissions from a user.
 
     Args:

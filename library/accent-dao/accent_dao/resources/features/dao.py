@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_find_all(session: AsyncSession, section: str) -> list[Features]:
+async def find_all(session: AsyncSession, section: str) -> list[Features]:
     """Find all features for a given section.
 
     Args:
@@ -31,7 +31,7 @@ async def async_find_all(session: AsyncSession, section: str) -> list[Features]:
 
 
 @async_daosession
-async def async_edit_all(
+async def edit_all(
     session: AsyncSession, section: str, features: list[Features]
 ) -> None:
     """Edit all features for a given section.
@@ -46,7 +46,7 @@ async def async_edit_all(
 
 
 @async_daosession
-async def async_get_value(session: AsyncSession, feature_id: int) -> str | None:
+async def get_value(session: AsyncSession, feature_id: int) -> str | None:
     """Get the value of a specific feature by its ID.
 
     Args:

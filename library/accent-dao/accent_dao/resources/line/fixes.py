@@ -1,25 +1,27 @@
-# file: accent_dao/resources/line/fixes.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import logging
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from accent_dao.alchemy.extension import Extension
+from accent_dao.alchemy.endpoint_sip import EndpointSIP
 from accent_dao.alchemy.line_extension import LineExtension
-from accent_dao.alchemy.linefeatures import LineFeatures as Line
+from accent_dao.alchemy.linefeatures import LineFeatures
 from accent_dao.alchemy.queuemember import QueueMember
+from accent_dao.alchemy.sccpline import SCCPLine
 from accent_dao.alchemy.user_line import UserLine
+from accent_dao.alchemy.usercustom import UserCustom
+from accent_dao.helpers.db_manager import async_daosession
 
 logger = logging.getLogger(__name__)
 
 
 class LineFixes:
-    """Provides methods for fixing inconsistencies in Line-related data."""
+    """Provides methods to fix inconsistencies in LineFeatures data."""
 
     def __init__(self, session: AsyncSession) -> None:
-        """Initialize LineFixes.
+        """Initialize LineFixes with a database session.
 
         Args:
             session: The database session.
@@ -27,178 +29,150 @@ class LineFixes:
         """
         self.session = session
 
-    async def async_fix(self, line_id: int) -> None:
-        """Fix inconsistencies for a given line.
+    @async_daosession
+    async def fix(self, session: AsyncSession, line_id: int) -> None:
+        """Fix inconsistencies for a specific line.
 
         Args:
+            session: The database session.
             line_id: The ID of the line to fix.
 
         """
-        await self.async_fix_number_and_context(line_id)
-        await self.async_fix_protocol(line_id)
-        await self.async_fix_name(line_id)
-        await self.async_fix_caller_id(line_id)
-        await self.session.flush()
-
-    async def async_fix_number_and_context(self, line_id: int) -> None:
-        """Fix the number and context of a line based on its main extension.
-
-        Args:
-            line_id: The ID of the line to fix.
-
-        """
-        extension = (
-            await self.session.execute(
-                select(Extension)
-                .join(LineExtension, LineExtension.extension_id == Extension.id)
-                .where(LineExtension.line_id == line_id)
-                .where(LineExtension.main_extension.is_(True))
-            )
-        ).scalar_one_or_none()
-
-        (
-            await self.session.execute(
-                update(Line)
-                .where(Line.id == line_id)
-                .values(
-                    number=extension.exten if extension else None,
-                    context=extension.context if extension else None,
-                )
-            )
+        line = await session.get(
+            LineFeatures,
+            line_id,
+            options=[
+                selectinload(LineFeatures.endpoint_sip),
+                selectinload(LineFeatures.endpoint_sccp),
+                selectinload(LineFeatures.endpoint_custom),
+                selectinload(LineFeatures.user_lines).selectinload(
+                    UserLine.main_user_rel
+                ),  # Load main_user relationship
+                selectinload(LineFeatures.line_extensions).selectinload(
+                    "main_extension_rel"
+                ),
+            ],
         )
+        if not line:
+            logger.warning("Line with ID %s not found for fixing.", line_id)
+            return  # Added to avoid the error and follow same logic as other resources
 
-    async def async_fix_protocol(self, line_id: int) -> None:
-        """Fix the protocol of a line based on its associated endpoint.
+        await self.fix_number_and_context(line)
+        await self.fix_protocol(line)
+        await self.fix_name(line)
+        await self.fix_caller_id(line)
+        await session.flush()  # Important: Flush changes
+
+    async def fix_number_and_context(self, line: LineFeatures) -> None:
+        """Update the number and context of the line based on the main extension.
 
         Args:
-            line_id: The ID of the line to fix.
+            line: The line object.
 
         """
-        line = await self.session.get(Line, line_id)
-        if not line:
-            return
+        main_extension = line.main_extension_rel
+        if main_extension:
+            line.number = main_extension.exten
+            line.context = main_extension.context
+        else:
+            line.number = None
 
+    async def fix_protocol(self, line: LineFeatures) -> None:
+        """Update the protocol of the line based on the associated endpoint.
+
+        Args:
+            line: The line object.
+
+        """
         if line.endpoint_sip_uuid:
-            protocol = "sip"
-            interface = f"PJSIP/{line.endpoint_sip.name}"
+            await self._fix_queue_member(line, f"PJSIP/{line.endpoint_sip.name}")
         elif line.endpoint_sccp_id:
-            protocol = "sccp"
-            interface = f"SCCP/{line.endpoint_sccp.name}"
+            await self._fix_sccp_line(line)
+            await self._fix_queue_member(line, f"SCCP/{line.endpoint_sccp.name}")
         elif line.endpoint_custom_id:
-            protocol = "custom"
-            interface = line.endpoint_custom.interface
+            if line.endpoint_custom:
+                line.endpoint_custom.context = line.context
+                await self._fix_queue_member(line, line.endpoint_custom.interface)
+            else:
+                logger.warning(
+                    "Custom endpoint with id %s not found, cannot update the line %s",
+                    line.endpoint_custom_id,
+                    line.id,
+                )
+        else:  # added to respect the previous logic
+            await self._fix_queue_member(line, "")
+
+    async def _fix_sccp_line(self, line: LineFeatures) -> None:
+        """Update the SCCP line based on the associated extension.
+
+        Args:
+            line: The line object.
+
+        """
+        if line.endpoint_sccp:
+            if main_extension := line.main_extension_rel:
+                line.endpoint_sccp.context = main_extension.context
+
+    async def fix_name(self, line: LineFeatures) -> None:
+        """Update the name of the line based on the associated endpoint.
+
+        Args:
+            line: The line object.
+
+        """
+        if line.endpoint_sip and line.endpoint_sip.name not in ("", None):
+            line.name = line.endpoint_sip.name
+        elif line.endpoint_sccp and line.endpoint_sccp.name not in ("", None):
+            line.name = line.endpoint_sccp.name
+        elif line.endpoint_custom and line.endpoint_custom.interface not in ("", None):
+            line.name = line.endpoint_custom.interface
         else:
-            return
+            line.name = None
 
-        await self.session.execute(
-            update(Line).where(Line.id == line_id).values(protocol=protocol)
-        )
-        # also update the interface in any associated queue members
-        await self._async_fix_queue_member(user_id, line.name, interface, context)
-
-    async def async_fix_name(self, line_id: int) -> None:
-        """Fix the name of a line based on its associated endpoint.
+    async def fix_caller_id(self, line: LineFeatures) -> None:
+        """Update the caller ID of the line based on the associated user and extension.
 
         Args:
-            line_id: The ID of the line to fix.
+            line: The line object.
 
         """
-        line = await self.session.get(Line, line_id)
-        if not line:
-            return
+        main_user = line.main_user_rel
+        if main_user:
+            if line.endpoint_sip_uuid and line.endpoint_sip:
+                await line.endpoint_sip.update_caller_id(
+                    main_user, line.main_extension_rel
+                )
+            elif line.endpoint_sccp_id and line.endpoint_sccp:
+                line.endpoint_sccp.update_caller_id(main_user, line.main_extension_rel)
 
-        if line.endpoint_sip and line.endpoint_sip.name:
-            new_name = line.endpoint_sip.name
-        elif line.endpoint_sccp and line.endpoint_sccp.name:
-            new_name = line.endpoint_sccp.name
-        elif line.endpoint_custom and line.endpoint_custom.interface:
-            new_name = line.endpoint_custom.interface
-        else:
-            new_name = None
-
-        await self.session.execute(
-            update(Line).where(Line.id == line_id).values(name=new_name)
-        )
-
-    async def async_fix_caller_id(self, line_id: int) -> None:
-        """Fix the caller ID of a line based on its associated user and endpoint.
+    async def _fix_queue_member(self, line: LineFeatures, interface: str) -> None:
+        """Update the queue member interface based on the line and user.
 
         Args:
-            line_id: The ID of the line to fix.
+            line: The line object.
+            interface: The interface string.
 
         """
-        line = await self.session.get(Line, line_id)
-        if not line:
+        # Use a separate method to avoid making changes if the line don't need change
+        if not line.main_user_rel:
             return
-
-        user_line = (
-            await self.session.execute(
-                select(UserLine)
-                .filter(UserLine.line_id == line.id)
-                .filter(UserLine.main_user.is_(True))
-            )
-        ).scalar_one_or_none()
-
-        if not user_line:
-            return
-        user = user_line.user
-
-        if line.endpoint_sip_uuid:
-            extension = await self.session.get(
-                Extension,
-                line.line_extensions[0].extension_id,
-            )
-            await line.endpoint_sip.update_caller_id(
-                user, extension
-            )  # Assuming this is already async
-        elif line.endpoint_sccp_id:
-            extension = await self.session.get(
-                Extension,
-                line.line_extensions[0].extension_id,
-            )
-            await line.endpoint_sccp.update_caller_id(
-                user, extension
-            )  # Assuming this is async.
-
-    async def _async_fix_queue_member(
-        self, user_id: int, line_name: str, interface: str, context: str
-    ) -> None:
-        """Update queue member interface based on user and line.
-
-        Args:
-            user_id: ID of the user associated with the queue member.
-            line_name: Name of the line.
-            interface: Computed interface string.
-            context: Context name.
-
-        """
-        # Local is a special case, we need to handle the interface differently.
-        if interface.startswith("Local/"):
-            if user := await self.session.get(User, user_id):
-                if main_line := user.main_line:
-                    if main_line.line_extensions:
-                        extension = main_line.line_extensions[0].extension
-                        local_interface = f"Local/{extension.exten}@{extension.context}"
-                        (
-                            await self.session.execute(
-                                update(QueueMember)
-                                .where(
-                                    QueueMember.usertype == "user",
-                                    QueueMember.userid == user_id,
-                                    QueueMember.channel == "Local",
-                                )
-                                .values(interface=local_interface)
-                            )
-                        )
-            return  # Exit early since we updated the local interface
-
-        # For non-local interfaces, update directly
-        await self.session.execute(
-            update(QueueMember)
-            .where(
-                QueueMember.usertype == "user",
-                QueueMember.userid == user_id,
-                QueueMember.interface != interface,
-            )
-            .values(interface=interface)
+        stmt = (
+            select(QueueMember)
+            .where(QueueMember.usertype == "user")
+            .where(QueueMember.userid == line.main_user_rel.id)
+            .where(QueueMember.interface != interface)
         )
+        result = await self.session.execute(stmt)
+        queue_members_to_update = result.scalars().all()
+
+        for queue_member in queue_members_to_update:
+            # Check interface prefix and act accordingly.
+            if queue_member.interface.startswith("Local/") and line.main_extension_rel:
+                queue_member.interface = f"Local/{line.main_extension_rel.exten}@{line.main_extension_rel.context}"
+            elif (
+                queue_member.interface.startswith("PJSIP/")
+                or queue_member.interface.startswith("SCCP/")
+                or queue_member.interface.startswith("CUSTOM/")
+                or queue_member.interface.startswith("Local/")
+            ):
+                queue_member.interface = interface

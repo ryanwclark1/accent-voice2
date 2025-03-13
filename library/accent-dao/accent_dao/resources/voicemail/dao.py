@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for voicemails.
@@ -37,7 +37,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, voicemail_id: int, tenant_uuids: list[str] | None = None
 ) -> Voicemail:
     """Get a voicemail by ID.
@@ -57,7 +57,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Voicemail:
     """Get a voicemail by criteria.
@@ -80,7 +80,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession,
     voicemail_id: int,
     tenant_uuids: list[str] | None = None,
@@ -102,7 +102,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Voicemail | None:
     """Find a voicemail by criteria.
@@ -122,7 +122,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[Voicemail]:
     """Find all voicemails by criteria.
@@ -142,7 +142,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, voicemail: Voicemail) -> Voicemail:
+async def create(session: AsyncSession, voicemail: Voicemail) -> Voicemail:
     """Create a new voicemail.
 
     Args:
@@ -157,7 +157,7 @@ async def async_create(session: AsyncSession, voicemail: Voicemail) -> Voicemail
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, voicemail: Voicemail) -> None:
+async def edit(session: AsyncSession, voicemail: Voicemail) -> None:
     """Edit an existing voicemail.
 
     Args:
@@ -169,7 +169,7 @@ async def async_edit(session: AsyncSession, voicemail: Voicemail) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, voicemail: Voicemail) -> None:
+async def delete(session: AsyncSession, voicemail: Voicemail) -> None:
     """Delete a voicemail.
 
     Args:

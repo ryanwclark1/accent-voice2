@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get(session: AsyncSession, context_name: str) -> Context | None:
+async def get(session: AsyncSession, context_name: str) -> Context | None:
     """Retrieve a context by its name.
 
     Args:
@@ -29,7 +29,7 @@ async def async_get(session: AsyncSession, context_name: str) -> Context | None:
 
 
 @async_daosession
-async def async_get_by_uuid(session: AsyncSession, context_uuid: str) -> Context | None:
+async def get_by_uuid(session: AsyncSession, context_uuid: str) -> Context | None:
     """Retrieve a context by its UUID.
 
     Args:
@@ -44,7 +44,7 @@ async def async_get_by_uuid(session: AsyncSession, context_uuid: str) -> Context
 
 
 @async_daosession
-async def async_get_all(
+async def get_all(
     session: AsyncSession, tenant_uuid: str | list[str] | None = None
 ) -> list[Context]:
     """Retrieve all contexts, optionally filtered by tenant UUID.
@@ -61,7 +61,7 @@ async def async_get_all(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, context: Context) -> Context:
+async def create(session: AsyncSession, context: Context) -> Context:
     """Create a new context.
 
     Args:
@@ -76,7 +76,7 @@ async def async_create(session: AsyncSession, context: Context) -> Context:
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, context: Context) -> None:
+async def edit(session: AsyncSession, context: Context) -> None:
     """Edit an existing context.
 
     Args:
@@ -88,7 +88,7 @@ async def async_edit(session: AsyncSession, context: Context) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, context: Context) -> None:
+async def delete(session: AsyncSession, context: Context) -> None:
     """Delete a context.
 
     Args:
@@ -100,7 +100,7 @@ async def async_delete(session: AsyncSession, context: Context) -> None:
 
 
 @async_daosession
-async def async_associate_contexts(
+async def associate_contexts(
     session: AsyncSession, context: Context, contexts: list[str]
 ) -> None:
     """Associate a list of contexts with a context.
@@ -115,7 +115,7 @@ async def async_associate_contexts(
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> list[Context]:
     """Search the contexts by provided parameters.
@@ -132,7 +132,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Context | None:
     """Find all contexts by criteria.
@@ -152,7 +152,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Context:
     """Get all contexts by criteria.
@@ -170,7 +170,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession, context_id: int, tenant_uuids: list[str] | None = None
 ) -> Context | None:
     """Find context instance by id.

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for users.
@@ -38,7 +38,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_search_collated(
+async def search_collated(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for users with collation.
@@ -58,7 +58,7 @@ async def async_search_collated(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, user_id: int, tenant_uuids: list[str] | None = None
 ) -> User:
     """Get a user by ID.
@@ -78,7 +78,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> User:
     """Get a user by criteria.
@@ -98,7 +98,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find_by_id_uuid(
+async def find_by_id_uuid(
     session: AsyncSession, id: int | str, tenant_uuids: list[str] | None = None
 ) -> User | None:
     """Find a user by ID or UUID.
@@ -118,7 +118,7 @@ async def async_find_by_id_uuid(
 
 
 @async_daosession
-async def async_get_by_id_uuid(
+async def get_by_id_uuid(
     session: AsyncSession, id: int | str, tenant_uuids: list[str] | None = None
 ) -> User:
     """Get a user by ID or UUID.
@@ -138,7 +138,7 @@ async def async_get_by_id_uuid(
 
 
 @async_daosession
-async def async_find_all_by_agent_id(
+async def find_all_by_agent_id(
     session: AsyncSession, agent_id: int
 ) -> list[User]:
     """Find all users by agent ID.
@@ -157,7 +157,7 @@ async def async_find_all_by_agent_id(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession, user_id: int, tenant_uuids: list[str] | None = None
 ) -> User | None:
     """Find a user by ID.
@@ -177,7 +177,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> User | None:
     """Find a user by criteria.
@@ -197,7 +197,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[User]:
     """Find all users by criteria.
@@ -217,7 +217,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_count_all_by(
+async def count_all_by(
     session: AsyncSession, column_name: str, **criteria: dict
 ) -> list:
     """Count all users by criteria.
@@ -237,7 +237,7 @@ async def async_count_all_by(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, user: User) -> User:
+async def create(session: AsyncSession, user: User) -> User:
     """Create a new user.
 
     Args:
@@ -252,7 +252,7 @@ async def async_create(session: AsyncSession, user: User) -> User:
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, user: User) -> None:
+async def edit(session: AsyncSession, user: User) -> None:
     """Edit an existing user.
 
     Args:
@@ -265,7 +265,7 @@ async def async_edit(session: AsyncSession, user: User) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, user: User) -> None:
+async def delete(session: AsyncSession, user: User) -> None:
     """Delete a user.
 
     Args:
@@ -277,7 +277,7 @@ async def async_delete(session: AsyncSession, user: User) -> None:
 
 
 @async_daosession
-async def async_associate_all_groups(
+async def associate_all_groups(
     session: AsyncSession, user: User, groups: list
 ) -> None:
     """Associate all groups with a user.
@@ -292,7 +292,7 @@ async def async_associate_all_groups(
 
 
 @async_daosession
-async def async_list_outgoing_callerid_associated(
+async def list_outgoing_callerid_associated(
     session: AsyncSession, user_id: int
 ) -> list:
     """List outgoing caller IDs associated with a user.

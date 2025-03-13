@@ -3,23 +3,23 @@
 """Tenant resource implementation."""
 
 from .dao import (
-    async_delete,
-    async_edit,
-    async_find,
-    async_find_all_by,
-    async_find_by,
-    async_get,
-    async_get_by,
-    async_search,
+    delete,
+    edit,
+    find,
+    find_all_by,
+    find_by,
+    get,
+    get_by,
+    search,
 )
 
 __all__ = [
-    "async_delete",
-    "async_edit",
-    "async_find",
-    "async_find_all_by",
-    "async_find_by",
-    "async_get",
-    "async_get_by",
-    "async_search",
+    "delete",
+    "edit",
+    "find",
+    "find_all_by",
+    "find_by",
+    "get",
+    "get_by",
+    "search",
 ]

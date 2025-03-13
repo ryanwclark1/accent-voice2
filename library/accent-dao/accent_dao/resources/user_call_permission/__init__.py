@@ -3,19 +3,19 @@
 """User call permission resource implementation."""
 
 from .dao import (
-    async_associate,
-    async_dissociate,
-    async_dissociate_all_by_user,
-    async_find_all_by,
-    async_find_by,
-    async_get_by,
+    associate,
+    dissociate,
+    dissociate_all_by_user,
+    find_all_by,
+    find_by,
+    get_by,
 )
 
 __all__: list[str] = [
-    "async_associate",
-    "async_dissociate",
-    "async_dissociate_all_by_user",
-    "async_find_all_by",
-    "async_find_by",
-    "async_get_by",
+    "associate",
+    "dissociate",
+    "dissociate_all_by_user",
+    "find_all_by",
+    "find_by",
+    "get_by",
 ]

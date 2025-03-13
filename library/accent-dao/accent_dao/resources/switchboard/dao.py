@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for switchboards.
@@ -36,7 +36,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, switchboard_uuid: str, tenant_uuids: list[str] | None = None
 ) -> Switchboard:
     """Get a switchboard by UUID.
@@ -56,7 +56,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Switchboard:
     """Get a switchboard by criteria.
@@ -79,7 +79,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Switchboard | None:
     """Find a switchboard by criteria.
@@ -99,7 +99,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[Switchboard]:
     """Find all switchboards by criteria.
@@ -119,7 +119,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, switchboard: Switchboard) -> Switchboard:
+async def create(session: AsyncSession, switchboard: Switchboard) -> Switchboard:
     """Create a new switchboard.
 
     Args:
@@ -134,7 +134,7 @@ async def async_create(session: AsyncSession, switchboard: Switchboard) -> Switc
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, switchboard: Switchboard) -> None:
+async def edit(session: AsyncSession, switchboard: Switchboard) -> None:
     """Edit an existing switchboard.
 
     Args:
@@ -146,7 +146,7 @@ async def async_edit(session: AsyncSession, switchboard: Switchboard) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, switchboard: Switchboard) -> None:
+async def delete(session: AsyncSession, switchboard: Switchboard) -> None:
     """Delete a switchboard.
 
     Args:

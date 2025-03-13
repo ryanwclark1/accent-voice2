@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get_by(session: AsyncSession, **criteria: dict) -> FeatureExtension:
+async def get_by(session: AsyncSession, **criteria: dict) -> FeatureExtension:
     """Get a feature extension by criteria.
 
     Args:
@@ -35,7 +35,7 @@ async def async_get_by(session: AsyncSession, **criteria: dict) -> FeatureExtens
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, **criteria: dict
 ) -> FeatureExtension | None:
     """Find a feature extension by criteria.
@@ -52,7 +52,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, **criteria: dict
 ) -> list[FeatureExtension]:
     """Find all feature extensions by criteria.
@@ -69,7 +69,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_get(session: AsyncSession, uuid: str) -> FeatureExtension:
+async def get(session: AsyncSession, uuid: str) -> FeatureExtension:
     """Get a feature extension by UUID.
 
     Args:
@@ -84,7 +84,7 @@ async def async_get(session: AsyncSession, uuid: str) -> FeatureExtension:
 
 
 @async_daosession
-async def async_find(session: AsyncSession, uuid: str) -> FeatureExtension | None:
+async def find(session: AsyncSession, uuid: str) -> FeatureExtension | None:
     """Find a feature extension by UUID.
 
     Args:
@@ -99,7 +99,7 @@ async def async_find(session: AsyncSession, uuid: str) -> FeatureExtension | Non
 
 
 @async_daosession
-async def async_search(session: AsyncSession, **parameters: dict) -> SearchResult:
+async def search(session: AsyncSession, **parameters: dict) -> SearchResult:
     """Search for feature extensions.
 
     Args:
@@ -114,7 +114,7 @@ async def async_search(session: AsyncSession, **parameters: dict) -> SearchResul
 
 
 @async_daosession
-async def async_create(
+async def create(
     session: AsyncSession, extension: FeatureExtension
 ) -> FeatureExtension:
     """Create a new feature extension.
@@ -131,7 +131,7 @@ async def async_create(
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, extension: FeatureExtension) -> None:
+async def edit(session: AsyncSession, extension: FeatureExtension) -> None:
     """Edit an existing feature extension.
 
     Args:
@@ -143,7 +143,7 @@ async def async_edit(session: AsyncSession, extension: FeatureExtension) -> None
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, extension: FeatureExtension) -> None:
+async def delete(session: AsyncSession, extension: FeatureExtension) -> None:
     """Delete a feature extension.
 
     Args:
@@ -155,7 +155,7 @@ async def async_delete(session: AsyncSession, extension: FeatureExtension) -> No
 
 
 @async_daosession
-async def async_find_all_service_extensions(
+async def find_all_service_extensions(
     session: AsyncSession,
 ) -> list[ServiceFeatureExtension]:
     """Find all service feature extensions.
@@ -171,7 +171,7 @@ async def async_find_all_service_extensions(
 
 
 @async_daosession
-async def async_find_all_forward_extensions(
+async def find_all_forward_extensions(
     session: AsyncSession,
 ) -> list[ForwardFeatureExtension]:
     """Find all forward feature extensions.
@@ -187,7 +187,7 @@ async def async_find_all_forward_extensions(
 
 
 @async_daosession
-async def async_find_all_agent_action_extensions(
+async def find_all_agent_action_extensions(
     session: AsyncSession,
 ) -> list[AgentActionFeatureExtension]:
     """Find all agent action feature extensions.

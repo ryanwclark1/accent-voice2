@@ -9,7 +9,7 @@ from accent_dao.helpers.db_manager import async_daosession
 
 
 @async_daosession
-async def async_is_live_reload_enabled(session: AsyncSession) -> bool:
+async def is_live_reload_enabled(session: AsyncSession) -> bool:
     """Check if live reload is enabled.
 
     Args:
@@ -31,7 +31,7 @@ async def async_is_live_reload_enabled(session: AsyncSession) -> bool:
 
 
 @async_daosession
-async def async_set_live_reload_status(session: AsyncSession, data: dict) -> None:
+async def set_live_reload_status(session: AsyncSession, data: dict) -> None:
     """Set the live reload status.
 
     Args:
@@ -48,7 +48,7 @@ async def async_set_live_reload_status(session: AsyncSession, data: dict) -> Non
 
 
 @async_daosession
-async def async_get_config(session: AsyncSession) -> Infos | None:
+async def get_config(session: AsyncSession) -> Infos | None:
     """Retrieve all Infos.
 
     Args:
@@ -64,7 +64,7 @@ async def async_get_config(session: AsyncSession) -> Infos | None:
 
 
 @async_daosession
-async def async_set_timezone(session: AsyncSession, timezone: str) -> None:
+async def set_timezone(session: AsyncSession, timezone: str) -> None:
     """Set the timezone.
 
     Args:
@@ -79,7 +79,7 @@ async def async_set_timezone(session: AsyncSession, timezone: str) -> None:
 
 
 @async_daosession
-async def async_get_timezone(session: AsyncSession) -> str | None:
+async def get_timezone(session: AsyncSession) -> str | None:
     """Get the timezone.
 
     Args:
@@ -95,7 +95,7 @@ async def async_get_timezone(session: AsyncSession) -> str | None:
 
 
 @async_daosession
-async def async_set_configured_flag(session: AsyncSession) -> None:
+async def set_configured_flag(session: AsyncSession) -> None:
     """Set the configured flag to true.
 
     Args:
@@ -109,7 +109,7 @@ async def async_set_configured_flag(session: AsyncSession) -> None:
 
 
 @async_daosession
-async def async_get_configured_flag(session: AsyncSession) -> bool:
+async def get_configured_flag(session: AsyncSession) -> bool:
     """Check if the system is configured.
 
     Args:

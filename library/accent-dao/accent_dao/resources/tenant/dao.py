@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession,
     resource_uuid: str,
     tenant_uuids: list[str] | None = None,
@@ -38,7 +38,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[Tenant]:
     """Find all tenants by criteria.
@@ -58,7 +58,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Tenant | None:
     """Find a tenant by criteria.
@@ -76,7 +76,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, resource_uuid: str, tenant_uuids: list[str] | None = None
 ) -> Tenant:
     """Get a tenant by UUID.
@@ -96,7 +96,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Tenant:
     """Get a tenant by criteria.
@@ -117,7 +117,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for tenants.
@@ -137,7 +137,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, tenant: Tenant) -> None:
+async def edit(session: AsyncSession, tenant: Tenant) -> None:
     """Edit an existing tenant.
 
     Args:
@@ -149,7 +149,7 @@ async def async_edit(session: AsyncSession, tenant: Tenant) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, tenant: Tenant) -> None:
+async def delete(session: AsyncSession, tenant: Tenant) -> None:
     """Delete a tenant.
 
     Args:

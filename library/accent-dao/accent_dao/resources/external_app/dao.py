@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for external apps.
@@ -36,7 +36,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession,
     external_app_name: str,
     tenant_uuids: list[str] | None = None,
@@ -58,7 +58,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> ExternalApp:
     """Get an external app by criteria.
@@ -81,7 +81,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession,
     external_app_name: str,
     tenant_uuids: list[str] | None = None,
@@ -103,7 +103,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> ExternalApp | None:
     """Find an external app by criteria.
@@ -123,7 +123,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[ExternalApp]:
     """Find all external apps by criteria.
@@ -143,7 +143,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, external_app: ExternalApp) -> ExternalApp:
+async def create(session: AsyncSession, external_app: ExternalApp) -> ExternalApp:
     """Create a new external app.
 
     Args:
@@ -158,7 +158,7 @@ async def async_create(session: AsyncSession, external_app: ExternalApp) -> Exte
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, external_app: ExternalApp) -> None:
+async def edit(session: AsyncSession, external_app: ExternalApp) -> None:
     """Edit an existing external app.
 
     Args:
@@ -170,7 +170,7 @@ async def async_edit(session: AsyncSession, external_app: ExternalApp) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, external_app: ExternalApp) -> None:
+async def delete(session: AsyncSession, external_app: ExternalApp) -> None:
     """Delete an external app.
 
     Args:

@@ -2,8 +2,8 @@
 # Copyright 2025 Accent Communications
 """Directory Profile resource implementation."""
 
-from .dao import async_find_by_incall_id
+from .dao import find_by_incall_id
 
 __all__: list[str] = [
-    "async_find_by_incall_id",
+    "find_by_incall_id",
 ]

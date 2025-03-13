@@ -3,21 +3,21 @@
 """SCCP endpoint resource implementation."""
 
 from .dao import (
-    async_create,
-    async_delete,
-    async_edit,
-    async_find_all_by,
-    async_find_by,
-    async_get,
-    async_search,
+    create,
+    delete,
+    edit,
+    find_all_by,
+    find_by,
+    get,
+    search,
 )
 
 __all__: list[str] = [
-    "async_create",
-    "async_delete",
-    "async_edit",
-    "async_find_all_by",
-    "async_find_by",
-    "async_get",
-    "async_search",
+    "create",
+    "delete",
+    "edit",
+    "find_all_by",
+    "find_by",
+    "get",
+    "search",
 ]

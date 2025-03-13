@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> IAXEndpoint | None:
     """Find an IAX endpoint by criteria.
@@ -34,7 +34,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[IAXEndpoint]:
     """Find all IAX endpoints by criteria.
@@ -52,7 +52,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for IAX endpoints.
@@ -70,7 +70,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, iax_id: int, tenant_uuids: list[str] | None = None
 ) -> IAXEndpoint:
     """Get an IAX endpoint by ID.
@@ -88,7 +88,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, iax: IAXEndpoint) -> IAXEndpoint:
+async def create(session: AsyncSession, iax: IAXEndpoint) -> IAXEndpoint:
     """Create a new IAX endpoint.
 
     Args:
@@ -103,7 +103,7 @@ async def async_create(session: AsyncSession, iax: IAXEndpoint) -> IAXEndpoint:
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, iax: IAXEndpoint) -> None:
+async def edit(session: AsyncSession, iax: IAXEndpoint) -> None:
     """Edit an existing IAX endpoint.
 
     Args:
@@ -115,7 +115,7 @@ async def async_edit(session: AsyncSession, iax: IAXEndpoint) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, iax: IAXEndpoint) -> None:
+async def delete(session: AsyncSession, iax: IAXEndpoint) -> None:
     """Delete an IAX endpoint.
 
     Args:

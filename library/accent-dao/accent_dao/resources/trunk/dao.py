@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, trunk_id: int, tenant_uuids: list[str] | None = None
 ) -> TrunkFeatures:
     """Get a trunk by ID.
@@ -41,7 +41,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> TrunkFeatures | None:
     """Find a trunk by criteria.
@@ -59,7 +59,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[TrunkFeatures]:
     """Find all trunks by criteria.
@@ -79,7 +79,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> TrunkFeatures:
     """Get a trunk by criteria.
@@ -100,7 +100,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for trunks.
@@ -118,7 +118,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, trunk: TrunkFeatures) -> TrunkFeatures:
+async def create(session: AsyncSession, trunk: TrunkFeatures) -> TrunkFeatures:
     """Create a new trunk.
 
     Args:
@@ -133,7 +133,7 @@ async def async_create(session: AsyncSession, trunk: TrunkFeatures) -> TrunkFeat
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, trunk: TrunkFeatures) -> None:
+async def edit(session: AsyncSession, trunk: TrunkFeatures) -> None:
     """Edit an existing trunk.
 
     Args:
@@ -145,7 +145,7 @@ async def async_edit(session: AsyncSession, trunk: TrunkFeatures) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, trunk: TrunkFeatures) -> None:
+async def delete(session: AsyncSession, trunk: TrunkFeatures) -> None:
     """Delete a trunk.
 
     Args:
@@ -157,7 +157,7 @@ async def async_delete(session: AsyncSession, trunk: TrunkFeatures) -> None:
 
 
 @async_daosession
-async def async_associate_endpoint_sip(
+async def associate_endpoint_sip(
     session: AsyncSession, trunk: TrunkFeatures, endpoint: EndpointSIP
 ) -> None:
     """Associate a SIP endpoint with a trunk.
@@ -172,7 +172,7 @@ async def async_associate_endpoint_sip(
 
 
 @async_daosession
-async def async_dissociate_endpoint_sip(
+async def dissociate_endpoint_sip(
     session: AsyncSession, trunk: TrunkFeatures, endpoint: EndpointSIP
 ) -> None:
     """Dissociate a SIP endpoint from a trunk.
@@ -187,7 +187,7 @@ async def async_dissociate_endpoint_sip(
 
 
 @async_daosession
-async def async_associate_endpoint_iax(
+async def associate_endpoint_iax(
     session: AsyncSession, trunk: TrunkFeatures, endpoint: UserIAX
 ) -> None:
     """Associate an IAX endpoint with a trunk.
@@ -202,7 +202,7 @@ async def async_associate_endpoint_iax(
 
 
 @async_daosession
-async def async_dissociate_endpoint_iax(
+async def dissociate_endpoint_iax(
     session: AsyncSession, trunk: TrunkFeatures, endpoint: UserIAX
 ) -> None:
     """Dissociate an IAX endpoint from a trunk.
@@ -217,7 +217,7 @@ async def async_dissociate_endpoint_iax(
 
 
 @async_daosession
-async def async_associate_endpoint_custom(
+async def associate_endpoint_custom(
     session: AsyncSession, trunk: TrunkFeatures, endpoint: UserCustom
 ) -> None:
     """Associate a custom endpoint with a trunk.
@@ -234,7 +234,7 @@ async def async_associate_endpoint_custom(
 
 
 @async_daosession
-async def async_dissociate_endpoint_custom(
+async def dissociate_endpoint_custom(
     session: AsyncSession, trunk: TrunkFeatures, endpoint: UserCustom
 ) -> None:
     """Dissociate a custom endpoint from a trunk.
@@ -251,7 +251,7 @@ async def async_dissociate_endpoint_custom(
 
 
 @async_daosession
-async def async_associate_register_iax(
+async def associate_register_iax(
     session: AsyncSession, trunk: TrunkFeatures, register: StaticIAX
 ) -> None:
     """Associate a register IAX with a trunk.
@@ -266,7 +266,7 @@ async def async_associate_register_iax(
 
 
 @async_daosession
-async def async_dissociate_register_iax(
+async def dissociate_register_iax(
     session: AsyncSession, trunk: TrunkFeatures, register: StaticIAX
 ) -> None:
     """Dissociate a register IAX from a trunk.

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for extensions.
@@ -35,7 +35,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Extension:
     """Get an extension by criteria.
@@ -53,7 +53,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Extension | None:
     """Find an extension by criteria.
@@ -71,7 +71,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[Extension]:
     """Find all extensions by criteria.
@@ -89,7 +89,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, id: int, tenant_uuids: list[str] | None = None
 ) -> Extension:
     """Get an extension by ID.
@@ -107,7 +107,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession, id: int, tenant_uuids: list[str] | None = None
 ) -> Extension | None:
     """Find an extension by ID.
@@ -125,7 +125,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, extension: Extension) -> Extension:
+async def create(session: AsyncSession, extension: Extension) -> Extension:
     """Create a new extension.
 
     Args:
@@ -140,7 +140,7 @@ async def async_create(session: AsyncSession, extension: Extension) -> Extension
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, extension: Extension) -> None:
+async def edit(session: AsyncSession, extension: Extension) -> None:
     """Edit an existing extension.
 
     Args:
@@ -153,7 +153,7 @@ async def async_edit(session: AsyncSession, extension: Extension) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, extension: Extension) -> None:
+async def delete(session: AsyncSession, extension: Extension) -> None:
     """Delete an extension.
 
     Args:
@@ -165,7 +165,7 @@ async def async_delete(session: AsyncSession, extension: Extension) -> None:
 
 
 @async_daosession
-async def async_associate_incall(
+async def associate_incall(
     session: AsyncSession, incall: Any, extension: Extension
 ) -> None:
     """Associate an incall with an extension.
@@ -181,7 +181,7 @@ async def async_associate_incall(
 
 
 @async_daosession
-async def async_dissociate_incall(
+async def dissociate_incall(
     session: AsyncSession, incall: Any, extension: Extension
 ) -> None:
     """Dissociate an incall from an extension.
@@ -197,7 +197,7 @@ async def async_dissociate_incall(
 
 
 @async_daosession
-async def async_associate_group(
+async def associate_group(
     session: AsyncSession, group: Any, extension: Extension
 ) -> None:
     """Associate a group with an extension.
@@ -212,7 +212,7 @@ async def async_associate_group(
 
 
 @async_daosession
-async def async_dissociate_group(
+async def dissociate_group(
     session: AsyncSession, group: Any, extension: Extension
 ) -> None:
     """Dissociate a group from an extension.
@@ -227,7 +227,7 @@ async def async_dissociate_group(
 
 
 @async_daosession
-async def async_associate_queue(
+async def associate_queue(
     session: AsyncSession, queue: Any, extension: Extension
 ) -> None:
     """Associate a queue with an extension.
@@ -242,7 +242,7 @@ async def async_associate_queue(
 
 
 @async_daosession
-async def async_dissociate_queue(
+async def dissociate_queue(
     session: AsyncSession, queue: Any, extension: Extension
 ) -> None:
     """Dissociate a queue from an extension.
@@ -257,7 +257,7 @@ async def async_dissociate_queue(
 
 
 @async_daosession
-async def async_associate_conference(
+async def associate_conference(
     session: AsyncSession, conference: Any, extension: Extension
 ) -> None:
     """Associate a conference with an extension.
@@ -272,7 +272,7 @@ async def async_associate_conference(
 
 
 @async_daosession
-async def async_dissociate_conference(
+async def dissociate_conference(
     session: AsyncSession, conference: Any, extension: Extension
 ) -> None:
     """Dissociate a conference from an extension.
@@ -287,7 +287,7 @@ async def async_dissociate_conference(
 
 
 @async_daosession
-async def async_associate_parking_lot(
+async def associate_parking_lot(
     session: AsyncSession, parking_lot: Any, extension: Extension
 ) -> None:
     """Associate a parking lot with an extension.
@@ -302,7 +302,7 @@ async def async_associate_parking_lot(
 
 
 @async_daosession
-async def async_dissociate_parking_lot(
+async def dissociate_parking_lot(
     session: AsyncSession, parking_lot: Any, extension: Extension
 ) -> None:
     """Dissociate a parking lot from an extension.

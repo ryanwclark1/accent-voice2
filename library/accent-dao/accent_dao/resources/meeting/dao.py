@@ -1,30 +1,27 @@
-# file: accent_dao/resources/meeting/dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-
-from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_dao.alchemy.meeting import Meeting
 from accent_dao.helpers.db_manager import async_daosession
+from accent_dao.resources.meeting.persistor import MeetingPersistor
+from accent_dao.resources.meeting.search import meeting_search
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
+    from collections.abc import Sequence
 
-    from accent_dao.alchemy.meeting import Meeting
     from accent_dao.resources.utils.search import SearchResult
 
-from .persistor import MeetingPersistor
-from .search import meeting_search
-
-# Configure logging
 logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
-) -> SearchResult:
+) -> "SearchResult":
     """Search for meetings.
 
     Args:
@@ -33,7 +30,7 @@ async def async_search(
         **parameters: Keyword arguments for search parameters.
 
     Returns:
-        SearchResult: The search results.
+        A SearchResult object containing the total count and the list of meetings.
 
     """
     return await MeetingPersistor(session, meeting_search, tenant_uuids).search(
@@ -42,7 +39,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, meeting_uuid: str, tenant_uuids: list[str] | None = None
 ) -> Meeting:
     """Get a meeting by UUID.
@@ -55,9 +52,6 @@ async def async_get(
     Returns:
         The meeting object.
 
-    Raises:
-        NotFoundError: If no meeting is found with the given UUID.
-
     """
     return await MeetingPersistor(session, meeting_search, tenant_uuids).get_by(
         {"uuid": meeting_uuid}
@@ -65,7 +59,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Meeting:
     """Get a meeting by criteria.
@@ -78,9 +72,6 @@ async def async_get_by(
     Returns:
         The meeting object.
 
-    Raises:
-        NotFoundError: If no meeting is found with the given criteria.
-
     """
     return await MeetingPersistor(session, meeting_search, tenant_uuids).get_by(
         criteria
@@ -88,7 +79,27 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find_by(
+async def find(
+    session: AsyncSession, meeting_uuid: str, tenant_uuids: list[str] | None = None
+) -> Meeting | None:
+    """Find a meeting by UUID.
+
+    Args:
+        session: The database session.
+        meeting_uuid: The UUID of the meeting.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+    Returns:
+        The meeting object or None if not found.
+
+    """
+    return await MeetingPersistor(session, meeting_search, tenant_uuids).find_by(
+        {"uuid": meeting_uuid}
+    )
+
+
+@async_daosession
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Meeting | None:
     """Find a meeting by criteria.
@@ -99,7 +110,7 @@ async def async_find_by(
         **criteria: Keyword arguments for filtering.
 
     Returns:
-        The meeting object, or None if not found.
+        The meeting object or None if not found.
 
     """
     return await MeetingPersistor(session, meeting_search, tenant_uuids).find_by(
@@ -108,7 +119,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[Meeting]:
     """Find all meetings by criteria.
@@ -122,13 +133,14 @@ async def async_find_all_by(
         A list of meeting objects.
 
     """
-    return await MeetingPersistor(session, meeting_search, tenant_uuids).find_all_by(
-        criteria
-    )
+    result: Sequence[Meeting] = await MeetingPersistor(
+        session, meeting_search, tenant_uuids
+    ).find_all_by(criteria)
+    return list(result)
 
 
 @async_daosession
-async def async_create(session: AsyncSession, meeting: Meeting) -> Meeting:
+async def create(session: AsyncSession, meeting: Meeting) -> Meeting:
     """Create a new meeting.
 
     Args:
@@ -143,7 +155,7 @@ async def async_create(session: AsyncSession, meeting: Meeting) -> Meeting:
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, meeting: Meeting) -> None:
+async def edit(session: AsyncSession, meeting: Meeting) -> None:
     """Edit an existing meeting.
 
     Args:
@@ -155,7 +167,7 @@ async def async_edit(session: AsyncSession, meeting: Meeting) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, meeting: Meeting) -> None:
+async def delete(session: AsyncSession, meeting: Meeting) -> None:
     """Delete a meeting.
 
     Args:

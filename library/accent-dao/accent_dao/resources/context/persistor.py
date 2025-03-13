@@ -92,7 +92,7 @@ class ContextPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Context]):
         query = await self._search_query()
         query = self._filter_tenant_uuid(query)
 
-        rows, total = await self.search_system.async_search_from_query(
+        rows, total = await self.search_system.search_from_query(
             self.session, query, parameters
         )
 

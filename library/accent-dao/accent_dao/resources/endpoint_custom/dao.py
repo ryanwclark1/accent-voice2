@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get(session: AsyncSession, custom_id: int) -> UserCustom:
+async def get(session: AsyncSession, custom_id: int) -> UserCustom:
     """Get a custom endpoint by ID.
 
     Args:
@@ -37,7 +37,7 @@ async def async_get(session: AsyncSession, custom_id: int) -> UserCustom:
 
 
 @async_daosession
-async def async_find_by(session: AsyncSession, **criteria: dict) -> UserCustom | None:
+async def find_by(session: AsyncSession, **criteria: dict) -> UserCustom | None:
     """Find a custom endpoint by criteria.
 
     Args:
@@ -52,7 +52,7 @@ async def async_find_by(session: AsyncSession, **criteria: dict) -> UserCustom |
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, **criteria: dict
 ) -> list[UserCustom]:
     """Find all custom endpoints by criteria.
@@ -69,7 +69,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_search(session: AsyncSession, **parameters: dict) -> SearchResult:
+async def search(session: AsyncSession, **parameters: dict) -> SearchResult:
     """Search for custom endpoints.
 
     Args:
@@ -84,7 +84,7 @@ async def async_search(session: AsyncSession, **parameters: dict) -> SearchResul
 
 
 @async_daosession
-async def async_create(session: AsyncSession, custom: UserCustom) -> UserCustom:
+async def create(session: AsyncSession, custom: UserCustom) -> UserCustom:
     """Create a new custom endpoint.
 
     Args:
@@ -99,7 +99,7 @@ async def async_create(session: AsyncSession, custom: UserCustom) -> UserCustom:
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, custom: UserCustom) -> None:
+async def edit(session: AsyncSession, custom: UserCustom) -> None:
     """Edit an existing custom endpoint.
 
     Args:
@@ -111,7 +111,7 @@ async def async_edit(session: AsyncSession, custom: UserCustom) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, custom: UserCustom) -> None:
+async def delete(session: AsyncSession, custom: UserCustom) -> None:
     """Delete a custom endpoint.
 
     Args:

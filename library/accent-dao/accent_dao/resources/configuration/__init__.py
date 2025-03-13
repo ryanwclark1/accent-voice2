@@ -3,21 +3,21 @@
 """Configuration resource implementation."""
 
 from .dao import (
-    async_get_config,
-    async_get_configured_flag,
-    async_get_timezone,
-    async_is_live_reload_enabled,
-    async_set_configured_flag,
-    async_set_live_reload_status,
-    async_set_timezone,
+    get_config,
+    get_configured_flag,
+    get_timezone,
+    is_live_reload_enabled,
+    set_configured_flag,
+    set_live_reload_status,
+    set_timezone,
 )
 
 __all__: list[str] = [
-    "async_get_config",
-    "async_get_configured_flag",
-    "async_get_timezone",
-    "async_is_live_reload_enabled",
-    "async_set_configured_flag",
-    "async_set_live_reload_status",
-    "async_set_timezone",
+    "get_config",
+    "get_configured_flag",
+    "get_timezone",
+    "is_live_reload_enabled",
+    "set_configured_flag",
+    "set_live_reload_status",
+    "set_timezone",
 ]

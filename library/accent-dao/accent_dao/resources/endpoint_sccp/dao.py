@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, sccp_id: int, tenant_uuids: list[str] | None = None
 ) -> SCCPLine:
     """Get an SCCP endpoint by ID.
@@ -37,7 +37,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession, sccp_id: int, tenant_uuids: list[str] | None = None
 ) -> SCCPLine | None:
     """Find an SCCP endpoint by ID.
@@ -57,7 +57,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_search(
+async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
 ) -> SearchResult:
     """Search for SCCP endpoints.
@@ -75,7 +75,7 @@ async def async_search(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, sccp: SCCPLine) -> SCCPLine:
+async def create(session: AsyncSession, sccp: SCCPLine) -> SCCPLine:
     """Create a new SCCP endpoint.
 
     Args:
@@ -90,7 +90,7 @@ async def async_create(session: AsyncSession, sccp: SCCPLine) -> SCCPLine:
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, sccp: SCCPLine) -> None:
+async def edit(session: AsyncSession, sccp: SCCPLine) -> None:
     """Edit an existing SCCP endpoint.
 
     Args:
@@ -102,7 +102,7 @@ async def async_edit(session: AsyncSession, sccp: SCCPLine) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, sccp: SCCPLine) -> None:
+async def delete(session: AsyncSession, sccp: SCCPLine) -> None:
     """Delete an SCCP endpoint.
 
     Args:
@@ -114,7 +114,7 @@ async def async_delete(session: AsyncSession, sccp: SCCPLine) -> None:
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> SCCPLine | None:
     """Find a SCCP endpoint by criteria.
@@ -132,7 +132,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> SCCPLine:
     """Get a SCCP endpoint by criteria.
@@ -153,7 +153,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[SCCPLine]:
     """Find all SCCP endpoints by criteria.

@@ -3,23 +3,23 @@
 """User line resource implementation."""
 
 from .dao import (
-    async_associate,
-    async_associate_all_lines,
-    async_dissociate,
-    async_find_all_by,
-    async_find_all_by_user_id,
-    async_find_by,
-    async_find_main_user_line,
-    async_get_by,
+    associate,
+    associate_all_lines,
+    dissociate,
+    find_all_by,
+    find_all_by_user_id,
+    find_by,
+    find_main_user_line,
+    get_by,
 )
 
 __all__: list[str] = [
-    "async_associate",
-    "async_associate_all_lines",
-    "async_dissociate",
-    "async_find_all_by",
-    "async_find_all_by_user_id",
-    "async_find_by",
-    "async_find_main_user_line",
-    "async_get_by",
+    "associate",
+    "associate_all_lines",
+    "dissociate",
+    "find_all_by",
+    "find_all_by_user_id",
+    "find_by",
+    "find_main_user_line",
+    "get_by",
 ]

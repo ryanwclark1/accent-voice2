@@ -42,7 +42,7 @@ async def search(
 
 
 @async_daosession
-async def async_get(
+async def get(
     session: AsyncSession, conference_id: int, tenant_uuids: list[str] | None = None
 ) -> Conference:
     """Get a conference by ID.
@@ -62,7 +62,7 @@ async def async_get(
 
 
 @async_daosession
-async def async_get_by(
+async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Conference:
     """Get a conference by criteria.
@@ -82,7 +82,7 @@ async def async_get_by(
 
 
 @async_daosession
-async def async_find(
+async def find(
     session: AsyncSession,
     conference_id: int,
     tenant_uuids: list[str] | None = None,
@@ -104,7 +104,7 @@ async def async_find(
 
 
 @async_daosession
-async def async_find_by(
+async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> Conference | None:
     """Find a conference by criteria.
@@ -124,7 +124,7 @@ async def async_find_by(
 
 
 @async_daosession
-async def async_find_all_by(
+async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
 ) -> list[Conference]:
     """Find all conferences by criteria.
@@ -145,7 +145,7 @@ async def async_find_all_by(
 
 
 @async_daosession
-async def async_create(session: AsyncSession, conference: Conference) -> Conference:
+async def create(session: AsyncSession, conference: Conference) -> Conference:
     """Create a new conference.
 
     Args:
@@ -160,7 +160,7 @@ async def async_create(session: AsyncSession, conference: Conference) -> Confere
 
 
 @async_daosession
-async def async_edit(session: AsyncSession, conference: Conference) -> None:
+async def edit(session: AsyncSession, conference: Conference) -> None:
     """Edit an existing conference.
 
     Args:
@@ -172,7 +172,7 @@ async def async_edit(session: AsyncSession, conference: Conference) -> None:
 
 
 @async_daosession
-async def async_delete(session: AsyncSession, conference: Conference) -> None:
+async def delete(session: AsyncSession, conference: Conference) -> None:
     """Delete a conference.
 
     Args:

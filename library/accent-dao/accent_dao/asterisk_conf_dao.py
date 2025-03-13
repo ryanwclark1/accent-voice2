@@ -32,7 +32,7 @@ from accent_dao.alchemy.sccpline import SCCPLine
 from accent_dao.alchemy.user_line import UserLine
 from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.alchemy.voicemail import Voicemail
-from accent_dao.helpers.db_manager import daosession
+from accent_dao.helpers.db_manager import daosession, async_daosession
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -94,6 +94,7 @@ def find_sccp_general_settings_sync(session: Session) -> list[dict[str, str]]:
     return res
 
 
+@async_daosession
 async def async_find_sccp_general_settings(session: AsyncSession) -> list[dict[str, str]]:
     """Find SCCP general settings (async version).
 
@@ -243,6 +244,7 @@ def find_sccp_line_settings(session: Session) -> Generator[dict[str, Any], None,
         yield line_config(*row)
 
 
+@async_daosession
 async def async_find_sccp_line_settings(session: AsyncSession) -> list[dict[str, Any]]:
     """Find SCCP line settings (async version).
 
@@ -401,6 +403,7 @@ def find_sccp_device_settings(session: Session) -> list[dict[str, Any]]:
     return devices
 
 
+@async_daosession
 async def async_find_sccp_device_settings(
     session: AsyncSession,
 ) -> list[dict[str, Any]]:
@@ -524,6 +527,7 @@ def find_sccp_speeddial_settings(session: Session) -> list[dict[str, Any]]:
     ]
 
 
+@async_daosession
 async def async_find_sccp_speeddial_settings(
     session: AsyncSession,
 ) -> list[dict[str, Any]]:
@@ -648,6 +652,7 @@ def find_features_settings(session: Session) -> dict[str, list[tuple[str, str]]]
     }
 
 
+@async_daosession
 async def async_find_features_settings(
     session: AsyncSession,
 ) -> dict[str, list[tuple[str, str]]]:
@@ -827,6 +832,7 @@ def find_pickup_members(session: Session, protocol: str) -> dict[Any, dict[str, 
     return dict(res)
 
 
+@async_daosession
 async def async_find_pickup_members(
     session: AsyncSession, protocol: str
 ) -> dict[Any, dict[str, set]]:

@@ -3,11 +3,11 @@
 """Voicemail zonemessages settings resource implementation."""
 
 from .dao import (
-    async_edit_all,
-    async_find_all,
+    edit_all,
+    find_all,
 )
 
 __all__: list[str] = [
-    "async_edit_all",
-    "async_find_all",
+    "edit_all",
+    "find_all",
 ]

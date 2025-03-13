@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @async_daosession
-async def async_get_by(session: AsyncSession, **criteria: dict) -> UserLine:
+async def get_by(session: AsyncSession, **criteria: dict) -> UserLine:
     """Get a user line by criteria.
 
     Args:
@@ -36,7 +36,7 @@ async def async_get_by(session: AsyncSession, **criteria: dict) -> UserLine:
 
 
 @async_daosession
-async def async_find_by(session: AsyncSession, **criteria: dict) -> UserLine | None:
+async def find_by(session: AsyncSession, **criteria: dict) -> UserLine | None:
     """Find a user line by criteria.
 
     Args:
@@ -51,7 +51,7 @@ async def async_find_by(session: AsyncSession, **criteria: dict) -> UserLine | N
 
 
 @async_daosession
-async def async_find_all_by(session: AsyncSession, **criteria: dict) -> list[UserLine]:
+async def find_all_by(session: AsyncSession, **criteria: dict) -> list[UserLine]:
     """Find all user lines by criteria.
 
     Args:
@@ -66,7 +66,7 @@ async def async_find_all_by(session: AsyncSession, **criteria: dict) -> list[Use
 
 
 @async_daosession
-async def async_find_all_by_user_id(
+async def find_all_by_user_id(
     session: AsyncSession, user_id: int
 ) -> list[UserLine]:
     """Find all user lines for a user ID.
@@ -83,7 +83,7 @@ async def async_find_all_by_user_id(
 
 
 @async_daosession
-async def async_find_main_user_line(
+async def find_main_user_line(
     session: AsyncSession, line_id: int
 ) -> UserLine | None:
     """Find the main user line for a line ID.
@@ -100,7 +100,7 @@ async def async_find_main_user_line(
 
 
 @async_daosession
-async def async_associate(
+async def associate(
     session: AsyncSession, user: UserFeatures, line: LineFeatures
 ) -> UserLine:
     """Associate a user with a line.
@@ -118,7 +118,7 @@ async def async_associate(
 
 
 @async_daosession
-async def async_dissociate(
+async def dissociate(
     session: AsyncSession, user: UserFeatures, line: LineFeatures
 ) -> UserLine | None:
     """Dissociate a user from a line.
@@ -136,7 +136,7 @@ async def async_dissociate(
 
 
 @async_daosession
-async def async_associate_all_lines(
+async def associate_all_lines(
     session: AsyncSession, user: UserFeatures, lines: list[LineFeatures]
 ) -> list[UserLine]:
     """Associate all provided lines with a user.
