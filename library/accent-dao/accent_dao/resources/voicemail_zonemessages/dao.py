@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.staticvoicemail import StaticVoicemail
 from accent_dao.helpers.db_manager import async_daosession
-from accent_dao.resources.voicemail_zonemessages.persistor import VoicemailZoneMessagesPersistor
+from accent_dao.resources.voicemail_zonemessages.persistor import (
+    VoicemailZoneMessagesPersistor,
+)
 
 logger = logging.getLogger(__name__)
 

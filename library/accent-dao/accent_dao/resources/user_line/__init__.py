@@ -13,7 +13,7 @@ from .dao import (
     async_get_by,
 )
 
-__all__ = [
+__all__: list[str] = [
     "async_associate",
     "async_associate_all_lines",
     "async_dissociate",

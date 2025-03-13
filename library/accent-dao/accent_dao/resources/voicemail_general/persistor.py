@@ -2,17 +2,24 @@
 # Copyright 2025 Accent Communications
 
 import logging
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.staticvoicemail import StaticVoicemail
+from accent_dao.helpers.persistor import AsyncBasePersistor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 
 
-class VoicemailGeneralPersistor:
+class VoicemailGeneralPersistor(AsyncBasePersistor[StaticVoicemail]):
     """Persistor class for StaticVoicemail model (general settings)."""
+
+    _search_table = StaticVoicemail
 
     def __init__(self, session: AsyncSession) -> None:
         """Initialize VoicemailGeneralPersistor.
@@ -21,6 +28,7 @@ class VoicemailGeneralPersistor:
             session: Async database session.
 
         """
+        super().__init__(session, self._search_table)
         self.session = session
 
     async def find_all(self) -> list[StaticVoicemail]:
@@ -55,8 +63,7 @@ class VoicemailGeneralPersistor:
         for setting in voicemail_general:
             setting.filename = "voicemail.conf"
             setting.category = "general"
-            # Avoid autoincrement issues.  Don't set the PK.
-            setting.id = None  # Assuming id is the primary key and auto-incrementing
-            self.session.add(setting)
-
+            setting.cat_metric = 1
+            setting.id = None  # Remove any existing ID to avoid conflicts and let auto increment work
+            self.session.add(setting)  # Use add instead of merge
         await self.session.flush()
