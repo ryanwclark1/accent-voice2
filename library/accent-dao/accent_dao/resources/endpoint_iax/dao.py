@@ -1,45 +1,126 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/endpoint_iax/dao.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-from accent_dao.helpers.db_utils import flush_session
-from accent_dao.helpers.db_manager import daosession
+import logging
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_dao.alchemy.useriax import UserIAX as IAXEndpoint
+from accent_dao.helpers.db_manager import async_daosession
+from accent_dao.resources.utils.search import SearchResult
 
 from .persistor import IAXPersistor
 from .search import iax_search
 
-
-@daosession
-def find_by(session, tenant_uuids=None, **criteria):
-    return IAXPersistor(session, iax_search, tenant_uuids).find_by(criteria)
+logger = logging.getLogger(__name__)
 
 
-@daosession
-def find_all_by(session, tenant_uuids=None, **criteria):
-    return IAXPersistor(session, iax_search, tenant_uuids).find_all_by(criteria)
+@async_daosession
+async def async_find_by(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
+) -> IAXEndpoint | None:
+    """Find an IAX endpoint by criteria.
+
+    Args:
+        session: The database session.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+        **criteria: Keyword arguments for filtering.
+
+    Returns:
+        The IAX endpoint if found, None otherwise.
+
+    """
+    return await IAXPersistor(session, iax_search, tenant_uuids).find_by(criteria)
 
 
-@daosession
-def search(session, tenant_uuids=None, **parameters):
-    return IAXPersistor(session, iax_search, tenant_uuids).search(parameters)
+@async_daosession
+async def async_find_all_by(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
+) -> list[IAXEndpoint]:
+    """Find all IAX endpoints by criteria.
+
+    Args:
+        session: The database session.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+        **criteria: Keyword arguments for filtering.
+
+    Returns:
+        A list of IAXEndpoint objects.
+
+    """
+    return await IAXPersistor(session, iax_search, tenant_uuids).find_all_by(criteria)
 
 
-@daosession
-def get(session, iax_id, tenant_uuids=None):
-    return IAXPersistor(session, iax_search, tenant_uuids).get(iax_id)
+@async_daosession
+async def async_search(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
+) -> SearchResult:
+    """Search for IAX endpoints.
+
+    Args:
+        session: The database session.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+        **parameters: Keyword arguments for search parameters.
+
+    Returns:
+        A SearchResult object containing the total count and the list of items.
+
+    """
+    return await IAXPersistor(session, iax_search, tenant_uuids).search(parameters)
 
 
-@daosession
-def create(session, iax):
-    with flush_session(session):
-        return IAXPersistor(session, iax_search).create(iax)
+@async_daosession
+async def async_get(
+    session: AsyncSession, iax_id: int, tenant_uuids: list[str] | None = None
+) -> IAXEndpoint:
+    """Get an IAX endpoint by ID.
+
+    Args:
+        session: The database session.
+        iax_id: The ID of the IAX endpoint.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+    Returns:
+        The IAX endpoint.
+
+    """
+    return await IAXPersistor(session, iax_search, tenant_uuids).get_by({"id": iax_id})
 
 
-@daosession
-def edit(session, iax):
-    with flush_session(session):
-        IAXPersistor(session, iax_search).edit(iax)
+@async_daosession
+async def async_create(session: AsyncSession, iax: IAXEndpoint) -> IAXEndpoint:
+    """Create a new IAX endpoint.
+
+    Args:
+        session: The database session.
+        iax: The IAX endpoint to create.
+
+    Returns:
+        The created IAX endpoint.
+
+    """
+    return await IAXPersistor(session, iax_search).create(iax)
 
 
-@daosession
-def delete(session, iax):
-    with flush_session(session):
-        return IAXPersistor(session, iax_search).delete(iax)
+@async_daosession
+async def async_edit(session: AsyncSession, iax: IAXEndpoint) -> None:
+    """Edit an existing IAX endpoint.
+
+    Args:
+        session: The database session.
+        iax: The IAX endpoint to edit.
+
+    """
+    await IAXPersistor(session, iax_search).edit(iax)
+
+
+@async_daosession
+async def async_delete(session: AsyncSession, iax: IAXEndpoint) -> None:
+    """Delete an IAX endpoint.
+
+    Args:
+        session: The database session.
+        iax: The IAX endpoint to delete.
+
+    """
+    await IAXPersistor(session, iax_search).delete(iax)

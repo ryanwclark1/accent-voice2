@@ -1,64 +1,186 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/endpoint_iax/persistor.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-from functools import partial
+import logging
+from typing import TYPE_CHECKING, Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.useriax import UserIAX as IAX
-from accent_dao.helpers import errors, generators
-from accent_dao.helpers.persistor import BasePersistor
+from accent_dao.helpers import errors
+from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.trunk.fixes import TrunkFixes
-from accent_dao.resources.utils.search import CriteriaBuilderMixin
+from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+logger = logging.getLogger(__name__)
 
 
-class IAXPersistor(CriteriaBuilderMixin, BasePersistor):
+class IAXPersistor(CriteriaBuilderMixin, AsyncBasePersistor[IAX]):
+    """Persistor class for IAX model."""
+
     _search_table = IAX
 
-    def __init__(self, session, iax_search, tenant_uuids=None):
-        self.session = session
+    def __init__(
+        self,
+        session: AsyncSession,
+        iax_search: Any,
+        tenant_uuids: list[str] | None = None,
+    ) -> None:
+        """Initialize IAXPersistor.
+
+        Args:
+            session: Async database session.
+            iax_search: Search system for IAX endpoints.
+            tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+        """
+        super().__init__(session, self._search_table)
         self.search_system = iax_search
         self.tenant_uuids = tenant_uuids
+        self.session = session
 
-    def _find_query(self, criteria):
-        query = self.session.query(IAX)
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find IAX endpoints based on criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        query = select(IAX)  # Use select for async
         query = self._filter_tenant_uuid(query)
         return self.build_criteria(query, criteria)
 
-    def get(self, iax_id):
-        iax = self.find_by({'id': iax_id})
+    async def _search_query(self) -> Any:
+        """Create a query for searching IAX endpoints.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        return select(self.search_system.config.table)
+
+    def _filter_tenant_uuid(self, query: Any) -> Any:
+        """Filter query by tenant UUID.
+
+        Args:
+            query: The query object.
+
+        Returns:
+            The filtered query object.
+
+        """
+        if self.tenant_uuids is not None:
+            query = query.filter(IAX.tenant_uuid.in_(self.tenant_uuids))
+        return query
+
+    async def get_by(self, criteria: dict[str, Any]) -> IAX:
+        """Retrieve a single IAX endpoint by criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            IAX: The found IAX endpoint.
+
+        Raises:
+            NotFoundError: If no IAX endpoint is found.
+
+        """
+        iax = await self.find_by(criteria)
         if not iax:
-            raise errors.not_found('IAXEndpoint', id=iax_id)
+            msg = "IAXEndpoint"
+            raise errors.NotFoundError(msg, **criteria)
         return iax
 
-    def _search_query(self):
-        return self.session.query(self.search_system.config.table)
+    async def search(self, parameters: dict[str, Any]) -> SearchResult:
+        """Search for IAX endpoints.
 
-    def create(self, iax):
+        Args:
+            parameters: Search parameters.
+
+        Returns:
+            SearchResult object containing total count and items.
+
+        """
+        query = await self._search_query()
+        query = self._filter_tenant_uuid(query)
+        rows, total = await self.search_system.async_search_from_query(
+            self.session, query, parameters
+        )
+        return SearchResult(total, rows)
+
+    async def create(self, iax: IAX) -> IAX:
+        """Create a new IAX endpoint.
+
+        Args:
+            iax: The IAX endpoint object to create.
+
+        Returns:
+            The created IAX endpoint object.
+
+        """
         self.fill_default_values(iax)
-        self.persist(iax)
-        return self.get(iax.id)
+        return await super().create(iax)
 
-    def edit(self, iax):
-        self.persist(iax)
-        self._fix_associated(iax)
+    def fill_default_values(self, iax: IAX) -> None:
+        """Fill default values for an IAX endpoint.
 
-    def delete(self, iax):
-        self.session.query(IAX).filter(IAX.id == iax.id).delete()
-        self._fix_associated(iax)
+        Args:
+            iax: The IAX endpoint object.
 
-    def _fix_associated(self, iax):
-        if iax.trunk_rel:
-            TrunkFixes(self.session).fix(iax.trunk_rel.id)
-
-    def fill_default_values(self, iax):
+        """
         if iax.name is None:
-            iax.name = generators.find_unused_hash(
-                partial(self._already_exists, IAX.name)
-            )
+            iax.name = self._generate_name()
         if iax.type is None:
-            iax.type = 'friend'
+            iax.type = "friend"
         if iax.host is None:
-            iax.host = 'dynamic'
+            iax.host = "dynamic"
         if iax.category is None:
-            iax.category = 'trunk'
+            iax.category = "trunk"
 
-    def _already_exists(self, column, data):
-        return self.session.query(IAX).filter(column == data).count() > 0
+    async def edit(self, iax: IAX) -> None:
+        """Edit an existing IAX endpoint.
+
+        Args:
+            iax: The IAX endpoint object to edit.
+
+        """
+        await super().edit(iax)
+        await self._fix_associated(iax)
+
+    async def delete(self, iax: IAX) -> None:
+        """Delete an IAX endpoint.
+
+        Args:
+            iax: The IAX endpoint object to delete.
+
+        """
+        await super().delete(iax)
+        await self._fix_associated(iax)
+
+    async def _fix_associated(self, iax: IAX) -> None:
+        """Fix associated trunk after edit or delete.
+
+        Args:
+            iax: The IAX endpoint object.
+
+        """
+        if iax.trunk_rel:
+            await TrunkFixes(self.session).async_fix(iax.trunk_rel.id)
+
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[IAX]:
+        """Find all IAX by criteria.
+
+        Returns:
+            list of IAX.
+
+        """
+        result: Sequence[IAX] = await super().find_all_by(criteria)
+        return list(result)
