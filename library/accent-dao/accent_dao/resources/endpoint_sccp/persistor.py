@@ -1,78 +1,172 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/endpoint_sccp/persistor.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-from functools import partial
+from __future__ import annotations
 
-from sqlalchemy import text
+import logging
+from typing import TYPE_CHECKING, Any
 
-from accent_dao.alchemy.sccpline import SCCPLine as SCCP
-from accent_dao.helpers import errors, generators
+from sqlalchemy import select
+
+from accent_dao.alchemy.sccpline import SCCPLine as SCCP  # noqa: N814
+from accent_dao.helpers import errors
+from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.line.fixes import LineFixes
-from accent_dao.resources.utils.search import SearchResult
+from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class SccpPersistor:
-    def __init__(self, session, sccp_search, tenant_uuids=None):
-        self.session = session
-        self.sccp_search = sccp_search
+logger = logging.getLogger(__name__)
+
+
+class SCCPPersistor(CriteriaBuilderMixin, AsyncBasePersistor[SCCP]):
+    """Persistor class for SCCPLine model."""
+
+    _search_table = SCCP
+
+    def __init__(
+        self,
+        session: AsyncSession,
+        sccp_search: Any,  # Use Any for now; specify more accurately if possible
+        tenant_uuids: list[str] | None = None,
+    ) -> None:
+        """Initialize SCCPPersistor.
+
+        Args:
+            session: Async database session.
+            sccp_search: Search system for SCCP endpoints.
+            tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+        """
+        super().__init__(session, self._search_table)
+        self.search_system = sccp_search
         self.tenant_uuids = tenant_uuids
+        self.session = session
 
-    def get(self, sccp_id):
-        sccp = self.find(sccp_id)
-        if not sccp:
-            raise errors.not_found('SCCPEndpoint', id=sccp_id)
-        return sccp
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find SCCP endpoints based on criteria.
 
-    def find(self, sccp_id):
-        query = self.session.query(SCCP).filter(SCCP.id == sccp_id)
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        query = select(SCCP)  # Use select for async
         query = self._filter_tenant_uuid(query)
-        return query.first()
+        return self.build_criteria(query, criteria)
 
-    def search(self, parameters):
-        query = self.session.query(self.sccp_search.config.table)
+    async def get_by(self, criteria: dict[str, Any]) -> SCCP:
+        """Retrieve a single SCCP endpoint by criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            SCCP: The found SCCP endpoint.
+
+        Raises:
+            NotFoundError: If no SCCP endpoint is found.
+
+        """
+        model = await self.find_by(criteria)
+        if not model:
+            raise errors.NotFoundError("SCCPEndpoint", **criteria)
+        return model
+
+    async def search(self, parameters: dict[str, Any]) -> SearchResult:
+        """Search for SCCP endpoints.
+
+        Args:
+            parameters: Search parameters.
+
+        Returns:
+            SearchResult object containing total count and items.
+
+        """
+        query = await self._search_query()
         query = self._filter_tenant_uuid(query)
-        rows, total = self.sccp_search.search_from_query(query, parameters)
+        rows, total = await self.search_system.async_search_from_query(
+            self.session, query, parameters
+        )
         return SearchResult(total, rows)
 
-    def create(self, sccp):
-        self.fill_default_values(sccp)
-        self.session.add(sccp)
-        self.session.flush()
-        return sccp
+    async def _search_query(self) -> Any:
+        """Create a query for searching SCCP endpoints.
 
-    def fill_default_values(self, sccp):
-        if sccp.name is None:
-            sccp.name = generators.find_unused_hash(
-                partial(self._already_exists, SCCP.name)
-            )
-        if sccp.context is None:
-            sccp.context = ''
-        if sccp.cid_name is None:
-            sccp.cid_name = ''
-        if sccp.cid_num is None:
-            sccp.cid_num = ''
+        Returns:
+            SQLAlchemy query object.
 
-    def edit(self, sccp):
-        self.session.add(sccp)
-        self.session.flush()
+        """
+        return select(self.search_system.config.table)
 
-    def delete(self, sccp):
-        self.session.delete(sccp)
-        self.session.expire_all()
-        self.session.flush()
-        self._fix_line(sccp)
+    def _filter_tenant_uuid(self, query: Any) -> Any:
+        """Filter query by tenant UUID.
 
-    def _filter_tenant_uuid(self, query):
-        if self.tenant_uuids is None:
-            return query
+        Args:
+            query: The query object.
 
-        if not self.tenant_uuids:
-            return query.filter(text('false'))
+        Returns:
+            The filtered query object.
 
-        return query.filter(SCCP.tenant_uuid.in_(self.tenant_uuids))
+        """
+        if self.tenant_uuids is not None:
+            query = query.filter(SCCP.tenant_uuid.in_(self.tenant_uuids))
+        return query
 
-    def _already_exists(self, column, data):
-        return self.session.query(SCCP).filter(column == data).count() > 0
+    async def create(self, sccp: SCCP) -> SCCP:
+        """Create a new SCCP endpoint.
 
-    def _fix_line(self, sccp):
+        Args:
+            sccp: The SCCP endpoint object to create.
+
+        Returns:
+            The created SCCP endpoint object.
+
+        """
+        return await super().create(sccp)
+
+    async def edit(self, sccp: SCCP) -> None:
+        """Edit an existing SCCP endpoint.
+
+        Args:
+            sccp: The SCCP endpoint object to edit.
+
+        """
+        await super().edit(sccp)
+        await self.async_fix_associated(sccp)
+
+    async def delete(self, sccp: SCCP) -> None:
+        """Delete an SCCP endpoint.
+
+        Args:
+            sccp: The SCCP endpoint object to delete.
+
+        """
+        await super().delete(sccp)
+        await self.async_fix_associated(sccp)
+
+    async def async_fix_associated(self, sccp: SCCP) -> None:
+        """Fix associated line after edit or delete.
+
+        Args:
+            sccp: The SCCP endpoint instance.
+
+        """
         if sccp.line:
-            LineFixes(self.session).fix(sccp.line.id)
+            await LineFixes(self.session).async_fix(sccp.line.id)
+
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[SCCP]:
+        """Find all SCCP by criteria.
+
+        Returns:
+            list of SCCP.
+
+        """
+        result: Sequence[SCCP] = await super().find_all_by(criteria)
+        return list(result)
