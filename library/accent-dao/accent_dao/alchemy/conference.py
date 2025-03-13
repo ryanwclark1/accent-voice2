@@ -4,6 +4,8 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
+from sqlalchemy.ext.associationproxy import association_proxy  # Correct import
+from sqlalchemy.ext.hybrid import hybrid_property  # Corrected import
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func, select
 
@@ -35,10 +37,10 @@ class Conference(Base):
         admin_pin: The administrator PIN for the conference room.
         extensions: Relationship to Extension.
         incall_dialactions: Relationship to Dialaction for incall actions.
-        incalls: Incall objects associated.
+        incalls: Association proxy to Incall objects associated via dialactions.
         _dialaction_actions: Relationship to Dialaction.
         func_keys_conference: Relationship to FuncKeyDestConference.
-        exten: A computed property for the extension.
+        exten: A hybrid property for the extension.
 
     """
 
@@ -97,11 +99,7 @@ class Conference(Base):
         viewonly=True,
     )
 
-    # This is how you would get the associated incalls, if you really need a list.
-    @property
-    def incalls(self) -> list[int]:
-        """Returns a list of incall identifiers associated with the conference."""
-        return [d.incall for d in self.incall_dialactions if d.incall]
+    incalls = association_proxy("incall_dialactions", "incall")
 
     _dialaction_actions: Mapped[list["Dialaction"]] = relationship(
         "Dialaction",
@@ -117,20 +115,21 @@ class Conference(Base):
         "FuncKeyDestConference", cascade="all, delete-orphan"
     )
 
-    @property
+    @hybrid_property
     def exten(self) -> str | None:
-        """The conference extension."""
+        """Get the conference extension."""
         for extension in self.extensions:
             return extension.exten
         return None
 
     @exten.setter
     def exten(self, value: str | None) -> None:
-        """There is no setter, you can't set the extension directly."""
+        """Raise an error, as you can't set the extension directly."""
+        msg = "can't set attribute"
+        raise AttributeError(msg)
 
-    # Use a standard property now
-    @exten.expression
-    def exten(cls) -> Mapped[str]:
+    @exten.expression  # type: ignore[no-redef]
+    def exten(cls) -> Mapped[str | None]:
         """Retrieve the extension identifier for a conference.
 
         This method constructs a SQL query to select the `exten` field from the
@@ -138,7 +137,7 @@ class Conference(Base):
         matches the string representation of the class's `id`.
 
         Returns:
-            Mapped[str]: A scalar subquery that represents the extension
+            Mapped[str | None]: A scalar subquery that represents the extension
             identifier for the conference.
 
         """
