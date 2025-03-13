@@ -114,7 +114,7 @@ class Pickup(Base):
 
     @property
     def users_from_group_targets(self) -> list["UserFeatures"]:
-        """Retrieve a list of users from group targets associated with the pickup members.
+        """Retrieve a list of users from group targets associated with pickup members.
 
         Returns:
             list[UserFeatures]: A list of users from group targets.
@@ -163,6 +163,12 @@ class Pickup(Base):
 
     @property
     def group_interceptors(self) -> list["PickupMember"]:
+        """Retrieve a list of PickupMember groups from pickup member groups.
+
+        Returns:
+            list[PickupMember]: A list of PickupMember groups that are not None.
+
+        """
         return [ptg.group for ptg in self.pickupmember_group_interceptors if ptg.group]
 
     @group_interceptors.setter
@@ -208,4 +214,10 @@ class Pickup(Base):
 
     @enabled.expression
     def enabled(cls) -> Mapped[bool]:
+        """
+        Check if the entity is enabled by verifying that it is not commented.
+
+        Returns:
+            Mapped[bool]: True if the entity is not commented, False otherwise.
+        """
         return func.not_(cast(cls.commented, Boolean))
