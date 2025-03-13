@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/application_dest_node.py
+# file: accent_dao/alchemy/application_dest_node.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String

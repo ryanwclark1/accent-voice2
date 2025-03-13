@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/agentglobalparams.py
+# file: accent_dao/alchemy/agentglobalparams.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String
