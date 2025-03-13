@@ -1,7 +1,8 @@
-# file: accent_dao/resources/asterisk_file/persistor.py
+# file: accent_dao/resources/asterisk_file/persistor.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,9 +12,6 @@ from accent_dao.alchemy.asterisk_file_section import AsteriskFileSection
 from accent_dao.alchemy.asterisk_file_variable import AsteriskFileVariable
 from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 class AsteriskFilePersistor(CriteriaBuilderMixin, AsyncBasePersistor[AsteriskFile]):

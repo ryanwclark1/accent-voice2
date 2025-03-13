@@ -71,7 +71,8 @@ class CallFilterPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Callfilter]):
         """
         model = await self.find_by(criteria)
         if not model:
-            raise errors.NotFoundError("Callfilter", **criteria)
+            msg = "Callfilter"
+            raise errors.NotFoundError(msg, **criteria)
         return model
 
     async def search(self, parameters: dict[str, Any]) -> SearchResult:

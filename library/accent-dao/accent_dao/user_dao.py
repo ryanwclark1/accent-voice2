@@ -2,9 +2,10 @@
 # Copyright 2025 Accent Communications
 
 import logging
+from functools import lru_cache
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -34,17 +35,16 @@ def get(session: Session, user_id: int | UUID) -> UserFeatures:
 
     """
     if isinstance(user_id, int):
-        result = session.execute(
-            select(UserFeatures).where(UserFeatures.id == user_id)
-        ).scalar_one_or_none()
+        stmt = select(UserFeatures).where(UserFeatures.id == user_id)
     else:
-        result = session.execute(
-            select(UserFeatures).where(UserFeatures.uuid == user_id)
-        ).scalar_one_or_none()
+        stmt = select(UserFeatures).where(UserFeatures.uuid == user_id)
+
+    result = session.execute(stmt).scalar_one_or_none()
 
     if result is None:
-        error_message = f"User with ID {user_id} not found"
-        raise LookupError(error_message)
+        logger.error("User with ID %s not found", user_id)
+        msg = f"User with ID {user_id} not found"
+        raise LookupError(msg)
     return result
 
 
@@ -64,22 +64,22 @@ async def get_async(session: AsyncSession, user_id: int | UUID) -> UserFeatures:
 
     """
     if isinstance(user_id, int):
-        result = await session.execute(
-            select(UserFeatures).where(UserFeatures.id == user_id)
-        )
+        stmt = select(UserFeatures).where(UserFeatures.id == user_id)
     else:
-        result = await session.execute(
-            select(UserFeatures).where(UserFeatures.uuid == user_id)
-        )
+        stmt = select(UserFeatures).where(UserFeatures.uuid == user_id)
 
+    result = await session.execute(stmt)
     user = result.scalar_one_or_none()
+
     if user is None:
-        msg = "User with ID %s not found"
-        raise LookupError(msg, user_id)
+        logger.error("User with ID %s not found", user_id)
+        msg = f"User with ID {user_id} not found"
+        raise LookupError(msg)
     return user
 
 
 @daosession
+@lru_cache(maxsize=128)
 def get_user_by_agent_id(session: Session, agent_id: str) -> UserFeatures:
     """Retrieve a user by their agent ID.
 
@@ -94,13 +94,13 @@ def get_user_by_agent_id(session: Session, agent_id: str) -> UserFeatures:
         LookupError: If no user is found with the given agent ID.
 
     """
-    result = session.execute(
-        select(UserFeatures).where(UserFeatures.agent_id == agent_id)
-    ).scalar_one_or_none()
+    stmt = select(UserFeatures).where(UserFeatures.agent_id == agent_id)
+    result = session.execute(stmt).scalar_one_or_none()
 
     if not result:
-        msg = "User with agent ID %s not found"
-        raise LookupError(msg, agent_id)
+        logger.error("User with agent ID %s not found", agent_id)
+        msg = f"User with agent ID {agent_id} not found"
+        raise LookupError(msg)
     return result
 
 
@@ -121,14 +121,14 @@ async def get_user_by_agent_id_async(
         LookupError: If no user is found with the given agent ID.
 
     """
-    result = await session.execute(
-        select(UserFeatures).where(UserFeatures.agent_id == agent_id)
-    )
+    stmt = select(UserFeatures).where(UserFeatures.agent_id == agent_id)
+    result = await session.execute(stmt)
 
     user = result.scalar_one_or_none()
     if not user:
-        msg = "User with agent ID %s not found"
-        raise LookupError(msg, agent_id)
+        logger.error("User with agent ID %s not found", agent_id)
+        msg = f"User with agent ID {agent_id} not found"
+        raise LookupError(msg)
     return user
 
 
@@ -160,7 +160,7 @@ def get_user_by_number_context(
             Extension.context == context,
             Extension.exten == exten,
             Extension.commented == 0,
-            UserLine.main_line.is_(True),
+            UserLine.main_line.is_(true()),  # Fixed: Using true() from sqlalchemy
             LineFeatures.commented == 0,
         )
     )
@@ -203,7 +203,7 @@ async def get_user_by_number_context_async(
             Extension.context == context,
             Extension.exten == exten,
             Extension.commented == 0,
-            UserLine.main_line.is_(True),
+            UserLine.main_line.is_(true()),  # Fixed: Using true() from sqlalchemy
             LineFeatures.commented == 0,
         )
     )

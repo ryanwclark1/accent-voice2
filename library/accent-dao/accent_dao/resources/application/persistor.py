@@ -53,7 +53,7 @@ class ApplicationPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Application]
         query = self._filter_tenant_uuid(query)
         return self.build_criteria(query, criteria)
 
-    async def _search_query(self):
+    async def _search_query(self) -> Any:
         """Create async query."""
         return select(self.search_system.config.table)
 
@@ -88,7 +88,8 @@ class ApplicationPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Application]
         """
         application = await self.find_by(criteria)
         if not application:
-            raise errors.NotFoundError("Application", **criteria)
+            msg = "Application"
+            raise errors.NotFoundError(msg, **criteria)
         return application
 
     def _filter_tenant_uuid(self, query: Any) -> Any:

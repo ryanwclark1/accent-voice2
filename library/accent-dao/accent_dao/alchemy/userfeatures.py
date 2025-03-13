@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/userfeatures.py
+# file: accent_dao/alchemy/userfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import datetime
