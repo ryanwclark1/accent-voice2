@@ -1,12 +1,16 @@
-# file: accent_dao/alchemy/queue.py
+# file: accent_dao/alchemy/queue.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import Enum, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from accent_dao.helpers.asterisk import AsteriskOptionsMixin
 from accent_dao.helpers.db_manager import Base
+
+if TYPE_CHECKING:
+    from .groupfeatures import GroupFeatures
+    from .queuefeatures import QueueFeatures
 
 QueueCategory = Literal["group", "queue"]
 QueueMonitorType = Literal["no", "mixmonitor"]

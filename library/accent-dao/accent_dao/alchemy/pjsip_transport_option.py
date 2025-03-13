@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/pjsip_transport_option.py
+# file: accent_dao/alchemy/pjsip_transport_option.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Index, Integer, Text

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/pjsip_transport.py
+# file: accent_dao/alchemy/pjsip_transport.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 

@@ -16,6 +16,7 @@ from sqlalchemy.sql import cast, select
 from accent_dao.helpers.db_manager import Base
 
 from .callerid import Callerid
+from .dialaction import Dialaction
 from .extension import Extension
 from .queue import Queue
 from .schedulepath import SchedulePath
@@ -23,7 +24,6 @@ from .schedulepath import SchedulePath
 if TYPE_CHECKING:
     from accent_dao.alchemy.func_key_dest_queue import FuncKeyDestQueue
 
-    from .dialaction import Dialaction
     from .queuemember import QueueMember
 
 
@@ -376,22 +376,22 @@ class QueueFeatures(Base):
         return [[key, value] for key, value in result.items()]
 
     @property
-    def wait_time_destination(self) -> "Dialaction" | None:
+    def wait_time_destination(self) -> Dialaction | None:
         """The destination for calls exceeding the wait time."""
         return self.queue_dialactions.get("qwaittime")
 
     @wait_time_destination.setter
-    def wait_time_destination(self, destination: "Dialaction" | None) -> None:
+    def wait_time_destination(self, destination: Dialaction | None) -> None:
         """Set the destination for calls exceeding the wait time."""
         self._set_dialaction("qwaittime", destination)
 
     @property
-    def wait_ratio_destination(self) -> "Dialaction" | None:
+    def wait_ratio_destination(self) -> Dialaction | None:
         """The destination for calls exceeding the wait ratio."""
         return self.queue_dialactions.get("qwaitratio")
 
     @wait_ratio_destination.setter
-    def wait_ratio_destination(self, destination: "Dialaction" | None) -> None:
+    def wait_ratio_destination(self, destination: Dialaction | None) -> None:
         """Set the destination for calls exceeding the wait ratio."""
         self._set_dialaction("qwaitratio", destination)
 
@@ -410,7 +410,7 @@ class QueueFeatures(Base):
         for event, dialaction in dialactions.items():
             self._set_dialaction(event, dialaction)
 
-    def _set_dialaction(self, event: str, dialaction: "Dialaction" | None) -> None:
+    def _set_dialaction(self, event: str, dialaction: Dialaction | None) -> None:
         """Dialaction helper method to set a for specific event.
 
         Args:
@@ -461,6 +461,15 @@ class QueueFeatures(Base):
 
     @label.expression
     def label(cls) -> Mapped[str | None]:
+        """Return the display name of the class instance if it is not an empty string.
+
+        If the display name is an empty string, it returns None.
+
+        Returns:
+            Mapped[str | None]: The display name or None if the 
+                display name is an empty string.
+
+        """
         return func.nullif(cls.displayname, "")
 
     @property
@@ -546,7 +555,7 @@ class QueueFeatures(Base):
     @property
     def retry_on_timeout(self) -> bool:
         """Indicates if retries on timeout are enabled."""
-        return not self.retries == 1
+        return self.retries != 1
 
     @retry_on_timeout.setter
     def retry_on_timeout(self, value: bool) -> None:

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/provisioning.py
+# file: accent_dao/alchemy/provisioning.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/pickupmember.py
+# file: accent_dao/alchemy/pickupmember.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
@@ -71,6 +71,13 @@ class PickupMember(Base):
 
     @property
     def users_from_group(self) -> list["UserFeatures"]:
+        """Retrieve a list of users from the group.
+
+        Returns:
+            list[UserFeatures]: A list of UserFeatures objects if the group
+                exists and has users, otherwise an empty list.
+
+        """
         return (
             self.group.users
             if self.group is not None and hasattr(self.group, "users")
