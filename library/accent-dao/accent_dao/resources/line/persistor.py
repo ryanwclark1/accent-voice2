@@ -1,170 +1,295 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/line/persistor.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
+from __future__ import annotations
+
+import logging
 import random
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import text
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select
 
-from accent_dao.alchemy.endpoint_sip import EndpointSIP
 from accent_dao.alchemy.linefeatures import LineFeatures as Line
-from accent_dao.alchemy.sccpline import SCCPLine
-from accent_dao.alchemy.usercustom import UserCustom
 from accent_dao.helpers import errors
-from accent_dao.helpers.persistor import BasePersistor
-from accent_dao.resources.line.search import line_search
-from accent_dao.resources.utils.search import CriteriaBuilderMixin
+from accent_dao.helpers.persistor import AsyncBasePersistor
+from accent_dao.resources.line.fixes import LineFixes
+from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from accent_dao.alchemy.application import Application
+    from accent_dao.alchemy.endpoint_sip import EndpointSIP
+    from accent_dao.alchemy.sccpline import SCCPLine
+    from accent_dao.alchemy.usercustom import UserCustom
+
+logger = logging.getLogger(__name__)
 
 
-class LinePersistor(CriteriaBuilderMixin, BasePersistor):
+class LinePersistor(CriteriaBuilderMixin, AsyncBasePersistor[Line]):
+    """Persistor class for Line model."""
+
     _search_table = Line
 
-    def __init__(self, session, tenant_uuids=None):
-        self.session = session
+    def __init__(
+        self, session: AsyncSession, tenant_uuids: list[str] | None = None
+    ) -> None:
+        """Initialize LinePersistor."""
+        super().__init__(session, self._search_table)
         self.tenant_uuids = tenant_uuids
-        self.search_system = line_search
+        self.session = session
 
-    def _find_query(self, criteria):
-        query = self.session.query(Line)
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find lines based on criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        query = select(Line)
         query = self._filter_tenant_uuid(query)
         return self.build_criteria(query, criteria)
 
-    def _search_query(self):
-        return (
-            self.session.query(Line)
-            .options(joinedload('context_rel'))
-            .options(joinedload('endpoint_sccp'))
-            .options(joinedload('endpoint_sip'))
-            .options(joinedload('endpoint_sip').joinedload('_auth_section'))
-            .options(joinedload('endpoint_sip').joinedload('_endpoint_section'))
-            .options(joinedload('endpoint_custom'))
-            .options(joinedload('line_extensions').joinedload('extension'))
-            .options(joinedload('user_lines').joinedload('user'))
-        )
+    async def get_by(self, criteria: dict[str, Any]) -> Line:
+        """Retrieve a single line by criteria.
 
-    def get(self, line_id):
-        line = self.find(line_id)
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            Line: The found line.
+
+        Raises:
+            NotFoundError: If no line is found.
+
+        """
+        line = await self.find_by(criteria)
         if not line:
-            raise errors.not_found('Line', id=line_id)
+            msg = "Line"
+            raise errors.NotFoundError(msg, **criteria)
         return line
 
-    def find(self, line_id):
-        return self.query().filter(Line.id == line_id).first()
+    async def search(self, parameters: dict[str, Any]) -> SearchResult:
+        """Search for lines.
 
-    def query(self):
-        query = (
-            self.session.query(Line)
-            .options(joinedload('endpoint_sccp'))
-            .options(joinedload('endpoint_sip'))
-        )
+        Args:
+            parameters: Search parameters.
+
+        Returns:
+            SearchResult object containing total count and items.
+
+        """
+        # Assuming search_system is available, e.g., via a mixin or composition
+        query = await self._search_query()
         query = self._filter_tenant_uuid(query)
+        rows, total = await self.search_system.async_search_from_query(
+            self.session, query, parameters
+        )
+        return SearchResult(total, rows)
+
+    async def _search_query(self) -> Any:
+        """Create a query for searching lines."""
+        return select(self.search_system.config.table)
+
+    def _filter_tenant_uuid(self, query: Any) -> Any:
+        """Filter query by tenant UUID.
+
+        Args:
+            query: The query object.
+
+        Returns:
+            The filtered query object.
+
+        """
+        if self.tenant_uuids is not None:
+            query = query.filter(Line.tenant_uuid.in_(self.tenant_uuids))
         return query
 
-    def create(self, line):
+    async def create(self, line: Line) -> Line:
+        """Create a new line.
+
+        Args:
+            line: The line object.
+
+        Returns:
+            The created line object.
+
+        """
         if line.provisioning_code is None:
             line.provisioning_code = self.generate_provisioning_code()
         if line.configregistrar is None:
-            line.configregistrar = 'default'
+            line.configregistrar = "default"
         if line.ipfrom is None:
-            line.ipfrom = ''
+            line.ipfrom = ""
+        return await super().create(line)
 
-        self.session.add(line)
-        self.session.flush()
-        return line
+    async def edit(self, line: Line) -> None:
+        """Edit an existing line.
 
-    def delete(self, line):
-        if line.endpoint_sip_uuid:
-            (
-                self.session.query(EndpointSIP)
-                .filter(EndpointSIP.uuid == line.endpoint_sip_uuid)
-                .delete()
-            )
-        elif line.endpoint_sccp_id:
-            (
-                self.session.query(SCCPLine)
-                .filter(SCCPLine.id == line.endpoint_sccp_id)
-                .delete()
-            )
-        elif line.endpoint_custom_id:
-            (
-                self.session.query(UserCustom)
-                .filter(UserCustom.id == line.endpoint_custom_id)
-                .delete()
-            )
-        self.session.delete(line)
-        self.session.flush()
+        Args:
+            line: The line object to edit.
 
-    def generate_provisioning_code(self):
-        exists = True
-        while exists:
-            code = self.random_code()
-            exists = (
-                self.session.query(Line.provisioningid)
-                .filter(Line.provisioningid == int(code))
-                .count()
-            ) > 0
-        return code
+        """
+        await super().edit(line)
+        await LineFixes(self.session).async_fix(line.id)
 
-    def random_code(self):
-        return str(100000 + random.randint(0, 899999))
+    async def delete(self, line: Line) -> None:
+        """Delete a line.
 
-    def _filter_tenant_uuid(self, query):
-        if self.tenant_uuids is None:
-            return query
+        Args:
+            line: The line object to delete.
 
-        if not self.tenant_uuids:
-            return query.filter(text('false'))
+        """
+        await super().delete(line)
 
-        return query.filter(Line.tenant_uuid.in_(self.tenant_uuids))
+    async def associate_endpoint_sip(self, line: Line, endpoint: EndpointSIP) -> None:
+        """Associate a line with a SIP endpoint.
 
-    def associate_endpoint_sip(self, line, endpoint):
-        if line.protocol not in ('sip', None):
-            raise errors.resource_associated(
-                'Trunk', 'Endpoint', line_id=line.id, protocol=line.protocol
+        Args:
+            line: The line object.
+            endpoint: The endpoint object.
+
+        Raises:
+            ResourceError: If the line already has an associated endpoint of a different type.
+
+        """
+        if line.protocol not in ("sip", None):
+            raise errors.ResourceError(
+                "Trunk", "Endpoint", line_id=line.id, protocol=line.protocol
             )
         line.endpoint_sip_uuid = endpoint.uuid
-        self.session.flush()
-        self.session.expire(line, ['endpoint_sip'])
+        await self.session.flush()
 
-    def dissociate_endpoint_sip(self, line, endpoint):
+    async def dissociate_endpoint_sip(self, line: Line, endpoint: EndpointSIP) -> None:
+        """Dissociate a line from a SIP endpoint.
+
+        Args:
+            line: The line object.
+            endpoint: The endpoint object.
+
+        """
         if endpoint is line.endpoint_sip:
             line.endpoint_sip_uuid = None
-            self.session.flush()
-            self.session.expire(line, ['endpoint_sip'])
+            await self.session.flush()
 
-    def associate_endpoint_sccp(self, line, endpoint):
-        if line.protocol not in ('sccp', None):
-            raise errors.resource_associated(
-                'Trunk', 'Endpoint', line_id=line.id, protocol=line.protocol
+    async def associate_endpoint_sccp(self, line: Line, endpoint: SCCPLine) -> None:
+        """Associate a line with an SCCP endpoint.
+
+        Args:
+            line: The line object.
+            endpoint: The endpoint object.
+
+        Raises:
+            ResourceError: If the line already has an associated endpoint of a different type.
+
+        """
+        if line.protocol not in ("sccp", None):
+            raise errors.ResourceError(
+                "Trunk", "Endpoint", line_id=line.id, protocol=line.protocol
             )
         line.endpoint_sccp_id = endpoint.id
-        self.session.flush()
-        self.session.expire(line, ['endpoint_sccp'])
+        await self.session.flush()
 
-    def dissociate_endpoint_sccp(self, line, endpoint):
+    async def dissociate_endpoint_sccp(self, line: Line, endpoint: SCCPLine) -> None:
+        """Dissociate a line from an SCCP endpoint.
+
+        Args:
+            line: The line object.
+            endpoint: The endpoint object.
+
+        """
         if endpoint is line.endpoint_sccp:
             line.endpoint_sccp_id = None
-            self.session.flush()
-            self.session.expire(line, ['endpoint_sccp'])
+            await self.session.flush()
 
-    def associate_endpoint_custom(self, line, endpoint):
-        if line.protocol not in ('custom', None):
-            raise errors.resource_associated(
-                'Trunk', 'Endpoint', line_id=line.id, protocol=line.protocol
+    async def associate_endpoint_custom(self, line: Line, endpoint: UserCustom) -> None:
+        """Associate a line with a custom endpoint.
+
+        Args:
+            line: The line object.
+            endpoint: The endpoint object.
+
+        Raises:
+            ResourceError: If the line already has an associated endpoint of a different type.
+
+        """
+        if line.protocol not in ("custom", None):
+            raise errors.ResourceError(
+                "Trunk", "Endpoint", line_id=line.id, protocol=line.protocol
             )
         line.endpoint_custom_id = endpoint.id
-        self.session.flush()
-        self.session.expire(line, ['endpoint_custom'])
+        await self.session.flush()
 
-    def dissociate_endpoint_custom(self, line, endpoint):
+    async def dissociate_endpoint_custom(self, line: Line, endpoint: UserCustom) -> None:
+        """Dissociate a line from a custom endpoint.
+
+        Args:
+            line: The line object.
+            endpoint: The endpoint object.
+
+        """
         if endpoint is line.endpoint_custom:
             line.endpoint_custom_id = None
-            self.session.flush()
-            self.session.expire(line, ['endpoint_custom'])
+            await self.session.flush()
 
-    def associate_application(self, line, application):
+    async def associate_application(
+        self, line: Line, application: Application
+    ) -> None:
+        """Associate a line with an application.
+
+        Args:
+            line: The line object.
+            application: The application object.
+
+        """
         line.application_uuid = application.uuid
-        self.session.flush()
+        await self.session.flush()
 
-    def dissociate_application(self, line, application):
+    async def dissociate_application(
+        self, line: Line, application: Application
+    ) -> None:
+        """Dissociate a line from an application.
+
+        Args:
+            line: The line object.
+            application: The application object.
+
+        """
         line.application_uuid = None
-        self.session.flush()
+        await self.session.flush()
+
+    def generate_provisioning_code(self) -> str:
+        """Generate a provisioning code.
+
+        Returns:
+            str: The generated provisioning code.
+
+        """
+        # Keep this synchronous since it's used for default value generation
+        while True:
+            code = str(100000 + random.randint(0, 899999))
+            # We can use the synchronous self.session here because we are *not* in an async function.
+            if (
+                not self.session.query(Line)
+                .filter(Line.provisioningid == int(code))
+                .first()
+            ):
+                return code
+
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[Line]:
+        """Find all lines by given criteria.
+
+        Args:
+            criteria (dict): Dictionary of criteria to filter by.
+
+        Returns:
+            list[Line]: List of Line objects.
+
+        """
+        result: Sequence[Line] = await super().find_all_by(criteria)
+        return list(result)
