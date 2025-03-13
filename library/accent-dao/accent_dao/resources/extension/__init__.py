@@ -1,4 +1,4 @@
-# file: accent_dao/resources/extension/__init__.py  # noqa: ERA001
+# file: accent_dao/resources/extension/__init__.py
 # Copyright 2025 Accent Communications
 """Extension resource implementation."""
 
@@ -22,6 +22,8 @@ from .dao import (
     async_get,
     async_get_by,
     async_search,
+    calluser_extension,
+    progfunckey_extension,
 )
 
 __all__: list[str] = [
@@ -44,4 +46,6 @@ __all__: list[str] = [
     "async_get",
     "async_get_by",
     "async_search",
+    "calluser_extension",
+    "progfunckey_extension",
 ]

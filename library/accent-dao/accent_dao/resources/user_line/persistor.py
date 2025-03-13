@@ -1,126 +1,198 @@
-# Copyright 2023 Accent Communications
+from typing import TYPE_CHECKING, Any
 
-from accent_dao.alchemy.queuemember import QueueMember
+from sqlalchemy import select
+
+from accent_dao.alchemy.linefeatures import LineFeatures
 from accent_dao.alchemy.user_line import UserLine
+from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.helpers import errors
-from accent_dao.resources.extension.fixes import ExtensionFixes
-from accent_dao.resources.line.fixes import LineFixes
-from accent_dao.resources.line_extension import dao as line_extension_dao
+from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin
+from sqlalchemy.ext.asyncio import AsyncSession
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
-class Persistor(CriteriaBuilderMixin):
+
+class UserLinePersistor(CriteriaBuilderMixin, AsyncBasePersistor[UserLine]):
+    """Persistor class for UserLine model."""
+
     _search_table = UserLine
 
-    def __init__(self, session, resource):
-        self.session = session
-        self.resource = resource
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize UserLinePersistor.
 
-    def find_query(self, criteria):
-        query = self.session.query(UserLine)
+        Args:
+            session: Database session.
+
+        """
+        super().__init__(session, self._search_table)
+        self.session = session
+
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find user lines based on criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        query = select(UserLine)
         return self.build_criteria(query, criteria)
 
-    def find_by(self, **criteria):
-        return self.find_query(criteria).first()
+    async def get_by(self, criteria: dict[str, Any]) -> UserLine:
+        """Retrieve a single user line by criteria.
 
-    def get_by(self, **criteria):
-        user_line = self.find_by(**criteria)
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            UserLine: The found user line.
+
+        Raises:
+            NotFoundError: If no user line is found.
+
+        """
+        user_line = await self.find_by(criteria)
         if not user_line:
-            raise errors.not_found(self.resource, **criteria)
+            raise errors.NotFoundError("UserLine", **criteria)
         return user_line
 
-    def find_all_by(self, **criteria):
-        return self.find_query(criteria).all()
+    async def find_all_by(self, **criteria: dict) -> list[UserLine]:
+        """Find all UserLine by criteria.
 
-    def associate_user_line(self, user, line):
-        user_line = self.find_by(user_id=user.id, line_id=line.id)
+        Returns:
+            list of UserLine.
+
+        """
+        result: Sequence[UserLine] = await super().find_all_by(criteria)
+        return list(result)
+
+    async def associate_user_line(
+        self, user: UserFeatures, line: LineFeatures
+    ) -> UserLine:
+        """Associate a user with a line.
+
+        If a UserLine already exists for the given user and line, it is returned.
+        Otherwise, a new UserLine is created, associating the user with the line.
+        The main_user and main_line flags are set based on whether existing associations
+        are present.
+
+        Args:
+            user: The UserFeatures object.
+            line: The LineFeatures object.
+
+        Returns:
+            The existing or newly created UserLine object.
+
+        """
+        user_line = await self.find_by(user_id=user.id, line_id=line.id)
         if user_line:
             return user_line
 
-        main_user_line = self.find_by(main_user=True, line_id=line.id)
-        user_main_line = self.find_by(main_line=True, user_id=user.id)
+        main_user_line = await self.find_by(main_user=True, line_id=line.id)
+        user_main_line = await self.find_by(main_line=True, user_id=user.id)
 
         user_line = UserLine(
             user_id=user.id,
             line_id=line.id,
-            main_line=(False if user_main_line else True),
-            main_user=(False if main_user_line else True),
+            main_line=False if user_main_line else True,
+            main_user=False if main_user_line else True,
         )
 
         self.session.add(user_line)
-        self.session.flush()
-        self.fix_associations(user_line)
+        await self.session.flush()
 
         return user_line
 
-    def dissociate_user_line(self, user, line):
-        user_line = self.find_by(user_id=user.id, line_id=line.id)
-        if not user_line:
-            return
+    async def dissociate_user_line(
+        self, user: UserFeatures, line: LineFeatures
+    ) -> UserLine | None:
+        """Dissociate a user from a line.
 
-        self.delete_queue_member(user_line, line)
+        If a UserLine exists for the given user and line, it is deleted.
+        If the UserLine represents the main line for the user,
+        the oldest remaining line is set as the main line.
+
+        Args:
+            user: The UserFeatures object.
+            line: The LineFeatures object.
+
+        """
+        user_line = await self.find_by(user_id=user.id, line_id=line.id)
+        if not user_line:
+            return None
 
         if user_line.main_line:
-            self._set_oldest_main_line(user)
+            await self._set_oldest_main_line(user)
 
-        self.session.delete(user_line)
-        self.session.flush()
-        self.fix_associations(user_line)
+        await self.session.delete(user_line)
+        await self.session.flush()
 
         return user_line
 
-    def delete_queue_member(self, user_line, line):
-        if line.endpoint_sip:
-            interface = f'PJSIP/{line.endpoint_sip.name}'
-        elif line.endpoint_sccp:
-            interface = f'SCCP/{line.endpoint_sccp.name}'
-        elif line.endpoint_custom:
-            interface = line.endpoint_custom.interface
-        else:
-            return
+    async def _set_oldest_main_line(self, user: UserFeatures) -> None:
+        """Set the oldest remaining line as the main line for the user.
 
-        (
-            self.session.query(QueueMember)
-            .filter(QueueMember.usertype == 'user')
-            .filter(QueueMember.userid == user_line.user_id)
-            .filter(QueueMember.interface == interface)
-            .delete()
-        )
+        Args:
+            user: The UserFeatures object.
 
-    def _set_oldest_main_line(self, user):
+        """
         oldest_user_line = (
-            self.session.query(UserLine)
-            .filter(UserLine.user_id == user.id)
-            .filter(UserLine.main_line == False)  # noqa
-            .order_by(UserLine.line_id.asc())
-            .first()
-        )
+            await self.session.execute(
+                select(UserLine)
+                .filter(UserLine.user_id == user.id)
+                .filter(UserLine.main_line.is_(False))
+                .order_by(UserLine.line_id.asc())
+            )
+        ).scalar_one_or_none()
+
         if oldest_user_line:
             oldest_user_line.main_line = True
-            self.session.add(oldest_user_line)
+            await self.session.flush()
 
-    def fix_associations(self, user_line):
-        line_extension = line_extension_dao.find_by(line_id=user_line.line_id)
-        if line_extension:
-            ExtensionFixes(self.session).fix_extension(line_extension.extension_id)
+    async def associate_all_lines(
+        self, user: UserFeatures, lines: list[LineFeatures]
+    ) -> list[UserLine]:
+        """Associate all provided lines with a user.
 
-        LineFixes(self.session).fix(user_line.line_id)
+        This method ensures that each provided line is associated with the user.
+        It marks the first line as the main line if no existing main line is found.
 
-    def associate_all_lines(self, user, lines):
-        # Do this only to execute dissociation's fixes
-        for existing_line in user.lines:
-            if existing_line not in lines:
-                self.dissociate_user_line(user, existing_line)
+        Args:
+            user: The UserFeatures object.
+            lines: A list of LineFeatures objects to associate.
 
-        user.lines = lines
+        Returns:
+            A list of created or existing UserLine objects.
 
-        for user_line in user.user_lines:
-            main_user_line = self.find_by(main_user=True, line_id=user_line.line.id)
-            if not main_user_line:
-                user_line.main_user = True
+        """
+        new_user_lines: list[UserLine] = []
+        main_line_set = False
 
-        self.session.flush()
-        for user_line in user.user_lines:
-            self.fix_associations(user_line)
+        for line in lines:
+            user_line = await self.find_by(user_id=user.id, line_id=line.id)
+            if not user_line:
+                is_main_line = not main_line_set
+                user_line = UserLine(
+                    user_id=user.id,
+                    line_id=line.id,
+                    main_line=is_main_line,
+                    main_user=False,
+                )
+                self.session.add(user_line)
+            else:
+                # Update existing UserLine if it's already associated
+                if not main_line_set:
+                    user_line.main_line = True
+                    main_line_set = True
+                else:
+                    user_line.main_line = False  # Ensure only one main line
+            new_user_lines.append(user_line)
+            main_line_set = main_line_set or user_line.main_line
 
-        return user.user_lines
+        await self.session.flush()
+        return new_user_lines

@@ -7,7 +7,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.external_app import ExternalApp
 from accent_dao.helpers import errors
@@ -16,6 +15,8 @@ from accent_dao.resources.utils.search import CriteriaBuilderMixin
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
