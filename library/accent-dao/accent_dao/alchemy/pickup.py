@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/pickup.py
+# file: accent_dao/alchemy/pickup.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -8,9 +8,10 @@ from sqlalchemy.sql import cast, func
 
 from accent_dao.helpers.db_manager import Base
 
+from .pickupmember import PickupMember
+
 if TYPE_CHECKING:
     from .groupfeatures import GroupFeatures
-    from .pickupmember import PickupMember
     from .userfeatures import UserFeatures
 
 
@@ -33,7 +34,8 @@ class Pickup(Base):
     pickupmember_group_interceptors: Relationship to PickupMember (group interceptors).
         group_interceptors: Groups that can intercept calls.
         pickupmember_queue_targets: Relationship to PickupMember (queue targets).
-        pickupmember_queue_interceptors: Relationship to PickupMember (queue interceptors).
+        pickupmember_queue_interceptors: Relationship to PickupMember
+            (queue interceptors).
         enabled: Indicates if the pickup group is enabled.
 
     """
@@ -66,6 +68,12 @@ class Pickup(Base):
 
     @property
     def user_targets(self) -> list["PickupMember"]:
+        """Retrieve a list of user targets associated with the pickup members.
+
+        Returns:
+            list[PickupMember]: A list of user targets.
+
+        """
         return [ptu.user for ptu in self.pickupmember_user_targets if ptu.user]
 
     @user_targets.setter
@@ -88,6 +96,13 @@ class Pickup(Base):
 
     @property
     def group_targets(self) -> list["PickupMember"]:
+        """Retrieves a list of groups from the pickup member group targets.
+
+        Returns:
+            list[PickupMember]: A list of groups where each group is extracted
+            from the pickup member group targets if the group exists.
+
+        """
         return [ptg.group for ptg in self.pickupmember_group_targets if ptg.group]
 
     @group_targets.setter
@@ -98,8 +113,14 @@ class Pickup(Base):
         ]
 
     @property
-    def users_from_group_targets(self) -> list["GroupFeatures"]:
-        return [gt.users for gt in self.group_targets if gt.users]
+    def users_from_group_targets(self) -> list["UserFeatures"]:
+        """Retrieve a list of users from group targets associated with the pickup members.
+
+        Returns:
+            list[UserFeatures]: A list of users from group targets.
+
+        """
+        return [gt.user for gt in self.group_targets if gt.user]
 
     pickupmember_user_interceptors: Mapped[list["PickupMember"]] = relationship(
         "PickupMember",
@@ -113,7 +134,13 @@ class Pickup(Base):
     )
 
     @property
-    def user_interceptors(self) -> list["PickupMember"]:
+    def user_interceptors(self) -> list["UserFeatures"]:
+        """Retrieve a list of user interceptors associated with the pickup members.
+
+        Returns:
+            list[UserFeatures]: A list of user interceptors.
+
+        """
         return [ptu.user for ptu in self.pickupmember_user_interceptors if ptu.user]
 
     @user_interceptors.setter

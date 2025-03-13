@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/parking_lot.py
+# file: accent_dao/alchemy/parking_lot.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -99,6 +99,17 @@ class ParkingLot(Base):
 
     @exten.expression
     def exten(cls) -> Mapped[str | None]:
+        """Retrieve the extension value for a parking lot.
+
+        This method constructs a SQL query to select the `exten` field from the
+        `Extension` table where the `type` is "parking" and the `typeval`
+        matches the string representation of the class instance's `id`.
+
+        Returns:
+            Mapped[str | None]: A scalar subquery that returns the extension
+                    value as a string, or None if no matching record is found.
+
+        """
         return (
             select(Extension.exten)
             .where(Extension.type == "parking")
@@ -115,10 +126,20 @@ class ParkingLot(Base):
 
     @context.setter
     def context(self, value: str) -> None:
-        """There is no setter, you can't set the context directly"""
+        """There is no setter, you can't set the context directly."""
 
     @context.expression
     def context(cls) -> Mapped[str | None]:
+        """Return a SQLAlchemy scalar subquery.
+
+        Subquery selects the context of an extension where the extension type is
+        "parking" and the typeval matches the string representation of the
+        class's id
+
+        Returns:
+            Mapped[str | None]: A scalar subquery selecting the context.
+
+        """
         return (
             select(Extension.context)
             .where(Extension.type == "parking")
