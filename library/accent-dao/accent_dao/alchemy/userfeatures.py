@@ -1,10 +1,10 @@
-# file: accent_dao/models/userfeatures.py
+# file: accent_dao/alchemy/userfeatures.py
 # Copyright 2025 Accent Communications
 
 # Import the new_uuid function
 # TODO: call_record_outgoing_external_enabled
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -488,6 +488,7 @@ class UserFeatures(Base):
 
         Args:
             value: A list of SchedulePath objects to associate with the user.
+
         """
         self.schedule_paths = [
             SchedulePath(path="user", schedule_id=schedule.id, schedule=schedule)
@@ -623,6 +624,7 @@ class UserFeatures(Base):
 
         Returns:
             A tuple containing the caller ID name and number.
+
         """
         default_num = extension.exten if extension else None
         user_match = caller_id_regex.match(self.callerid or "")  # Handle None

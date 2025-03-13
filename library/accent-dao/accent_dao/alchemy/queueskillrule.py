@@ -1,4 +1,4 @@
-# file: accent_dao/models/queueskillrule.py
+# file: accent_dao/alchemy/queueskillrule.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Index, Integer, String, Text, func

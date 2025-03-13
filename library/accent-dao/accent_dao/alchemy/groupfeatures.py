@@ -1,4 +1,4 @@
-# file: accent_dao/models/groupfeatures.py
+# file: accent_dao/alchemy/groupfeatures.py
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING

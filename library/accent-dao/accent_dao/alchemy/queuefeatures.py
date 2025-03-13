@@ -1,4 +1,4 @@
-# file: accent_dao/models/queuefeatures.py
+# file: accent_dao/alchemy/queuefeatures.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -6,14 +6,12 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    PrimaryKeyConstraint,
     String,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
-from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
-from sqlalchemy.sql import and_, cast, select
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import cast, select
 
 from accent_dao.helpers.db_manager import Base
 
@@ -116,6 +114,7 @@ class QueueFeatures(Base):
         wait_ratio_threshold: The wait ratio threshold.
     mark_answered_elsewhere_bool: Boolean representation of mark_answered_elsewhere.
         exten: The extension number.
+
     """
 
     __tablename__: str = "queuefeatures"

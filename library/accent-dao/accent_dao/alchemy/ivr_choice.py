@@ -1,4 +1,4 @@
-# file: accent_dao/models/ivr_choice.py
+# file: accent_dao/alchemy/ivr_choice.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

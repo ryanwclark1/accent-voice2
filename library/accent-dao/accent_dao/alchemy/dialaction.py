@@ -1,4 +1,4 @@
-# file: accent_dao/models/dialaction.py  # noqa: ERA001
+# file: accent_dao/alchemy/dialaction.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 

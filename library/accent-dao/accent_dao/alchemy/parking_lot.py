@@ -1,4 +1,4 @@
-# file: accent_dao/models/parking_lot.py
+# file: accent_dao/alchemy/parking_lot.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

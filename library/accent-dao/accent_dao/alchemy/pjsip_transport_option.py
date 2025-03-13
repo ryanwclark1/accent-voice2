@@ -1,7 +1,7 @@
-# file: accent_dao/models/pjsip_transport_option.py
+# file: accent_dao/alchemy/pjsip_transport_option.py
 # Copyright 2025 Accent Communications
 
-from sqlalchemy import ForeignKey, Index, Integer, Text, func
+from sqlalchemy import ForeignKey, Index, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 

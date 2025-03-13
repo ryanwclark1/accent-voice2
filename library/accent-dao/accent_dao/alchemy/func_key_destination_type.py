@@ -1,4 +1,4 @@
-# file: accent_dao/models/func_key_destination_type.py
+# file: accent_dao/alchemy/func_key_destination_type.py
 # Copyright 2025 Accent Communications
 from sqlalchemy import Integer, String, select
 from sqlalchemy.orm import Mapped, mapped_column

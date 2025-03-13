@@ -1,4 +1,4 @@
-# file: accent_dao/models/stat_switchboard_queue.py
+# file: accent_dao/alchemy/stat_switchboard_queue.py
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal

@@ -1,4 +1,4 @@
-# file: accent_dao/models/rightcallexten.py
+# file: accent_dao/alchemy/rightcallexten.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import (

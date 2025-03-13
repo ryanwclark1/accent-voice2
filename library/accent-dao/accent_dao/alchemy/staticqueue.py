@@ -1,4 +1,4 @@
-# file: accent_dao/models/staticqueue.py
+# file: accent_dao/alchemy/staticqueue.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, String

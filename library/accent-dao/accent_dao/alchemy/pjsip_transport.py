@@ -1,7 +1,6 @@
-# file: accent_dao/models/pjsip_transport.py
+# file: accent_dao/alchemy/pjsip_transport.py
 # Copyright 2025 Accent Communications
 
-from typing import TYPE_CHECKING
 
 from sqlalchemy import Text, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -10,9 +9,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from accent_dao.helpers.db_manager import Base
 
 from .pjsip_transport_option import PJSIPTransportOption
-
-if TYPE_CHECKING:
-    pass
 
 
 class PJSIPTransport(Base):

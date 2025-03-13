@@ -1,4 +1,4 @@
-# file: accent_dao/models/queue_log.py
+# file: accent_dao/alchemy/queue_log.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import DateTime, Index, Integer, PrimaryKeyConstraint, String, Text

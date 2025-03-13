@@ -1,4 +1,4 @@
-# file: accent_dao/models/infos.py
+# file: accent_dao/alchemy/infos.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Boolean, String, func

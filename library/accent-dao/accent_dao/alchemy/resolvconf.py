@@ -1,4 +1,4 @@
-# file: accent_dao/models/resolvconf.py
+# file: accent_dao/alchemy/resolvconf.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String, Text, UniqueConstraint

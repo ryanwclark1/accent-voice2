@@ -1,4 +1,4 @@
-# file: accent_dao/models/pickup.py
+# file: accent_dao/alchemy/pickup.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

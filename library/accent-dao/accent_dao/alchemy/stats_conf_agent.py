@@ -1,4 +1,4 @@
-# file: accent_dao/models/stats_conf_agent.py
+# file: accent_dao/alchemy/stats_conf_agent.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, PrimaryKeyConstraint

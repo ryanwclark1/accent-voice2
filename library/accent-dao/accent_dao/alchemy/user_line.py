@@ -1,4 +1,4 @@
-# file: accent_dao/models/user_line.py
+# file: accent_dao/alchemy/user_line.py
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING

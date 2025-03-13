@@ -1,4 +1,4 @@
-# file: accent_dao/models/application_dest_node.py
+# file: accent_dao/alchemy/application_dest_node.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String

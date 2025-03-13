@@ -1,4 +1,4 @@
-# file: accent_dao/models/mail.py
+# file: accent_dao/alchemy/mail.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String, Text

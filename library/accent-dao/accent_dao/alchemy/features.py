@@ -1,4 +1,4 @@
-# file: accent_dao/models/features.py  # noqa: ERA001
+# file: accent_dao/alchemy/features.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, PrimaryKeyConstraint, String

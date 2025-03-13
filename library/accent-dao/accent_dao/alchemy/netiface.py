@@ -1,4 +1,4 @@
-# file: accent_dao/models/netiface.py
+# file: accent_dao/alchemy/netiface.py
 # Copyright 2025 Accent Communications
 
 from typing import Literal

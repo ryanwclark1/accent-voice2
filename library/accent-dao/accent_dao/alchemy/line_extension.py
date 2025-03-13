@@ -1,4 +1,4 @@
-# file: accent_dao/models/line_extension.py
+# file: accent_dao/alchemy/line_extension.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

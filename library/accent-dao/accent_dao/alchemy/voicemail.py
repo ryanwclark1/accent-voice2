@@ -1,4 +1,4 @@
-# file: accent_dao/models/voicemail.py
+# file: accent_dao/alchemy/voicemail.py
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING

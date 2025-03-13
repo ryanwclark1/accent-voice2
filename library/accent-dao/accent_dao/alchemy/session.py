@@ -1,4 +1,4 @@
-# file: accent_dao/models/session.py
+# file: accent_dao/alchemy/session.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, PrimaryKeyConstraint, String, Text

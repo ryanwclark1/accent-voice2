@@ -1,4 +1,4 @@
-# file: accent_dao/models/agent_login_status.py  # noqa: ERA001
+# file: accent_dao/alchemy/agent_login_status.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING

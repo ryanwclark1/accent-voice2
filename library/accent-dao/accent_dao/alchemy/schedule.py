@@ -1,20 +1,17 @@
-# file: accent_dao/models/schedule.py
+# file: accent_dao/alchemy/schedule.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import cast, func, not_
+from sqlalchemy.sql import cast, func
 
 from accent_dao.helpers.db_manager import Base
-from . import enum  # Import the local enum
 
 if TYPE_CHECKING:
     from .application import Application
     from .conference import Conference
-    from .dialaction import Dialaction
     from .groupfeatures import GroupFeatures
-    from .incall import Incall
     from .ivr import IVR
     from .queuefeatures import QueueFeatures
     from .schedule_time import ScheduleTime
@@ -22,7 +19,6 @@ if TYPE_CHECKING:
     from .switchboard import Switchboard
     from .userfeatures import UserFeatures
     from .voicemail import Voicemail
-    from .tenant import Tenant
 
 DialactionAction = Literal[
     "none",
@@ -91,6 +87,7 @@ class Schedule(Base):
         actionarg1: The first argument for the fallback action.
         actionarg2: The second argument for the fallback action.
         enabled: Indicates if the schedule is enabled.
+
     """
 
     __tablename__: str = "schedule"

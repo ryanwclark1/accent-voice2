@@ -1,4 +1,4 @@
-# file: accent_dao/models/iaxcallnumberlimits.py
+# file: accent_dao/alchemy/iaxcallnumberlimits.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String

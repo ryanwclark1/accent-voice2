@@ -1,4 +1,4 @@
-# file: accent_dao/models/ivr.py
+# file: accent_dao/alchemy/ivr.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -34,6 +34,7 @@ class IVR(Base):
         invalid_destination: The destination for invalid input.
         timeout_destination: The destination for timeout.
         abort_destination: The destination for abort.
+
     """
 
     __tablename__: str = "ivr"

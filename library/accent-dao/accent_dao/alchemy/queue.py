@@ -1,12 +1,12 @@
-# file: accent_dao/models/queue.py
+# file: accent_dao/alchemy/queue.py
 # Copyright 2025 Accent Communications
 from typing import Literal
 
 from sqlalchemy import Enum, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.asterisk import AsteriskOptionsMixin
+from accent_dao.helpers.db_manager import Base
 
 QueueCategory = Literal["group", "queue"]
 QueueMonitorType = Literal["no", "mixmonitor"]

@@ -1,4 +1,4 @@
-# file: accent_dao/models/paginguser.py
+# file: accent_dao/alchemy/paginguser.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

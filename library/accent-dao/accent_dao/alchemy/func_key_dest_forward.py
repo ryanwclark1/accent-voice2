@@ -1,4 +1,4 @@
-# file: accent_dao/models/func_key_dest_forward.py
+# file: accent_dao/alchemy/func_key_dest_forward.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 

@@ -1,4 +1,4 @@
-# file: accent_dao/models/agentglobalparams.py
+# file: accent_dao/alchemy/agentglobalparams.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String

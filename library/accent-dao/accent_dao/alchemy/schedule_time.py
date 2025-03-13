@@ -1,4 +1,4 @@
-# file: accent_dao/models/schedule_time.py
+# file: accent_dao/alchemy/schedule_time.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 

@@ -1,4 +1,4 @@
-# file: accent_dao/models/trunkfeatures.py
+# file: accent_dao/alchemy/trunkfeatures.py
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal

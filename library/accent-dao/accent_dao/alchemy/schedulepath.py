@@ -1,4 +1,4 @@
-# file: accent_dao/models/schedulepath.py
+# file: accent_dao/alchemy/schedulepath.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

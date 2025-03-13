@@ -1,4 +1,4 @@
-# file: accent_dao/models/func_key_dest_queue.py
+# file: accent_dao/alchemy/func_key_dest_queue.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

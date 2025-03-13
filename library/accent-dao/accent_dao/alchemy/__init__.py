@@ -1,4 +1,4 @@
-# file: accent_dao/models/__init__.py
+# file: accent_dao/alchemy/__init__.py
 # Copyright 2025 Accent Communications
 
 # explicitly import modules that are referenced in relationship to prevent

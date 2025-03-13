@@ -1,4 +1,4 @@
-# file: accent_dao/models/outcalltrunk.py
+# file: accent_dao/alchemy/outcalltrunk.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Integer

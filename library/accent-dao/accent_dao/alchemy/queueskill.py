@@ -1,4 +1,4 @@
-# file: accent_dao/models/queueskill.py
+# file: accent_dao/alchemy/queueskill.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -20,6 +20,7 @@ class QueueSkill(Base):
         name: The name of the skill.
         description: A description of the skill.
         agent_queue_skills: Relationship to AgentQueueSkill.
+
     """
 
     __tablename__: str = "queueskill"

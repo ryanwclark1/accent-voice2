@@ -1,4 +1,4 @@
-# file: accent_dao/models/ingress_http.py
+# file: accent_dao/alchemy/ingress_http.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Index, String, Text, func

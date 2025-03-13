@@ -1,4 +1,4 @@
-# file: accent_dao/models/sccpgeneralsettings.py
+# file: accent_dao/alchemy/sccpgeneralsettings.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String

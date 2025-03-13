@@ -1,4 +1,4 @@
-# file: accent_dao/models/meeting.py
+# file: accent_dao/alchemy/meeting.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -6,8 +6,8 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.datetime import utcnow_with_tzinfo
+from accent_dao.helpers.db_manager import Base
 
 if TYPE_CHECKING:
     from .endpoint_sip import EndpointSIP

@@ -1,4 +1,4 @@
-# file: accent_dao/models/moh.py
+# file: accent_dao/alchemy/moh.py
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint

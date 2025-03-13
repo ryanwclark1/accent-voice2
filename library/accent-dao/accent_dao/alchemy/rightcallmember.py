@@ -1,4 +1,4 @@
-# file: accent_dao/models/rightcallmember.py
+# file: accent_dao/alchemy/rightcallmember.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 

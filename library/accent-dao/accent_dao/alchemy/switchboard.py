@@ -1,4 +1,4 @@
-# file: accent_dao/models/switchboard.py
+# file: accent_dao/alchemy/switchboard.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

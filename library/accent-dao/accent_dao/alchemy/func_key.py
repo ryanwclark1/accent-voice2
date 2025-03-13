@@ -1,4 +1,4 @@
-# file: accent_dao/models/func_key.py
+# file: accent_dao/alchemy/func_key.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

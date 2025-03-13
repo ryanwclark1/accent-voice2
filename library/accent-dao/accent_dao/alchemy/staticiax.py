@@ -1,4 +1,4 @@
-# file: accent_dao/models/staticiax.py
+# file: accent_dao/alchemy/staticiax.py
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

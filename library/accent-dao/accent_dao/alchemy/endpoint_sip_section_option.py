@@ -1,4 +1,4 @@
-# file: accent_dao/models/endpoint_sip_section_option.py  # noqa: ERA001
+# file: accent_dao/alchemy/endpoint_sip_section_option.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, Index, Text, func

@@ -1,4 +1,4 @@
-# file: accent_dao/models/linefeatures.py
+# file: accent_dao/alchemy/linefeatures.py
 # Copyright 2025 Accent Communications
 
 import re

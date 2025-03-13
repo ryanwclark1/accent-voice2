@@ -1,4 +1,4 @@
-# file: accent_dao/models/func_key_type.py
+# file: accent_dao/alchemy/func_key_type.py
 # Copyright 2025 Accent Communications
 
 
