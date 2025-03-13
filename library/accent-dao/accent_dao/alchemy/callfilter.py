@@ -13,7 +13,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import (
     Mapped,
@@ -43,22 +42,6 @@ CallfilterCallfrom = Literal["internal", "external", "all"]
 if TYPE_CHECKING:
     from .callfiltermember import Callfiltermember
     from .dialaction import Dialaction
-
-
-# def _convert_to_bosssecretary(value: str) -> CallfilterBosssecretary | str:
-#     """Convert a string to a CallfilterBosssecretary enum member, if possible.
-
-#     Args:
-#         value: The string value to convert.
-
-#     Returns:
-#         CallfilterBosssecretary | str: The enum member if valid, or
-#         the original string if not.
-
-#     """
-#     if value in get_args(CallfilterBosssecretary):
-#         return value  # type: ignore #  mypy is confused, but this is correct.  # noqa: PGH003
-#     return value
 
 
 class Callfilter(Base):
@@ -241,15 +224,15 @@ class Callfilter(Base):
 
         """
         if value == "all-recipients-then-linear-surrogates":
-             self.bosssecretary = "bossfirst-serial"
+            self.bosssecretary = "bossfirst-serial"
         elif value == "all-recipients-then-all-surrogates":
-             self.bosssecretary = "bossfirst-simult"
+            self.bosssecretary = "bossfirst-simult"
         elif value == "linear-surrogates-then-all-recipients":
-             self.bosssecretary = "secretary-serial"
+            self.bosssecretary = "secretary-serial"
         elif value == "all-surrogates-then-all-recipients":
-             self.bosssecretary = "secretary-simult"
-        elif value == 'all':
-            self.bosssecretary = 'all'
+            self.bosssecretary = "secretary-simult"
+        elif value == "all":
+            self.bosssecretary = "all"
 
         else:
             #Handle the case where a string not matching is provided.
