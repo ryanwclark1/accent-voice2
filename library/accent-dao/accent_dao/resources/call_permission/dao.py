@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import selectinload
 
+from accent_dao.alchemy.rightcall import RightCall as CallPermission
 from accent_dao.helpers.db_manager import async_daosession
 from accent_dao.resources.call_permission.persistor import CallPermissionPersistor
 from accent_dao.resources.call_permission.search import call_permission_search
@@ -15,11 +17,10 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from sqlalchemy.ext.asyncio import AsyncSession
-
-    from accent_dao.alchemy.rightcall import RightCall as CallPermission
-    from accent_dao.resources.utils.search import SearchResult
     from sqlalchemy.orm import Load
     from sqlalchemy.orm.strategy_options import loader_option
+
+    from accent_dao.resources.utils.search import SearchResult
 
 preload_relationships = (
     selectinload(CallPermission.rightcall_groups)
@@ -48,6 +49,7 @@ async def search(
 
     Returns:
         SearchResult: The search results.
+
     """
     return await CallPermissionPersistor(
         session, call_permission_search, tenant_uuids
@@ -69,6 +71,7 @@ async def get(
 
     Returns:
         CallPermission: The call permission.
+
     """
     return await CallPermissionPersistor(
         session, call_permission_search, tenant_uuids
@@ -88,6 +91,7 @@ async def get_by(
 
     Returns:
         CallPermission: The call permission.
+
     """
     return await CallPermissionPersistor(
         session, call_permission_search, tenant_uuids
@@ -109,6 +113,7 @@ async def find(
 
     Returns:
         CallPermission | None: The call permission, or None if not found.
+
     """
     return await CallPermissionPersistor(
         session, call_permission_search, tenant_uuids
@@ -128,6 +133,7 @@ async def find_by(
 
     Returns:
         CallPermission | None: The call permission, or None if not found.
+
     """
     return await CallPermissionPersistor(
         session, call_permission_search, tenant_uuids
@@ -147,6 +153,7 @@ async def find_all_by(
 
     Returns:
         list[CallPermission]: A list of call permissions.
+
     """
     result: Sequence[CallPermission] = await CallPermissionPersistor(
         session, call_permission_search, tenant_uuids
@@ -166,6 +173,7 @@ async def create(
 
     Returns:
         CallPermission: The created call permission.
+
     """
     return await CallPermissionPersistor(session, call_permission_search).create(
         call_permission
@@ -179,6 +187,7 @@ async def edit(session: AsyncSession, call_permission: CallPermission) -> None:
     Args:
         session: The database session.
         call_permission: The call permission to edit.
+
     """
     await CallPermissionPersistor(session, call_permission_search).edit(call_permission)
 
@@ -190,6 +199,7 @@ async def delete(session: AsyncSession, call_permission: CallPermission) -> None
     Args:
         session: The database session.
         call_permission: The call permission to delete.
+
     """
     await CallPermissionPersistor(session, call_permission_search).delete(
         call_permission
@@ -201,15 +211,17 @@ async def associate_call_permission(
     session: AsyncSession, group: Any, call_permission: Any
 ) -> None:
     """Associate a call permission.
+
     This is place holder.
 
     Args:
         session: The database session.
         group: The group.
         call_permission: The call permission.
+
     """
     # This is a place holder for the associate_call_permission
-    pass
+    pass  # noqa: PIE790
 
 
 @async_daosession
@@ -217,19 +229,33 @@ async def dissociate_call_permission(
     session: AsyncSession, group: Any, call_permission: Any
 ) -> None:
     """Dissociate a call permission.
+
     This is place holder.
 
     Args:
         session: The database session.
         group: The group.
         call_permission: The call permission.
+
     """
     # This is place holder for the dissociate_call_permission
-    pass
+    pass  # noqa: PIE790
 
 
 @contextmanager
 def query_options(*options: Load | loader_option):
-    """Query options context"""
+    """Set query options in the context of CallPermissionPersistor.
+
+    This function is a context manager that temporarily sets the query options
+    for the CallPermissionPersistor. The options are provided as arguments and
+    are applied within the context of the function.
+
+    Args:
+        *options (Load | loader_option): Variable length argument list of query options.
+
+    Yields:
+        None: This function is a context manager and does not return a value.
+
+    """
     with CallPermissionPersistor.context_query_options(*options):
         yield
