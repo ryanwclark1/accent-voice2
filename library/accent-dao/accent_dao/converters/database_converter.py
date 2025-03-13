@@ -155,7 +155,10 @@ class DatabaseConverter(Generic[T, S]):
         extracted_values: dict[str, Any] = {}
         for column_name in columns:
             if not hasattr(source_object, column_name):
-                error_msg = f"Column {column_name} does not exist in object {type(source_object)}"
+                error_msg = (
+                    f"Column {column_name} does not exist in object "
+                    f"{type(source_object)}"
+                )
                 raise ValueError(error_msg)
             extracted_values[column_name] = getattr(source_object, column_name)
         return extracted_values
