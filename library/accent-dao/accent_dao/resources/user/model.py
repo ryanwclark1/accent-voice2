@@ -1,65 +1,39 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/user/model.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
+
+from typing import NamedTuple
+
+# using NamedTuple so no changes needed.
 
 
-class UserDirectory:
-    def __init__(
-        self,
-        id,
-        uuid,
-        line_id,
-        agent_id,
-        firstname,
-        lastname,
-        exten,
-        email,
-        mobile_phone_number,
-        voicemail_number,
-        userfield,
-        description,
-        context,
-    ):
-        self.id = id
-        self.uuid = uuid
-        self.line_id = line_id
-        self.agent_id = agent_id
-        self.firstname = firstname
-        self.lastname = lastname
-        self.exten = exten
-        self.email = email
-        self.mobile_phone_number = mobile_phone_number
-        self.voicemail_number = voicemail_number
-        self.userfield = userfield
-        self.description = description
-        self.context = context
+class UserDirectory(NamedTuple):
+    """Represents a user directory entry."""
 
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+    id: int
+    uuid: str
+    line_id: int
+    agent_id: int | None
+    firstname: str | None
+    lastname: str | None
+    exten: str
+    email: str | None
+    mobile_phone_number: str | None
+    voicemail_number: str | None
+    userfield: str | None
+    description: str | None
+    context: str
 
 
-class UserSummary:
-    def __init__(
-        self,
-        id,
-        uuid,
-        firstname,
-        lastname,
-        email,
-        enabled,
-        provisioning_code,
-        protocol,
-        extension,
-        context,
-    ):
-        self.id = id
-        self.uuid = uuid
-        self.firstname = firstname
-        self.lastname = lastname
-        self.email = email
-        self.enabled = enabled
-        self.provisioning_code = provisioning_code
-        self.protocol = protocol
-        self.extension = extension
-        self.context = context
+class UserSummary(NamedTuple):
+    """Represents a user summary."""
 
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+    id: int
+    uuid: str
+    firstname: str | None
+    lastname: str | None
+    email: str | None
+    enabled: bool
+    exten: str | None
+    context: str | None
+    provisioning_code: str | None
+    protocol: str | None

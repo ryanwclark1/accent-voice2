@@ -1,117 +1,77 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/user/search.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-from sqlalchemy.sql import and_, or_
 
-from accent_dao.alchemy.extension import Extension
-from accent_dao.alchemy.line_extension import LineExtension
-from accent_dao.alchemy.linefeatures import LineFeatures
-from accent_dao.alchemy.user_line import UserLine
-from accent_dao.alchemy.userfeatures import UserFeatures
-from accent_dao.alchemy.voicemail import Voicemail
+from sqlalchemy import func, select
+
+from accent_dao.alchemy.userfeatures import UserFeatures as User
 from accent_dao.resources.utils.search import SearchConfig, SearchSystem
 
 config = SearchConfig(
-    table=UserFeatures,
+    table=User,
     columns={
-        'id': UserFeatures.id,
-        'uuid': UserFeatures.uuid,
-        'firstname': UserFeatures.firstname,
-        'lastname': UserFeatures.lastname,
-        'fullname': (UserFeatures.firstname + " " + UserFeatures.lastname),
-        'caller_id': UserFeatures.callerid,
-        'description': UserFeatures.description,
-        'userfield': UserFeatures.userfield,
-        'email': UserFeatures.email,
-        'mobile_phone_number': UserFeatures.mobilephonenumber,
-        'music_on_hold': UserFeatures.musiconhold,
-        'outgoing_caller_id': UserFeatures.outcallerid,
-        'preprocess_subroutine': UserFeatures.preprocess_subroutine,
-        'voicemail_number': Voicemail.mailbox,
-        'provisioning_code': LineFeatures.provisioning_code,
-        'exten': Extension.exten,
-        'extension': Extension.exten,
-        'context': Extension.context,
-        'username': UserFeatures.loginclient,
-        'enabled': UserFeatures.enabled,
+        "id": User.id,
+        "uuid": User.uuid,
+        "firstname": User.firstname,
+        "lastname": User.lastname,
+        "fullname": User.fullname,
+        "caller_id": User.callerid,
+        "description": User.description,
+        "userfield": User.userfield,
+        "email": User.email,
+        "mobile_phone_number": User.mobilephonenumber,
+        "music_on_hold": User.musiconhold,
+        "outgoing_caller_id": User.outcallerid,
+        "preprocess_subroutine": User.preprocess_subroutine,
+        "username": User.loginclient,
+        "enabled": User.enabled,
+        "simultcalls": User.simultcalls,
     },
     search=[
-        'fullname',
-        'caller_id',
-        'description',
-        'userfield',
-        'email',
-        'mobile_phone_number',
-        'preprocess_subroutine',
-        'outgoing_caller_id',
-        'exten',
-        'username',
-        'provisioning_code',
+        "fullname",
+        "caller_id",
+        "description",
+        "userfield",
+        "email",
+        "mobile_phone_number",
+        "preprocess_subroutine",
+        "outgoing_caller_id",
+        "username",
     ],
-    default_sort='lastname',
+    default_sort="lastname",
 )
 
 
-class UserSearchSystem(SearchSystem):
-    def search_from_query(self, query, parameters):
-        if 'uuid' in parameters and isinstance(parameters['uuid'], str):
-            uuids = parameters.pop('uuid').split(',')
-            query = self._filter_exact_match_uuids(query, uuids)
+class AsyncSearchSystem(SearchSystem):
+    """Extend SearchSystem to add async support."""
 
-        if 'exten' in parameters and isinstance(parameters['exten'], str):
-            extens = parameters.pop('exten').split(',')
-            query = self._filter_exact_match_extens(query, extens)
+    async def async_search_from_query(self, session, query, parameters=None):
+        """Asynchronously perform a search starting from an existing query."""
+        parameters = self._populate_parameters(parameters)
+        self._validate_parameters(parameters)
 
-        if 'mobile_phone_number' in parameters and isinstance(
-            parameters['mobile_phone_number'], str
-        ):
-            extens = parameters.pop('mobile_phone_number').split(',')
-            query = self._filter_exact_match_mobile_phone_numbers(query, extens)
+        query = self._filter(query, parameters["search"])
+        query = self._filter_exact_match(query, parameters)
 
-        query = self._search_on_extension(query)
-        return super().search_from_query(query, parameters)
+        # Apply sorting
+        sort_column_name = parameters["order"]
+        sort_direction = parameters["direction"]
+        query = self._sort(query, sort_column_name, sort_direction)
 
-    def _filter_exact_match_uuids(self, query, uuids):
-        column = self.config.column_for_searching('uuid')
-        return query.filter(or_(column == uuid for uuid in uuids))
+        # Apply pagination
+        limit = parameters["limit"]
+        offset = parameters["offset"]
+        query = self._paginate(query, limit, offset)
 
-    def _filter_exact_match_extens(self, query, extens):
-        column = self.config.column_for_searching('exten')
-        return query.filter(or_(column == exten for exten in extens))
+        # Execute count and fetch queries
+        count_query = select(func.count()).select_from(query.subquery())
+        count_task = session.execute(count_query)
 
-    def _filter_exact_match_mobile_phone_numbers(self, query, extens):
-        column = self.config.column_for_searching('mobile_phone_number')
-        return query.filter(or_(column == exten for exten in extens))
+        result = await session.execute(query)
+        rows = result.scalars().all()
 
-    def _search_on_extension(self, query):
-        return (
-            query.outerjoin(
-                UserLine,
-                and_(
-                    UserLine.user_id == UserFeatures.id,
-                    UserLine.main_line == True,  # noqa
-                ),
-            )
-            .outerjoin(
-                LineFeatures,
-                and_(LineFeatures.id == UserLine.line_id, LineFeatures.commented == 0),
-            )
-            .outerjoin(LineExtension, UserLine.line_id == LineExtension.line_id)
-            .outerjoin(
-                Extension,
-                and_(
-                    LineExtension.extension_id == Extension.id,
-                    LineExtension.main_extension == True,  # noqa
-                    Extension.commented == 0,
-                ),
-            )
-            .outerjoin(
-                Voicemail,
-                and_(
-                    UserFeatures.voicemailid == Voicemail.uniqueid,
-                    Voicemail.commented == 0,
-                ),
-            )
-        )
+        total = (await count_task).scalar_one()
+        return SearchResult(total, rows)
 
 
-user_search = UserSearchSystem(config)
+user_search = AsyncSearchSystem(config)
