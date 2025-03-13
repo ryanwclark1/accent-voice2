@@ -1,4 +1,4 @@
-# file: accent_dao/resources/access_feature/persistor.py
+# file: accent_dao/resources/access_feature/persistor.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Any
@@ -76,7 +76,8 @@ class AccessFeaturesPersistor(CriteriaBuilderMixin, AsyncBasePersistor):
         """
         model = await self.find_by(criteria)
         if not model:
-            raise errors.NotFoundError("AccessFeature", **criteria)
+            msg = "AccessFeature"
+            raise errors.NotFoundError(msg, **criteria)
         return model
 
     async def find_all_by(self, criteria: dict[str, Any]) -> list[AccessFeatures]:
