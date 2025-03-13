@@ -1,38 +1,92 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/meeting/persistor.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
 
-import random
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Any
+
+from sqlalchemy import select
 
 from accent_dao.alchemy.meeting import Meeting, MeetingOwner
-from accent_dao.helpers.persistor import BasePersistor
+from accent_dao.helpers import errors
+from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
 
-NUMBER_LEN = 6
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 
-class Persistor(CriteriaBuilderMixin, BasePersistor):
+class MeetingPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Meeting]):
+    """Persistor class for Meeting model."""
+
     _search_table = Meeting
 
-    def __init__(self, session, search_system, tenant_uuids=None):
-        self.session = session
+    def __init__(
+        self,
+        session: AsyncSession,
+        search_system: Any,
+        tenant_uuids: list[str] | None = None,
+    ) -> None:
+        """Initialize MeetingPersistor.
+
+        Args:
+            session: Async database session.
+            search_system: Search system for meetings.
+            tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+        """
+        super().__init__(session, self._search_table)
         self.search_system = search_system
         self.tenant_uuids = tenant_uuids
+        self.session = session
 
-    def create(self, meeting):
-        meeting.number = self._generate_number()
-        self.session.add(meeting)
-        self.session.flush()
-        return meeting
+    async def _find_query(self, criteria: dict[str, Any]) -> Any:
+        """Build a query to find meetings based on criteria.
 
-    def search(self, parameters):
-        query = self._search_query()
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        query = select(Meeting)
         query = self._filter_tenant_uuid(query)
-        query = self._filter_owner(query, parameters)
-        query = self._filter_created_before(query, parameters)
-        rows, total = self.search_system.search_from_query(query, parameters)
-        return SearchResult(total, rows)
+        query = self._filter_owner(query, criteria)
+        query = self._filter_created_before(query, criteria)
+        return self.build_criteria(query, criteria)
 
-    def _filter_owner(self, query, criteria):
-        owner = criteria.pop('owner', None)
+    async def _search_query(self) -> Any:
+        """Create a query for searching meetings.
+
+        Returns:
+            SQLAlchemy query object.
+
+        """
+        return select(self.search_system.config.table)
+
+    def _filter_tenant_uuid(self, query: Any) -> Any:
+        """Filter query by tenant UUID.
+
+        Args:
+            query: The query object.
+
+        Returns:
+            The filtered query object.
+
+        """
+        if self.tenant_uuids is not None:
+            query = query.filter(Meeting.tenant_uuid.in_(self.tenant_uuids))
+        return query
+
+    def _filter_owner(self, query: Any, criteria: dict[str, Any]) -> Any:
+        """Filter by owner."""
+        owner = criteria.pop("owner", None)
         if not owner:
             return query
 
@@ -43,27 +97,57 @@ class Persistor(CriteriaBuilderMixin, BasePersistor):
 
         return query
 
-    def _filter_created_before(self, query, criteria):
-        before = criteria.pop('created_before', None)
+    def _filter_created_before(self, query: Any, criteria: dict[str, Any]) -> Any:
+        """Filter by created_before."""
+        before = criteria.pop("created_before", None)
         if not before:
             return query
 
         return query.filter(Meeting.created_at < before)
 
-    def _find_query(self, criteria):
-        query = self.session.query(Meeting)
+    async def get_by(self, criteria: dict[str, Any]) -> Meeting:
+        """Retrieve a single meeting by criteria.
+
+        Args:
+            criteria: Dictionary of criteria.
+
+        Returns:
+            Meeting: The found meeting.
+
+        Raises:
+            NotFoundError: If no meeting is found.
+
+        """
+        model = await self.find_by(criteria)
+        if not model:
+            raise errors.NotFoundError("Meeting", **criteria)
+        return model
+
+    async def search(self, parameters: dict[str, Any]) -> SearchResult:
+        """Search for meetings.
+
+        Args:
+            parameters: Search parameters.
+
+        Returns:
+            SearchResult object containing total count and items.
+
+        """
+        query = await self._search_query()
         query = self._filter_tenant_uuid(query)
-        query = self._filter_owner(query, criteria)
-        query = self._filter_created_before(query, criteria)
-        return self.build_criteria(query, criteria)
+        query = self._filter_owner(query, parameters)
+        query = self._filter_created_before(query, parameters)
+        rows, total = await self.search_system.async_search_from_query(
+            self.session, query, parameters
+        )
+        return SearchResult(total, rows)
 
-    def _generate_number(self):
-        max = int('9' * NUMBER_LEN)
-        while True:
-            number = str(random.randint(0, max)).rjust(NUMBER_LEN, '0')
-            count = self.session.query(Meeting).filter(Meeting.number == number).count()
-            if not count:
-                return number
+    async def find_all_by(self, criteria: dict[str, Any]) -> list[Meeting]:
+        """Find all Meeting by criteria.
 
-    def _search_query(self):
-        return self.session.query(self.search_system.config.table)
+        Returns:
+            list of Meeting.
+
+        """
+        result: Sequence[Meeting] = await super().find_all_by(criteria)
+        return list(result)
