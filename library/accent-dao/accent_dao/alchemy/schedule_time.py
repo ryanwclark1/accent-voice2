@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/schedule_time.py
+# file: accent_dao/alchemy/schedule_time.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
@@ -209,7 +209,7 @@ class ScheduleTime(Base):
         self._set_hours(hours_start, hours_end)
 
     def _set_hours(self, hours_start: str, hours_end: str) -> None:
-        """Helper method to set the hours string."""
+        """Set the hours string helper function."""
         end_suffix = f"-{hours_end}" if hours_end else ""
         self.hours = f"{hours_start}{end_suffix}"
 
@@ -250,7 +250,7 @@ class ScheduleTime(Base):
         self.months = self._convert_array_to_str(value)
 
     def _expand_range(self, multi_range: str) -> list[int]:
-        """Expands a string representation of ranges into a list of integers.
+        """Expand a string representation of ranges into a list of integers.
 
         Args:
             multi_range: A string like "1-5,7,9-12".
@@ -272,7 +272,7 @@ class ScheduleTime(Base):
         return result
 
     def _convert_array_to_str(self, value: list[int] | None) -> str | None:
-        """Converts a list of integers to a comma-separated string representation.
+        """Convert a list of integers to a comma-separated string representation.
 
         Args:
             value: The list of integers.
@@ -290,8 +290,8 @@ class ScheduleTime(Base):
 
     @type.setter
     def type(self, value: str) -> None:
-        """Set the type of the action."""
-        self.action = f"{value}:{self.subtype}" if self.subtype else value  # type: ignore
+        """Set type of the action."""
+        self.action = f"{value}:{self.subtype}" if self.subtype else value  # type: ignore[attr-defined]
 
     @property
     def subtype(self) -> str | None:
@@ -304,9 +304,9 @@ class ScheduleTime(Base):
     def subtype(self, value: str | None) -> None:
         """Set the subtype of the action."""
         if value is not None:
-            self.action = f"{self.type}:{value}"  # type: ignore
+            self.action = f"{self.type}:{value}"  # type: ignore[attr-defined]
         else:
-            self.action = self.type  # type: ignore
+            self.action = self.type  # type: ignore[attr-defined]
 
     @property
     def actionarg1(self) -> str | None:

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/stats_conf_queue.py
+# file: accent_dao/alchemy/stats_conf_queue.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, PrimaryKeyConstraint, SmallInteger, text

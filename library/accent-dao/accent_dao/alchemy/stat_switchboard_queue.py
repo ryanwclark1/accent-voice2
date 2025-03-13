@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/stat_switchboard_queue.py
+# file: accent_dao/alchemy/stat_switchboard_queue.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal
@@ -25,7 +25,8 @@ class StatSwitchboardQueue(Base):
     Attributes:
         id: The unique identifier for the switchboard queue statistics entry.
         time: The timestamp of the event.
-        end_type: The type of call ending ('abandoned', 'completed', 'forwarded', 'transferred').
+        end_type: The type of call ending ('abandoned', 'completed',
+            'forwarded', 'transferred').
         wait_time: The wait time.
         queue_id: The ID of the associated QueueFeatures.
         queue: Relationship to QueueFeatures.

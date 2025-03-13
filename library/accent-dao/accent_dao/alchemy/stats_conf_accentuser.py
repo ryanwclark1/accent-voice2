@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/stats_conf_accentuser.py
+# file: accent_dao/alchemy/stats_conf_accentuser.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, PrimaryKeyConstraint

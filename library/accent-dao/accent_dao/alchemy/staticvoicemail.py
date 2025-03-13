@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/staticvoicemail.py
+# file: accent_dao/alchemy/staticvoicemail.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, String, Text

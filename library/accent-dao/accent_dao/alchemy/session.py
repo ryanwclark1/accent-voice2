@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/session.py
+# file: accent_dao/alchemy/session.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, PrimaryKeyConstraint, String, Text

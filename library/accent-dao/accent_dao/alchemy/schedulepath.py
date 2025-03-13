@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/schedulepath.py
+# file: accent_dao/alchemy/schedulepath.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -21,7 +21,8 @@ class SchedulePath(Base):
 
     Attributes:
         schedule_id: The ID of the associated schedule.
-        path: The type of path ('user', 'group', 'queue', 'incall', 'outcall', 'voicemenu').
+        path: The type of path ('user', 'group', 'queue', 'incall',
+            'outcall', 'voicemenu').
         pathid: The ID of the entity associated with the path.
         incall: Relationship to Incall (if path is 'incall').
         group: Relationship to GroupFeatures (if path is 'group').

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/switchboard_member_user.py
+# file: accent_dao/alchemy/switchboard_member_user.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

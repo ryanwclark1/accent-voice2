@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/user_external_app.py
+# file: accent_dao/alchemy/user_external_app.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import ForeignKey, String, Text

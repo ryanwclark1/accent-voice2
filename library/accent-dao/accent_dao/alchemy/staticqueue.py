@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/staticqueue.py
+# file: accent_dao/alchemy/staticqueue.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Index, Integer, String

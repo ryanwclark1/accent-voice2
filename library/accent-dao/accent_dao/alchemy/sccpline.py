@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/sccpline.py
+# file: accent_dao/alchemy/sccpline.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -6,11 +6,12 @@ from sqlalchemy import ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import Enum
 
+from accent_dao.alchemy import enum
 from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.exception import InputError
-from accent_dao.models import enum
 
 if TYPE_CHECKING:
+    from .extension import Extension
     from .linefeatures import LineFeatures
     from .userfeatures import UserFeatures
 
@@ -60,6 +61,14 @@ class SCCPLine(Base):
 
     @property
     def options(self) -> list:
+        """Generate a list of options based on the attributes of the instance.
+
+        Returns:
+            list: A list of options where each option is a list containing
+                the attribute name and its value. The options include
+                'cid_name', 'cid_num', 'disallow', and 'allow' if they are set.
+
+        """
         options = []
         if self.cid_name != "":
             options.append(["cid_name", self.cid_name])
@@ -79,7 +88,7 @@ class SCCPLine(Base):
         self.set_options(values)
 
     def clear_options(self) -> None:
-        """Clears the codec options (allow and disallow)."""
+        """Clear the codec options (allow and disallow)."""
         self.allow = None
         self.disallow = None
 
@@ -95,20 +104,23 @@ class SCCPLine(Base):
             elif name == "disallow":
                 self.disallow = value
             else:
-                raise InputError(f"Unknown SCCP options: {name}")  # Use InputError
+                msg = f"Unknown SCCP options: {name}"
+                raise InputError(msg)  # Use InputError
 
     def same_protocol(self, protocol: str, id: str | int) -> bool:  # Added type
-        """Checks if the given protocol and ID match this SCCP line."""
+        """Check if the given protocol and ID match this SCCP line."""
         return protocol == "sccp" and self.id == id
 
     def update_extension(self, extension: "Extension") -> None:
-        """Updates the context based on the associated extension."""
+        """Update the context based on the associated extension."""
         self.context = extension.context
 
     def update_caller_id(
-        self, user: "UserFeatures", extension: "Extension" | None = None
-    ) -> None:  # type: ignore
-        """Updates the caller ID based on user and extension information."""
+        self,
+        user: "UserFeatures",
+        extension: "Extension" | None = None
+    ) -> None:
+        """Update the caller ID based on user and extension information."""
         name, user_num = user.extrapolate_caller_id(extension)
         self.cid_name = name or ""
         if extension:
@@ -119,5 +131,5 @@ class SCCPLine(Base):
             self.cid_num = ""
 
     def endpoint_protocol(self) -> str:
-        """Returns the protocol used by the endpoint (always 'sccp')."""
+        """Return the protocol used by the endpoint (always 'sccp')."""
         return "sccp"

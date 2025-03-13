@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/trunkfeatures.py
+# file: accent_dao/alchemy/trunkfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal
@@ -41,11 +41,13 @@ class TrunkFeatures(Base):
     endpoint_sip_uuid: The UUID of the associated SIP endpoint (if applicable).
     endpoint_iax_id: The ID of the associated IAX user (if applicable).
     endpoint_custom_id: The ID of the associated custom endpoint (if applicable).
-    register_iax_id: The ID of the associated static IAX entry for registration (if applicable).
+    register_iax_id: The ID of the associated static IAX entry
+        for registration (if applicable).
         registercommented: Indicates if the registration is commented out.
         description: A description of the trunk.
         context: The context associated with the trunk.
-    outgoing_caller_id_format: The format for outgoing caller ID ('+E164', 'E164', 'national').
+    outgoing_caller_id_format: The format for outgoing caller ID
+        ('+E164', 'E164', 'national').
         twilio_incoming: Indicates if this trunk is for Twilio incoming calls.
         endpoint_sip: Relationship to EndpointSIP.
         endpoint_iax: Relationship to UserIAX.
@@ -144,6 +146,12 @@ class TrunkFeatures(Base):
 
     @property
     def outcalls(self) -> list["OutcallTrunk"]:
+        """Retrieves a list of OutcallTrunk objects.
+
+        Returns:
+            list[OutcallTrunk]: A list of OutcallTrunk objects.
+
+        """
         return [ot.outcall for ot in self.outcall_trunks]
 
     @outcalls.setter
@@ -179,6 +187,17 @@ class TrunkFeatures(Base):
 
     @name.expression
     def name(cls) -> Mapped[str | None]:
+        """Return the name of the endpoint based on type (SIP, IAX, or Custom).
+
+        This method constructs and executes SQL queries to fetch the name of
+        the endpoint from the corresponding tables (EndpointSIP, UserIAX,
+        UserCustom) based on the endpoint type identifiers
+        (endpoint_sip_uuid, endpoint_iax_id, endpoint_custom_id).
+
+        Returns:
+            Mapped[str | None]: Name of endpoint if available, otherwise None.
+
+        """
         endpoint_sip_query = (
             select(EndpointSIP.name)
             .where(EndpointSIP.uuid == cls.endpoint_sip_uuid)
@@ -213,6 +232,13 @@ class TrunkFeatures(Base):
 
     @label.expression
     def label(cls) -> Mapped[str | None]:
+        """Generate SQLAlchemy to retrieve label of EndpointSIP current instance.
+
+        Returns:
+            Mapped[str | None]: The label of the associated EndpointSIP if it exists,
+            otherwise None.
+
+        """
         endpoint_sip_query = (
             select(EndpointSIP.label)
             .where(EndpointSIP.uuid == cls.endpoint_sip_uuid)

@@ -1,8 +1,8 @@
-# file: accent_dao/alchemy/rightcallmember.py
+# file: accent_dao/alchemy/rightcallmember.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
-from sqlalchemy import CheckConstraint, Integer, String, func
+from sqlalchemy import CheckConstraint, Integer, String, case, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from accent_dao.helpers.db_manager import Base
@@ -105,6 +105,17 @@ class RightCallMember(Base):
 
     @user_id.expression
     def user_id(cls) -> Mapped[int | None]:
+        """Return the user ID if the type is "user", otherwise returns None.
+
+        This method uses SQLAlchemy's `func.coalesce` and `case` to check if the
+        `type` attribute of the class is "user". If it is, it casts the `typeval`
+        attribute to an integer and returns it. If not, it returns None.
+
+        Returns:
+            Mapped[int | None]: The user ID as an integer if the type is "user",
+            otherwise None.
+
+        """
         return func.coalesce(
             case((cls.type == "user", func.cast(cls.typeval, Integer)), else_=None),
             None,
