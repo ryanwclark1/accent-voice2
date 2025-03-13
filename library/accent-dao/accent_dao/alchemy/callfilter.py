@@ -13,8 +13,15 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.orderinglist import ordering_list
-from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
+from sqlalchemy.orm import (
+    Mapped,
+    attribute_keyed_dict,
+    column_property,
+    mapped_column,
+    relationship,
+)
 from sqlalchemy.sql import and_, select
 
 from accent_dao.helpers.db_manager import Base
@@ -38,20 +45,20 @@ if TYPE_CHECKING:
     from .dialaction import Dialaction
 
 
-def _convert_to_bosssecretary(value: str) -> CallfilterBosssecretary | str:
-    """Convert a string to a CallfilterBosssecretary enum member, if possible.
+# def _convert_to_bosssecretary(value: str) -> CallfilterBosssecretary | str:
+#     """Convert a string to a CallfilterBosssecretary enum member, if possible.
 
-    Args:
-        value: The string value to convert.
+#     Args:
+#         value: The string value to convert.
 
-    Returns:
-        CallfilterBosssecretary | str: The enum member if valid, or
-        the original string if not.
+#     Returns:
+#         CallfilterBosssecretary | str: The enum member if valid, or
+#         the original string if not.
 
-    """
-    if value in get_args(CallfilterBosssecretary):
-        return value  # type: ignore #  mypy is confused, but this is correct.  # noqa: PGH003
-    return value
+#     """
+#     if value in get_args(CallfilterBosssecretary):
+#         return value  # type: ignore #  mypy is confused, but this is correct.  # noqa: PGH003
+#     return value
 
 
 class Callfilter(Base):
@@ -134,6 +141,7 @@ class Callfilter(Base):
             Dialaction.category == 'callfilter',
             Dialaction.categoryval == cast(Callfilter.id, String)
         )""",
+        collection_class=attribute_keyed_dict("event"),
         cascade="all, delete-orphan",
         foreign_keys="Dialaction.categoryval",
     )
@@ -232,7 +240,22 @@ class Callfilter(Base):
             value: strategy name
 
         """
-        self.bosssecretary = _convert_to_bosssecretary(value)
+        if value == "all-recipients-then-linear-surrogates":
+             self.bosssecretary = "bossfirst-serial"
+        elif value == "all-recipients-then-all-surrogates":
+             self.bosssecretary = "bossfirst-simult"
+        elif value == "linear-surrogates-then-all-recipients":
+             self.bosssecretary = "secretary-serial"
+        elif value == "all-surrogates-then-all-recipients":
+             self.bosssecretary = "secretary-simult"
+        elif value == 'all':
+            self.bosssecretary = 'all'
+
+        else:
+            #Handle the case where a string not matching is provided.
+            if value in get_args(CallfilterBosssecretary):
+                self.bosssecretary = value #type: ignore
+            #You could raise an exception if required.
 
     @property
     def surrogates_timeout(self) -> int | None:

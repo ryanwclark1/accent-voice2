@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
 
 from accent_dao.helpers.db_manager import Base
 
@@ -34,8 +34,7 @@ class AsteriskFile(Base):
 
     sections: Mapped[dict[str, "AsteriskFileSection"]] = relationship(
         "AsteriskFileSection",
-        # Changed to regular dict to remove dependency on sqlalchemy
-        # collection_class=attribute_mapped_collection("name"),  # noqa: ERA001
+        collection_class=attribute_keyed_dict("name"),
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

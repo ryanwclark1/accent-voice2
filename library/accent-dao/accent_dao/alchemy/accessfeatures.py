@@ -1,8 +1,16 @@
 # file: accent_dao/alchemy/accessfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from sqlalchemy import CheckConstraint, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    ColumnElement,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql.expression import cast, not_
+from sqlalchemy.types import Boolean
 
 from accent_dao.helpers.db_manager import Base
 
@@ -51,3 +59,13 @@ class AccessFeatures(Base):
 
         """
         self.commented = int(not value)  # 0 if True, 1 if False
+
+    @enabled.expression  # type: ignore[attr-defined]
+    def enabled(self) -> ColumnElement[bool]:
+        """Define the database expression for the enabled property.
+
+        Returns:
+            A column expression representing whether access feature is enabled.
+
+        """
+        return not_(cast(AccessFeatures.commented, Boolean))
