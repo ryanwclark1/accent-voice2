@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import logging
+from typing import TYPE_CHECKING, Protocol
 
 from sqlalchemy import select
 
@@ -12,18 +13,29 @@ from accent_dao.alchemy.line_extension import LineExtension
 from accent_dao.alchemy.linefeatures import LineFeatures
 from accent_dao.alchemy.user_line import UserLine
 from accent_dao.alchemy.userfeatures import UserFeatures
-from accent_dao.helpers.db_manager import daosession
+from accent_dao.helpers.db_manager import async_daosession, daosession
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
 
+# Set up logging
+logger = logging.getLogger(__name__)
+
+
+class EndpointRow(Protocol):
+    """Protocol for endpoint row data."""
+
+    endpoint_sip_uuid: str | None
+    endpoint_sccp_id: str | None
+    endpoint_custom_id: str | None
+    name: str
+    main_line: bool | None = None
+
 
 @daosession
 def get_interface_from_exten_and_context(
-    session: Session,
-    extension: str,
-    context: str
+    session: Session, extension: str, context: str
 ) -> str:
     """Get interface from extension and context.
 
@@ -67,10 +79,9 @@ def get_interface_from_exten_and_context(
     return interface
 
 
+@async_daosession
 async def async_get_interface_from_exten_and_context(
-    session: AsyncSession,
-    extension: str,
-    context: str
+    session: AsyncSession, extension: str, context: str
 ) -> str:
     """Get interface from extension and context (async version).
 
@@ -148,6 +159,7 @@ def get_interface_from_line_id(session: Session, line_id: int) -> str:
     return _format_interface(line_row)
 
 
+@async_daosession
 async def async_get_interface_from_line_id(session: AsyncSession, line_id: int) -> str:
     """Get interface from line ID (async version).
 
@@ -200,12 +212,15 @@ def get_main_extension_context_from_line_id(
         .filter(LineExtension.main_extension.is_(True))
     )
 
-    return query.first()
+    result = query.first()
+    if result:
+        return (result.exten, result.context)
+    return None
 
 
+@async_daosession
 async def async_get_main_extension_context_from_line_id(
-session: AsyncSession,
-line_id: int
+    session: AsyncSession, line_id: int
 ) -> tuple[str, str] | None:
     """Get main extension and context from line ID (async version).
 
@@ -225,7 +240,10 @@ line_id: int
     )
 
     result = await session.execute(stmt)
-    return result.first()
+    row = result.first()
+    if row:
+        return (row.exten, row.context)
+    return None
 
 
 @daosession
@@ -252,6 +270,7 @@ def is_line_owned_by_user(session: Session, user_uuid: str, line_id: int) -> boo
     return user_line_row is not None
 
 
+@async_daosession
 async def async_is_line_owned_by_user(
     session: AsyncSession, user_uuid: str, line_id: int
 ) -> bool:
@@ -278,7 +297,7 @@ async def async_is_line_owned_by_user(
     return user_line_row is not None
 
 
-def _format_interface(row: Any) -> str:
+def _format_interface(row: EndpointRow) -> str:
     """Format interface string from row.
 
     Args:
