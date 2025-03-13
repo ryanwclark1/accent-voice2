@@ -2,7 +2,8 @@
 # Copyright 2025 Accent Communications
 
 import logging
-from typing import Any, TypeVar
+from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
 from accent_dao.helpers.exception import (
     InputError,
@@ -28,15 +29,14 @@ def format_error(
         metadata: Additional metadata to include in the error message.
 
     Returns:
-        str: Formatted error message.
+        Formatted error message.
 
     """
     metadata = metadata or {}
     template = "{category} - {error} {metadata}"
-    message = template.format(
+    return template.format(
         category=category, error=error, metadata=_format_metadata(metadata)
-    )
-    return message.strip()
+    ).strip()
 
 
 def _format_metadata(metadata: dict[str, Any]) -> str:
@@ -46,7 +46,7 @@ def _format_metadata(metadata: dict[str, Any]) -> str:
         metadata: Dictionary of metadata to format.
 
     Returns:
-        str: Formatted metadata string.
+        Formatted metadata string.
 
     """
     if len(metadata) == 0:
@@ -54,20 +54,20 @@ def _format_metadata(metadata: dict[str, Any]) -> str:
     return f"({str(metadata).strip('{}')})"
 
 
-def _format_list(elements: list[str]) -> str:
+def _format_list(elements: Sequence[str]) -> str:
     """Join a list of elements with commas.
 
     Args:
-        elements: List of elements to join.
+        elements: Sequence of elements to join.
 
     Returns:
-        str: Comma-separated string of elements.
+        Comma-separated string of elements.
 
     """
     return ", ".join(elements)
 
 
-class FormattedError:
+class FormattedError(Generic[T]):
     """Factory class for creating formatted error exceptions.
 
     Attributes:
@@ -87,7 +87,7 @@ class FormattedError:
         self.exception: type[T] = exception
         self.error_template: str = error_template
 
-    def __call__(self, *args: Any, **metadata: Any) -> T:
+    def __call__(self, *args: str, **metadata: Any) -> T:
         """Create and return a formatted exception.
 
         Args:
@@ -99,10 +99,9 @@ class FormattedError:
 
         """
         message = self._format_message(args, metadata)
-        error = self.exception(message, metadata)
-        return error
+        return self.exception(message, metadata)
 
-    def _format_message(self, args: tuple[Any, ...], metadata: dict[str, Any]) -> str:
+    def _format_message(self, args: tuple[str, ...], metadata: dict[str, Any]) -> str:
         """Format the error message using the template and arguments.
 
         Args:
@@ -110,12 +109,11 @@ class FormattedError:
             metadata: Additional metadata for the error.
 
         Returns:
-            str: Formatted error message.
+            Formatted error message.
 
         """
         error = self.error_template.format(*args)
-        message = format_error(self.exception.prefix, error, metadata)
-        return message
+        return format_error(self.exception.prefix, error, metadata)
 
 
 def missing(*params: str) -> InputError:
@@ -125,13 +123,12 @@ def missing(*params: str) -> InputError:
         *params: Names of the missing parameters.
 
     Returns:
-        InputError: Formatted error for missing parameters.
+        Formatted error for missing parameters.
 
     """
     template = "missing parameters: {params}"
     message = template.format(params=_format_list(params))
-    error = format_error("Input Error", message)
-    return InputError(error)
+    return InputError(format_error("Input Error", message))
 
 
 def unknown(*params: str) -> InputError:
@@ -141,16 +138,15 @@ def unknown(*params: str) -> InputError:
         *params: Names of the unknown parameters.
 
     Returns:
-        InputError: Formatted error for unknown parameters.
+        Formatted error for unknown parameters.
 
     """
     template = "unknown parameters: {params}"
     message = template.format(params=_format_list(params))
-    error = format_error("Input Error", message)
-    return InputError(error)
+    return InputError(format_error("Input Error", message))
 
 
-def invalid_choice(field: str, choices: list[str], **metadata: Any) -> InputError:
+def invalid_choice(field: str, choices: list[str], **metadata: str) -> InputError:
     """Create an error for an invalid choice.
 
     Args:
@@ -159,60 +155,83 @@ def invalid_choice(field: str, choices: list[str], **metadata: Any) -> InputErro
         **metadata: Additional metadata for the error.
 
     Returns:
-        InputError: Formatted error for invalid choice.
+        Formatted error for invalid choice.
 
     """
     template = "'{field}' must be one of ({choices})"
     message = template.format(field=field, choices=_format_list(choices))
-    error = format_error("Input Error", message, metadata)
-    return InputError(error)
+    return InputError(format_error("Input Error", message, metadata))
 
 
 # Predefined formatted errors
-minimum_length = FormattedError(
+minimum_length = FormattedError[InputError](
     InputError, "field '{}': must have a minimum length of {}"
 )
-invalid_direction = FormattedError(InputError, "direction: must be 'asc' or 'desc'")
-invalid_ordering = FormattedError(InputError, "order: column '{}' was not found")
-wrong_type = FormattedError(InputError, "field '{}': wrong type. Should be a {}")
-outside_context_range = FormattedError(
+invalid_direction = FormattedError[InputError](
+    InputError, "direction: must be 'asc' or 'desc'"
+)
+invalid_ordering = FormattedError[InputError](
+    InputError, "order: column '{}' was not found"
+)
+wrong_type = FormattedError[InputError](
+    InputError, "field '{}': wrong type. Should be a {}"
+)
+outside_context_range = FormattedError[InputError](
     InputError, "Extension '{}' is outside of range for context '{}'"
 )
-outside_park_range = FormattedError(
+outside_park_range = FormattedError[InputError](
     InputError, "Parking position '{}' is outside of range"
 )
-outside_range = FormattedError(InputError, "{} is outside of range")
-invalid_func_key_type = FormattedError(InputError, "FuncKey type '{}' does not exist")
-invalid_destination_type = FormattedError(
+outside_range = FormattedError[InputError](InputError, "{} is outside of range")
+invalid_func_key_type = FormattedError[InputError](
+    InputError, "FuncKey type '{}' does not exist"
+)
+invalid_destination_type = FormattedError[InputError](
     InputError, "FuncKey destination type '{}' does not exist"
 )
-param_not_found = FormattedError(InputError, "field '{}': {} was not found")
-invalid_query_parameter = FormattedError(
+param_not_found = FormattedError[InputError](InputError, "field '{}': {} was not found")
+invalid_query_parameter = FormattedError[InputError](
     InputError, "parameter '{}': '{}' is not valid"
 )
-invalid_view = FormattedError(InputError, "view '{}' does not exist")
-ivr_exten_used = FormattedError(InputError, "exten '{}' used in more than one choice")
-invalid_exten_pattern = FormattedError(InputError, "exten '{}' cannot be a pattern")
-moh_custom_no_app = FormattedError(InputError, "custom mode must have an application")
+invalid_view = FormattedError[InputError](InputError, "view '{}' does not exist")
+ivr_exten_used = FormattedError[InputError](
+    InputError, "exten '{}' used in more than one choice"
+)
+invalid_exten_pattern = FormattedError[InputError](
+    InputError, "exten '{}' cannot be a pattern"
+)
+moh_custom_no_app = FormattedError[InputError](
+    InputError, "custom mode must have an application"
+)
 
-not_found = FormattedError(NotFoundError, "{} was not found")
+not_found = FormattedError[NotFoundError](NotFoundError, "{} was not found")
 
-resource_exists = FormattedError(ResourceError, "{} already exists")
-resource_associated = FormattedError(ResourceError, "{} is associated with a {}")
-resource_not_associated = FormattedError(ResourceError, "{} is not associated with {}")
-missing_association = FormattedError(ResourceError, "{} must be associated with a {}")
-forward_destination_null = FormattedError(
+resource_exists = FormattedError[ResourceError](ResourceError, "{} already exists")
+resource_associated = FormattedError[ResourceError](
+    ResourceError, "{} is associated with a {}"
+)
+resource_not_associated = FormattedError[ResourceError](
+    ResourceError, "{} is not associated with {}"
+)
+missing_association = FormattedError[ResourceError](
+    ResourceError, "{} must be associated with a {}"
+)
+forward_destination_null = FormattedError[ResourceError](
     ResourceError, "Forward must be disabled to remove destination"
 )
-unhandled_context_type = FormattedError(
+unhandled_context_type = FormattedError[ResourceError](
     ResourceError, "ContextType '{}' cannot be associated"
 )
-secondary_users = FormattedError(
+secondary_users = FormattedError[ResourceError](
     ResourceError, "There are secondary users associated to the line"
 )
-not_permitted = FormattedError(ResourceError, "Operation not permitted. {}")
-different_tenants = FormattedError(ResourceError, "different tenants")
-quota_exceeded = FormattedError(ResourceError, "Quota for {} exceeded. Maximum: {}")
-extension_conflict = FormattedError(
+not_permitted = FormattedError[ResourceError](
+    ResourceError, "Operation not permitted. {}"
+)
+different_tenants = FormattedError[ResourceError](ResourceError, "different tenants")
+quota_exceeded = FormattedError[ResourceError](
+    ResourceError, "Quota for {} exceeded. Maximum: {}"
+)
+extension_conflict = FormattedError[ResourceError](
     ResourceError, "{} is already used for a destination or parking slot"
 )
