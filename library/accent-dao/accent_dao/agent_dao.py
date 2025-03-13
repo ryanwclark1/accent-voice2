@@ -3,41 +3,63 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple
+import logging
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, cast
 
-from sqlalchemy import and_, select
+from sqlalchemy import BinaryExpression, and_, select
 
 from accent_dao.alchemy.agentfeatures import AgentFeatures
 from accent_dao.alchemy.queuefeatures import QueueFeatures
 from accent_dao.alchemy.queuemember import QueueMember
 from accent_dao.alchemy.userfeatures import UserFeatures
-from accent_dao.helpers.db_manager import daosession
+from accent_dao.helpers.db_manager import async_daosession, daosession
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
-    from sqlalchemy.sql.elements import BinaryExpression
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
-class Agent(NamedTuple):
-    """Agent data structure."""
-
-    id: int
-    tenant_uuid: str
-    number: str
-    queues: list[QueueFeatures]
-    user_ids: list[int]
+T = TypeVar("T")
 
 
 class Queue(NamedTuple):
-    """Queue data structure."""
+    """Queue data structure.
+
+    Attributes:
+        id: Queue ID
+        tenant_uuid: Tenant UUID
+        name: Queue name
+        penalty: Penalty
+
+    """
 
     id: int
     tenant_uuid: str
     name: str
     penalty: int
+
+
+class Agent(NamedTuple):
+    """Agent data structure.
+
+    Attributes:
+        id: Agent ID
+        tenant_uuid: Tenant UUID
+        number: Agent number
+        queues: List of Queue objects
+        user_ids: List of user IDs
+
+    """
+
+    id: int
+    tenant_uuid: str
+    number: str
+    queues: list[Queue]
+    user_ids: list[int]
 
 
 @daosession
@@ -60,7 +82,11 @@ def agent_with_id(
         LookupError: If no agent found
 
     """
-    agent = _get_agent(session, AgentFeatures.id == int(agent_id), tenant_uuids)
+    agent = _get_agent(
+        session,
+        cast(BinaryExpression[Any], AgentFeatures.id == int(agent_id)),
+        tenant_uuids,
+    )
     _add_queues_to_agent(session, agent)
     return agent
 
@@ -83,7 +109,11 @@ def agent_with_number(
         LookupError: If no agent found
 
     """
-    agent = _get_agent(session, AgentFeatures.number == agent_number, tenant_uuids)
+    agent = _get_agent(
+        session,
+        cast(BinaryExpression[Any], AgentFeatures.number == agent_number),
+        tenant_uuids,
+    )
     _add_queues_to_agent(session, agent)
     return agent
 
@@ -129,19 +159,31 @@ def agent_with_user_uuid(
     return agent
 
 
-
-
 def _get_agent(
     session: Session,
-    whereclause: BinaryExpression,
-    tenant_uuids: list[str] | None = None
+    whereclause: BinaryExpression[Any],
+    tenant_uuids: list[str] | None = None,
 ) -> Agent:
+    """Get agent by where clause.
+
+    Args:
+        session: Database session
+        whereclause: Where clause
+        tenant_uuids: Optional list of tenant UUIDs to filter by
+
+    Returns:
+        Agent matching where clause
+
+    Raises:
+        LookupError: If no agent found
+
+    """
     query = session.query(AgentFeatures).filter(whereclause)
     if tenant_uuids is not None:
         query = query.filter(AgentFeatures.tenant_uuid.in_(tenant_uuids))
     agent = query.first()
     if agent is None:
-        error_message = f"no agent matching clause {whereclause.compile().params}"
+        error_message = f"no agent matching clause {whereclause}"
         raise LookupError(error_message)
     return Agent(
         agent.id, agent.tenant_uuid, agent.number, [], [user.id for user in agent.users]
@@ -149,13 +191,19 @@ def _get_agent(
 
 
 def _add_queues_to_agent(session: Session, agent: Agent) -> None:
+    """Add queues to agent.
+
+    Args:
+        session: Database session
+        agent: Agent to add queues to
+
+    """
+    # Update select syntax for SQLAlchemy 2.x
     stmt = select(
-        [
-            QueueFeatures.id,
-            QueueFeatures.tenant_uuid,
-            QueueMember.queue_name,
-            QueueMember.penalty,
-        ]
+        QueueFeatures.id,
+        QueueFeatures.tenant_uuid,
+        QueueMember.queue_name,
+        QueueMember.penalty,
     ).where(
         and_(
             QueueMember.usertype == "agent",
@@ -164,9 +212,12 @@ def _add_queues_to_agent(session: Session, agent: Agent) -> None:
         )
     )
 
-    for row in session.execute(stmt):
-        queue = Queue(row["id"], row["tenant_uuid"], row["queue_name"], row["penalty"])
-        agent.queues.append(queue)
+    result = session.execute(stmt)
+    for row in result:
+        queue = Queue(row.id, row.tenant_uuid, row.queue_name, row.penalty)
+        agent.queues.append(
+            queue
+        )  # Type is correct because Agent.queues is list[Queue]
 
 
 @daosession
@@ -191,7 +242,7 @@ def get(
 
 
 @daosession
-def all(
+def get_all(
     session: Session, tenant_uuids: list[str] | None = None
 ) -> Sequence[AgentFeatures]:
     """Get all agents.
@@ -210,9 +261,10 @@ def all(
     return query.all()
 
 
-# Now add async versions
+# Async versions
 
 
+@async_daosession
 async def async_agent_with_id(
     session: AsyncSession,
     agent_id: int | str,
@@ -233,12 +285,15 @@ async def async_agent_with_id(
 
     """
     agent = await async_get_agent(
-        session, AgentFeatures.id == int(agent_id), tenant_uuids
+        session,
+        cast(BinaryExpression[Any], AgentFeatures.id == int(agent_id)),
+        tenant_uuids,
     )
     await async_add_queues_to_agent(session, agent)
     return agent
 
 
+@async_daosession
 async def async_agent_with_number(
     session: AsyncSession, agent_number: str, tenant_uuids: list[str] | None = None
 ) -> Agent:
@@ -257,12 +312,15 @@ async def async_agent_with_number(
 
     """
     agent = await async_get_agent(
-        session, AgentFeatures.number == agent_number, tenant_uuids
+        session,
+        cast(BinaryExpression[Any], AgentFeatures.number == agent_number),
+        tenant_uuids,
     )
     await async_add_queues_to_agent(session, agent)
     return agent
 
 
+@async_daosession
 async def async_agent_with_user_uuid(
     session: AsyncSession, user_uuid: str, tenant_uuids: list[str] | None = None
 ) -> Agent:
@@ -308,8 +366,8 @@ async def async_agent_with_user_uuid(
 
 async def async_get_agent(
     session: AsyncSession,
-    whereclause: BinaryExpression,
-    tenant_uuids: list[str] | None = None
+    whereclause: BinaryExpression[Any],
+    tenant_uuids: list[str] | None = None,
 ) -> Agent:
     """Get agent by where clause (async version).
 
@@ -365,9 +423,12 @@ async def async_add_queues_to_agent(session: AsyncSession, agent: Agent) -> None
     result = await session.execute(stmt)
     for row in result:
         queue = Queue(row.id, row.tenant_uuid, row.queue_name, row.penalty)
-        agent.queues.append(queue)
+        agent.queues.append(
+            queue
+        )  # Type is correct because Agent.queues is list[Queue]
 
 
+@async_daosession
 async def async_get(
     session: AsyncSession,
     agentid: int | str,
@@ -392,7 +453,8 @@ async def async_get(
     return result.scalar_one_or_none()
 
 
-async def async_all(
+@async_daosession
+async def async_get_all(
     session: AsyncSession, tenant_uuids: list[str] | None = None
 ) -> Sequence[AgentFeatures]:
     """Get all agents (async version).
