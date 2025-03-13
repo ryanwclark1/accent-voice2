@@ -20,6 +20,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import select
 
+from accent_dao.alchemy.line_extension import LineExtension
 from accent_dao.helpers.db_manager import Base
 from accent_dao.helpers.exception import InputError
 
@@ -227,6 +228,18 @@ class LineFeatures(Base):
 
     @protocol.expression
     def protocol(cls) -> Mapped[str | None]:
+        """Determine the protocol type based on the endpoint identifiers.
+
+        This method checks the endpoint identifiers in the following order:
+        - If `endpoint_sip_uuid` is not None, it returns "sip".
+        - If `endpoint_sccp_id` is not None, it returns "sccp".
+        - If `endpoint_custom_id` is not None, it returns "custom".
+        - If none of the above conditions are met, it returns None.
+
+        Returns:
+            Mapped[str | None]: The protocol type as a string ("sip", "sccp", "custom") or None if no endpoint identifier is set.
+
+        """
         return func.coalesce(
             case(
                 (cls.endpoint_sip_uuid.isnot(None), "sip"),

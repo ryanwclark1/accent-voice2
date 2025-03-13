@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     case,
+    func,
     select,
 )
 from sqlalchemy.dialects.postgresql import UUID

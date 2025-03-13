@@ -1,19 +1,20 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
 
-from accent_dao.alchemy.groupfeatures import GroupFeatures as Group
-from accent_dao.resources.utils.search import SearchSystem, SearchConfig
+from sqlalchemy import select
 
+from accent_dao.alchemy.groupfeatures import GroupFeatures
+from accent_dao.resources.utils.search import SearchConfig, SearchSystem
 
 config = SearchConfig(
-    table=Group,
+    table=GroupFeatures,
     columns={
-        'id': Group.id,
-        'name': Group.name,
-        'label': Group.label,
-        'preprocess_subroutine': Group.preprocess_subroutine,
-        'exten': Group.exten,
+        "id": GroupFeatures.id,
+        "name": GroupFeatures.name,
+        "label": GroupFeatures.label,
+        "preprocess_subroutine": GroupFeatures.preprocess_subroutine,
+        "exten": GroupFeatures.exten,
     },
-    default_sort='label',
+    default_sort="label",
 )
 
 group_search = SearchSystem(config)

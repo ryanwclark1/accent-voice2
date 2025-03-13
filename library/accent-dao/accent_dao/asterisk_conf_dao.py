@@ -51,7 +51,7 @@ class Member(NamedTuple):
 
 
 @daosession
-def find_sccp_general_settings(session: Session) -> list[dict[str, str]]:
+def find_sccp_general_settings_sync(session: Session) -> list[dict[str, str]]:
     """Find SCCP general settings.
 
     Args:

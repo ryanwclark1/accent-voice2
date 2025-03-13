@@ -1,18 +1,24 @@
+# file: accent_dao/resources/user_line/persistor.py
+# Copyright 2025 Accent Communications
+
+import logging
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from accent_dao.alchemy.linefeatures import LineFeatures
 from accent_dao.alchemy.user_line import UserLine
-from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.helpers import errors
 from accent_dao.helpers.persistor import AsyncBasePersistor
 from accent_dao.resources.utils.search import CriteriaBuilderMixin
-from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from accent_dao.alchemy.linefeatures import LineFeatures
+    from accent_dao.alchemy.userfeatures import UserFeatures
+
+logger = logging.getLogger(__name__)
 
 
 class UserLinePersistor(CriteriaBuilderMixin, AsyncBasePersistor[UserLine]):
@@ -131,7 +137,6 @@ class UserLinePersistor(CriteriaBuilderMixin, AsyncBasePersistor[UserLine]):
 
         await self.session.delete(user_line)
         await self.session.flush()
-
         return user_line
 
     async def _set_oldest_main_line(self, user: UserFeatures) -> None:
@@ -184,13 +189,12 @@ class UserLinePersistor(CriteriaBuilderMixin, AsyncBasePersistor[UserLine]):
                     main_user=False,
                 )
                 self.session.add(user_line)
+            # Update existing UserLine if it's already associated
+            elif not main_line_set:
+                user_line.main_line = True
+                main_line_set = True
             else:
-                # Update existing UserLine if it's already associated
-                if not main_line_set:
-                    user_line.main_line = True
-                    main_line_set = True
-                else:
-                    user_line.main_line = False  # Ensure only one main line
+                user_line.main_line = False  # Ensure only one main line
             new_user_lines.append(user_line)
             main_line_set = main_line_set or user_line.main_line
 
