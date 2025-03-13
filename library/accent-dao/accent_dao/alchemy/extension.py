@@ -16,9 +16,10 @@ from sqlalchemy.sql import select
 
 from accent_dao.helpers.db_manager import Base
 
+from .context import Context
+
 if TYPE_CHECKING:
     from .conference import Conference
-    from .context import Context
     from .dialpattern import DialPattern
     from .groupfeatures import GroupFeatures
     from .incall import Incall
@@ -107,6 +108,12 @@ class Extension(Base):
 
     @tenant_uuid.expression
     def tenant_uuid(cls) -> Mapped[str | None]:
+        """Retrieve the tenant UUID associated with the current context.
+
+        Returns:
+            Mapped[str | None]: The tenant UUID if available, otherwise None.
+
+        """
         return (
             select(Context.tenant_uuid)
             .where(Context.name == cls.context)

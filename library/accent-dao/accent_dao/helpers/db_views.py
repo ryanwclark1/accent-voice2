@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
     from sqlalchemy.orm.unitofwork import UOWTransaction
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
 
@@ -88,7 +87,6 @@ class MaterializedView(Base):
                                 cls.__tablename__,
                             )
                             # Don't reraise, as this is an event handler
-
             cls._view_dependencies_handler = _after_flush_handler
 
             # Async event handling is still limited in SQLAlchemy 2.x

@@ -41,7 +41,7 @@ class EndpointSIPSectionOption(Base):
 
     @property
     def option(self) -> list[str]:
-        """A list containing the key and value of the option."""
+        """Return a list containing the key and value of the option."""
         return [self.key, self.value]
 
     @option.setter

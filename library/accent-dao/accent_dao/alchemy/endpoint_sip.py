@@ -14,6 +14,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.hybrid import hybrid_property  # Corrected import.
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 from sqlalchemy.sql import and_, column, select, table
@@ -159,11 +160,13 @@ class EndpointSIP(Base):
     )
 
     @property
-    def templates(self) -> list["EndpointSIPTemplate"]:
+    def templates(self) -> list["EndpointSIP"]:
+        """Retrieve the related template Endpoints."""
         return [t.parent for t in self.template_relations]
 
     @templates.setter
-    def templates(self, value: list["EndpointSIPTemplate"]) -> None:
+    def templates(self, value: list["EndpointSIP"]) -> None:
+        """Set the related template Endpoints using EndpointSIPTemplate."""
         self.template_relations = [EndpointSIPTemplate(parent=v) for v in value]
 
     _options: Mapped[dict[str, Any]] = column_property(
@@ -230,7 +233,7 @@ class EndpointSIP(Base):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        """Initializes the EndpointSIP object, creating section objects if options are provided."""
+        """Initialize the EndpointSIP object, creating section objects if options are provided."""
         if aor_section_options:
             kwargs["_aor_section"] = AORSection(
                 options=aor_section_options,
@@ -266,7 +269,7 @@ class EndpointSIP(Base):
             self.caller_id = caller_id
 
     def __repr__(self) -> str:
-        """Returns a string representation of the EndpointSIP object."""
+        """Return a string representation of the EndpointSIP object."""
         return f"EndpointSIP(label={self.label})"
 
     @property
@@ -321,7 +324,7 @@ class EndpointSIP(Base):
             self._endpoint_section = None
 
     def _get_combined_section_options(self, section_name: str) -> list[list[str]]:
-        """Combines inherited and endpoint-specific options for a section."""
+        """Combine inherited and endpoint-specific options for a section."""
         inherited_options: list[list[str]] = getattr(
             self, f"inherited_{section_name}_section_options"
         )
@@ -366,7 +369,7 @@ class EndpointSIP(Base):
         return self._get_combined_section_options("outbound_auth")
 
     def _get_inherited_section_options(self, section_name: str) -> list[list[str]]:
-        """Gets inherited options for a section from templates."""
+        """Get inherited options for a section from templates."""
         if not self.templates:
             return []
 
@@ -490,9 +493,9 @@ class EndpointSIP(Base):
     line: Mapped["LineFeatures"] = relationship("LineFeatures", uselist=False)
     trunk: Mapped["TrunkFeatures"] = relationship("TrunkFeatures", uselist=False)
 
-    @property
+    @hybrid_property
     def caller_id(self) -> str | None:
-        """The caller ID for the endpoint."""
+        """Caller ID for the endpoint."""
         if not self._endpoint_section:
             return None
 
@@ -509,14 +512,14 @@ class EndpointSIP(Base):
 
         self._endpoint_section.add_or_replace("callerid", caller_id)
 
-    @caller_id.expression
-    def caller_id(cls) -> Mapped[str]:
+    @caller_id.expression  # type:ignore
+    def caller_id(cls) -> Mapped[str | None]:
         return cls._query_option_value("callerid")
 
     def update_caller_id(
         self, user: Any, extension: Any = None
     ) -> None:  # Added Type Hint
-        """Updates the caller ID based on user and extension information."""
+        """Update the caller ID based on user and extension information."""
         # Copied from old table
         name, num = user.extrapolate_caller_id(extension)
         caller_id = f'"{name}"'
@@ -525,16 +528,26 @@ class EndpointSIP(Base):
         self.caller_id = caller_id
 
     def endpoint_protocol(self) -> str:
-        """Returns the protocol used by the endpoint (always 'sip' for this class)."""
+        """Return the protocol used by the endpoint (always 'sip' for this class)."""
         return "sip"
 
-    @property
+    @hybrid_property
     def username(self) -> str | None:
-        """The username for authentication."""
+        """Username for authentication."""
         return self._find_first_value(self._auth_section, "username")
 
     @username.expression
     def username(cls) -> Mapped[str | None]:
+        """Retrieve the username associated with the EndpointSIPSection.
+
+        This method constructs a SQLAlchemy query to select the value of the
+        'username' key from the EndpointSIPSectionOption table, where the
+        EndpointSIPSection is of type 'auth' and matches the given UUID.
+
+        Returns:
+            Mapped[str | None]: The username if found, otherwise None.
+
+        """
         return (
             select(EndpointSIPSectionOption.value)
             .where(
@@ -549,13 +562,23 @@ class EndpointSIP(Base):
             .scalar_subquery()
         )
 
-    @property
+    @hybrid_property
     def password(self) -> str | None:
-        """The password for authentication."""
+        """Password for authentication."""
         return self._find_first_value(self._auth_section, "password")
 
     @password.expression
     def password(cls) -> Mapped[str | None]:
+        """Retrieve the password for an EndpointSIPSection of type 'auth'.
+
+        This method constructs a SQLAlchemy query to select the value of the
+        'password' key from the EndpointSIPSectionOption table, where the
+        EndpointSIPSection is of type 'auth' and matches the given UUID.
+
+        Returns:
+            Mapped[str | None]: The password value if found, otherwise None.
+
+        """
         return (
             select(EndpointSIPSectionOption.value)
             .where(
@@ -573,7 +596,7 @@ class EndpointSIP(Base):
     def _find_first_value(
         self, section: EndpointSIPSection | None, key: str
     ) -> str | None:
-        """Finds the first value for a given key in a section."""
+        """Find the first value for a given key in a section."""
         if not section:
             return None
         matching_options = section.find(key)
@@ -596,9 +619,9 @@ class EndpointSIP(Base):
         return self._options.get(option, None)
 
     @classmethod
-    def _query_option_value(cls, option: str | None) -> Mapped[str | None]:
-        """Queries the value of a specific option using a subquery."""
+    def _query_option_value(cls, option: str | None) -> Mapped[str | None] | None:
+        """Query the value of a specific option using a subquery."""
         if option is None:
             return None
 
-        return cls._options.remote_attr.get(option)  # type: ignore
+        return cls._options.remote_attr.get(option)
