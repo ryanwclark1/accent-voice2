@@ -1,9 +1,19 @@
 # file: accent_dao/alchemy/endpoint_sip_options_view.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
+import logging
 
-from sqlalchemy import Index, String, Subquery, func, join, literal, select, text
+from sqlalchemy import (
+    Index,
+    String,
+    Subquery,
+    func,
+    inspect,
+    join,
+    literal,
+    select,
+    text,
+)
 from sqlalchemy.dialects.postgresql import aggregate_order_by
-from sqlalchemy.engine import reflection
 from sqlalchemy_utils import create_materialized_view
 
 from accent_dao.helpers.db_manager import Base, get_async_session, get_session
@@ -12,6 +22,7 @@ from .endpoint_sip import EndpointSIP, EndpointSIPTemplate
 from .endpoint_sip_section import EndpointSIPSection
 from .endpoint_sip_section_option import EndpointSIPSectionOption
 
+logger = logging.getLogger(__name__)
 
 def _generate_selectable() -> Subquery:
     """Generate the selectable for the materialized view."""
@@ -101,16 +112,16 @@ class EndpointSIPOptionsView:
                 Index("endpoint_sip_options_view__idx_root", text("root"), unique=True),
             ],
         )
-        # Instead of using metatdata.tables which is a MutableMapping, check for view using reflection.
+        # Added check to avoid dropping and recreating view.
         with metadata.bind.connect() as connection:  # type: ignore
-            insp = reflection.Inspector.from_engine(connection)
+            insp = inspect(connection)
             if "endpoint_sip_options_view" not in insp.get_view_names():
                 mat_view.create(metadata.bind, checkfirst=True)  # type: ignore
 
     @classmethod
     def get_option_value(
-            cls, options: dict[str, str], option: str
-        ) -> str | None:  # Added Options
+        cls, options: dict[str, str], option: str
+    ) -> str | None:  # Added Options
         """Retrieve the value of a specific option from the options dictionary.
 
         Args:
@@ -129,7 +140,9 @@ class EndpointSIPOptionsView:
         async with get_async_session() as session:
             if concurrently:
                 await session.execute(
-                    text("REFRESH MATERIALIZED VIEW CONCURRENTLY endpoint_sip_options_view")
+                    text(
+                        "REFRESH MATERIALIZED VIEW CONCURRENTLY endpoint_sip_options_view"
+                    )
                 )
             else:
                 await session.execute(
@@ -138,17 +151,20 @@ class EndpointSIPOptionsView:
             await session.commit()
             logger.info("Refreshed materialized view: endpoint_sip_options_view")
 
-
     @classmethod
     def refresh_sync(cls, concurrently: bool = True) -> None:
         """Refresh the materialized view synchronously."""
         with get_session() as session:
             if concurrently:
                 session.execute(
-                    text("REFRESH MATERIALIZED VIEW CONCURRENTLY endpoint_sip_options_view")
+                    text(
+                        "REFRESH MATERIALIZED VIEW CONCURRENTLY endpoint_sip_options_view"
+                    )
                 )
             else:
-                session.execute(text("REFRESH MATERIALIZED VIEW endpoint_sip_options_view"))
+                session.execute(
+                    text("REFRESH MATERIALIZED VIEW endpoint_sip_options_view")
+                )
 
             session.commit()
             logger.info("Refreshed materialized view: endpoint_sip_options_view")
