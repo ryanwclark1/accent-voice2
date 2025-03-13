@@ -24,7 +24,7 @@ class DirectoryProfile(TypedDict):
 
 
 @async_daosession
-async def async_find_by_incall_id(
+async def find_by_incall_id(
     session: AsyncSession, incall_id: int
 ) -> DirectoryProfile | None:
     """Find directory profile information by incall ID.

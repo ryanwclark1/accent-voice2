@@ -7,8 +7,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 from sqlalchemy import case, false, select, true
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import Select
 
 from accent_dao.alchemy.agent_login_status import AgentLoginStatus
 from accent_dao.alchemy.agent_membership_status import AgentMembershipStatus
@@ -21,6 +19,8 @@ from accent_dao.helpers.db_utils import async_flush_session
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class Queue(NamedTuple):

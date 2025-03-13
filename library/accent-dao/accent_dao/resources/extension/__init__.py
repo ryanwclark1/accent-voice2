@@ -8,6 +8,7 @@ from .dao import (
     associate_incall,
     associate_parking_lot,
     associate_queue,
+    calluser_extension,
     create,
     delete,
     dissociate_conference,
@@ -21,9 +22,8 @@ from .dao import (
     find_by,
     get,
     get_by,
-    search,
-    calluser_extension,
     progfunckey_extension,
+    search,
 )
 
 __all__: list[str] = [
@@ -32,6 +32,7 @@ __all__: list[str] = [
     "associate_incall",
     "associate_parking_lot",
     "associate_queue",
+    "calluser_extension",
     "create",
     "delete",
     "dissociate_conference",
@@ -45,7 +46,6 @@ __all__: list[str] = [
     "find_by",
     "get",
     "get_by",
-    "search",
-    "calluser_extension",
     "progfunckey_extension",
+    "search",
 ]

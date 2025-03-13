@@ -1,4 +1,4 @@
-# file: accent_dao/resources/call_permission/dao.py
+# file: accent_dao/resources/call_permission/dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from __future__ import annotations

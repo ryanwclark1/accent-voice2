@@ -1,4 +1,4 @@
-# file: accent_dao/resources/voicemail/persistor.py
+# file: accent_dao/resources/voicemail/persistor.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import logging

@@ -1,4 +1,4 @@
-# file: accent_dao/resources/voicemail/__init__.py
+# file: accent_dao/resources/voicemail/__init__.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 """Voicemail resource implementation."""
 
