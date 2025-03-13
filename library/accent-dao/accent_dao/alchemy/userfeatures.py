@@ -74,7 +74,7 @@ T = TypeVar("T")
 class EmailComparator(ColumnProperty.Comparator):
     """Custom comparator for case-insensitive email comparison."""
 
-    def __eq__(self, other: object) -> BinaryExpression:
+    def __eq__(self, other: object) -> Any:
         """Perform a case-insensitive email comparison.
 
         Args:

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/user_line.py
+# file: accent_dao/alchemy/user_line.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING
@@ -43,10 +43,6 @@ class UserLine(Base):
     )
     main_user: Mapped[bool] = mapped_column(Boolean, nullable=False)
     main_line: Mapped[bool] = mapped_column(Boolean, nullable=False)
-
-    # These are redundant, and can cause issues. Replaced by back_populates.
-    # linefeatures = relationship("LineFeatures")
-    # userfeatures = relationship("UserFeatures")
 
     main_user_rel: Mapped["UserFeatures"] = relationship(
         "UserFeatures",

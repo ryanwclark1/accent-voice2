@@ -1,8 +1,17 @@
 # file: accent_dao/alchemy/usercustom.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    ForeignKey,
+    Function,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    cast,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -117,7 +126,7 @@ class UserCustom(Base):
             self.intfsuffix = value
 
     @interface_suffix.expression
-    def interface_suffix(cls) -> Mapped[str | None]:
+    def interface_suffix(cls) -> Function[Any]:
         """Return the interface suffix of the user, or None suffix is an empty string.
 
         Returns:

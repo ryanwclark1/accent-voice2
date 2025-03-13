@@ -1,13 +1,13 @@
-# file: accent_dao/alchemy/voicemail.py
+# file: accent_dao/alchemy/voicemail.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, Integer, String, cast, select
+from sqlalchemy import Boolean, Function, Integer, ScalarSelect, String, cast, select
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm.attributes import get_history  # Import the get_history function
 from sqlalchemy.sql import func
 
-from accent_dao.helpers import get_history  # Import the get_history function
 from accent_dao.helpers.db_manager import Base
 
 from .context import Context
@@ -98,7 +98,7 @@ class Voicemail(Base):
         viewonly=True,
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize a Voicemail instance.
 
         Args:
@@ -210,7 +210,7 @@ class Voicemail(Base):
         self.skipcheckpass = int(not value)
 
     @ask_password.expression
-    def ask_password(cls) -> Mapped[bool]:
+    def ask_password(cls) -> Function[Any]:
         """Return the expression for asking password."""
         return func.not_(cast(cls.skipcheckpass, Boolean))
 
@@ -227,7 +227,7 @@ class Voicemail(Base):
         self.commented = int(not value) if value is not None else None
 
     @enabled.expression
-    def enabled(cls) -> Mapped[bool]:
+    def enabled(cls) -> Function[Any]:
         """Return the expression for enabled status."""
         return func.not_(cast(cls.commented, Boolean))
 
@@ -237,7 +237,7 @@ class Voicemail(Base):
         return self.context_rel.tenant_uuid
 
     @tenant_uuid.expression
-    def tenant_uuid(cls) -> Mapped[str]:
+    def tenant_uuid(cls) -> ScalarSelect[str]:
         """Return the tenant UUID expression."""
         return (
             select(Context.tenant_uuid)

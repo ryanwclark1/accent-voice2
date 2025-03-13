@@ -1,10 +1,12 @@
 # file: accent_dao/alchemy/staticiax.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
+
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Index, Integer, String, func
+from sqlalchemy import Boolean, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import cast
+from sqlalchemy.sql.expression import ColumnElement  # Import ColumnElement
 
 from accent_dao.helpers.db_manager import Base
 
@@ -40,7 +42,7 @@ class StaticIAX(Base):
     filename: Mapped[str] = mapped_column(String(128), nullable=False)
     category: Mapped[str] = mapped_column(String(128), nullable=False)
     var_name: Mapped[str] = mapped_column(String(128), nullable=False)
-    var_val: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    var_val: Mapped[str | None] = mapped_column(Text, nullable=True)  # Changed to Text
 
     trunk: Mapped["TrunkFeatures"] = relationship(
         "TrunkFeatures", viewonly=True, uselist=False
@@ -61,8 +63,8 @@ class StaticIAX(Base):
         else:
             self.var_metric = value - 1  # Modified
 
-    @metric.expression
-    def metric(cls) -> Mapped[int | None]:
+    @metric.expression  # type: ignore[no-redef]
+    def metric(cls) -> ColumnElement[int | None]:
         """Return the metric expression."""
         return func.nullif(cls.var_metric, 0)
 
@@ -78,7 +80,7 @@ class StaticIAX(Base):
         """Enable or disable the entry."""
         self.commented = int(not value) if value is not None else None
 
-    @enabled.expression
-    def enabled(cls) -> Mapped[bool]:
+    @enabled.expression  # type: ignore[no-redef]
+    def enabled(cls) -> ColumnElement[bool]:  # Corrected return type
         """Return the enabled expression."""
         return func.not_(cast(cls.commented, Boolean))

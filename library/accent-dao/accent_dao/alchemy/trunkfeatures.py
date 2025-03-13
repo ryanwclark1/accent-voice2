@@ -1,7 +1,7 @@
 # file: accent_dao/alchemy/trunkfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -17,20 +17,20 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.expression import ColumnElement
 
 from accent_dao.helpers.db_manager import Base
 
 from .endpoint_sip import EndpointSIP
-from .outcalltrunk import OutcallTrunk
 from .usercustom import UserCustom
 from .useriax import UserIAX
 
 if TYPE_CHECKING:
     from .context import Context
+    from .outcalltrunk import OutcallTrunk
     from .staticiax import StaticIAX
-
-TrunkProtocol = Literal["sip", "iax", "sccp", "custom"]
 
 
 class TrunkFeatures(Base):
@@ -39,16 +39,16 @@ class TrunkFeatures(Base):
     Attributes:
         id: The unique identifier for the trunk features.
         tenant_uuid: The UUID of the tenant the trunk belongs to.
-    endpoint_sip_uuid: The UUID of the associated SIP endpoint (if applicable).
-    endpoint_iax_id: The ID of the associated IAX user (if applicable).
-    endpoint_custom_id: The ID of the associated custom endpoint (if applicable).
-    register_iax_id: The ID of the associated static IAX entry
-        for registration (if applicable).
+        endpoint_sip_uuid: The UUID of the associated SIP endpoint (if applicable).
+        endpoint_iax_id: The ID of the associated IAX user (if applicable).
+        endpoint_custom_id: The ID of the associated custom endpoint (if applicable).
+        register_iax_id: The ID of the associated static IAX entry
+            for registration (if applicable).
         registercommented: Indicates if the registration is commented out.
         description: A description of the trunk.
         context: The context associated with the trunk.
-    outgoing_caller_id_format: The format for outgoing caller ID
-        ('+E164', 'E164', 'national').
+        outgoing_caller_id_format: The format for outgoing caller ID
+            ('+E164', 'E164', 'national').
         twilio_incoming: Indicates if this trunk is for Twilio incoming calls.
         endpoint_sip: Relationship to EndpointSIP.
         endpoint_iax: Relationship to UserIAX.
@@ -95,7 +95,7 @@ class TrunkFeatures(Base):
         Index("trunkfeatures__idx__registercommented", "registercommented"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tenant_uuid: Mapped[str] = mapped_column(
         String(36), ForeignKey("tenant.uuid", ondelete="CASCADE"), nullable=False
     )
@@ -125,7 +125,7 @@ class TrunkFeatures(Base):
         server_default="+E164",
     )
     twilio_incoming: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="False"
+        Boolean, nullable=False, server_default="false"
     )
 
     endpoint_sip: Mapped["EndpointSIP"] = relationship("EndpointSIP", viewonly=True)
@@ -141,13 +141,14 @@ class TrunkFeatures(Base):
 
     outcall_trunks: Mapped[list["OutcallTrunk"]] = relationship(
         "OutcallTrunk",
+        order_by="OutcallTrunk.priority",
         cascade="all, delete-orphan",
         back_populates="trunk",
     )
 
     @property
     def outcalls(self) -> list["OutcallTrunk"]:
-        """Retrieves a list of OutcallTrunk objects.
+        """Retrieve a list of OutcallTrunk objects.
 
         Returns:
             list[OutcallTrunk]: A list of OutcallTrunk objects.
@@ -155,15 +156,17 @@ class TrunkFeatures(Base):
         """
         return [ot.outcall for ot in self.outcall_trunks]
 
-    @outcalls.setter
-    def outcalls(self, value: list["OutcallTrunk"]) -> None:
-        self.outcall_trunks = [OutcallTrunk(outcall=v) for v in value]
-
     register_iax: Mapped["StaticIAX"] = relationship("StaticIAX", viewonly=True)
 
-    @property
+    @hybrid_property
     def protocol(self) -> str | None:
-        """The protocol used by the trunk."""
+        """Return the protocol used by the line.
+
+        Returns:
+            str | None: The protocol type as a string ("sip", "iax", or "custom"),
+                        or None if no protocol is found.
+
+        """
         if self.endpoint_sip_uuid:
             return "sip"
         if self.endpoint_iax_id:
@@ -175,9 +178,9 @@ class TrunkFeatures(Base):
             return "iax"
         return None
 
-    @property
+    @hybrid_property
     def name(self) -> str | None:
-        """The name of the trunk."""
+        """Get the name of the trunk, based on the endpoint."""
         if self.endpoint_sip and self.endpoint_sip.name not in ("", None):
             return self.endpoint_sip.name
         if self.endpoint_iax and self.endpoint_iax.name not in ("", None):
@@ -186,19 +189,9 @@ class TrunkFeatures(Base):
             return self.endpoint_custom.interface
         return None
 
-    @name.expression
-    def name(cls) -> Mapped[str | None]:
-        """Return the name of the endpoint based on type (SIP, IAX, or Custom).
-
-        This method constructs and executes SQL queries to fetch the name of
-        the endpoint from the corresponding tables (EndpointSIP, UserIAX,
-        UserCustom) based on the endpoint type identifiers
-        (endpoint_sip_uuid, endpoint_iax_id, endpoint_custom_id).
-
-        Returns:
-            Mapped[str | None]: Name of endpoint if available, otherwise None.
-
-        """
+    @name.expression  # type: ignore[no-redef]
+    def name(cls) -> ColumnElement[str | None]:
+        """Return SQL expression for name selection."""
         endpoint_sip_query = (
             select(EndpointSIP.name)
             .where(EndpointSIP.uuid == cls.endpoint_sip_uuid)
@@ -219,27 +212,20 @@ class TrunkFeatures(Base):
                 (cls.endpoint_sip_uuid.isnot(None), endpoint_sip_query),
                 (cls.endpoint_iax_id.isnot(None), endpoint_iax_query),
                 (cls.endpoint_custom_id.isnot(None), endpoint_custom_query),
-                else_=None,
             ),
             None,
         )
 
-    @property
+    @hybrid_property
     def label(self) -> str | None:
-        """The label (display name) of the trunk (only for SIP trunks)."""
+        """Get label for SIP, otherwise None."""
         if self.endpoint_sip and self.endpoint_sip.label not in ("", None):
             return self.endpoint_sip.label
         return None
 
-    @label.expression
-    def label(cls) -> Mapped[str | None]:
-        """Generate SQLAlchemy to retrieve label of EndpointSIP current instance.
-
-        Returns:
-            Mapped[str | None]: The label of the associated EndpointSIP if it exists,
-            otherwise None.
-
-        """
+    @label.expression  # type: ignore[no-redef]
+    def label(cls) -> ColumnElement[str | None]:
+        """Return SQL expression for label."""
         endpoint_sip_query = (
             select(EndpointSIP.label)
             .where(EndpointSIP.uuid == cls.endpoint_sip_uuid)

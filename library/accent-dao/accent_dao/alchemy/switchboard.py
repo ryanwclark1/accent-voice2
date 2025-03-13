@@ -12,6 +12,9 @@ from .dialaction import Dialaction
 from .switchboard_member_user import SwitchboardMemberUser
 
 if TYPE_CHECKING:
+    from accent_dao.alchemy.incall import Incall
+    from accent_dao.alchemy.userfeatures import UserFeatures
+
     from .moh import MOH
 
 
@@ -75,7 +78,7 @@ class Switchboard(Base):
     )
 
     @property
-    def incalls(self) -> list["Dialaction"]:
+    def incalls(self) -> list["Incall"]:
         """Return a list of incall Dialaction objects."""
         return [d.incall for d in self.incall_dialactions if d.incall]
 
@@ -105,7 +108,7 @@ class Switchboard(Base):
     )
 
     @property
-    def user_members(self) -> list["SwitchboardMemberUser"]:
+    def user_members(self) -> list["UserFeatures"]:
         """Return a list of user members associated with the switchboard."""
         return [smu.user for smu in self.switchboard_member_users if smu.user]
 
