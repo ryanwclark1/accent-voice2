@@ -194,7 +194,7 @@ class Incall(Base):
     def user_id(self) -> int | None:
         """The ID of the associated user (if applicable)."""
         if self.dialaction and self.dialaction.action == "user":
-            return int(self.dialaction.actionarg1)  # type: ignore
+            return int(self.dialaction.actionarg1)
         return None
 
     @user_id.expression
