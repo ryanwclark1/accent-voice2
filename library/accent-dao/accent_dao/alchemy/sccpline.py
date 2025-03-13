@@ -118,7 +118,7 @@ class SCCPLine(Base):
     def update_caller_id(
         self,
         user: "UserFeatures",
-        extension: "Extension" | None = None
+        extension: Extension | None = None
     ) -> None:
         """Update the caller ID based on user and extension information."""
         name, user_num = user.extrapolate_caller_id(extension)

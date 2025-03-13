@@ -199,7 +199,6 @@ class GroupFeatures(Base):
         """Incall objects associated."""
         return [d.incall for d in self.incall_dialactions if d.incall]
 
-    # Removed attribute_mapped_collection
     group_dialactions: Mapped[dict[str, "Dialaction"]] = relationship(
         "Dialaction",
         primaryjoin="""and_(

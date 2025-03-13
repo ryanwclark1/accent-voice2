@@ -279,7 +279,6 @@ class QueueFeatures(Base):
         "FuncKeyDestQueue", cascade="all, delete-orphan"
     )
 
-    # Removed attribute_mapped_collection
     queue_dialactions: Mapped[dict[str, "Dialaction"]] = relationship(
         "Dialaction",
         primaryjoin="""and_(
@@ -466,7 +465,7 @@ class QueueFeatures(Base):
         If the display name is an empty string, it returns None.
 
         Returns:
-            Mapped[str | None]: The display name or None if the 
+            Mapped[str | None]: The display name or None if the
                 display name is an empty string.
 
         """

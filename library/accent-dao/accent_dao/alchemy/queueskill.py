@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/queueskill.py
+# file: accent_dao/alchemy/queueskill.py # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 

@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/resolvconf.py
+# file: accent_dao/alchemy/resolvconf.py # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import Integer, String, Text, UniqueConstraint

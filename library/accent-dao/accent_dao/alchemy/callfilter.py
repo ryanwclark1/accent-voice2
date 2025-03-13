@@ -117,7 +117,6 @@ class Callfilter(Base):
         .scalar_subquery()
     )
 
-    # Removed collection_class=attribute_mapped_collection('event')
     callfilter_dialactions: Mapped[dict[str, "Dialaction"]] = relationship(
         "Dialaction",
         primaryjoin="""and_(

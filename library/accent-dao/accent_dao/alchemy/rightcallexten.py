@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/rightcallexten.py
+# file: accent_dao/alchemy/rightcallexten.py # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import (
