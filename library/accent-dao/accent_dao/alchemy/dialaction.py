@@ -2,8 +2,10 @@
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
-from sqlalchemy import Index, PrimaryKeyConstraint, String
+from sqlalchemy import Index, PrimaryKeyConstraint, String, func
+from sqlalchemy.ext.hybrid import hybrid_property  # Correct import
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import case
 
 from accent_dao.helpers.db_manager import Base
 
@@ -230,7 +232,7 @@ class Dialaction(Base):
                 actionarg2=None,
             )
 
-    @property
+    @hybrid_property
     def type(self) -> str:
         """The type of the dial action."""
         return self.action.split(":")[0]
@@ -240,7 +242,12 @@ class Dialaction(Base):
         """Set the type of the dial action."""
         self.action = f"{value}:{self.subtype}" if self.subtype else value
 
-    @property
+    @type.expression
+    def type(cls) -> Mapped[str]:
+        """Return sql expression for type attribute."""
+        return func.split_part(cls.action, ":", 1)
+
+    @hybrid_property
     def subtype(self) -> str | None:
         """The subtype of the dial action."""
         if ":" not in self.action:
@@ -250,8 +257,14 @@ class Dialaction(Base):
     @subtype.setter
     def subtype(self, value: str | None) -> None:
         """Set the subtype of the dial action."""
-        self.action = (
-            f"{self.type}:{value}" if value is not None else self.type
+        self.action = f"{self.type}:{value}" if value is not None else self.type
+
+    @subtype.expression
+    def subtype(cls) -> Mapped[str | None]:
+        """Return sql expression for type attribute."""
+        return case(
+            (func.strpos(cls.action, ":") == 0, None),
+            else_=func.split_part(cls.action, ":", 2),
         )
 
     @property
