@@ -1,58 +1,64 @@
-# file: accent_dao/resources/user/view.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy import func, select
-from sqlalchemy.sql import case
 
+from accent_dao.alchemy.endpoint_sip import EndpointSIP
+from accent_dao.alchemy.endpoint_sip_options_view import EndpointSIPOptionsView
 from accent_dao.alchemy.extension import Extension
-from accent_dao.alchemy.linefeatures import LineFeatures as Line
+from accent_dao.alchemy.line_extension import LineExtension
+from accent_dao.alchemy.linefeatures import LineFeatures
+from accent_dao.alchemy.sccpline import SCCPLine
 from accent_dao.alchemy.user_line import UserLine
-from accent_dao.alchemy.userfeatures import UserFeatures as User
-from accent_dao.alchemy.voicemail import Voicemail
-from accent_dao.helpers import errors
+from accent_dao.alchemy.usercustom import UserCustom
+from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.resources.utils.view import View, ViewSelector
-
-from .model import UserDirectory, UserSummary
 
 
 class DefaultView(View):
-    """Default view for user features."""
+    """Default view for UserFeatures."""
 
-    async def query(self, session):
-        """Define the query for the default view."""
-        return select(User)
+    def query(self, session):
+        """Return the query for default view."""
+        return session.query(UserFeatures)
 
     def convert(self, row):
-        """Convert a database row to a default view object."""
+        """Return the row as is."""
         return row
 
 
 class DirectoryView(View):
-    """View for directory information."""
+    """View for directory information of UserFeatures."""
 
-    async def query(self, session):
+    def query(self, session):
         """Define the query for the directory view."""
-        return select(
-            User.id.label("id"),
-            User.uuid.label("uuid"),
+        query = session.query(
+            UserFeatures.id.label("id"),
+            UserFeatures.uuid.label("uuid"),
             UserLine.line_id.label("line_id"),
-            User.agentid.label("agent_id"),
-            User.firstname.label("firstname"),
-            func.nullif(User.lastname, "").label("lastname"),
-            func.nullif(User.email, "").label("email"),
-            func.nullif(User.mobilephonenumber, "").label("mobile_phone_number"),
-            Voicemail.mailbox.label("voicemail_number"),
-            func.nullif(User.userfield, "").label("userfield"),
-            func.nullif(User.description, "").label("description"),
+            UserFeatures.agentid.label("agent_id"),
+            UserFeatures.firstname.label("firstname"),
+            func.nullif(UserFeatures.lastname, "").label("lastname"),
+            func.nullif(UserFeatures.email, "").label("email"),
+            func.nullif(UserFeatures.mobilephonenumber, "").label(
+                "mobile_phone_number"
+            ),
+            func.nullif(UserFeatures.voicemail, "").label(
+                "voicemail_number"
+            ),  # Use property
+            func.nullif(UserFeatures.userfield, "").label("userfield"),
+            func.nullif(UserFeatures.description, "").label("description"),
             Extension.exten.label("exten"),
             Extension.context.label("context"),
         )
+        return query
 
     def convert(self, row):
-        """Convert a database row to a directory view object."""
+        """Convert database row to UserDirectory model."""
+        from .model import UserDirectory  # Local import to prevent circular import
+
         return UserDirectory(
             id=row.id,
-            uuid=row.uuid,
+            uuid=str(row.uuid),
             line_id=row.line_id,
             agent_id=row.agent_id,
             firstname=row.firstname,
@@ -68,31 +74,31 @@ class DirectoryView(View):
 
 
 class SummaryView(View):
-    """View for user summary information."""
+    """View for summary information of UserFeatures."""
 
-    async def query(self, session):
+    def query(self, session):
         """Define the query for the summary view."""
-        return select(
-            User.id.label("id"),
-            User.uuid.label("uuid"),
-            User.firstname.label("firstname"),
-            func.nullif(User.lastname, "").label("lastname"),
-            func.nullif(User.email, "").label("email"),
-            User.enabled.label("enabled"),
-            case(
-                (Line.endpoint_custom_id.isnot(None), None),
-                else_=Line.provisioning_code,
-            ).label("provisioning_code"),
-            Line.protocol.label("protocol"),
+        query = session.query(
+            UserFeatures.id.label("id"),
+            UserFeatures.uuid.label("uuid"),
+            UserFeatures.firstname.label("firstname"),
+            func.nullif(UserFeatures.lastname, "").label("lastname"),
+            func.nullif(UserFeatures.email, "").label("email"),
+            UserFeatures.enabled.label("enabled"),
+            LineFeatures.provisioning_code.label("provisioning_code"),  # Use property
+            LineFeatures.protocol.label("protocol"),  # Use property
             Extension.exten.label("extension"),
             Extension.context.label("context"),
         )
+        return query
 
     def convert(self, row):
-        """Convert a database row to a summary view object."""
+        """Convert database row to UserSummary model."""
+        from .model import UserSummary  # Local import to prevent circular import
+
         return UserSummary(
             id=row.id,
-            uuid=row.uuid,
+            uuid=str(row.uuid),  # Convert UUID to string
             firstname=row.firstname,
             lastname=row.lastname,
             email=row.email,
@@ -104,19 +110,6 @@ class SummaryView(View):
         )
 
 
-class UserViewSelector(ViewSelector):
-    """View selector for User resources."""
-
-    def select(self, name=None, default_query=None):
-        if not name:
-            if default_query:
-                return DefaultView(default_query)
-            return self.default
-        if name not in self.views:
-            raise errors.invalid_view(name)
-        return self.views[name]
-
-
-user_view = UserViewSelector(
+user_view = ViewSelector(
     default=DefaultView(), directory=DirectoryView(), summary=SummaryView()
 )

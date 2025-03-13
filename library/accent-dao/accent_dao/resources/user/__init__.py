@@ -2,9 +2,9 @@
 # Copyright 2025 Accent Communications
 """User resource implementation."""
 
+
 from .dao import (
     associate_all_groups,
-    count_all_by,
     create,
     delete,
     edit,
@@ -23,7 +23,6 @@ from .dao import (
 
 __all__: list[str] = [
     "associate_all_groups",
-    "count_all_by",
     "create",
     "delete",
     "edit",

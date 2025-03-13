@@ -1,35 +1,36 @@
 # file: accent_dao/resources/user/model.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from typing import NamedTuple
+# Copyright 2025 Accent Communications
+from dataclasses import dataclass
 
-# using NamedTuple so no changes needed.
 
-
-class UserDirectory(NamedTuple):
+@dataclass
+class UserDirectory:
     """Represents a user directory entry."""
 
     id: int
     uuid: str
-    line_id: int
+    line_id: int | None
     agent_id: int | None
-    firstname: str | None
+    firstname: str
     lastname: str | None
-    exten: str
+    exten: str | None
     email: str | None
     mobile_phone_number: str | None
     voicemail_number: str | None
     userfield: str | None
     description: str | None
-    context: str
+    context: str | None
 
 
-class UserSummary(NamedTuple):
+@dataclass
+class UserSummary:
     """Represents a user summary."""
 
     id: int
     uuid: str
-    firstname: str | None
+    firstname: str
     lastname: str | None
     email: str | None
     enabled: bool

@@ -1,4 +1,4 @@
-# file: accent_dao/resources/user/strategy.py
+# file: accent_dao/resources/user/strategy.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from sqlalchemy.orm import (
@@ -47,8 +47,5 @@ user_unpaginated_strategy = (
     joinedload("switchboard_member_users").selectinload("switchboard"),
     joinedload("tenant"),
     joinedload("voicemail"),
-    # Don't lazy load anything else, eager load everything specified.
+    # Use lazy loading for any attributes not explicitly eager loaded
 )
-
-
-no_strategy = []

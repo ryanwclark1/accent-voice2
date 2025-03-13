@@ -1,13 +1,24 @@
-# file: accent_dao/resources/user/dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 import logging
+from typing import TYPE_CHECKING
 
+from sqlalchemy import Integer
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
 
-from accent_dao.alchemy.userfeatures import UserFeatures as User
+from accent_dao.alchemy.rightcallmember import RightCallMember
+from accent_dao.alchemy.userfeatures import UserFeatures
 from accent_dao.helpers.db_manager import async_daosession
-from accent_dao.resources.utils.search import SearchResult
+from accent_dao.resources.user.persistor import UserPersistor
+from accent_dao.resources.user.search import user_search
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from accent_dao.alchemy.groupfeatures import GroupFeatures
+    from accent_dao.alchemy.rightcall import RightCall
+    from accent_dao.resources.utils.search import SearchResult
 
 from .fixes import UserFixes
 from .persistor import UserPersistor
@@ -20,7 +31,7 @@ logger = logging.getLogger(__name__)
 @async_daosession
 async def search(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
-) -> SearchResult:
+) -> "SearchResult":
     """Search for users.
 
     Args:
@@ -29,7 +40,7 @@ async def search(
         **parameters: Keyword arguments for search parameters.
 
     Returns:
-        SearchResult: The search results.
+        A SearchResult object containing the total count and the list of users.
 
     """
     return await UserPersistor(session, user_view, user_search, tenant_uuids).search(
@@ -40,8 +51,8 @@ async def search(
 @async_daosession
 async def search_collated(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
-) -> SearchResult:
-    """Search for users with collation.
+) -> "SearchResult":
+    """Search for users, with additional collation.
 
     Args:
         session: The database session.
@@ -49,7 +60,7 @@ async def search_collated(
         **parameters: Keyword arguments for search parameters.
 
     Returns:
-        SearchResult: The search results.
+        A SearchResult object containing the total count and the list of users.
 
     """
     return await UserPersistor(
@@ -60,7 +71,7 @@ async def search_collated(
 @async_daosession
 async def get(
     session: AsyncSession, user_id: int, tenant_uuids: list[str] | None = None
-) -> User:
+) -> UserFeatures:
     """Get a user by ID.
 
     Args:
@@ -69,7 +80,7 @@ async def get(
         tenant_uuids: Optional list of tenant UUIDs to filter by.
 
     Returns:
-        The user.
+        The user object.
 
     """
     return await UserPersistor(session, user_view, user_search, tenant_uuids).get_by(
@@ -80,7 +91,7 @@ async def get(
 @async_daosession
 async def get_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
-) -> User:
+) -> UserFeatures:
     """Get a user by criteria.
 
     Args:
@@ -89,7 +100,7 @@ async def get_by(
         **criteria: Keyword arguments for filtering.
 
     Returns:
-        The user.
+        The user object.
 
     """
     return await UserPersistor(session, user_view, user_search, tenant_uuids).get_by(
@@ -98,68 +109,9 @@ async def get_by(
 
 
 @async_daosession
-async def find_by_id_uuid(
-    session: AsyncSession, id: int | str, tenant_uuids: list[str] | None = None
-) -> User | None:
-    """Find a user by ID or UUID.
-
-    Args:
-        session: The database session.
-        id: The ID or UUID of the user.
-        tenant_uuids: Optional list of tenant UUIDs to filter by.
-
-    Returns:
-        The user if found, None otherwise.
-
-    """
-    return await UserPersistor(
-        session, user_view, user_search, tenant_uuids
-    ).find_by_id_uuid(id)
-
-
-@async_daosession
-async def get_by_id_uuid(
-    session: AsyncSession, id: int | str, tenant_uuids: list[str] | None = None
-) -> User:
-    """Get a user by ID or UUID.
-
-    Args:
-        session: The database session.
-        id: The ID or UUID of the user.
-        tenant_uuids: Optional list of tenant UUIDs to filter by.
-
-    Returns:
-        The user.
-
-    """
-    return await UserPersistor(
-        session, user_view, user_search, tenant_uuids
-    ).get_by_id_uuid(id)
-
-
-@async_daosession
-async def find_all_by_agent_id(
-    session: AsyncSession, agent_id: int
-) -> list[User]:
-    """Find all users by agent ID.
-
-    Args:
-        session: The database session.
-        agent_id: The ID of the agent.
-
-    Returns:
-        A list of users.
-
-    """
-    return await UserPersistor(session, user_view, user_search).find_all_by_agent_id(
-        agent_id
-    )
-
-
-@async_daosession
 async def find(
     session: AsyncSession, user_id: int, tenant_uuids: list[str] | None = None
-) -> User | None:
+) -> UserFeatures | None:
     """Find a user by ID.
 
     Args:
@@ -168,7 +120,7 @@ async def find(
         tenant_uuids: Optional list of tenant UUIDs to filter by.
 
     Returns:
-        The user if found, None otherwise.
+        The user object or None if not found.
 
     """
     return await UserPersistor(session, user_view, user_search, tenant_uuids).find_by(
@@ -179,7 +131,7 @@ async def find(
 @async_daosession
 async def find_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
-) -> User | None:
+) -> UserFeatures | None:
     """Find a user by criteria.
 
     Args:
@@ -188,7 +140,7 @@ async def find_by(
         **criteria: Keyword arguments for filtering.
 
     Returns:
-        The user if found, None otherwise.
+        The user object or None if not found.
 
     """
     return await UserPersistor(session, user_view, user_search, tenant_uuids).find_by(
@@ -199,7 +151,7 @@ async def find_by(
 @async_daosession
 async def find_all_by(
     session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
-) -> list[User]:
+) -> list[UserFeatures]:
     """Find all users by criteria.
 
     Args:
@@ -208,101 +160,163 @@ async def find_all_by(
         **criteria: Keyword arguments for filtering.
 
     Returns:
-        A list of users.
+        A list of user objects.
+
+    """
+    result: Sequence[UserFeatures] = await UserPersistor(
+        session, user_view, user_search, tenant_uuids
+    ).find_all_by(criteria)
+    return list(result)
+
+
+@async_daosession
+async def get_by_id_uuid(
+    session: AsyncSession, id: int | str, tenant_uuids: list[str] | None = None
+) -> UserFeatures:
+    """Get a user by ID or UUID.
+
+    Args:
+        session: The database session.
+        id: The ID or UUID of the user.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+    Returns:
+        The user object.
 
     """
     return await UserPersistor(
         session, user_view, user_search, tenant_uuids
-    ).find_all_by(criteria)
+    ).get_by_id_uuid(id)
 
 
 @async_daosession
-async def count_all_by(
-    session: AsyncSession, column_name: str, **criteria: dict
-) -> list:
-    """Count all users by criteria.
+async def find_by_id_uuid(
+    session: AsyncSession, id: int | str, tenant_uuids: list[str] | None = None
+) -> UserFeatures | None:
+    """Find a user by ID or UUID.
 
     Args:
         session: The database session.
-        column_name: The column name to group by.
-        **criteria: Keyword arguments for filtering.
+        id: The ID or UUID of the user.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
 
     Returns:
-        A list of counts.
+        The user object or None if not found.
 
     """
-    return await UserPersistor(session, user_view, user_search).count_all_by(
-        column_name, **criteria
-    )
+    return await UserPersistor(
+        session, user_view, user_search, tenant_uuids
+    ).find_by_id_uuid(id)
 
 
 @async_daosession
-async def create(session: AsyncSession, user: User) -> User:
+async def find_all_by_agent_id(
+    session: AsyncSession, agent_id: int, tenant_uuids: list[str] | None = None
+) -> list[UserFeatures]:
+    """Find all users associated with an agent ID.
+
+    Args:
+        session: The database session.
+        agent_id: The ID of the agent.
+        tenant_uuids: Optional list of tenant UUIDs to filter by.
+
+    Returns:
+        A list of user objects.
+
+    """
+    result: Sequence[UserFeatures] = await UserPersistor(
+        session, user_view, user_search, tenant_uuids
+    ).find_all_by({"agentid": agent_id})
+    return list(result)
+
+
+@async_daosession
+async def create(session: AsyncSession, user: UserFeatures) -> UserFeatures:
     """Create a new user.
 
     Args:
         session: The database session.
-        user: The user to create.
+        user: The user object to create.
 
     Returns:
-        The created user.
+        The created user object.
 
     """
-    return await UserPersistor(session).create(user)
+    return await UserPersistor(session, user_view, user_search).create(user)
 
 
 @async_daosession
-async def edit(session: AsyncSession, user: User) -> None:
+async def edit(session: AsyncSession, user: UserFeatures) -> None:
     """Edit an existing user.
 
     Args:
         session: The database session.
-        user: The user to edit.
+        user: The user object to edit.
 
     """
-    await UserPersistor(session).edit(user)
-    await UserFixes(session).async_fix(user.id)
+    await UserPersistor(session, user_view, user_search).edit(user)
+
+    await UserFixes(session).fix(user.id)
 
 
 @async_daosession
-async def delete(session: AsyncSession, user: User) -> None:
+async def delete(session: AsyncSession, user: UserFeatures) -> None:
     """Delete a user.
 
     Args:
         session: The database session.
-        user: The user to delete.
+        user: The user object to delete.
 
     """
-    await UserPersistor(session).delete(user)
+    await UserPersistor(session, user_view, user_search).delete(user)
 
 
 @async_daosession
 async def associate_all_groups(
-    session: AsyncSession, user: User, groups: list
+    session: AsyncSession, user: UserFeatures, groups: list["GroupFeatures"]
 ) -> None:
     """Associate all groups with a user.
 
     Args:
         session: The database session.
-        user: The user.
-        groups: The list of groups to associate.
+        user: The user object.
+        groups: The list of group objects.
 
     """
-    await UserPersistor(session).associate_all_groups(user, groups)
+    await UserPersistor(session, user_view, user_search).associate_all_groups(user, groups)
+
+
+@async_daosession
+async def dissociate_call_permission(
+    session: AsyncSession, user: UserFeatures, call_permission: "RightCall"
+) -> None:
+    """Dissociate a call permission from a user.
+
+    Args:
+        session: The database session.
+        user: The user object.
+        call_permission: The call permission object to dissociate.
+
+    """
+    await UserPersistor(session, user_view, user_search).dissociate_call_permission(
+        user, call_permission
+    )
 
 
 @async_daosession
 async def list_outgoing_callerid_associated(
     session: AsyncSession, user_id: int
-) -> list:
-    """List outgoing caller IDs associated with a user.
+) -> list[dict[str, str]]:
+    """List outgoing caller ID associations for a user.
 
     Args:
         session: The database session.
         user_id: The ID of the user.
 
     Returns:
-        A list of associated outgoing caller IDs.
+        A list of dictionaries with 'number' and 'type' keys.
 
     """
-    return await UserPersistor(session).list_outgoing_callerid_associated(user_id)
+    return await UserPersistor(session, user_view, user_search).list_outgoing_callerid_associated(
+        user_id
+    )
