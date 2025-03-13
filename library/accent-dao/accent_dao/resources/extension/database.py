@@ -2,131 +2,84 @@
 # Copyright 2025 Accent Communications
 
 
-from accent.accent_helpers import clean_extension
+from typing import TYPE_CHECKING
 
-extenumbers_type: list[str] = [
-    "extenfeatures",
-    "featuremap",
-    "generalfeatures",
-    "group",
-    "incall",
-    "outcall",
-    "queue",
-    "user",
-    "voicemenu",
-    "conference",
-    "parking",
-]
+from accent_dao.helpers.accent_helpers import clean_extension
 
-callfilter_type: list[str] = ["bosssecretary"]
+if TYPE_CHECKING:
+    from typing import Literal
 
-callfilter_bosssecretary: list[str] = [
-    "bossfirst-serial",
-    "bossfirst-simult",
-    "secretary-serial",
-    "secretary-simult",
-    "all",
-]
-
-callfilter_callfrom: list[str] = ["internal", "external", "all"]
-
-generic_bsfilter: list[str] = ["no", "boss", "secretary"]
-
-netiface_type: list[str] = ["iface"]
-
-schedule_path_type: list[str] = [
-    "user",
-    "group",
-    "queue",
-    "incall",
-    "outcall",
-    "voicemenu",
-]
-
-stat_switchboard_endtype: list[str] = [
-    "abandoned",
-    "completed",
-    "forwarded",
-    "transferred",
-]
-
-valid_trunk_protocols: list[str] = [
-    "sip",
-    "iax",
-    "sccp",
-    "custom",
-]
-trunk_protocol: list[str] = [*valid_trunk_protocols]
+    # Literal type for clearer type hints
+    ExtenumbersType = Literal[
+        "extenfeatures",
+        "featuremap",
+        "generalfeatures",
+        "group",
+        "incall",
+        "outcall",
+        "queue",
+        "user",
+        "voicemenu",
+        "conference",
+        "parking",
+    ]
 
 
-class ServiceFeatureExtension:
-    """Represents a service feature extension."""
+class ServiceExtension:
+    """Represents a service extension."""
 
     def __init__(self, uuid: str, exten: str, service: str) -> None:
-        """Initialize with UUID, extension, and service name."""
+        """Initialize ServiceExtension.
+
+        Args:
+            uuid: The UUID of the feature extension.
+            exten: The extension number.
+            service: The service associated with the extension.
+
+        """
         self.uuid = uuid
         self.exten = exten
         self.service = service
 
-    def is_pattern(self) -> bool:
-        """Check if extension pattern starts underscore."""
-        return self.exten.startswith("_")
 
-    def clean_exten(self) -> str:
-        """Clean the extension number."""
-        return clean_extension(self.exten)
-
-
-class ForwardFeatureExtension:
-    """Represents a forward feature extension."""
+class ForwardExtension:
+    """Represents a forward extension."""
 
     def __init__(self, uuid: str, exten: str, forward: str) -> None:
-        """Initialize with UUID, extension, and forward type."""
+        """Initialize ForwardExtension.
+
+        Args:
+            uuid: The UUID of the feature extension.
+            exten: The extension number.
+            forward: The forward type.
+
+        """
         self.uuid = uuid
         self.exten = exten
         self.forward = forward
 
-    def is_pattern(self) -> bool:
-        """Check if extension pattern starts underscore."""
-        return self.exten.startswith("_")
 
-    def clean_exten(self) -> str:
-        """Clean the extension number."""
-        return clean_extension(self.exten)
-
-
-class AgentActionFeatureExtension:
-    """Represents a agent action feature extension."""
+class AgentActionExtension:
+    """Represents an agent action extension."""
 
     def __init__(self, uuid: str, exten: str, action: str) -> None:
-        """Initialize with UUID, extension, and action type."""
-        self.uuid = uuid
-        self.exten = exten
-        self.action = action
+        """Initialize AgentActionExtension.
 
-    def is_pattern(self) -> bool:
-        """Check if extension pattern starts underscore."""
-        return self.exten.startswith("_")
+        Args:
+            uuid: The UUID of the feature extension.
+            exten: The extension number.
+            action: The agent action.
 
-    def clean_exten(self) -> str:
-        """Clean the extension number."""
-        return clean_extension(self.exten)
-
-
-class GroupMemberActionFeatureExtension:
-    """Converter class for group member action feature extensions."""
-
-    def __init__(self, uuid: str, exten: str, action: str) -> None:
-        """Initialize with UUID, extension, and action type."""
+        """
         self.uuid = uuid
         self.exten = exten
         self.action = action
 
 
-class ServiceFeatureExtensionConverter:
-    """Converter class for service feature extensions."""
+class ServiceExtensionConverter:
+    """Converter for service extensions."""
 
-    SERVICES: tuple[str, ...] = (
+    SERVICES = (
         "enablevm",
         "vmusermsg",
         "vmuserpurge",
@@ -142,187 +95,80 @@ class ServiceFeatureExtensionConverter:
     )
 
     @classmethod
-    def features(cls) -> tuple[str, ...]:
-        """Return the list of service features."""
+    def typevals(cls) -> tuple[str, ...]:
+        """Return all valid service types."""
         return cls.SERVICES
 
-    def to_model(self, row) -> ServiceFeatureExtension:
-        """Convert database row to ServiceFeatureExtension model.
 
-        Args:
-            row: Database row.
+class ForwardExtensionConverter:
+    """Converter for forward extensions."""
 
-        Returns:
-            ServiceFeatureExtension: The created model.
+    FORWARDS = {"fwdbusy": "busy", "fwdrna": "noanswer", "fwdunc": "unconditional"}
 
-        """
-        exten = clean_extension(row.exten)
-        return ServiceFeatureExtension(uuid=row.uuid, exten=exten, service=row.feature)
+    TYPEVALS = {value: key for key, value in FORWARDS.items()}
 
-
-class ForwardFeatureExtensionConverter:
-    """Converter class for forward feature extensions."""
-
-    FORWARDS: dict[str, str] = {
-        "fwdbusy": "busy",
-        "fwdrna": "noanswer",
-        "fwdunc": "unconditional",
-    }
-
-    FEATURES: dict[str, str] = {value: key for key, value in FORWARDS.items()}
-
-    def features(self) -> list[str]:
-        """Return the list of forward features."""
+    def typevals(self) -> list[str]:
+        """Return all valid forward types."""
         return list(self.FORWARDS.keys())
 
-    def to_feature(self, forward: str) -> str:
-        """Convert forward type to feature name.
+    def to_typeval(self, forward: str) -> str:
+        """Convert forward type to database value."""
+        return self.TYPEVALS[forward]
 
-        Args:
-            forward: Forward type.
-
-        Returns:
-            Feature name.
-
-        """
-        return self.FEATURES[forward]
-
-    def to_forward(self, feature: str) -> str:
-        """Convert feature name to forward type.
-
-        Args:
-            feature: Feature name.
-
-        Returns:
-            Forward type.
-
-        """
-        return self.FORWARDS[feature]
-
-    def to_model(self, row) -> ForwardFeatureExtension:
-        """Convert database row to ForwardFeatureExtension model.
-
-        Args:
-            row: Database row.
-
-        Returns:
-            ForwardFeatureExtension: The created model.
-
-        """
-        forward = self.FORWARDS[row.feature]
-        exten = clean_extension(row.exten)
-        return ForwardFeatureExtension(uuid=row.uuid, exten=exten, forward=forward)
+    def to_forward(self, typeval: str) -> str:
+        """Convert database value to forward type."""
+        return self.FORWARDS[typeval]
 
 
-class AgentActionFeatureExtensionConverter:
-    """Converter class for agent action feature extensions."""
+class AgentActionExtensionConverter:
+    """Converter for agent action extensions."""
 
-    ACTIONS: dict[str, str] = {
+    ACTIONS = {
         "agentstaticlogin": "login",
         "agentstaticlogoff": "logout",
         "agentstaticlogtoggle": "toggle",
     }
 
-    FEATURES: dict[str, str] = {value: key for key, value in ACTIONS.items()}
+    TYPEVALS = {value: key for key, value in ACTIONS.items()}
 
-    def features(self) -> list[str]:
-        """Return the list of agent action features."""
+    def typevals(self) -> list[str]:
+        """Return all valid agent action types."""
         return list(self.ACTIONS.keys())
 
-    def to_feature(self, action: str) -> str:
-        """Convert action type to feature name.
+    def to_typeval(self, action: str) -> str:
+        """Convert action type to database value."""
+        return self.TYPEVALS[action]
 
-        Args:
-            action: Action type.
-
-        Returns:
-            Feature name.
-
-        """
-        return self.FEATURES[action]
-
-    def to_action(self, feature: str) -> str:
-        """Convert feature name to action type.
-
-        Args:
-            feature: Feature name.
-
-        Returns:
-            Action type.
-
-        """
-        return self.ACTIONS[feature]
-
-    def to_model(self, row) -> AgentActionFeatureExtension:
-        """Convert database row to AgentActionFeatureExtension model.
-
-        Args:
-            row: Database row.
-
-        Returns:
-            AgentActionFeatureExtension: The created model.
-
-        """
-        action = self.ACTIONS[row.feature]
-        exten = clean_extension(row.exten)
-        return AgentActionFeatureExtension(uuid=row.uuid, exten=exten, action=action)
+    def to_action(self, typeval: str) -> str:
+        """Convert database value to action type."""
+        return self.ACTIONS[typeval]
 
 
-class GroupMemberActionFeatureExtensionConverter:
-    """Converter class for group member action feature extensions."""
+class GroupMemberActionExtensionConverter:
+    """Converter for group member action extensions."""
 
-    ACTIONS: dict[str, str] = {
+    ACTIONS = {
         "groupmemberjoin": "join",
         "groupmemberleave": "leave",
         "groupmembertoggle": "toggle",
     }
 
-    FEATURES: dict[str, str] = {value: key for key, value in ACTIONS.items()}
+    TYPEVALS = {value: key for key, value in ACTIONS.items()}
 
-    def features(self) -> list[str]:
-        """Return the list of group member action features."""
+    def typevals(self) -> list[str]:
+        """Return all valid group member action types."""
         return list(self.ACTIONS.keys())
 
-    def to_feature(self, action: str) -> str:
-        """Convert action type to feature name.
+    def to_typeval(self, action: str) -> str:
+        """Convert action type to database value."""
+        return self.TYPEVALS[action]
 
-        Args:
-            action: Action type.
-
-        Returns:
-            Feature name.
-
-        """
-        return self.FEATURES[action]
-
-    def to_action(self, feature: str) -> str:
-        """Convert feature name to action type.
-
-        Args:
-            feature: Feature name.
-
-        Returns:
-            Action type.
-
-        """
-        return self.ACTIONS[feature]
-
-    def to_model(self, row) -> AgentActionFeatureExtension:
-        """Convert database row to AgentActionFeatureExtension model.
-
-        Args:
-            row: Database row.
-
-        Returns:
-            AgentActionFeatureExtension: The created model.
-
-        """
-        action = self.ACTIONS[row.feature]
-        exten = clean_extension(row.exten)
-        return AgentActionFeatureExtension(uuid=row.uuid, exten=exten, action=action)
+    def to_action(self, typeval: str) -> str:
+        """Convert database value to action type."""
+        return self.ACTIONS[typeval]
 
 
-agent_action_converter = AgentActionFeatureExtensionConverter()
-fwd_converter = ForwardFeatureExtensionConverter()
-group_member_action_converter = GroupMemberActionFeatureExtensionConverter()
-service_converter = ServiceFeatureExtensionConverter()
+agent_action_converter = AgentActionExtensionConverter()
+fwd_converter = ForwardExtensionConverter()
+group_member_action_converter = GroupMemberActionExtensionConverter()
+service_converter = ServiceExtensionConverter()

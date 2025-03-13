@@ -1,21 +1,18 @@
-# file: accent_dao/resources/context/persistor.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
-
-from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.context import Context
+from accent_dao.alchemy.contextinclude import ContextInclude
 from accent_dao.helpers import errors
 from accent_dao.helpers.persistor import AsyncBasePersistor
-from accent_dao.resources.utils.search import CriteriaBuilderMixin, SearchResult
+from accent_dao.resources.utils.search import CriteriaBuilderMixin
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ContextPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Context]):
@@ -37,10 +34,8 @@ class ContextPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Context]):
             tenant_uuids: Optional list of tenant UUIDs to filter by.
 
         """
-        super().__init__(session, self._search_table)
+        super().__init__(session, self._search_table, tenant_uuids)
         self.search_system = context_search
-        self.tenant_uuids = tenant_uuids
-        self.session = session
 
     async def _find_query(self, criteria: dict[str, Any]) -> Any:
         """Build a query to find contexts based on criteria.
@@ -57,46 +52,8 @@ class ContextPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Context]):
         return self.build_criteria(query, criteria)
 
     async def _search_query(self) -> Any:
-        """Create a query for searching contexts.
-
-        Returns:
-            SQLAlchemy query object.
-
-        """
+        """Create a query for searching contexts."""
         return select(self.search_system.config.table)
-
-    def _filter_tenant_uuid(self, query: Any) -> Any:
-        """Filter query by tenant UUID.
-
-        Args:
-            query: The query object.
-
-        Returns:
-            The filtered query object.
-
-        """
-        if self.tenant_uuids is not None:
-            query = query.filter(Context.tenant_uuid.in_(self.tenant_uuids))
-        return query
-
-    async def search(self, parameters: dict[str, Any]) -> SearchResult:
-        """Search for Contexts.
-
-        Args:
-            parameters: Search parameters.
-
-        Returns:
-            SearchResult object containing total count and items.
-
-        """
-        query = await self._search_query()
-        query = self._filter_tenant_uuid(query)
-
-        rows, total = await self.search_system.search_from_query(
-            self.session, query, parameters
-        )
-
-        return SearchResult(total, rows)
 
     async def get_by(self, criteria: dict[str, Any]) -> Context:
         """Retrieve a single context by criteria.
@@ -113,27 +70,28 @@ class ContextPersistor(CriteriaBuilderMixin, AsyncBasePersistor[Context]):
         """
         context = await self.find_by(criteria)
         if not context:
-            msg = "Context"
-            raise errors.NotFoundError(msg, **criteria)
+            raise errors.NotFoundError("Context", **criteria)
         return context
 
     async def find_all_by(self, criteria: dict[str, Any]) -> list[Context]:
         """Find all Context by criteria.
 
         Returns:
-            list of Contexts.
+            list of Context.
 
         """
         result: Sequence[Context] = await super().find_all_by(criteria)
         return list(result)
 
-    async def associate_contexts(self, context: Context, contexts: list[str]) -> None:
-        """Associate a list of contexts.
+    async def associate_contexts(
+        self, context: Context, included_contexts: list[str]
+    ) -> None:
+        """Associate contexts within context.
 
         Args:
-            context: Main context to be associated.
-            contexts: List of contexts to associate with the main context.
+            context: Context to associate.
+            included_contexts: Contexts to be associated.
 
         """
-        context.contexts = contexts
+        context.contexts = included_contexts
         await self.session.flush()

@@ -23,17 +23,17 @@ class UserFixes:
         """
         self.session = session
 
-    async def async_fix(self, user_id: int) -> None:
+    async def fix(self, user_id: int) -> None:
         """Fix inconsistencies for a given user.
 
         Args:
             user_id: The ID of the user to fix.
 
         """
-        await self.async_fix_lines(user_id)
+        await self.fix_lines(user_id)
         await self.session.flush()
 
-    async def async_fix_lines(self, user_id: int) -> None:
+    async def fix_lines(self, user_id: int) -> None:
         """Fix line associations for a user.
 
         Args:

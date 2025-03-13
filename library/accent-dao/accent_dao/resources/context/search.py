@@ -1,4 +1,3 @@
-# file: accent_dao/resources/context/search.py
 # Copyright 2025 Accent Communications
 
 from accent_dao.alchemy.context import Context
@@ -8,11 +7,13 @@ config = SearchConfig(
     table=Context,
     columns={
         "id": Context.id,
-        "description": Context.description,
         "name": Context.name,
         "label": Context.label,
-        "type": Context.contexttype,
+        "description": Context.description,
+        "type": Context.type,
+        "enabled": Context.enabled,
     },
+    search=["name", "description", "label"],
     default_sort="id",
 )
 

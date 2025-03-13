@@ -1,6 +1,4 @@
-# file: accent_dao/resources/extension/__init__.py
 # Copyright 2025 Accent Communications
-"""Extension resource implementation."""
 
 from .dao import (
     associate_conference,
@@ -8,7 +6,6 @@ from .dao import (
     associate_incall,
     associate_parking_lot,
     associate_queue,
-    calluser_extension,
     create,
     delete,
     dissociate_conference,
@@ -22,17 +19,16 @@ from .dao import (
     find_by,
     get,
     get_by,
-    progfunckey_extension,
     search,
+    update_extension,
 )
 
-__all__: list[str] = [
+__all__ = [
     "associate_conference",
     "associate_group",
     "associate_incall",
     "associate_parking_lot",
     "associate_queue",
-    "calluser_extension",
     "create",
     "delete",
     "dissociate_conference",
@@ -46,6 +42,6 @@ __all__: list[str] = [
     "find_by",
     "get",
     "get_by",
-    "progfunckey_extension",
     "search",
+    "update_extension",
 ]

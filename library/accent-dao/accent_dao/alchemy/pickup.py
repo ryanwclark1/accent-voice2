@@ -214,10 +214,10 @@ class Pickup(Base):
 
     @enabled.expression
     def enabled(cls) -> Mapped[bool]:
-        """
-        Check if the entity is enabled by verifying that it is not commented.
+        """Determine if the entity is enabled based on the 'commented' attribute.
 
         Returns:
             Mapped[bool]: True if the entity is not commented, False otherwise.
+
         """
         return func.not_(cast(cls.commented, Boolean))

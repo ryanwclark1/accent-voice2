@@ -1,328 +1,146 @@
-# file: accent_dao/resources/extension/database.py
 # Copyright 2025 Accent Communications
 
+import logging
 
-from accent.accent_helpers import clean_extension
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
-extenumbers_type: list[str] = [
-    "extenfeatures",
-    "featuremap",
-    "generalfeatures",
-    "group",
-    "incall",
-    "outcall",
-    "queue",
-    "user",
-    "voicemenu",
-    "conference",
-    "parking",
-]
+from accent_dao.alchemy.extension import Extension
+from accent_dao.alchemy.line_extension import LineExtension
+from accent_dao.alchemy.user_line import UserLine
+from accent_dao.helpers.db_manager import async_daosession
+from accent_dao.resources.line.fixes import LineFixes
 
-callfilter_type: list[str] = ["bosssecretary"]
-
-callfilter_bosssecretary: list[str] = [
-    "bossfirst-serial",
-    "bossfirst-simult",
-    "secretary-serial",
-    "secretary-simult",
-    "all",
-]
-
-callfilter_callfrom: list[str] = ["internal", "external", "all"]
-
-generic_bsfilter: list[str] = ["no", "boss", "secretary"]
-
-netiface_type: list[str] = ["iface"]
-
-schedule_path_type: list[str] = [
-    "user",
-    "group",
-    "queue",
-    "incall",
-    "outcall",
-    "voicemenu",
-]
-
-stat_switchboard_endtype: list[str] = [
-    "abandoned",
-    "completed",
-    "forwarded",
-    "transferred",
-]
-
-valid_trunk_protocols: list[str] = [
-    "sip",
-    "iax",
-    "sccp",
-    "custom",
-]
-trunk_protocol: list[str] = [*valid_trunk_protocols]
+logger = logging.getLogger(__name__)
 
 
-class ServiceFeatureExtension:
-    """Represents a service feature extension."""
+class ExtensionFixes:
+    """Provides methods to fix inconsistencies in Extension data."""
 
-    def __init__(self, uuid: str, exten: str, service: str) -> None:
-        """Initialize with UUID, extension, and service name."""
-        self.uuid = uuid
-        self.exten = exten
-        self.service = service
-
-    def is_pattern(self) -> bool:
-        """Check if extension pattern starts underscore."""
-        return self.exten.startswith("_")
-
-    def clean_exten(self) -> str:
-        """Clean the extension number."""
-        return clean_extension(self.exten)
-
-
-class ForwardFeatureExtension:
-    """Represents a forward feature extension."""
-
-    def __init__(self, uuid: str, exten: str, forward: str) -> None:
-        """Initialize with UUID, extension, and forward type."""
-        self.uuid = uuid
-        self.exten = exten
-        self.forward = forward
-
-    def is_pattern(self) -> bool:
-        """Check if extension pattern starts underscore."""
-        return self.exten.startswith("_")
-
-    def clean_exten(self) -> str:
-        """Clean the extension number."""
-        return clean_extension(self.exten)
-
-
-class AgentActionFeatureExtension:
-    """Represents a agent action feature extension."""
-
-    def __init__(self, uuid: str, exten: str, action: str) -> None:
-        """Initialize with UUID, extension, and action type."""
-        self.uuid = uuid
-        self.exten = exten
-        self.action = action
-
-    def is_pattern(self) -> bool:
-        """Check if extension pattern starts underscore."""
-        return self.exten.startswith("_")
-
-    def clean_exten(self) -> str:
-        """Clean the extension number."""
-        return clean_extension(self.exten)
-
-
-class GroupMemberActionFeatureExtension:
-    """Converter class for group member action feature extensions."""
-
-    def __init__(self, uuid: str, exten: str, action: str) -> None:
-        """Initialize with UUID, extension, and action type."""
-        self.uuid = uuid
-        self.exten = exten
-        self.action = action
-
-
-class ServiceFeatureExtensionConverter:
-    """Converter class for service feature extensions."""
-
-    SERVICES: tuple[str, ...] = (
-        "enablevm",
-        "vmusermsg",
-        "vmuserpurge",
-        "phonestatus",
-        "recsnd",
-        "calllistening",
-        "directoryaccess",
-        "fwdundoall",
-        "pickup",
-        "callrecord",
-        "incallfilter",
-        "enablednd",
-    )
-
-    @classmethod
-    def features(cls) -> tuple[str, ...]:
-        """Return the list of service features."""
-        return cls.SERVICES
-
-    def to_model(self, row) -> ServiceFeatureExtension:
-        """Convert database row to ServiceFeatureExtension model.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize ExtensionFixes with a database session.
 
         Args:
-            row: Database row.
-
-        Returns:
-            ServiceFeatureExtension: The created model.
+            session: The database session.
 
         """
-        exten = clean_extension(row.exten)
-        return ServiceFeatureExtension(uuid=row.uuid, exten=exten, service=row.feature)
+        self.session = session
 
-
-class ForwardFeatureExtensionConverter:
-    """Converter class for forward feature extensions."""
-
-    FORWARDS: dict[str, str] = {
-        "fwdbusy": "busy",
-        "fwdrna": "noanswer",
-        "fwdunc": "unconditional",
-    }
-
-    FEATURES: dict[str, str] = {value: key for key, value in FORWARDS.items()}
-
-    def features(self) -> list[str]:
-        """Return the list of forward features."""
-        return list(self.FORWARDS.keys())
-
-    def to_feature(self, forward: str) -> str:
-        """Convert forward type to feature name.
+    @async_daosession
+    async def fix(self, session: AsyncSession, extension_id: int) -> None:
+        """Fix inconsistencies for a specific extension.
 
         Args:
-            forward: Forward type.
-
-        Returns:
-            Feature name.
+            session: The database session (injected by decorator).
+            extension_id: The ID of the extension to fix.
 
         """
-        return self.FEATURES[forward]
+        await self.fix_extension(extension_id)
+        await self.fix_lines(extension_id)
 
-    def to_forward(self, feature: str) -> str:
-        """Convert feature name to forward type.
+    async def fix_extension(self, extension_id: int) -> None:
+        """Fix the extension type and typeval based on associated user lines.
 
         Args:
-            feature: Feature name.
-
-        Returns:
-            Forward type.
+            extension_id: The ID of the extension to fix.
 
         """
-        return self.FORWARDS[feature]
+        user_lines = await self.find_all_user_line(extension_id)
+        if user_lines:
+            # Assuming the first user_line is sufficient to determine the user_id
+            user_id = user_lines[0].user_id
+            await self.adjust_for_user(extension_id, user_id)
+        else:
+            await self.reset_destination(extension_id)
 
-    def to_model(self, row) -> ForwardFeatureExtension:
-        """Convert database row to ForwardFeatureExtension model.
+    async def fix_lines(self, extension_id: int) -> None:
+        """Fix associated lines.
 
         Args:
-            row: Database row.
-
-        Returns:
-            ForwardFeatureExtension: The created model.
+            extension_id: The ID of the extension.
 
         """
-        forward = self.FORWARDS[row.feature]
-        exten = clean_extension(row.exten)
-        return ForwardFeatureExtension(uuid=row.uuid, exten=exten, forward=forward)
+        line_extensions = await self.find_all_line_extension(extension_id)
+        for line_extension in line_extensions:
+            # Assuming LineDAO is the async DAO, no need to create new
+            await LineFixes.fix(self.session, line_extension.line_id)
 
-
-class AgentActionFeatureExtensionConverter:
-    """Converter class for agent action feature extensions."""
-
-    ACTIONS: dict[str, str] = {
-        "agentstaticlogin": "login",
-        "agentstaticlogoff": "logout",
-        "agentstaticlogtoggle": "toggle",
-    }
-
-    FEATURES: dict[str, str] = {value: key for key, value in ACTIONS.items()}
-
-    def features(self) -> list[str]:
-        """Return the list of agent action features."""
-        return list(self.ACTIONS.keys())
-
-    def to_feature(self, action: str) -> str:
-        """Convert action type to feature name.
+    async def find_all_user_line(self, extension_id: int) -> list[UserLine]:
+        """Find all user lines associated with the extension.
 
         Args:
-            action: Action type.
+            extension_id: The ID of the extension.
 
         Returns:
-            Feature name.
+            A list of UserLine objects.
 
         """
-        return self.FEATURES[action]
+        stmt = (
+            select(UserLine.user_id)
+            .join(LineExtension, LineExtension.line_id == UserLine.line_id)
+            .where(LineExtension.extension_id == extension_id)
+            .where(LineExtension.main_extension.is_(True))
+            .where(UserLine.main_user.is_(True))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
 
-    def to_action(self, feature: str) -> str:
-        """Convert feature name to action type.
+    async def find_all_line_extension(self, extension_id: int) -> list[LineExtension]:
+        """Find all line extensions associated with the extension.
 
         Args:
-            feature: Feature name.
+            extension_id: The ID of the extension.
 
         Returns:
-            Action type.
+            A list of LineExtension objects.
 
         """
-        return self.ACTIONS[feature]
+        stmt = (
+            select(LineExtension.line_id)
+            .where(LineExtension.extension_id == extension_id)
+            .where(LineExtension.main_extension.is_(True))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
 
-    def to_model(self, row) -> AgentActionFeatureExtension:
-        """Convert database row to AgentActionFeatureExtension model.
+    async def adjust_for_user(self, extension_id: int, user_id: int) -> None:
+        """Adjust the extension type and typeval for a user association.
 
         Args:
-            row: Database row.
-
-        Returns:
-            AgentActionFeatureExtension: The created model.
+            extension_id: The ID of the extension.
+            user_id: The ID of the user.
 
         """
-        action = self.ACTIONS[row.feature]
-        exten = clean_extension(row.exten)
-        return AgentActionFeatureExtension(uuid=row.uuid, exten=exten, action=action)
+        await self.session.execute(
+            update(Extension)
+            .where(Extension.id == extension_id)
+            .values(type="user", typeval=str(user_id))
+        )
 
-
-class GroupMemberActionFeatureExtensionConverter:
-    """Converter class for group member action feature extensions."""
-
-    ACTIONS: dict[str, str] = {
-        "groupmemberjoin": "join",
-        "groupmemberleave": "leave",
-        "groupmembertoggle": "toggle",
-    }
-
-    FEATURES: dict[str, str] = {value: key for key, value in ACTIONS.items()}
-
-    def features(self) -> list[str]:
-        """Return the list of group member action features."""
-        return list(self.ACTIONS.keys())
-
-    def to_feature(self, action: str) -> str:
-        """Convert action type to feature name.
+    async def reset_destination(self, extension_id: int) -> None:
+        """Reset the extension type and typeval to default values.
 
         Args:
-            action: Action type.
-
-        Returns:
-            Feature name.
+            extension_id: The ID of the extension.
 
         """
-        return self.FEATURES[action]
+        await self.session.execute(
+            update(Extension)
+            .where(Extension.id == extension_id)
+            .values(type="user", typeval="0")
+        )
 
-    def to_action(self, feature: str) -> str:
-        """Convert feature name to action type.
+    async def get_destination(self, extension_id: int) -> str:
+        """Get the type of an extension.
 
         Args:
-            feature: Feature name.
+            extension_id: The ID of the extension.
 
         Returns:
-            Action type.
+            The type of the extension.
 
         """
-        return self.ACTIONS[feature]
-
-    def to_model(self, row) -> AgentActionFeatureExtension:
-        """Convert database row to AgentActionFeatureExtension model.
-
-        Args:
-            row: Database row.
-
-        Returns:
-            AgentActionFeatureExtension: The created model.
-
-        """
-        action = self.ACTIONS[row.feature]
-        exten = clean_extension(row.exten)
-        return AgentActionFeatureExtension(uuid=row.uuid, exten=exten, action=action)
-
-
-agent_action_converter = AgentActionFeatureExtensionConverter()
-fwd_converter = ForwardFeatureExtensionConverter()
-group_member_action_converter = GroupMemberActionFeatureExtensionConverter()
-service_converter = ServiceFeatureExtensionConverter()
+        result = await self.session.execute(
+            select(Extension.type).where(Extension.id == extension_id)
+        )
+        return result.scalar_one()

@@ -11,8 +11,8 @@ from .dao import (
     find_all_by,
     find_by,
     get,
-    get_all,
-    get_by_uuid,
+    get_by,
+    get_by_name,
     search,
 )
 
@@ -25,7 +25,7 @@ __all__: list[str] = [
     "find_all_by",
     "find_by",
     "get",
-    "get_all",
-    "get_by_uuid",
+    "get_by",
+    "get_by_name",
     "search",
 ]
