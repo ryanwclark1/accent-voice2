@@ -1,41 +1,59 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/trunk/fixes.py  # noqa: ERA001
+# Copyright 2025 Accent Communications
+import logging
 
-from sqlalchemy.orm import Load
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from accent_dao.alchemy.trunkfeatures import TrunkFeatures
 from accent_dao.alchemy.usercustom import UserCustom
 from accent_dao.alchemy.useriax import UserIAX
 
+logger = logging.getLogger(__name__)
+
 
 class TrunkFixes:
-    def __init__(self, session):
+    """Helper class for fixing inconsistencies in Trunk-related data."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize TrunkFixes.
+
+        Args:
+            session: The database session.
+
+        """
         self.session = session
 
-    def fix(self, trunk_id):
-        row = self.get_row(trunk_id)
-        self.fix_protocol(row)
-        self.session.flush()
+    async def async_fix(self, trunk_id: int) -> None:
+        """Fix inconsistencies for a given trunk.
 
-    def get_row(self, trunk_id):
-        query = (
-            self.session.query(TrunkFeatures, UserIAX, UserCustom)
-            .outerjoin(TrunkFeatures.endpoint_sip)
-            .outerjoin(TrunkFeatures.endpoint_iax)
-            .outerjoin(TrunkFeatures.endpoint_custom)
-            .options(
-                Load(TrunkFeatures).load_only("id", "context"),
-                Load(UserIAX).load_only("id", "category", "context"),
-                Load(UserCustom).load_only("id", "category", "context"),
+        Args:
+            trunk_id: The ID of the trunk to fix.
+
+        """
+        await self.async_fix_protocol(trunk_id)
+
+    async def async_fix_protocol(self, trunk_id: int) -> None:
+        """Fix the protocol of a trunk based on its associated endpoint.
+
+        Args:
+            trunk_id: The ID of the trunk to fix.
+
+        """
+        trunk = await self.session.get(Trunk, trunk_id)
+        if not trunk:
+            return
+
+        if trunk.endpoint_iax_id:
+            iax_endpoint = await self.session.get(UserIAX, trunk.endpoint_iax_id)
+            if iax_endpoint:
+                iax_endpoint.context = trunk.context
+                iax_endpoint.category = "trunk"
+                await self.session.flush()
+
+        elif trunk.endpoint_custom_id:
+            custom_endpoint = await self.session.get(
+                UserCustom, trunk.endpoint_custom_id
             )
-            .filter(TrunkFeatures.id == trunk_id)
-        )
-
-        return query.first()
-
-    def fix_protocol(self, row):
-        if row.UserIAX:
-            row.UserIAX.context = row.TrunkFeatures.context
-            row.UserIAX.category = 'trunk'
-        elif row.UserCustom:
-            row.UserCustom.context = row.TrunkFeatures.context
-            row.UserCustom.category = 'trunk'
+            if custom_endpoint:
+                custom_endpoint.context = trunk.context
+                custom_endpoint.category = "trunk"
+                await self.session.flush()
