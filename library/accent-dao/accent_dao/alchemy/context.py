@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/context.py
+# file: accent_dao/alchemy/context.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING
@@ -149,7 +149,7 @@ class Context(Base):
     @property
     def contexts(self) -> list[str]:
         """Returns a list of included contexts."""
-        return [p.included_context for p in self.context_include_parents]
+        return [p.include for p in self.context_include_parents]
 
     @contexts.setter
     def contexts(self, value: list[str]) -> None:

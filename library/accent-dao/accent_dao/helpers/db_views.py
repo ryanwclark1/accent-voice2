@@ -2,9 +2,10 @@
 # Copyright 2025 Accent Communications
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from sqlalchemy import Table, text
+from sqlalchemy import Select, Table, text
 from sqlalchemy.event import contains, listens_for, remove
 from sqlalchemy.exc import InvalidRequestError
 
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import Session
     from sqlalchemy.orm.unitofwork import UOWTransaction
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class MaterializedView(Base):
@@ -34,7 +38,7 @@ class MaterializedView(Base):
     """
 
     __abstract__ = True
-    __view_dependencies__: ClassVar[tuple[type[Base], ...]] = tuple()
+    __view_dependencies__: ClassVar[tuple[type[Base], ...]] = ()
     _view_dependencies_handler: ClassVar[
         Callable[[Session, UOWTransaction], None] | None
     ] = None
@@ -50,31 +54,43 @@ class MaterializedView(Base):
 
         """
         if not isinstance(getattr(cls, "__table__", None), Table):
-            raise InvalidRequestError(
-                f"Class '{cls}' '__table__' attribute must be created with 'create_materialized_view'"
+            msg = (
+                f"Class '{cls}' '__table__' attribute must be created with "
+                f"'create_materialized_view'"
             )
+            raise InvalidRequestError(msg)
+
         super().__init_subclass__()
 
         if targets := cls.__view_dependencies__:
             # Sync handler
             @listens_for(SyncSession, "after_flush")
-            def _after_flush_handler(
-                session: Session, flush_context: UOWTransaction
-            ) -> None:
+            def _after_flush_handler(session: Session, _: UOWTransaction) -> None:
                 for obj in session.dirty | session.new | session.deleted:
                     if isinstance(obj, targets):
-                        # Cannot call `refresh_materialized_view` as it will try to flush again.
-                        session.execute(
-                            text(
-                                f"REFRESH MATERIALIZED VIEW CONCURRENTLY {cls.__table__.fullname}"
+                        # Cannot call `refresh_materialized_view` as it will try to
+                        # flush again.
+                        try:
+                            session.execute(
+                                text(
+                                    f"REFRESH MATERIALIZED VIEW CONCURRENTLY "
+                                    f"{cls.__table__.key}"
+                                )
                             )
-                        )
-                        return
+                            logger.debug(
+                                "Refreshed materialized view: %s", cls.__table__.key
+                            )
+                            return
+                        except Exception:
+                            logger.exception(
+                                "Error refreshing materialized view: %s",
+                                cls.__table__.key,
+                            )
+                            # Don't reraise, as this is an event handler
 
             cls._view_dependencies_handler = _after_flush_handler
 
-            # Async handler implementation (reserved for future feature)
-            # Note: SQLAlchemy event system doesn't have direct async support yet
+            # Async event handling is still limited in SQLAlchemy 2.x
             # This is a placeholder for future implementation
             cls._async_dependencies_handler = None
         else:
@@ -82,12 +98,11 @@ class MaterializedView(Base):
             cls._async_dependencies_handler = None
 
     @classmethod
-    @property
     def autorefresh(cls) -> bool:
         """Check if autorefresh is enabled for this view.
 
         Returns:
-            bool: True if autorefresh is enabled.
+            True if autorefresh is enabled.
 
         """
         if handler := cls._view_dependencies_handler:
@@ -97,19 +112,23 @@ class MaterializedView(Base):
     @classmethod
     def enable_autorefresh(cls) -> None:
         """Enable auto-refreshing of the materialized view."""
-        if handler := cls._view_dependencies_handler:
-            if not contains(SyncSession, "after_flush", handler):
-                listens_for(SyncSession, "after_flush")(handler)
+        if handler := cls._view_dependencies_handler and not contains(
+            SyncSession, "after_flush", handler
+        ):
+            listens_for(SyncSession, "after_flush")(handler)
+            logger.info("Enabled autorefresh for %s", cls.__name__)
 
     @classmethod
     def disable_autorefresh(cls) -> None:
         """Disable auto-refreshing of the materialized view."""
-        if handler := cls._view_dependencies_handler:
-            if contains(SyncSession, "after_flush", handler):
-                remove(SyncSession, "after_flush", handler)
+        if handler := cls._view_dependencies_handler and contains(
+            SyncSession, "after_flush", handler
+        ):
+            remove(SyncSession, "after_flush", handler)
+            logger.info("Disabled autorefresh for %s", cls.__name__)
 
     @classmethod
-    def refresh(cls, concurrently: bool = True) -> None:
+    def refresh(cls, *, concurrently: bool = True) -> None:
         """Refresh the materialized view synchronously.
 
         Args:
@@ -117,15 +136,24 @@ class MaterializedView(Base):
 
         """
         with SyncSession() as session:
-            refresh_stmt = text(
-                f"REFRESH MATERIALIZED VIEW {'CONCURRENTLY ' if concurrently else ''}"
-                f"{cls.__table__.fullname}"
-            )
-            session.execute(refresh_stmt)
-            session.commit()
+            try:
+                refresh_stmt = text(
+                    f"REFRESH MATERIALIZED VIEW "
+                    f"{'CONCURRENTLY ' if concurrently else ''}"
+                    f"{cls.__table__.key}"
+                )
+                session.execute(refresh_stmt)
+                session.commit()
+                logger.info("Refreshed materialized view: %s", cls.__table__.key)
+            except Exception:
+                session.rollback()
+                logger.exception(
+                    "Error refreshing materialized view %s", cls.__table__.key
+                )
+                raise
 
     @classmethod
-    async def async_refresh(cls, concurrently: bool = True) -> None:
+    async def async_refresh(cls, *, concurrently: bool = True) -> None:
         """Refresh the materialized view asynchronously.
 
         Args:
@@ -133,16 +161,25 @@ class MaterializedView(Base):
 
         """
         async with get_async_session() as session:
-            refresh_stmt = text(
-                f"REFRESH MATERIALIZED VIEW {'CONCURRENTLY ' if concurrently else ''}"
-                f"{cls.__table__.fullname}"
-            )
-            await session.execute(refresh_stmt)
-            await session.commit()
+            try:
+                refresh_stmt = text(
+                    f"REFRESH MATERIALIZED VIEW "
+                    f"{'CONCURRENTLY ' if concurrently else ''}"
+                    f"{cls.__table__.key}"
+                )
+                await session.execute(refresh_stmt)
+                await session.commit()
+                logger.info("Async refreshed materialized view: %s", cls.__table__.key)
+            except Exception:
+                await session.rollback()
+                logger.exception(
+                    "Error async refreshing materialized view %s", cls.__table__.key
+                )
+                raise
 
 
 def create_materialized_view(
-    name: str, selectable: Any, schema: str | None = None
+    name: str, selectable: Select, schema: str | None = None
 ) -> Table:
     """Create a materialized view table definition.
 
@@ -152,12 +189,12 @@ def create_materialized_view(
         schema: Optional schema name.
 
     Returns:
-        Table: SQLAlchemy table object for the materialized view.
+        SQLAlchemy table object for the materialized view.
 
     """
     return Table(
         name,
         Base.metadata,
-        info=dict(is_materialized_view=True, selectable=selectable),
+        info={"is_materialized_view": True, "selectable": selectable},
         schema=schema,
     )

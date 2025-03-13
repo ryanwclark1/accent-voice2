@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/useriax.py
+# file: accent_dao/alchemy/useriax.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING, Literal
@@ -210,9 +210,9 @@ class UserIAX(Base, AsteriskOptionsMixin):
     )
 
     def endpoint_protocol(self) -> str:
-        """Returns the protocol used by the endpoint (always 'iax')."""
+        """Return the protocol used by the endpoint (always 'iax')."""
         return "iax"
 
     def same_protocol(self, protocol: str, protocolid: str | int) -> bool:
-        """Checks if the protocol and ID match."""
+        """Check if the protocol and ID match."""
         return protocol == "iax" and self.id == int(protocolid)

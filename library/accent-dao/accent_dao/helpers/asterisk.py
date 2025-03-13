@@ -207,7 +207,8 @@ class AsteriskOptionsMixin:
         """
         error_msg = _LIST_OF_PAIR_ERROR
         if not isinstance(options, Iterable):
-            raise errors.wrong_type("options", error_msg)
+            msg = "options"
+            raise errors.wrong_type(msg, error_msg)
 
     def validate_option(self, option: list[Any]) -> None:
         """Validate that an option is a pair of strings.
@@ -221,16 +222,19 @@ class AsteriskOptionsMixin:
         """
         error_msg = _LIST_OF_PAIR_ERROR
         if not isinstance(option, list | tuple):
-            raise errors.wrong_type("options", error_msg)
+            msg = "options"
+            raise errors.wrong_type(msg, error_msg)
 
         sized_option = cast(Sized, option)
         if len(sized_option) != _OPTION_PAIR_LENGTH:
-            raise errors.wrong_type("options", error_msg)
+            msg = "options"
+            raise errors.wrong_type(msg, error_msg)
 
         for i in option:
             if not isinstance(i, str):
                 not_str_msg = f"value '{i}' is not a string"
-                raise errors.wrong_type("options", not_str_msg)
+                msg = "options"
+                raise errors.wrong_type(msg, not_str_msg)
 
     def set_native_option(self, column: str, value: str) -> None:
         """Set a native option value.

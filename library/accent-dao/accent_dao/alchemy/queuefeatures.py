@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/queuefeatures.py
+# file: accent_dao/alchemy/queuefeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING
 
@@ -15,13 +15,16 @@ from sqlalchemy.sql import cast, select
 
 from accent_dao.helpers.db_manager import Base
 
+from .callerid import Callerid
+from .extension import Extension
+from .queue import Queue
+from .schedulepath import SchedulePath
+
 if TYPE_CHECKING:
-    from .callerid import Callerid
+    from accent_dao.alchemy.func_key_dest_queue import FuncKeyDestQueue
+
     from .dialaction import Dialaction
-    from .extension import Extension
-    from .queue import Queue
     from .queuemember import QueueMember
-    from .schedulepath import SchedulePath
 
 
 DEFAULT_QUEUE_OPTIONS: dict[str, str] = {
@@ -109,7 +112,7 @@ class QueueFeatures(Base):
     dtmf_record_caller_enabled: Indicates if DTMF recording is enabled for callers.
         retry_on_timeout: Indicates if retries on timeout are enabled.
         ring_on_hold: Indicates if ringing on hold is enabled.
-    announce_hold_time_on_entry: Indicates if hold time announcement on entry is enabled.
+    announce_hold_time_on_entry: Indicates if hold time announcement on entry enabled.
         wait_time_threshold: The wait time threshold.
         wait_ratio_threshold: The wait ratio threshold.
     mark_answered_elsewhere_bool: Boolean representation of mark_answered_elsewhere.
@@ -187,14 +190,34 @@ class QueueFeatures(Base):
 
     @property
     def enabled(self) -> bool | None:
+        """Check if the queue is enabled.
+
+        Returns:
+            bool | None: True if the queue is enabled, False if it is disabled,
+                         or None if the queue is not set.
+
+        """
         return self._queue.enabled if self._queue else None
 
     @property
     def options(self) -> list[list[str]]:
+        """Retrieve the options from the queue.
+
+        Returns:
+            list[list[str]]: A list of lists containing string options if the queue
+            exists, otherwise an empty list.
+
+        """
         return self._queue.options if self._queue else []
 
     @property
     def music_on_hold(self) -> str | None:
+        """Retrieves music class for the queue, determines the moh.
+
+        Returns:
+            str | None: The music class if the queue exists, otherwise None.
+
+        """
         return self._queue.musicclass if self._queue else None
 
     caller_id: Mapped["Callerid"] = relationship(
@@ -210,6 +233,12 @@ class QueueFeatures(Base):
 
     @property
     def caller_id_mode(self) -> str | None:
+        """Retrieve the mode of the caller ID.
+
+        Returns:
+            str | None: The mode of the caller ID if it exists, otherwise None.
+
+        """
         return self.caller_id.mode if self.caller_id else None
 
     @caller_id_mode.setter
@@ -221,6 +250,12 @@ class QueueFeatures(Base):
 
     @property
     def caller_id_name(self) -> str | None:
+        """Retrieves the caller ID name.
+
+        Returns:
+            str | None: The name associated with the caller ID if available, or None.
+
+        """
         return self.caller_id.name if self.caller_id else None
 
     @caller_id_name.setter
@@ -301,6 +336,12 @@ class QueueFeatures(Base):
 
     @property
     def schedules(self) -> list["SchedulePath"]:
+        """Retrieves a list of schedules from the schedule paths.
+
+        Returns:
+            list[SchedulePath]: A list of SchedulePath objects representing schedules.
+
+        """
         return [sp.schedule for sp in self.schedule_paths]
 
     @schedules.setter
@@ -310,7 +351,7 @@ class QueueFeatures(Base):
         ]
 
     def __init__(self, options: list[list[str]] | None = None, **kwargs: Any) -> None:  # type: ignore
-        """Initializes the QueueFeatures object, creating a Queue if one doesn't exist."""
+        """Initialize the QueueFeatures object, creating Queue if one doesn't exist."""
         options = options or []
         options = self.merge_options_with_default_values(options)
         enabled = kwargs.pop("enabled", True)
@@ -328,7 +369,7 @@ class QueueFeatures(Base):
     def merge_options_with_default_values(
         self, options: list[list[str]]
     ) -> list[list[str]]:
-        """Merges provided options with default values."""
+        """Merge provided options with default values."""
         result: dict = dict(DEFAULT_QUEUE_OPTIONS)
         for option in options:
             result[option[0]] = option[1]
@@ -370,7 +411,17 @@ class QueueFeatures(Base):
             self._set_dialaction(event, dialaction)
 
     def _set_dialaction(self, event: str, dialaction: "Dialaction" | None) -> None:
-        """Helper method to set a dialaction for a specific event."""
+        """Dialaction helper method to set a for specific event.
+
+        Args:
+            event (str): The event for which the dialaction is being set.
+            dialaction (Dialaction | None): The dialaction object to set for the event.
+                            If None, the dialaction for the event will be removed.
+
+        Returns:
+            None
+
+        """
         if dialaction is None:
             self.queue_dialactions.pop(event, None)  # Use pop with default
             return
@@ -385,7 +436,7 @@ class QueueFeatures(Base):
             self.queue_dialactions[event].actionarg2 = dialaction.actionarg2
 
     def fix_extension(self) -> None:
-        """Fixes the extension number and context based on associated extensions."""
+        """Fix the extension number and context based on associated extensions."""
         self.number = None
         self.context = None
         for extension in self.extensions:
@@ -544,6 +595,12 @@ class QueueFeatures(Base):
 
     @property
     def mark_answered_elsewhere_bool(self) -> bool:
+        """Check if the mark_answered_elsewhere flag is set to True.
+
+        Returns:
+            bool: True if mark_answered_elsewhere is equal to 1, False otherwise.
+
+        """
         return self.mark_answered_elsewhere == 1
 
     @mark_answered_elsewhere_bool.setter
@@ -559,6 +616,12 @@ class QueueFeatures(Base):
 
     @exten.expression
     def exten(cls) -> Mapped[str | None]:
+        """Retrieve the extension for the queue type and the given class ID.
+
+        Returns:
+            Mapped[str | None]: The extension as a string if found, otherwise None.
+
+        """
         return (
             select(Extension.exten)
             .where(Extension.type == "queue")

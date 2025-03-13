@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/agentfeatures.py
+# file: accent_dao/alchemy/agentfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 from typing import TYPE_CHECKING

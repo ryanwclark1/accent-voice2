@@ -1,4 +1,4 @@
-# file: accent_dao/queue_log_dao.py
+# file: accent_dao/queue_log_dao.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
 """Data access module for queue logs."""
