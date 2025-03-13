@@ -3,7 +3,7 @@
 from hamcrest import assert_that, contains_exactly, contains_inanyorder, empty
 
 from accent_dao import phone_access_dao
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 
 class TestPhoneAccessDao(DAOTestCase):

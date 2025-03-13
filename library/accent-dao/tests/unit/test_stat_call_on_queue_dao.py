@@ -2,17 +2,16 @@
 
 from datetime import datetime as dt
 from datetime import timedelta
-from pytz import UTC
-
-from hamcrest import assert_that
-from hamcrest import contains
-from sqlalchemy import func
 
 from accent_dao import stat_call_on_queue_dao
+from accent_dao.alchemy.stat_agent import StatAgent
 from accent_dao.alchemy.stat_call_on_queue import StatCallOnQueue
 from accent_dao.alchemy.stat_queue import StatQueue
-from accent_dao.alchemy.stat_agent import StatAgent
-from accent_dao.tests.test_dao import DAOTestCase
+from hamcrest import assert_that, contains
+from pytz import UTC
+from sqlalchemy import func
+
+from .test_dao import DAOTestCase
 
 
 class TestStatCallOnQueueDAO(DAOTestCase):

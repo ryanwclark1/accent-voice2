@@ -3,7 +3,7 @@
 from hamcrest import assert_that, calling, equal_to, raises
 
 from accent_dao import user_dao
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 
 class TestUserFeaturesDAO(DAOTestCase):

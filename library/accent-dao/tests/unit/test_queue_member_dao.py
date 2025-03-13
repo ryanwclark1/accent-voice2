@@ -1,9 +1,9 @@
 # Copyright 2023 Accent Communications
 
 from accent_dao.alchemy.queuemember import QueueMember
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
-from .. import queue_member_dao
+from accent_dao import queue_member_dao
 
 
 class TestQueueMemberDAO(DAOTestCase):

@@ -2,7 +2,7 @@
 
 from accent_dao import callfilter_dao
 from accent_dao.alchemy.callfiltermember import Callfiltermember
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 
 class BaseTestCallFilterDAO(DAOTestCase):

@@ -4,6 +4,7 @@
 from sqlalchemy import Boolean, Index, Integer, PrimaryKeyConstraint, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import case
+from sqlalchemy.sql.expression import ColumnElement
 
 from accent_dao.helpers.db_manager import Base
 
@@ -43,8 +44,8 @@ class StatAgent(Base):
             return self.name.split("/")[-1]
         return None
 
-    @number.expression
-    def number(cls) -> Mapped[str | None]:
+    @number.expression  # type: ignore[no-redef]
+    def number(cls) -> ColumnElement[str | None]:
         """Extract and return the substring of `cls.name` starting from the 7th char.
 
         If the first 6 characters of `cls.name` match "Agent/", return the substring.

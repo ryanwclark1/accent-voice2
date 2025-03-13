@@ -7,7 +7,7 @@ from hamcrest import assert_that, contains_inanyorder
 from accent_dao import stat_queue_dao
 from accent_dao.alchemy.stat_queue import StatQueue
 from accent_dao.helpers.db_utils import flush_session
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 
 class TestStatQueueDAO(DAOTestCase):

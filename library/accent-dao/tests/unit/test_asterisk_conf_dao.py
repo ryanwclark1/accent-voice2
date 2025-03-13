@@ -25,7 +25,7 @@ from accent_dao.alchemy.iaxcallnumberlimits import IAXCallNumberLimits
 from accent_dao.alchemy.queuepenalty import QueuePenalty
 from accent_dao.alchemy.queuepenaltychange import QueuePenaltyChange
 from accent_dao.alchemy.func_key_dest_custom import FuncKeyDestCustom
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 
 @contextmanager

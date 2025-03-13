@@ -10,7 +10,7 @@ from accent_dao import stat_queue_periodic_dao
 from accent_dao.alchemy.stat_queue_periodic import StatQueuePeriodic
 from accent_dao.alchemy.stat_queue import StatQueue
 from accent_dao.helpers.db_utils import flush_session
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 
 class TestStatQueuePeriodicDAO(DAOTestCase):

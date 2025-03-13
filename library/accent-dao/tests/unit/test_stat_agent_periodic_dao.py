@@ -2,15 +2,15 @@
 
 from datetime import datetime as dt
 from datetime import timedelta
-from sqlalchemy import func
-from pytz import UTC
 
 from accent_dao import stat_agent_periodic_dao
-from accent_dao.alchemy.stat_agent_periodic import StatAgentPeriodic
 from accent_dao.alchemy.stat_agent import StatAgent
+from accent_dao.alchemy.stat_agent_periodic import StatAgentPeriodic
 from accent_dao.helpers.db_utils import flush_session
-from accent_dao.tests.test_dao import DAOTestCase
+from pytz import UTC
+from sqlalchemy import func
 
+from .test_dao import DAOTestCase
 
 ONE_HOUR = timedelta(hours=1)
 

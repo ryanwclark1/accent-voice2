@@ -2,9 +2,9 @@
 
 from hamcrest import assert_that, equal_to, has_properties
 from sqlalchemy.inspection import inspect
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
-from .. import tenant_dao
+from accent_dao import tenant_dao
 
 
 class TestTenantDAO(DAOTestCase):

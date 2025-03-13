@@ -1,6 +1,6 @@
 # Copyright 2023 Accent Communications
 
-from accent_dao.tests.test_dao import (
+from .test_dao import (
     DAOTestCase,
     UNKNOWN_UUID,
     UNKNOWN_ID,

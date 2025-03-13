@@ -10,7 +10,7 @@ from accent_dao import queue_log_dao
 from accent_dao.alchemy.stat_agent import StatAgent
 from accent_dao.alchemy.queue_log import QueueLog
 from accent_dao.helpers.db_utils import flush_session
-from accent_dao.tests.test_dao import DAOTestCase
+from .test_dao import DAOTestCase
 
 ONE_HOUR = timedelta(hours=1)
 ONE_MICROSECOND = timedelta(microseconds=1)
