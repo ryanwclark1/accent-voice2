@@ -1,93 +1,316 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/extension/dao.py
+# Copyright 2025 Accent Communications
 
-from accent_dao.helpers.db_manager import Session
+import logging
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from accent_dao.alchemy.extension import Extension
+from accent_dao.helpers.db_manager import async_daosession
 from accent_dao.resources.utils.search import SearchResult
 
 from .fixes import ExtensionFixes
 from .persistor import ExtensionPersistor
 
-
-def persistor(tenant_uuids=None):
-    return ExtensionPersistor(Session, tenant_uuids)
-
-
-def get_by(tenant_uuids=None, **criteria):
-    return persistor(tenant_uuids).get_by(criteria)
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
-def find_by(tenant_uuids=None, **criteria):
-    return persistor(tenant_uuids).find_by(criteria)
+@async_daosession
+async def async_search(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **parameters: dict
+) -> SearchResult:
+    """Search for extensions.
+
+    Args:
+        session: Database session.
+        tenant_uuids: Optional list of tenant UUIDs.
+        parameters: Search parameters.
+
+    Returns:
+        SearchResult: Search results.
+
+    """
+    return await ExtensionPersistor(session, tenant_uuids).search(parameters)
 
 
-def find_all_by(tenant_uuids=None, **criteria):
-    return persistor(tenant_uuids).find_all_by(criteria)
+@async_daosession
+async def async_get_by(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
+) -> Extension:
+    """Get an extension by criteria.
+
+    Args:
+        session: Database session.
+        tenant_uuids: Optional list of tenant UUIDs.
+        criteria: Filter criteria.
+
+    Returns:
+        The extension.
+
+    """
+    return await ExtensionPersistor(session, tenant_uuids).get_by(criteria)
 
 
-def get(id, tenant_uuids=None):
-    return persistor(tenant_uuids).get_by({'id': id})
+@async_daosession
+async def async_find_by(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
+) -> Extension | None:
+    """Find an extension by criteria.
+
+    Args:
+        session: Database session.
+        tenant_uuids: Optional list of tenant UUIDs.
+        criteria: Filter criteria.
+
+    Returns:
+        The extension or None.
+
+    """
+    return await ExtensionPersistor(session, tenant_uuids).find_by(criteria)
 
 
-def find(id, tenant_uuids=None):
-    return persistor(tenant_uuids).find_by({'id': id})
+@async_daosession
+async def async_find_all_by(
+    session: AsyncSession, tenant_uuids: list[str] | None = None, **criteria: dict
+) -> list[Extension]:
+    """Find all extensions by criteria.
+
+    Args:
+        session: Database session.
+        tenant_uuids: Optional list of tenant UUIDs.
+        criteria: Filter criteria.
+
+    Returns:
+        A list of extensions.
+
+    """
+    return await ExtensionPersistor(session, tenant_uuids).find_all_by(criteria)
 
 
-def search(tenant_uuids=None, **parameters):
-    total, items = persistor(tenant_uuids).search(parameters)
-    return SearchResult(total, items)
+@async_daosession
+async def async_get(
+    session: AsyncSession, id: int, tenant_uuids: list[str] | None = None
+) -> Extension:
+    """Get an extension by ID.
+
+    Args:
+        session: Database session.
+        id: Extension ID.
+        tenant_uuids: Optional list of tenant UUIDs.
+
+    Returns:
+        The extension.
+
+    """
+    return await ExtensionPersistor(session, tenant_uuids).get_by({"id": id})
 
 
-def create(extension):
-    return persistor().create(extension)
+@async_daosession
+async def async_find(
+    session: AsyncSession, id: int, tenant_uuids: list[str] | None = None
+) -> Extension | None:
+    """Find an extension by ID.
+
+    Args:
+        session: Database session.
+        id: Extension ID.
+        tenant_uuids: Optional list of tenant UUIDs.
+
+    Returns:
+        The extension or None.
+
+    """
+    return await ExtensionPersistor(session, tenant_uuids).find_by({"id": id})
 
 
-def edit(extension):
-    persistor().edit(extension)
-    ExtensionFixes(Session).fix(extension.id)
+@async_daosession
+async def async_create(session: AsyncSession, extension: Extension) -> Extension:
+    """Create a new extension.
+
+    Args:
+        session: Database session.
+        extension: Extension to create.
+
+    Returns:
+        The created extension.
+
+    """
+    return await ExtensionPersistor(session).create(extension)
 
 
-def delete(extension):
-    persistor().delete(extension)
+@async_daosession
+async def async_edit(session: AsyncSession, extension: Extension) -> None:
+    """Edit an existing extension.
+
+    Args:
+        session: Database session.
+        extension: Extension to edit.
+
+    """
+    await ExtensionPersistor(session).edit(extension)
+    await ExtensionFixes(session).async_fix(extension.id)
 
 
-def associate_incall(incall, extension):
-    persistor().associate_incall(incall, extension)
-    ExtensionFixes(Session).fix(extension.id)
+@async_daosession
+async def async_delete(session: AsyncSession, extension: Extension) -> None:
+    """Delete an extension.
+
+    Args:
+        session: Database session.
+        extension: Extension to delete.
+
+    """
+    await ExtensionPersistor(session).delete(extension)
 
 
-def dissociate_incall(incall, extension):
-    persistor().dissociate_incall(incall, extension)
-    ExtensionFixes(Session).fix(extension.id)
+@async_daosession
+async def async_associate_incall(
+    session: AsyncSession, incall: Any, extension: Extension
+) -> None:
+    """Associate an incall with an extension.
+
+    Args:
+        session: Database session.
+        incall: Inbound call.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).associate_incall(incall, extension)
+    await ExtensionFixes(session).async_fix(extension.id)
 
 
-def associate_group(group, extension):
-    persistor().associate_group(group, extension)
+@async_daosession
+async def async_dissociate_incall(
+    session: AsyncSession, incall: Any, extension: Extension
+) -> None:
+    """Dissociate an incall from an extension.
+
+    Args:
+        session: Database session.
+        incall: Inbound call.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).dissociate_incall(incall, extension)
+    await ExtensionFixes(session).async_fix(extension.id)
 
 
-def dissociate_group(group, extension):
-    persistor().dissociate_group(group, extension)
+@async_daosession
+async def async_associate_group(
+    session: AsyncSession, group: Any, extension: Extension
+) -> None:
+    """Associate a group with an extension.
+
+    Args:
+        session: Database session.
+        group: Group.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).associate_group(group, extension)
 
 
-def associate_queue(queue, extension):
-    persistor().associate_queue(queue, extension)
-    queue.fix_extension()
+@async_daosession
+async def async_dissociate_group(
+    session: AsyncSession, group: Any, extension: Extension
+) -> None:
+    """Dissociate a group from an extension.
+
+    Args:
+        session: Database session.
+        group: Group.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).dissociate_group(group, extension)
 
 
-def dissociate_queue(queue, extension):
-    persistor().dissociate_queue(queue, extension)
-    queue.fix_extension()
+@async_daosession
+async def async_associate_queue(
+    session: AsyncSession, queue: Any, extension: Extension
+) -> None:
+    """Associate a queue with an extension.
+
+    Args:
+        session: Database session.
+        queue: Queue.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).associate_queue(queue, extension)
 
 
-def associate_conference(conference, extension):
-    persistor().associate_conference(conference, extension)
+@async_daosession
+async def async_dissociate_queue(
+    session: AsyncSession, queue: Any, extension: Extension
+) -> None:
+    """Dissociate a queue from an extension.
+
+    Args:
+        session: Database session.
+        queue: Queue.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).dissociate_queue(queue, extension)
 
 
-def dissociate_conference(conference, extension):
-    persistor().dissociate_conference(conference, extension)
+@async_daosession
+async def async_associate_conference(
+    session: AsyncSession, conference: Any, extension: Extension
+) -> None:
+    """Associate a conference with an extension.
+
+    Args:
+        session: Database session.
+        conference: Conference.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).associate_conference(conference, extension)
 
 
-def associate_parking_lot(parking_lot, extension):
-    persistor().associate_parking_lot(parking_lot, extension)
+@async_daosession
+async def async_dissociate_conference(
+    session: AsyncSession, conference: Any, extension: Extension
+) -> None:
+    """Dissociate a conference from an extension.
+
+    Args:
+        session: Database session.
+        conference: Conference.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).dissociate_conference(conference, extension)
 
 
-def dissociate_parking_lot(parking_lot, extension):
-    persistor().dissociate_parking_lot(parking_lot, extension)
+@async_daosession
+async def async_associate_parking_lot(
+    session: AsyncSession, parking_lot: Any, extension: Extension
+) -> None:
+    """Associate a parking lot with an extension.
+
+    Args:
+        session: Database session.
+        parking_lot: Parking lot.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).associate_parking_lot(parking_lot, extension)
+
+
+@async_daosession
+async def async_dissociate_parking_lot(
+    session: AsyncSession, parking_lot: Any, extension: Extension
+) -> None:
+    """Dissociate a parking lot from an extension.
+
+    Args:
+        session: Database session.
+        parking_lot: Parking lot.
+        extension: Extension.
+
+    """
+    await ExtensionPersistor(session).dissociate_parking_lot(parking_lot, extension)

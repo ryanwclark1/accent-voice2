@@ -1,5 +1,9 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/func_key/hint_dao.py
+# Copyright 2025 Accent Communications
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from accent.accent_helpers import clean_extension
 from sqlalchemy import (
@@ -7,20 +11,13 @@ from sqlalchemy import (
     Unicode,
     and_,
     bindparam,
+    func,
     literal_column,
-    sql,
+    select,
 )
-from sqlalchemy.ext import baked
-from sqlalchemy.orm import (
-    aliased,
-    joinedload,
-)
-from sqlalchemy.sql.expression import true
+from sqlalchemy.sql.expression import cast
 
-from accent_dao.alchemy.callfilter import Callfilter
-from accent_dao.alchemy.callfiltermember import Callfiltermember
 from accent_dao.alchemy.conference import Conference
-from accent_dao.alchemy.endpoint_sip import EndpointSIP
 from accent_dao.alchemy.extension import Extension
 from accent_dao.alchemy.feature_extension import FeatureExtension
 from accent_dao.alchemy.func_key_dest_agent import FuncKeyDestAgent
@@ -37,18 +34,23 @@ from accent_dao.alchemy.sccpline import SCCPLine
 from accent_dao.alchemy.user_line import UserLine
 from accent_dao.alchemy.usercustom import UserCustom
 from accent_dao.alchemy.userfeatures import UserFeatures
-from accent_dao.helpers.db_manager import daosession
+from accent_dao.helpers.db_manager import async_daosession, daosession
 from accent_dao.resources.func_key.model import Hint
 
-user_extension = aliased(Extension)
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
-agent_hints_bakery = baked.bakery()
-agent_hints_query = agent_hints_bakery(
-    lambda s: s.query(
-        sql.cast(FuncKeyDestAgent.agent_id, Unicode).label('argument'),
-        UserFeatures.id.label('user_id'),
-        FeatureExtension.exten.label('feature_extension'),
-        user_extension.context,
+user_extension = select(Extension).alias()
+user_line = select(UserLine).alias()
+line_extension = select(LineExtension).alias()
+line_features = select(LineFeatures).alias()
+
+agent_hints_bakery = (
+    select(
+        FuncKeyDestAgent.agent_id.cast(Unicode).label("argument"),
+        UserFeatures.id.label("user_id"),
+        FeatureExtension.exten.label("feature_extension"),
+        user_extension.c.context,
     )
     .join(
         FeatureExtension,
@@ -59,38 +61,34 @@ agent_hints_query = agent_hints_bakery(
         FuncKeyDestAgent.func_key_id == FuncKeyMapping.func_key_id,
     )
     .filter(
-        FeatureExtension.enabled == true(),
+        FeatureExtension.enabled.is_(True),
     )
     .join(
         UserFeatures,
         FuncKeyMapping.template_id == UserFeatures.func_key_private_template_id,
     )
     .join(
-        UserLine,
-        UserFeatures.id == UserLine.user_id,
+        user_line,
+        UserFeatures.id == user_line.c.user_id,
     )
     .join(
-        LineExtension,
-        LineExtension.line_id == UserLine.line_id,
+        line_extension,
+        line_extension.c.line_id == user_line.c.line_id,
     )
     .join(
         user_extension,
-        LineExtension.extension_id == user_extension.id,
+        line_extension.c.extension_id == user_extension.c.id,
     )
     .filter(
-        and_(
-            UserLine.main_user.is_(True),
-            UserLine.main_line.is_(True),
-            LineExtension.main_extension.is_(True),
-            FuncKeyMapping.blf.is_(True),
-        )
+        user_line.c.main_user.is_(True),
+        line_extension.c.main_extension.is_(True),
+        FuncKeyMapping.blf.is_(True),
     )
 )
 
-bsfilter_hints_bakery = baked.bakery()
-bsfilter_hints_query = bsfilter_hints_bakery(
-    lambda s: s.query(
-        sql.cast(FuncKeyDestBSFilter.filtermember_id, Unicode).label('argument'),
+bsfilter_hints_bakery = (
+    select(
+        FuncKeyDestBSFilter.filtermember_id.cast(Unicode).label("argument"),
         Extension.context,
     )
     .join(
@@ -103,7 +101,7 @@ bsfilter_hints_query = bsfilter_hints_bakery(
     )
     .join(
         UserFeatures,
-        sql.cast(Callfiltermember.typeval, Integer) == UserFeatures.id,
+        cast(Callfiltermember.typeval, Integer) == UserFeatures.id,
     )
     .join(
         UserLine,
@@ -118,40 +116,33 @@ bsfilter_hints_query = bsfilter_hints_bakery(
         Extension.id == LineExtension.extension_id,
     )
     .filter(
-        and_(
-            UserLine.main_user.is_(True),
-            UserLine.main_line.is_(True),
-            LineExtension.main_extension.is_(True),
-            Extension.commented == 0,
-            Callfilter.commented == 0,
-        )
+        UserLine.main_user.is_(True),
+        LineExtension.main_extension.is_(True),
+        Extension.commented == 0,
+        Callfilter.commented == 0,
     )
 )
 
 
-conference_hints_bakery = baked.bakery()
-conference_hints_query = conference_hints_bakery(
-    lambda s: s.query(
-        Conference.id.label('conference_id'),
-        Extension.exten.label('extension'),
+conference_hints_bakery = (
+    select(
+        Conference.id.label("conference_id"),
+        Extension.exten.label("extension"),
         Extension.context,
     )
     .select_from(Conference)
     .join(FuncKeyDestConference, FuncKeyDestConference.conference_id == Conference.id)
     .join(
         Extension,
-        sql.and_(
-            Extension.type == 'conference',
-            Extension.typeval == sql.cast(Conference.id, Unicode),
+        and_(
+            Extension.type == "conference",
+            Extension.typeval == cast(Conference.id, String),
         ),
     )
 )
 
-custom_hints_bakery = baked.bakery()
-custom_hints_query = custom_hints_bakery(
-    lambda s: s.query(
-        FuncKeyDestCustom.exten.label('extension'), user_extension.context
-    )
+custom_hints_bakery = (
+    select(FuncKeyDestCustom.exten.label("extension"), user_extension.c.context)
     .join(
         FuncKeyMapping,
         FuncKeyDestCustom.func_key_id == FuncKeyMapping.func_key_id,
@@ -161,34 +152,32 @@ custom_hints_query = custom_hints_bakery(
         FuncKeyMapping.template_id == UserFeatures.func_key_private_template_id,
     )
     .join(
-        UserLine,
-        UserFeatures.id == UserLine.user_id,
+        user_line,
+        UserFeatures.id == user_line.c.user_id,
     )
     .join(
-        LineExtension,
-        LineExtension.line_id == UserLine.line_id,
+        line_extension,
+        line_extension.c.line_id == user_line.c.line_id,
     )
     .join(
         user_extension,
-        LineExtension.extension_id == user_extension.id,
+        line_extension.c.extension_id == user_extension.c.id,
     )
     .filter(
         and_(
-            UserLine.main_user.is_(True),
-            UserLine.main_line.is_(True),
-            LineExtension.main_extension.is_(True),
+            user_line.c.main_user.is_(True),
+            line_extension.c.main_extension.is_(True),
             FuncKeyMapping.blf.is_(True),
         )
     )
 )
 
-forwards_hints_bakery = baked.bakery()
-forwards_hints_query = forwards_hints_bakery(
-    lambda s: s.query(
-        FeatureExtension.exten.label('feature_extension'),
-        UserFeatures.id.label('user_id'),
-        FuncKeyDestForward.number.label('argument'),
-        user_extension.context,
+forwards_hints_bakery = (
+    select(
+        FeatureExtension.exten.label("feature_extension"),
+        UserFeatures.id.label("user_id"),
+        FuncKeyDestForward.number.label("argument"),
+        user_extension.c.context,
     )
     .join(
         FuncKeyDestForward,
@@ -198,40 +187,38 @@ forwards_hints_query = forwards_hints_bakery(
         FuncKeyMapping,
         FuncKeyDestForward.func_key_id == FuncKeyMapping.func_key_id,
     )
-    .filter(FeatureExtension.enabled == true())
+    .filter(FeatureExtension.enabled == True)
     .join(
         UserFeatures,
         FuncKeyMapping.template_id == UserFeatures.func_key_private_template_id,
     )
     .join(
-        UserLine,
-        UserFeatures.id == UserLine.user_id,
+        user_line,
+        UserFeatures.id == user_line.c.user_id,
     )
     .join(
-        LineExtension,
-        LineExtension.line_id == UserLine.line_id,
+        line_extension,
+        line_extension.c.line_id == user_line.c.line_id,
     )
     .join(
         user_extension,
-        LineExtension.extension_id == user_extension.id,
+        line_extension.c.extension_id == user_extension.c.id,
     )
     .filter(
         and_(
-            UserLine.main_user.is_(True),
-            UserLine.main_line.is_(True),
-            LineExtension.main_extension.is_(True),
+            user_line.c.main_user.is_(True),
+            line_extension.c.main_extension.is_(True),
             FuncKeyMapping.blf.is_(True),
         )
     )
 )
 
-groupmember_hints_bakery = baked.bakery()
-groupmember_hints_query = groupmember_hints_bakery(
-    lambda s: s.query(
-        sql.cast(FuncKeyDestGroupMember.group_id, Unicode).label('argument'),
-        UserFeatures.id.label('user_id'),
-        FeatureExtension.exten.label('feature_extension'),
-        user_extension.context,
+groupmember_hints_bakery = (
+    select(
+        cast(FuncKeyDestGroupMember.group_id, Unicode).label("argument"),
+        UserFeatures.id.label("user_id"),
+        FeatureExtension.exten.label("feature_extension"),
+        user_extension.c.context,
     )
     .join(
         FeatureExtension,
@@ -242,39 +229,37 @@ groupmember_hints_query = groupmember_hints_bakery(
         FuncKeyDestGroupMember.func_key_id == FuncKeyMapping.func_key_id,
     )
     .filter(
-        FeatureExtension.enabled == true(),
+        FeatureExtension.enabled == True(),
     )
     .join(
         UserFeatures,
         FuncKeyMapping.template_id == UserFeatures.func_key_private_template_id,
     )
     .join(
-        UserLine,
-        UserFeatures.id == UserLine.user_id,
+        user_line,
+        UserFeatures.id == user_line.c.user_id,
     )
     .join(
-        LineExtension,
-        LineExtension.line_id == UserLine.line_id,
+        line_extension,
+        line_extension.c.line_id == user_line.c.line_id,
     )
     .join(
         user_extension,
-        LineExtension.extension_id == user_extension.id,
+        line_extension.c.extension_id == user_extension.c.id,
     )
     .filter(
         and_(
-            UserLine.main_user.is_(True),
-            UserLine.main_line.is_(True),
-            LineExtension.main_extension.is_(True),
+            user_line.c.main_user.is_(True),
+            line_extension.c.main_extension.is_(True),
             FuncKeyMapping.blf.is_(True),
         )
     )
 )
 
-user_extensions_bakery = baked.bakery()
-user_extensions_query = user_extensions_bakery(
-    lambda s: s.query(
-        UserFeatures.id.label('user_id'),
-        Extension.exten.label('extension'),
+user_extensions_bakery = (
+    select(
+        UserFeatures.id.label("user_id"),
+        Extension.exten.label("extension"),
         Extension.context,
     )
     .distinct()
@@ -298,12 +283,11 @@ user_extensions_query = user_extensions_bakery(
     )
 )
 
-user_arguments_bakery = baked.bakery()
-user_arguments_query = user_arguments_bakery(
-    lambda s: s.query(
-        UserFeatures.id.label('user_id'),
-        sql.func.string_agg(
-            sql.case(
+user_arguments_bakery = (
+    select(
+        UserFeatures.id.label("user_id"),
+        func.string_agg(
+            case(
                 [
                     (
                         LineFeatures.endpoint_sip_uuid.isnot(None),
@@ -320,13 +304,13 @@ user_arguments_query = user_arguments_bakery(
                 ]
             ),
             literal_column("'&'"),
-        ).label('argument'),
+        ).label("argument"),
     )
     .join(
         UserLine.userfeatures,
     )
     .join(
-        UserLine.linefeatures,
+        LineFeatures,
     )
     .outerjoin(
         EndpointSIP,
@@ -345,16 +329,15 @@ user_arguments_query = user_arguments_bakery(
     )
     .group_by(UserFeatures.id)
 )
-user_arguments_query += lambda q: q.filter(
-    UserFeatures.id.in_(bindparam('user_ids', expanding=True))
+user_arguments_bakery += lambda q: q.filter(
+    UserFeatures.id.in_(bindparam("user_ids", expanding=True))
 )
 
-service_hints_bakery = baked.bakery()
-service_hints_query = service_hints_bakery(
-    lambda s: s.query(
-        FeatureExtension.exten.label('feature_extension'),
-        UserFeatures.id.label('user_id'),
-        user_extension.context,
+service_hints_bakery = (
+    select(
+        FeatureExtension.exten.label("feature_extension"),
+        UserFeatures.id.label("user_id"),
+        user_extension.c.context,
     )
     .join(
         FuncKeyDestService,
@@ -364,66 +347,97 @@ service_hints_query = service_hints_bakery(
         FuncKeyMapping,
         FuncKeyDestService.func_key_id == FuncKeyMapping.func_key_id,
     )
-    .filter(FeatureExtension.enabled == true())
+    .filter(FeatureExtension.enabled == True())
     .join(
         UserFeatures,
         FuncKeyMapping.template_id == UserFeatures.func_key_private_template_id,
     )
     .join(
-        UserLine,
-        UserFeatures.id == UserLine.user_id,
+        user_line,
+        UserFeatures.id == user_line.c.user_id,
     )
     .join(
-        LineExtension,
-        LineExtension.line_id == UserLine.line_id,
+        line_extension,
+        line_extension.c.line_id == user_line.c.line_id,
     )
     .join(
         user_extension,
-        LineExtension.extension_id == user_extension.id,
+        line_extension.c.extension_id == user_extension.c.id,
     )
     .filter(
         and_(
-            UserLine.main_user.is_(True),
-            UserLine.main_line.is_(True),
-            LineExtension.main_extension.is_(True),
+            user_line.c.main_user.is_(True),
+            line_extension.c.main_extension.is_(True),
             FuncKeyMapping.blf.is_(True),
         )
     )
 )
 
-extenfeatures_bakery = baked.bakery()
-extenfeatures_query = extenfeatures_bakery(lambda s: s.query(FeatureExtension.exten))
+extenfeatures_bakery = select(FeatureExtension.exten)
 extenfeatures_query += lambda q: q.filter(
-    FeatureExtension.feature == bindparam('feature')
+    FeatureExtension.feature == bindparam("feature")
 )
 
 
 def _find_extenfeatures(session, feature):
-    return extenfeatures_query(session).params(feature=feature).scalar()
+    result = session.execute(
+        extenfeatures_query(session).params(feature=feature)
+    ).scalar()
+    return result
 
 
 @daosession
-def progfunckey_extension(session):
-    extension = _find_extenfeatures(session, 'phoneprogfunckey')
-    return clean_extension(extension)
+def progfunckey_extension(session: Session) -> str | None:
+    """Retrieve the extension for programmable function keys.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        The cleaned extension string, or None if not found.
+
+    """
+    extension = _find_extenfeatures(session, "phoneprogfunckey")
+    return clean_extension(extension) if extension else None
 
 
 @daosession
-def calluser_extension(session):
-    extension = _find_extenfeatures(session, 'calluser')
-    return clean_extension(extension)
+def calluser_extension(session: Session) -> str | None:
+    """Retrieve the extension for the calluser feature.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        The cleaned extension string, or None if not found.
+
+    """
+    extension = _find_extenfeatures(session, "calluser")
+    return clean_extension(extension) if extension else None
 
 
-@daosession
-def user_hints(session):
-    user_extensions = _list_user_extensions(session)
+@async_daosession
+async def async_user_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for user extensions.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
+
+    """
+    user_extensions = (await session.execute(user_extensions_bakery(session))).all()
     if not user_extensions:
         return {}
 
-    user_arguments = _list_user_arguments(
-        session, {item.user_id for item in user_extensions}
+    user_ids = {user.user_id for user in user_extensions}
+    user_arguments_result = await session.execute(
+        user_arguments_query(session).params(user_ids=list(user_ids))
     )
-    hints = defaultdict(list)
+    user_arguments = {row.user_id: row.argument for row in user_arguments_result}
+
+    hints: dict[str, list[Hint]] = defaultdict(list)
     for user_id, extension, context in user_extensions:
         argument = user_arguments.get(user_id)
         if argument:
@@ -433,81 +447,61 @@ def user_hints(session):
     return hints
 
 
-@daosession
-def user_shared_hints(session):
-    query = session.query(UserFeatures).options(
-        joinedload('user_lines').joinedload('line')
-    )
-    hints = []
-    for user in query.all():
-        ifaces = [f'Custom:{user.uuid}-mobile']
-        for line in user.lines:
-            if line.endpoint_custom_id:
-                ifaces.append(line.name)
-            elif line.endpoint_sip_uuid:
-                ifaces.append(f'PJSIP/{line.name}')
-            elif line.endpoint_sccp_id:
-                ifaces.append(f'SCCP/{line.name}')
-            else:
-                ifaces.append(f'CUSTOM/{line.name}')
+@async_daosession
+async def async_conference_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for conference extensions.
 
-        if not ifaces:
-            continue
-        argument = '&'.join(ifaces)
-        hint = Hint(user_id=user.id, extension=user.uuid, argument=argument)
-        hints.append(hint)
-    return hints
+    Args:
+        session: Database session.
 
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
 
-def _list_user_extensions(session):
-    return user_extensions_query(session).all()
-
-
-def _list_user_arguments(session, user_ids):
-    query = user_arguments_query(session).params(user_ids=list(user_ids)).all()
-    return {row.user_id: row.argument for row in query}
-
-
-@daosession
-def conference_hints(session):
-    query = conference_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
+    """
+    result = await session.execute(conference_hints_bakery(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
         hint = Hint(conference_id=row.conference_id, extension=row.extension)
         hints[row.context].append(hint)
     return hints
 
 
-@daosession
-def service_hints(session):
-    query = service_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
+@async_daosession
+async def async_service_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for service feature extensions.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
+
+    """
+    result = await session.execute(service_hints_bakery(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
         hint = Hint(user_id=row.user_id, extension=row.feature_extension, argument=None)
         hints[row.context].append(hint)
     return hints
 
 
-@daosession
-def forward_hints(session):
-    query = forwards_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
-        hint = Hint(
-            user_id=row.user_id,
-            extension=clean_extension(row.feature_extension),
-            argument=row.argument,
-        )
-        hints[row.context].append(hint)
+@async_daosession
+async def async_forward_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for forward feature extensions.
 
-    return hints
+    Args:
+        session: Database session.
 
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
 
-@daosession
-def agent_hints(session):
-    query = agent_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
+    """
+    result = await session.execute(forwards_hints_bakery(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
         hint = Hint(
             user_id=row.user_id,
             extension=clean_extension(row.feature_extension),
@@ -517,36 +511,108 @@ def agent_hints(session):
     return hints
 
 
-@daosession
-def custom_hints(session):
-    query = custom_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
+@async_daosession
+async def async_agent_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for agent feature extensions.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
+
+    """
+    result = await session.execute(agent_hints_query(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
+        hint = Hint(
+            user_id=row.user_id,
+            extension=clean_extension(row.feature_extension),
+            argument=str(row.argument),
+        )
+        hints[row.context].append(hint)
+    return hints
+
+
+@async_daosession
+async def async_custom_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for custom function key destinations.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
+
+    """
+    result = await session.execute(custom_hints_bakery(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
         hint = Hint(extension=row.extension)
         hints[row.context].append(hint)
     return hints
 
 
-@daosession
-def bsfilter_hints(session):
-    bsfilter_extension = clean_extension(_find_extenfeatures(session, 'bsfilter'))
-    query = bsfilter_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
+@async_daosession
+async def async_bsfilter_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for boss-secretary filter function key destinations.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
+
+    """
+    bsfilter_extension = clean_extension(
+        await async_find_extenfeatures(session, "bsfilter")
+    )
+    result = await session.execute(bsfilter_hints_bakery(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
         hint = Hint(extension=bsfilter_extension, argument=row.argument)
         hints[row.context].append(hint)
     return hints
 
 
-@daosession
-def groupmember_hints(session):
-    query = groupmember_hints_query(session).all()
-    hints = defaultdict(list)
-    for row in query:
+@async_daosession
+async def async_groupmember_hints(session: AsyncSession) -> dict[str, list[Hint]]:
+    """Gather hints for group member function key destinations.
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Dictionary mapping context names to lists of Hint objects.
+
+    """
+    result = await session.execute(groupmember_hints_bakery(session))
+    rows = result.all()
+    hints: dict[str, list[Hint]] = defaultdict(list)
+    for row in rows:
         hint = Hint(
             user_id=row.user_id,
             extension=clean_extension(row.feature_extension),
-            argument=row.argument,
+            argument=str(row.argument),
         )
         hints[row.context].append(hint)
     return hints
+
+
+@async_daosession
+async def async_find_extenfeatures(session: AsyncSession, feature: str) -> str | None:
+    """Retrieve the extension for a specific feature.
+
+    Args:
+        session: The database session.
+        feature: The feature name to search for.
+
+    Returns:
+        The extension string associated with the feature, or None if not found.
+
+    """
+    result = await session.execute(extenfeatures_query(session).params(feature=feature))
+    return result.scalar_one_or_none()

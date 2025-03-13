@@ -1,33 +1,72 @@
-# Copyright 2023 Accent Communications
+# file: accent_dao/resources/features/dao.py
+# Copyright 2025 Accent Communications
+
+import logging
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_dao.alchemy.features import Features
-from accent_dao.helpers import errors
-from accent_dao.helpers.db_manager import daosession
+from accent_dao.helpers.db_manager import async_daosession
+from accent_dao.helpers.exception import NotFoundError
 
 from .persistor import FeaturesPersistor
 
-
-@daosession
-def find_all(session, section):
-    return FeaturesPersistor(session).find_all(section)
+logger = logging.getLogger(__name__)
 
 
-@daosession
-def edit_all(session, section, features):
-    FeaturesPersistor(session).edit_all(section, features)
+@async_daosession
+async def async_find_all(session: AsyncSession, section: str) -> list[Features]:
+    """Find all features for a given section.
+
+    Args:
+        session: The database session.
+        section: The section to filter features by.
+
+    Returns:
+        A list of Feature objects.
+
+    """
+    return await FeaturesPersistor(session).find_all(section)
 
 
-@daosession
-def get_value(session, feature_id):
-    value = session.query(Features.var_val).filter(Features.id == feature_id).scalar()
+@async_daosession
+async def async_edit_all(
+    session: AsyncSession, section: str, features: list[Features]
+) -> None:
+    """Edit all features for a given section.
+
+    Args:
+        session: The database session.
+        section: The section to update features in.
+        features: The list of Feature objects with updated values.
+
+    """
+    await FeaturesPersistor(session).edit_all(section, features)
+
+
+@async_daosession
+async def async_get_value(session: AsyncSession, feature_id: int) -> str | None:
+    """Get the value of a specific feature by its ID.
+
+    Args:
+        session: The database session.
+        feature_id: The ID of the feature.
+
+    Returns:
+        The value of the feature, or None if not found.
+
+    Raises:
+        NotFoundError: If no feature is found with the given ID.
+
+    """
+    result = await session.execute(
+        select(Features.var_val).where(Features.id == feature_id)
+    )
+    value = result.scalar_one_or_none()
 
     if not value:
-        raise errors.not_found('Features', id=feature_id)
+        raise NotFoundError("Features", id=feature_id)
 
-    value = _extract_applicationmap_dtmf(value)
-
+    value = value.split(",", 1)[0]
     return value
-
-
-def _extract_applicationmap_dtmf(value):
-    return value.split(',', 1)[0]
