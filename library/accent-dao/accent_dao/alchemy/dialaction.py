@@ -92,8 +92,10 @@ class Dialaction(Base):
     )
 
     # Remove the following warning:
-    #   SAWarning: DELETE statement on table 'dialaction' expected to delete 2 row(s); 1 were matched.
-    #   Please set confirm_deleted_rows=False within the mapper configuration to prevent this warning.
+    #   SAWarning: DELETE statement on table 'dialaction'
+    # expected to delete 2 row(s); 1 were matched.
+    #   Please set confirm_deleted_rows=False within the mapper
+    # onfiguration to prevent this warning.
     # When child try to delete parent and the parent try delete child,
     # then the same row expecte to be removed twice.
     # This is the case of ivr_choice
@@ -236,7 +238,7 @@ class Dialaction(Base):
     @type.setter
     def type(self, value: str) -> None:
         """Set the type of the dial action."""
-        self.action = f"{value}:{self.subtype}" if self.subtype else value  # type: ignore
+        self.action = f"{value}:{self.subtype}" if self.subtype else value
 
     @property
     def subtype(self) -> str | None:
@@ -248,7 +250,7 @@ class Dialaction(Base):
     @subtype.setter
     def subtype(self, value: str | None) -> None:
         """Set the subtype of the dial action."""
-        self.action = (  # type: ignore
+        self.action = (
             f"{self.type}:{value}" if value is not None else self.type
         )
 

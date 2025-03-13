@@ -27,7 +27,7 @@ class Callerid(Base):
     __tablename__: str = "callerid"
 
     # Removed the primary key constraint here.  SQLA is unhappy otherwise
-    # __table_args__ = (PrimaryKeyConstraint('type', 'typeval'),)
+    # __table_args__ = (PrimaryKeyConstraint('type', 'typeval'),)  # noqa: ERA001
 
     mode: Mapped[CalleridMode | None] = mapped_column(
         Enum("prepend", "overwrite", "append", name="callerid_mode"), nullable=True

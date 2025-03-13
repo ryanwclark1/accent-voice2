@@ -50,7 +50,7 @@ def _convert_to_bosssecretary(value: str) -> CallfilterBosssecretary | str:
 
     """
     if value in get_args(CallfilterBosssecretary):
-        return value  # type: ignore #  mypy is confused, but this is correct.
+        return value  # type: ignore #  mypy is confused, but this is correct.  # noqa: PGH003
     return value
 
 
@@ -177,7 +177,7 @@ class Callfilter(Base):
         if self.caller_id:
             self.caller_id.name = value
         else:
-            self.caller_id = Callerid(type="callfilter", name=value)  # type: ignore
+            self.caller_id = Callerid(type="callfilter", name=value)  # type: ignore[assignment]
 
     recipients: Mapped[list["Callfiltermember"]] = relationship(
         "Callfiltermember",

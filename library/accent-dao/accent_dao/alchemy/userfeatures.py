@@ -1,10 +1,16 @@
-# file: accent_dao/alchemy/userfeatures.py  # noqa: ERA001
+# file: accent_dao/alchemy/userfeatures.py
 # Copyright 2025 Accent Communications
 
 import datetime
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Optional,
+    TypeVar,
+    cast,
+)
 
 from sqlalchemy import (
     Boolean,
@@ -27,14 +33,15 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.collections import attribute_mapped_collection  # Fixed import
 from sqlalchemy.orm.properties import ColumnProperty
-from sqlalchemy.sql import expression
+from sqlalchemy.sql import BinaryExpression, expression
 
-from accent_dao.alchemy.queuemember import QueueMember
 from accent_dao.helpers.db_manager import Base, cached_query
 from accent_dao.helpers.uuid import new_uuid
 
+# Local imports
+from .queuemember import QueueMember
 from .schedulepath import SchedulePath
 from .user_line import UserLine
 
@@ -45,11 +52,9 @@ if TYPE_CHECKING:
     from .extension import Extension
     from .func_key_dest_user import FuncKeyDestUser
     from .func_key_template import FuncKeyTemplate
-    from .linefeatures import LineFeatures
     from .paginguser import PagingUser
     from .pickup import Pickup
     from .pickupmember import PickupMember
-    from .rightcall import RightCall
     from .rightcallmember import RightCallMember
     from .switchboard_member_user import SwitchboardMemberUser
     from .tenant import Tenant
@@ -58,11 +63,12 @@ if TYPE_CHECKING:
 # Setup logging
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T")
 
 class EmailComparator(ColumnProperty.Comparator):
     """Custom comparator for case-insensitive email comparison."""
 
-    def __eq__(self, other: object) -> sql.elements.BinaryExpression:
+    def __eq__(self, other: object) -> BinaryExpression[bool]:
         """Perform a case-insensitive email comparison.
 
         Args:
@@ -150,8 +156,8 @@ class UserFeatures(Base):
 
     """
 
-    __tablename__: ClassVar[str] = "userfeatures"
-    __table_args__: ClassVar[tuple] = (
+    __tablename__ = "userfeatures"
+    __table_args__ = (
         ForeignKeyConstraint(
             ("voicemailid",),
             ("voicemail.uniqueid",),
@@ -301,6 +307,10 @@ class UserFeatures(Base):
     webi_description: Mapped[str] = mapped_column(
         "description", Text, nullable=False, server_default=""
     )
+
+    # Private cache for property attributes
+    _exten: str | None = None
+    _context: str | None = None
 
     # Relationships
     func_key_template: Mapped["FuncKeyTemplate"] = relationship(
@@ -638,14 +648,14 @@ class UserFeatures(Base):
         return name
 
     @fullname.expression
-    def fullname(cls) -> sql.elements.ColumnElement:
+    def fullname(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the user's full name.
 
         Returns:
             A SQL expression that concatenates firstname and lastname.
 
         """
-        return func.trim(cls.firstname + " " + cls.webi_lastname)
+        return func.trim(UserFeatures.firstname + " " + UserFeatures.webi_lastname)
 
     @hybrid_property
     def username(self) -> str | None:
@@ -673,14 +683,14 @@ class UserFeatures(Base):
             self.loginclient = value
 
     @username.expression
-    def username(cls) -> sql.elements.ColumnElement:
+    def username(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the username.
 
         Returns:
             A SQL expression that returns NULL if loginclient is empty.
 
         """
-        return func.nullif(cls.loginclient, "")
+        return func.nullif(UserFeatures.loginclient, "")
 
     @hybrid_property
     def password(self) -> str | None:
@@ -708,14 +718,14 @@ class UserFeatures(Base):
             self.passwdclient = value
 
     @password.expression
-    def password(cls) -> sql.elements.ColumnElement:
+    def password(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the password.
 
         Returns:
             A SQL expression that returns NULL if passwdclient is empty.
 
         """
-        return func.nullif(cls.passwdclient, "")
+        return func.nullif(UserFeatures.passwdclient, "")
 
     @hybrid_property
     def agent_id(self) -> int | None:
@@ -763,14 +773,14 @@ class UserFeatures(Base):
             self.callerid = value
 
     @caller_id.expression
-    def caller_id(cls) -> sql.elements.ColumnElement:
+    def caller_id(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the caller ID.
 
         Returns:
             A SQL expression that returns NULL if callerid is empty.
 
         """
-        return func.nullif(cls.callerid, "")
+        return func.nullif(UserFeatures.callerid, "")
 
     @hybrid_property
     def outgoing_caller_id(self) -> str | None:
@@ -798,14 +808,14 @@ class UserFeatures(Base):
             self.outcallerid = value
 
     @outgoing_caller_id.expression
-    def outgoing_caller_id(cls) -> sql.elements.ColumnElement:
+    def outgoing_caller_id(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the outgoing caller ID.
 
         Returns:
             A SQL expression that returns NULL if outcallerid is empty.
 
         """
-        return func.nullif(cls.outcallerid, "")
+        return func.nullif(UserFeatures.outcallerid, "")
 
     @hybrid_property
     def music_on_hold(self) -> str | None:
@@ -833,14 +843,14 @@ class UserFeatures(Base):
             self.musiconhold = value
 
     @music_on_hold.expression
-    def music_on_hold(cls) -> sql.elements.ColumnElement:
+    def music_on_hold(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the music on hold.
 
         Returns:
             A SQL expression that returns NULL if musiconhold is empty.
 
         """
-        return func.nullif(cls.musiconhold, "")
+        return func.nullif(UserFeatures.musiconhold, "")
 
     @hybrid_property
     def mobile_phone_number(self) -> str | None:
@@ -868,14 +878,14 @@ class UserFeatures(Base):
             self.mobilephonenumber = value
 
     @mobile_phone_number.expression
-    def mobile_phone_number(cls) -> sql.elements.ColumnElement:
+    def mobile_phone_number(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the mobile phone number.
 
         Returns:
             A SQL expression that returns NULL if mobilephonenumber is empty.
 
         """
-        return func.nullif(cls.mobilephonenumber, "")
+        return func.nullif(UserFeatures.mobilephonenumber, "")
 
     @hybrid_property
     def voicemail_id(self) -> int | None:
@@ -923,14 +933,14 @@ class UserFeatures(Base):
             self.webi_userfield = value
 
     @userfield.expression
-    def userfield(cls) -> sql.elements.ColumnElement:
+    def userfield(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the userfield.
 
         Returns:
             A SQL expression that returns NULL if webi_userfield is empty.
 
         """
-        return func.nullif(cls.webi_userfield, "")
+        return func.nullif(UserFeatures.webi_userfield, "")
 
     @hybrid_property
     def lastname(self) -> str | None:
@@ -958,14 +968,14 @@ class UserFeatures(Base):
             self.webi_lastname = value
 
     @lastname.expression
-    def lastname(cls) -> sql.elements.ColumnElement:
+    def lastname(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the lastname.
 
         Returns:
             A SQL expression that returns NULL if webi_lastname is empty.
 
         """
-        return func.nullif(cls.webi_lastname, "")
+        return func.nullif(UserFeatures.webi_lastname, "")
 
     @hybrid_property
     def description(self) -> str | None:
@@ -993,14 +1003,14 @@ class UserFeatures(Base):
             self.webi_description = value
 
     @description.expression
-    def description(cls) -> sql.elements.ColumnElement:
+    def description(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the description.
 
         Returns:
             A SQL expression that returns NULL if webi_description is empty.
 
         """
-        return func.nullif(cls.webi_description, "")
+        return func.nullif(UserFeatures.webi_description, "")
 
     @hybrid_property
     def template_id(self) -> int | None:
@@ -1284,14 +1294,14 @@ class UserFeatures(Base):
             self.destbusy = value
 
     @busy_destination.expression
-    def busy_destination(cls) -> sql.elements.ColumnElement:
+    def busy_destination(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the busy destination.
 
         Returns:
             A SQL expression that returns NULL if destbusy is empty.
 
         """
-        return func.nullif(cls.destbusy, "")
+        return func.nullif(UserFeatures.destbusy, "")
 
     @hybrid_property
     def noanswer_enabled(self) -> bool | None:
@@ -1343,14 +1353,14 @@ class UserFeatures(Base):
             self.destrna = value
 
     @noanswer_destination.expression
-    def noanswer_destination(cls) -> sql.elements.ColumnElement:
+    def noanswer_destination(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the no answer destination.
 
         Returns:
             A SQL expression that returns NULL if destrna is empty.
 
         """
-        return func.nullif(cls.destrna, "")
+        return func.nullif(UserFeatures.destrna, "")
 
     @hybrid_property
     def unconditional_enabled(self) -> bool | None:
@@ -1402,14 +1412,14 @@ class UserFeatures(Base):
             self.destunc = value
 
     @unconditional_destination.expression
-    def unconditional_destination(cls) -> sql.elements.ColumnElement:
+    def unconditional_destination(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the unconditional destination.
 
         Returns:
             A SQL expression that returns NULL if destunc is empty.
 
         """
-        return func.nullif(cls.destunc, "")
+        return func.nullif(UserFeatures.destunc, "")
 
     @hybrid_property
     def enabled(self) -> bool | None:
@@ -1424,14 +1434,14 @@ class UserFeatures(Base):
         return bool(self.commented == 0)
 
     @enabled.expression
-    def enabled(cls) -> sql.elements.ColumnElement:
+    def enabled(self) -> sql.elements.ClauseElement:
         """Get the SQL expression for the enabled flag.
 
         Returns:
             A SQL expression that returns TRUE if commented is 0.
 
         """
-        return sql.not_(cast(cls.commented, Boolean))
+        return sql.not_(cast(UserFeatures.commented, Boolean))
 
     @enabled.setter
     def enabled(self, value: bool | None) -> None:
@@ -1458,101 +1468,5 @@ class UserFeatures(Base):
             return None
         return self.rightcallcode
 
-    @call_permission_password.expression
-    def call_permission_password(cls) -> sql.elements.ColumnElement:
-        """Get the SQL expression for the call permission password.
+        return func.nullif(UserFeatures.rightcallcode, "")
 
-        Returns:
-            A SQL expression that returns NULL if rightcallcode is empty.
-
-        """
-        return func.nullif(cls.rightcallcode, "")
-
-    @call_permission_password.setter
-    def call_permission_password(self, value: str | None) -> None:
-        """Set the password for call permissions.
-
-        Args:
-            value: The password to set or None to clear it.
-
-        """
-        if value == "":  # Allow empty string, but treat as None
-            self.rightcallcode = None
-        else:
-            self.rightcallcode = value
-
-    @property
-    def forwards(self) -> "UserFeatures":
-        """Get a reference to this user's forwarding settings.
-
-        Returns:
-            A reference to this user features object (for compatibility).
-
-        """
-        return self
-
-    @property
-    def services(self) -> "UserFeatures":
-        """Get a reference to this user's service settings.
-
-        Returns:
-            A reference to this user features object (for compatibility).
-
-        """
-        return self
-
-    @property
-    def country(self) -> str | None:
-        """Get the country code associated with this user.
-
-        Returns:
-            The country code from the tenant or None if not available.
-
-        """
-        if not hasattr(self, "tenant") or not self.tenant:
-            return None
-        return self.tenant.country
-
-    def set_lines(self, value: list["LineFeatures"]) -> None:
-        """Set the lines for the user.
-
-        Args:
-            value: A list of LineFeatures objects to associate with the user.
-
-        """
-        new_user_lines: list[UserLine] = []
-        main_set = False
-        for line in value:
-            is_main = not main_set
-            new_user_lines.append(
-                UserLine(line=line, user=self, main_user=False, main_line=is_main)
-            )
-            if is_main:
-                main_set = True
-        self.user_lines = new_user_lines
-
-    # For API compatibility, create a property using the set_lines method
-    @lines.setter
-    def lines(self, value: list["LineFeatures"]) -> None:
-        """Set the lines for this user.
-
-        Args:
-            value: List of LineFeatures to associate with this user
-
-        """
-        self.set_lines(value)
-
-    @call_permissions.setter
-    def call_permissions(self, value: list["RightCall"]) -> None:
-        """Set the call permissions for this user.
-
-        Args:
-            value: List of RightCall objects to associate with this user
-
-        """
-        from .rightcallmember import RightCallMember
-
-        self.rightcall_members = [
-            RightCallMember(type="user", typeval=str(self.id), rightcall=permission)
-            for permission in value
-        ]

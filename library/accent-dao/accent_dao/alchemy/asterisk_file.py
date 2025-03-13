@@ -35,7 +35,7 @@ class AsteriskFile(Base):
     sections: Mapped[dict[str, "AsteriskFileSection"]] = relationship(
         "AsteriskFileSection",
         # Changed to regular dict to remove dependency on sqlalchemy
-        # collection_class=attribute_mapped_collection("name"),
+        # collection_class=attribute_mapped_collection("name"),  # noqa: ERA001
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

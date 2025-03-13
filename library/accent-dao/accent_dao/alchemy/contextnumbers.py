@@ -73,6 +73,12 @@ class ContextNumbers(Base):
 
     @end.expression
     def end(cls) -> Mapped[str]:
+        """Determine the end number for the context.
+
+        Returns:
+            Mapped[str]: The end number if it exists, otherwise the beginning number.
+
+        """
         return case((cls.numberend == "", cls.numberbeg), else_=cls.numberend)
 
     @property

@@ -131,6 +131,17 @@ class Conference(Base):
     # Use a standard property now
     @exten.expression
     def exten(cls) -> Mapped[str]:
+        """Retrieve the extension identifier for a conference.
+
+        This method constructs a SQL query to select the `exten` field from the
+        `Extension` table where the `type` is "conference" and the `typeval`
+        matches the string representation of the class's `id`.
+
+        Returns:
+            Mapped[str]: A scalar subquery that represents the extension
+            identifier for the conference.
+
+        """
         return (
             select(Extension.exten)
             .where(Extension.type == "conference")
