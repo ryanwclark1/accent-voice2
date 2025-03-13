@@ -1,11 +1,10 @@
-# file: accent_dao/alchemy/userfeatures.py
+# file: accent_dao/alchemy/userfeatures.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-# Import the new_uuid function
-# TODO: call_record_outgoing_external_enabled
+import datetime
+import logging
 import re
-from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 from sqlalchemy import (
     Boolean,
@@ -18,14 +17,24 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    sql,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import false
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import (
+    Mapped,
+    column_property,
+    mapped_column,
+    relationship,
+)
+from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.properties import ColumnProperty
+from sqlalchemy.sql import expression
 
-from accent_dao.helpers.db_manager import Base
-from accent_dao.helpers.uuid import new_uuid  # Adjust the import path as necessary
+from accent_dao.alchemy.queuemember import QueueMember
+from accent_dao.helpers.db_manager import Base, cached_query
+from accent_dao.helpers.uuid import new_uuid
 
-from .rightcallmember import RightCallMember
 from .schedulepath import SchedulePath
 from .user_line import UserLine
 
@@ -33,22 +42,40 @@ if TYPE_CHECKING:
     from .agentfeatures import AgentFeatures
     from .callfiltermember import Callfiltermember
     from .dialaction import Dialaction
+    from .extension import Extension
     from .func_key_dest_user import FuncKeyDestUser
     from .func_key_template import FuncKeyTemplate
-    from .linefeatures import LineFeatures  # For caller ID extrapolation
-    from .paginguser import PagingUser  # Import the PagingUser class
+    from .linefeatures import LineFeatures
+    from .paginguser import PagingUser
     from .pickup import Pickup
     from .pickupmember import PickupMember
-    from .queuemember import QueueMember
+    from .rightcall import RightCall
+    from .rightcallmember import RightCallMember
     from .switchboard_member_user import SwitchboardMemberUser
+    from .tenant import Tenant
     from .voicemail import Voicemail
 
-# from .func_key_template import FuncKeyTemplate  #Imported in Type_Checking
-# from .queuemember import QueueMember  #Imported in Type_Checking
-# from .schedulepath import SchedulePath #Imported in Type_Checking
-# from .user_line import UserLine  #Imported in Type_Checking
+# Setup logging
+logger = logging.getLogger(__name__)
 
 
+class EmailComparator(ColumnProperty.Comparator):
+    """Custom comparator for case-insensitive email comparison."""
+
+    def __eq__(self, other: object) -> sql.elements.BinaryExpression:
+        """Perform a case-insensitive email comparison.
+
+        Args:
+            other: The value to compare with
+
+        Returns:
+            A SQL expression for case-insensitive comparison
+
+        """
+        return func.lower(self.__clause_element__()) == func.lower(other)
+
+
+# Regex to extract caller ID information
 caller_id_regex = re.compile(
     r"""
     "                      #name start
@@ -65,22 +92,8 @@ caller_id_regex = re.compile(
 )
 
 
-def ordering_main_line(index: int, collection: list) -> bool:  # type: ignore
-    """Order the main line first.
-
-    Args:
-        index: The index of the item in the collection.
-        collection: The list of items to order.
-
-    Returns:
-        True if the item is the main line, otherwise False.
-
-    """
-    return True if index == 0 else False
-
-
 class UserFeatures(Base):
-    """Represents features for a user.
+    """Represent features for a user.
 
     Attributes:
         id: The unique identifier for the user features.
@@ -102,15 +115,11 @@ class UserFeatures(Base):
         enablexfer: Indicates if call transfer is enabled for the user.
         dtmf_hangup: Indicates if DTMF hangup is enabled for the user.
         enableonlinerec: Indicates if online recording is enabled for the user.
-    call_record_outgoing_external_enabled: Indicates if call recording is enabled for
-     outgoing external calls.
-    call_record_outgoing_internal_enabled: Indicates if call recording is enabled for
-     outgoing internal calls.
-    call_record_incoming_external_enabled: Indicates if call recording is enabled for
-     incoming external calls.
-    call_record_incoming_internal_enabled: Indicates if call recording is enabled for
-     incoming internal calls.
-        incallfilter:  (Purpose unclear, possibly related to call filtering).
+        call_record_outgoing_external_enabled: Call recording outgoing external calls.
+        call_record_outgoing_internal_enabled: Call recording outgoing internal calls.
+        call_record_incoming_external_enabled: Call recording incoming external calls.
+        call_record_incoming_internal_enabled: Call recording incoming internal calls.
+        incallfilter: Call filtering setting.
         enablednd: Indicates if "Do Not Disturb" is enabled.
         enableunc: Indicates if unconditional call forwarding is enabled.
         destunc: The destination for unconditional call forwarding.
@@ -121,67 +130,28 @@ class UserFeatures(Base):
         musiconhold: The music on hold setting.
         outcallerid: The outgoing caller ID.
         mobilephonenumber: The user's mobile phone number.
-        bsfilter:  (Purpose unclear, possibly related to boss-secretary filtering).
+        bsfilter: Boss-secretary filtering setting.
         preprocess_subroutine: A preprocess subroutine.
         timezone: The user's timezone.
         language: The user's preferred language.
-        ringintern:  (Purpose unclear).
-        ringextern:  (Purpose unclear).
-        ringgroup:  (Purpose unclear).
-        ringforward:  (Purpose unclear).
+        ringintern: Ring pattern for internal calls.
+        ringextern: Ring pattern for external calls.
+        ringgroup: Ring pattern for group calls.
+        ringforward: Ring pattern for call forwards.
         rightcallcode: The rightcall code.
         commented: Indicates if the user features are commented out.
         func_key_template_id: The ID of the associated function key template.
-    func_key_private_template_id: The ID of the associated private
-                function key template.
+        func_key_private_template_id: The private function key template ID.
         subscription_type: The subscription type.
         created_at: The timestamp when the user features were created.
         webi_lastname: Last name from webi.
         webi_userfield: userfield from webi.
         webi_description: Description from webi.
-        func_key_template: Relationship to FuncKeyTemplate.
-        func_key_template_private: Relationship to the private FuncKeyTemplate.
-        main_line_rel: Relationship to UserLine (main line only).
-        agent: Relationship to AgentFeatures (if applicable).
-        voicemail: Relationship to Voicemail.
-        user_lines: Relationship to UserLine.
-        lines: Lines this extension belongs to.
-        incall_dialactions: Relationship to Dialaction for incall actions.
-        incalls: Incall objects associated.
-        user_dialactions: Relationship to Dialaction, mapped by event.
-        group_members: Relationship to QueueMember for group membership.
-        groups: Group that the users belongs to.
-        queue_members: Relationship to QueueMember for queue membership.
-        queues: Queues the user belongs to.
-        paging_users: Relationship to PagingUser.
-        switchboard_member_users: Relationship to SwitchboardMemberUser.
-        switchboards: Switchboards the user belongs to.
-        _dialaction_actions: Relationship to Dialaction.
-        schedule_paths: Relationship to SchedulePath.
-        schedules: Schedules associated with the user.
-        call_filter_recipients: Relationship to Callfiltermember (recipients).
-        call_filter_surrogates: Relationship to Callfiltermember (surrogates).
-        call_pickup_interceptors: Relationship to PickupMember (interceptors).
-        call_pickup_targets: Relationship to PickupMember (targets).
-        rightcall_members: Relationship to RightCallMember.
-        call_permissions: Rightcall objects associated.
-    call_pickup_interceptor_pickups: Relationship to Pickup groups that
-        the user intercepts calls from.
-    users_from_call_pickup_user_targets: Users associated with
-        the user's targets through pickup.
-    users_from_call_pickup_group_targets: Users associated with
-        the user's targets through pickup.
-    users_from_call_pickup_group_interceptors_user_targets: Users associated with
-        the group.
-    users_from_call_pickup_group_interceptors_group_targets: Groups associated
-        through pickup.
-        func_keys: Relationship to FuncKeyDestUser.
-        tenant: Relationship to Tenant.
 
     """
 
-    __tablename__: str = "userfeatures"
-    __table_args__: tuple = (
+    __tablename__: ClassVar[str] = "userfeatures"
+    __table_args__: ClassVar[tuple] = (
         ForeignKeyConstraint(
             ("voicemailid",),
             ("voicemail.uniqueid",),
@@ -193,6 +163,7 @@ class UserFeatures(Base):
         ),
         UniqueConstraint("func_key_private_template_id"),
         UniqueConstraint("uuid", name="userfeatures_uuid"),
+        UniqueConstraint("email", name="userfeatures_email"),
         Index("userfeatures__idx__agentid", "agentid"),
         Index("userfeatures__idx__firstname", "firstname"),
         Index("userfeatures__idx__lastname", "lastname"),
@@ -208,12 +179,15 @@ class UserFeatures(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    # Primary columns
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     uuid: Mapped[str] = mapped_column(String(38), nullable=False, default=new_uuid)
     firstname: Mapped[str] = mapped_column(
         String(128), nullable=False, server_default=""
     )
-    email: Mapped[str | None] = mapped_column(String(254), unique=True, nullable=True)
+    email: Mapped[str | None] = column_property(
+        mapped_column(String(254), unique=True), comparator_factory=EmailComparator
+    )
     voicemailid: Mapped[int | None] = mapped_column(Integer, nullable=True)
     agentid: Mapped[int | None] = mapped_column(Integer, nullable=True)
     pictureid: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -227,65 +201,53 @@ class UserFeatures(Base):
     )
     enableclient: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    )
     loginclient: Mapped[str] = mapped_column(
         String(254), nullable=False, server_default=""
     )
     passwdclient: Mapped[str] = mapped_column(
         String(64), nullable=False, server_default=""
     )
-    enablehint: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="1"
-    )  # Integer representation
+    enablehint: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     enablevoicemail: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
-    )  # Integer representation
-    enablexfer: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    )
+    enablexfer: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     dtmf_hangup: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    )
     enableonlinerec: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    )
     call_record_outgoing_external_enabled: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        server_default=False,  # Boolean, keep as boolean
+        server_default=expression.false(),
     )
     call_record_outgoing_internal_enabled: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        server_default=false(),  # Boolean, keep as boolean
+        server_default=expression.false(),
     )
     call_record_incoming_external_enabled: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        server_default=false(),  # Boolean
+        server_default=expression.false(),
     )
     call_record_incoming_internal_enabled: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        server_default=false(),  # Boolean
+        server_default=expression.false(),
     )
     incallfilter: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
-    )  # Integer representation
-    enablednd: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )  # Integer representation
-    enableunc: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    )
+    enablednd: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    enableunc: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     destunc: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
-    enablerna: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    enablerna: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     destrna: Mapped[str] = mapped_column(String(128), nullable=False, server_default="")
-    enablebusy: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )  # Integer representation
+    enablebusy: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     destbusy: Mapped[str] = mapped_column(
         String(128), nullable=False, server_default=""
     )
@@ -299,11 +261,13 @@ class UserFeatures(Base):
         String(128), nullable=False, server_default=""
     )
     bsfilter: Mapped[str] = mapped_column(
-        String,
+        String(16),
         nullable=False,
         server_default="no",
     )
-    preprocess_subroutine: Mapped[str | None] = mapped_column(String(79), nullable=True)
+    preprocess_subroutine: Mapped[str | None] = mapped_column(
+        String(79), nullable=True
+    )
     timezone: Mapped[str | None] = mapped_column(String(128), nullable=True)
     language: Mapped[str | None] = mapped_column(String(20), nullable=True)
     ringintern: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -321,12 +285,13 @@ class UserFeatures(Base):
     subscription_type: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default="0"
     )
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime,
-        default=datetime.now(timezone.utc),
+        default=datetime.datetime.now(datetime.UTC),
         server_default=func.now(),
     )
 
+    # Columns with aliases
     webi_lastname: Mapped[str] = mapped_column(
         "lastname", String(128), nullable=False, server_default=""
     )
@@ -337,11 +302,12 @@ class UserFeatures(Base):
         "description", Text, nullable=False, server_default=""
     )
 
+    # Relationships
     func_key_template: Mapped["FuncKeyTemplate"] = relationship(
-        "FuncKeyTemplate", foreign_keys=func_key_template_id
+        "FuncKeyTemplate", foreign_keys=func_key_template_id, lazy="selectin"
     )
     func_key_template_private: Mapped["FuncKeyTemplate"] = relationship(
-        "FuncKeyTemplate", foreign_keys=func_key_private_template_id
+        "FuncKeyTemplate", foreign_keys=func_key_private_template_id, lazy="selectin"
     )
 
     main_line_rel: Mapped["UserLine"] = relationship(
@@ -351,41 +317,28 @@ class UserFeatures(Base):
             UserLine.main_line == True
         )""",
         viewonly=True,
+        lazy="selectin",
     )
-    agent: Mapped["AgentFeatures"] = relationship(
+
+    agent: Mapped[Optional["AgentFeatures"]] = relationship(
         "AgentFeatures",
         primaryjoin="AgentFeatures.id == UserFeatures.agentid",
         foreign_keys="UserFeatures.agentid",
         viewonly=True,
+        lazy="selectin",
     )
 
-    voicemail: Mapped["Voicemail"] = relationship("Voicemail", back_populates="users")
+    voicemail: Mapped[Optional["Voicemail"]] = relationship(
+        "Voicemail", back_populates="users", lazy="selectin"
+    )
 
     user_lines: Mapped[list["UserLine"]] = relationship(
         "UserLine",
         order_by="desc(UserLine.main_line)",
-        # collection_class=ordering_list("main_line", ordering_func=ordering_main_line), #Removed ordering list
         cascade="all, delete-orphan",
         back_populates="user",
+        lazy="selectin",
     )
-
-    @property
-    def lines(self) -> list["UserLine"]:
-        """Return a list of UserLine objects associated with the user."""
-        return [ul.linefeatures for ul in self.user_lines]
-
-    @lines.setter
-    def lines(self, value: list["LineFeatures"]) -> None:
-        new_user_lines: list[UserLine] = []
-        main_set = False
-        for line in value:
-            is_main = not main_set
-            new_user_lines.append(
-                UserLine(line=line, user=self, main_user=False, main_line=is_main)
-            )
-            if is_main:
-                main_set = True
-        self.user_lines = new_user_lines
 
     incall_dialactions: Mapped[list["Dialaction"]] = relationship(
         "Dialaction",
@@ -396,14 +349,9 @@ class UserFeatures(Base):
         )""",
         foreign_keys="Dialaction.actionarg1",
         viewonly=True,
+        lazy="selectin",
     )
 
-    @property
-    def incalls(self) -> list["Dialaction"]:
-        """Return a list of incall Dialaction objects associated with the user."""
-        return [d.incall for d in self.incall_dialactions if d.incall]
-
-    # Removed collection_class
     user_dialactions: Mapped[dict[str, "Dialaction"]] = relationship(
         "Dialaction",
         primaryjoin="""and_(
@@ -411,7 +359,9 @@ class UserFeatures(Base):
             Dialaction.categoryval == cast(UserFeatures.id, String)
         )""",
         cascade="all, delete-orphan",
+        collection_class=attribute_mapped_collection("event"),
         foreign_keys="Dialaction.categoryval",
+        lazy="selectin",
     )
 
     group_members: Mapped[list["QueueMember"]] = relationship(
@@ -423,11 +373,8 @@ class UserFeatures(Base):
         )""",
         foreign_keys="QueueMember.userid",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-
-    @property
-    def groups(self) -> list["QueueMember"]:
-        return [gm.group for gm in self.group_members if gm.group]
 
     queue_members: Mapped[list["QueueMember"]] = relationship(
         "QueueMember",
@@ -438,24 +385,16 @@ class UserFeatures(Base):
         )""",
         foreign_keys="QueueMember.userid",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
-    @property
-    def queues(self) -> list[QueueMember]:
-        """Return a list of queue members associated with the user."""
-        return [qm.queue for qm in self.queue_members if qm.queue]
-
     paging_users: Mapped[list["PagingUser"]] = relationship(
-        "PagingUser", cascade="all, delete-orphan"
+        "PagingUser", cascade="all, delete-orphan", lazy="selectin"
     )
 
     switchboard_member_users: Mapped[list["SwitchboardMemberUser"]] = relationship(
-        "SwitchboardMemberUser", cascade="all, delete-orphan"
+        "SwitchboardMemberUser", cascade="all, delete-orphan", lazy="selectin"
     )
-
-    @property
-    def switchboards(self) -> list["SwitchboardMemberUser"]:
-        return [sm.switchboard for sm in self.switchboard_member_users]
 
     _dialaction_actions: Mapped[list["Dialaction"]] = relationship(
         "Dialaction",
@@ -465,6 +404,7 @@ class UserFeatures(Base):
         )""",
         foreign_keys="Dialaction.actionarg1",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     schedule_paths: Mapped[list["SchedulePath"]] = relationship(
@@ -475,25 +415,8 @@ class UserFeatures(Base):
         )""",
         foreign_keys="SchedulePath.pathid",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-
-    @property
-    def schedules(self) -> list["SchedulePath"]:
-        """Return a list of schedule paths associated with the user."""
-        return [sp.schedule for sp in self.schedule_paths]
-
-    @schedules.setter
-    def schedules(self, value: list["SchedulePath"]) -> None:
-        """Set the schedule paths for the user.
-
-        Args:
-            value: A list of SchedulePath objects to associate with the user.
-
-        """
-        self.schedule_paths = [
-            SchedulePath(path="user", schedule_id=schedule.id, schedule=schedule)
-            for schedule in value
-        ]
 
     call_filter_recipients: Mapped[list["Callfiltermember"]] = relationship(
         "Callfiltermember",
@@ -504,7 +427,9 @@ class UserFeatures(Base):
         )""",
         foreign_keys="Callfiltermember.typeval",
         cascade="delete, delete-orphan",
+        lazy="selectin",
     )
+
     call_filter_surrogates: Mapped[list["Callfiltermember"]] = relationship(
         "Callfiltermember",
         primaryjoin="""and_(
@@ -514,6 +439,7 @@ class UserFeatures(Base):
         )""",
         foreign_keys="Callfiltermember.typeval",
         cascade="delete, delete-orphan",
+        lazy="selectin",
     )
 
     call_pickup_interceptors: Mapped[list["PickupMember"]] = relationship(
@@ -525,7 +451,9 @@ class UserFeatures(Base):
         )""",
         foreign_keys="PickupMember.memberid",
         cascade="delete, delete-orphan",
+        lazy="selectin",
     )
+
     call_pickup_targets: Mapped[list["PickupMember"]] = relationship(
         "PickupMember",
         primaryjoin="""and_(
@@ -535,6 +463,7 @@ class UserFeatures(Base):
         )""",
         foreign_keys="PickupMember.memberid",
         cascade="delete, delete-orphan",
+        lazy="selectin",
     )
 
     rightcall_members: Mapped[list["RightCallMember"]] = relationship(
@@ -545,20 +474,8 @@ class UserFeatures(Base):
         )""",
         foreign_keys="RightCallMember.typeval",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
-
-    @property
-    def call_permissions(self):
-        return [m.rightcall for m in self.rightcall_members if m.rightcall]
-
-    @call_permissions.setter
-    def call_permissions(self, value: list["RightCall"]) -> None:
-        self.rightcall_members = [
-            RightCallMember(
-                type="user", typeval=str(permission.id), rightcall=permission
-            )
-            for permission in value
-        ]
 
     call_pickup_interceptor_pickups: Mapped[list["Pickup"]] = relationship(
         "Pickup",
@@ -571,51 +488,77 @@ class UserFeatures(Base):
         secondaryjoin="Pickup.id == pickupmember.c.pickupid",
         foreign_keys="PickupMember.pickupid,PickupMember.memberid",
         viewonly=True,
+        lazy="selectin",
     )
-
-    @property
-    def users_from_call_pickup_user_targets(self):
-        """Return a list of user targets associated with call pickup interceptors."""
-        return [
-            p.user_targets
-            for p in self.call_pickup_interceptor_pickups
-            if p.user_targets
-        ]
-
-    @property
-    def users_from_call_pickup_group_targets(self):
-        """Return a list of group targets associated with call pickup interceptors."""
-        return [
-            p.users_from_group_targets
-            for p in self.call_pickup_interceptor_pickups
-            if p.users_from_group_targets
-        ]
-
-    @property
-    def users_from_call_pickup_group_interceptors_user_targets(self):
-        """Return a list of user targets associated with group interceptors."""
-        return [
-            gm.users_from_call_pickup_group_interceptor_user_targets
-            for gm in self.group_members
-            if gm.users_from_call_pickup_group_interceptor_user_targets
-        ]
-
-    @property
-    def users_from_call_pickup_group_interceptors_group_targets(self):
-        """Return a list of group targets associated with group interceptors."""
-        return [
-            gm.users_from_call_pickup_group_interceptor_group_targets
-            for gm in self.group_members
-            if gm.users_from_call_pickup_group_interceptor_group_targets
-        ]
 
     func_keys: Mapped[list["FuncKeyDestUser"]] = relationship(
-        "FuncKeyDestUser", cascade="all, delete-orphan"
+        "FuncKeyDestUser", cascade="all, delete-orphan", lazy="selectin"
     )
-    tenant: Mapped["Tenant"] = relationship("Tenant")
 
+    tenant: Mapped["Tenant"] = relationship("Tenant", lazy="selectin")
+
+    # Association proxies
+    lines = association_proxy(
+        "user_lines",
+        "line",
+        creator=lambda _line: UserLine(line=_line, main_user=False),
+    )
+
+    groups = association_proxy(
+        "group_members",
+        "group",
+        creator=lambda _group: QueueMember(
+            category="group", usertype="user", group=_group
+        ),
+    )
+
+    queues = association_proxy("queue_members", "queue")
+
+    switchboards = association_proxy("switchboard_member_users", "switchboard")
+
+    schedules = association_proxy(
+        "schedule_paths",
+        "schedule",
+        creator=lambda _schedule: SchedulePath(
+            path="user", schedule_id=_schedule.id, schedule=_schedule
+        ),
+    )
+
+    call_permissions = association_proxy("rightcall_members", "rightcall")
+
+    users_from_call_pickup_user_targets = association_proxy(
+        "call_pickup_interceptor_pickups", "user_targets"
+    )
+
+    users_from_call_pickup_group_targets = association_proxy(
+        "call_pickup_interceptor_pickups", "users_from_group_targets"
+    )
+
+    users_from_call_pickup_group_interceptors_user_targets = association_proxy(
+        "group_members", "users_from_call_pickup_group_interceptor_user_targets"
+    )
+
+    users_from_call_pickup_group_interceptors_group_targets = association_proxy(
+        "group_members", "users_from_call_pickup_group_interceptor_group_targets"
+    )
+
+    @property
+    def incalls(self) -> list[Any]:
+        """Get a list of incall Dialaction objects associated with the user.
+
+        Returns:
+            A list of incalls linked to this user through dialactions.
+
+        """
+        return [
+            d.incall
+            for d in self.incall_dialactions
+            if hasattr(d, "incall") and d.incall
+        ]
+
+    @cached_query()
     def extrapolate_caller_id(
-        self, extension: "Extension" | None = None
+        self, extension: Optional["Extension"] = None
     ) -> tuple[str | None, str | None]:
         """Extrapolate the caller ID name and number.
 
@@ -628,26 +571,41 @@ class UserFeatures(Base):
         """
         default_num = extension.exten if extension else None
         user_match = caller_id_regex.match(self.callerid or "")  # Handle None
-        name = user_match.group("name") if user_match else None
-        num = user_match.group("num") if user_match else None
+
+        name = user_match.group("n") if user_match else None
+        num = (
+            user_match.group("num") if user_match and user_match.group("num") else None
+        )
+
         return name, (num or default_num)
 
     def fill_caller_id(self) -> None:
         """Fill in the caller ID if it's empty.
 
-        This method sets the caller ID to the user's full name if the caller ID is currently None.
+        This method sets the caller ID to the user's full name
+        if the caller ID is currently None.
         """
         if self.caller_id is None:
             self.caller_id = f'"{self.fullname}"'
 
     @property
     def fallbacks(self) -> dict[str, "Dialaction"]:
-        """The fallback dialactions for the user."""
+        """Get the fallback dialactions for the user.
+
+        Returns:
+            A dictionary of dialactions mapped by event.
+
+        """
         return self.user_dialactions
 
     @fallbacks.setter
     def fallbacks(self, dialactions: dict[str, "Dialaction"]) -> None:
-        """Set the fallback dialactions."""
+        """Set the fallback dialactions for the user.
+
+        Args:
+            dialactions: A dictionary of dialactions mapped by event.
+
+        """
         for event in list(self.user_dialactions.keys()):
             if event not in dialactions:
                 self.user_dialactions.pop(event, None)
@@ -666,467 +624,935 @@ class UserFeatures(Base):
             self.user_dialactions[event].actionarg1 = dialaction.actionarg1
             self.user_dialactions[event].actionarg2 = dialaction.actionarg2
 
-    @property
+    @hybrid_property
     def fullname(self) -> str:
-        """The user's full name."""
+        """Get the user's full name.
+
+        Returns:
+            The user's full name (firstname + lastname).
+
+        """
         name = self.firstname
         if self.lastname:
             name += f" {self.lastname}"
         return name
 
     @fullname.expression
-    def fullname(cls) -> Mapped[str]:
+    def fullname(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the user's full name.
+
+        Returns:
+            A SQL expression that concatenates firstname and lastname.
+
+        """
         return func.trim(cls.firstname + " " + cls.webi_lastname)
 
-    @property
+    @hybrid_property
     def username(self) -> str | None:
-        """The username for client login."""
+        """Get the username for client login.
+
+        Returns:
+            The username or None if empty.
+
+        """
         if self.loginclient == "":
             return None
         return self.loginclient
 
     @username.setter
     def username(self, value: str | None) -> None:
-        """Set the username."""
+        """Set the username.
+
+        Args:
+            value: The username to set or None to clear it.
+
+        """
         if value is None:
             self.loginclient = ""
         else:
             self.loginclient = value
 
     @username.expression
-    def username(cls) -> Mapped[str | None]:
+    def username(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the username.
+
+        Returns:
+            A SQL expression that returns NULL if loginclient is empty.
+
+        """
         return func.nullif(cls.loginclient, "")
 
-    @property
+    @hybrid_property
     def password(self) -> str | None:
-        """The password for client login."""
+        """Get the password for client login.
+
+        Returns:
+            The password or None if empty.
+
+        """
         if self.passwdclient == "":
             return None
         return self.passwdclient
 
     @password.setter
     def password(self, value: str | None) -> None:
-        """Set the password."""
+        """Set the password.
+
+        Args:
+            value: The password to set or None to clear it.
+
+        """
         if value is None:
             self.passwdclient = ""
         else:
             self.passwdclient = value
 
     @password.expression
-    def password(cls) -> Mapped[str | None]:
+    def password(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the password.
+
+        Returns:
+            A SQL expression that returns NULL if passwdclient is empty.
+
+        """
         return func.nullif(cls.passwdclient, "")
 
-    @property
+    @hybrid_property
     def agent_id(self) -> int | None:
-        """The agent ID."""
+        """Get the agent ID.
+
+        Returns:
+            The agent ID.
+
+        """
         return self.agentid
 
     @agent_id.setter
     def agent_id(self, value: int | None) -> None:
-        """Set the agent ID."""
+        """Set the agent ID.
+
+        Args:
+            value: The agent ID to set.
+
+        """
         self.agentid = value
 
-    @property
+    @hybrid_property
     def caller_id(self) -> str | None:
-        """The caller ID."""
+        """Get the caller ID.
+
+        Returns:
+            The caller ID or None if empty.
+
+        """
         if self.callerid == "":
             return None
         return self.callerid
 
     @caller_id.setter
     def caller_id(self, value: str | None) -> None:
-        """Set the caller ID."""
+        """Set the caller ID.
+
+        Args:
+            value: The caller ID to set or None to clear it.
+
+        """
         if value is None:
             self.callerid = ""
         else:
             self.callerid = value
 
     @caller_id.expression
-    def caller_id(cls) -> Mapped[str | None]:
+    def caller_id(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the caller ID.
+
+        Returns:
+            A SQL expression that returns NULL if callerid is empty.
+
+        """
         return func.nullif(cls.callerid, "")
 
-    @property
+    @hybrid_property
     def outgoing_caller_id(self) -> str | None:
-        """The outgoing caller ID."""
+        """Get the outgoing caller ID.
+
+        Returns:
+            The outgoing caller ID or None if empty.
+
+        """
         if self.outcallerid == "":
             return None
         return self.outcallerid
 
     @outgoing_caller_id.setter
     def outgoing_caller_id(self, value: str | None) -> None:
-        """Set the outgoing caller ID."""
+        """Set the outgoing caller ID.
+
+        Args:
+            value: The outgoing caller ID to set or None to clear it.
+
+        """
         if value is None:
             self.outcallerid = ""
         else:
             self.outcallerid = value
 
     @outgoing_caller_id.expression
-    def outgoing_caller_id(cls) -> Mapped[str | None]:
+    def outgoing_caller_id(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the outgoing caller ID.
+
+        Returns:
+            A SQL expression that returns NULL if outcallerid is empty.
+
+        """
         return func.nullif(cls.outcallerid, "")
 
-    @property
+    @hybrid_property
     def music_on_hold(self) -> str | None:
-        """The music on hold setting."""
+        """Get the music on hold setting.
+
+        Returns:
+            The music on hold setting or None if empty.
+
+        """
         if self.musiconhold == "":
             return None
         return self.musiconhold
 
     @music_on_hold.setter
     def music_on_hold(self, value: str | None) -> None:
-        """Set the music on hold setting."""
+        """Set the music on hold setting.
+
+        Args:
+            value: The music on hold setting to set or None to clear it.
+
+        """
         if value is None:
             self.musiconhold = ""
         else:
             self.musiconhold = value
 
     @music_on_hold.expression
-    def music_on_hold(cls) -> Mapped[str | None]:
+    def music_on_hold(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the music on hold.
+
+        Returns:
+            A SQL expression that returns NULL if musiconhold is empty.
+
+        """
         return func.nullif(cls.musiconhold, "")
 
-    @property
+    @hybrid_property
     def mobile_phone_number(self) -> str | None:
-        """The mobile phone number."""
+        """Get the mobile phone number.
+
+        Returns:
+            The mobile phone number or None if empty.
+
+        """
         if self.mobilephonenumber == "":
             return None
         return self.mobilephonenumber
 
     @mobile_phone_number.setter
     def mobile_phone_number(self, value: str | None) -> None:
-        """Set the mobile phone number."""
+        """Set the mobile phone number.
+
+        Args:
+            value: The mobile phone number to set or None to clear it.
+
+        """
         if value is None:
             self.mobilephonenumber = ""
         else:
             self.mobilephonenumber = value
 
     @mobile_phone_number.expression
-    def mobile_phone_number(cls) -> Mapped[str | None]:
+    def mobile_phone_number(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the mobile phone number.
+
+        Returns:
+            A SQL expression that returns NULL if mobilephonenumber is empty.
+
+        """
         return func.nullif(cls.mobilephonenumber, "")
 
-    @property
+    @hybrid_property
     def voicemail_id(self) -> int | None:
-        """The voicemail ID."""
+        """Get the voicemail ID.
+
+        Returns:
+            The voicemail ID.
+
+        """
         return self.voicemailid
 
     @voicemail_id.setter
     def voicemail_id(self, value: int | None) -> None:
-        """Set the voicemail ID."""
+        """Set the voicemail ID.
+
+        Args:
+            value: The voicemail ID to set.
+
+        """
         self.voicemailid = value
 
-    @property
+    @hybrid_property
     def userfield(self) -> str | None:
-        """The userfield."""
+        """Get the userfield.
+
+        Returns:
+            The userfield or None if empty.
+
+        """
         if self.webi_userfield == "":
             return None
         return self.webi_userfield
 
     @userfield.setter
     def userfield(self, value: str | None) -> None:
+        """Set the userfield.
+
+        Args:
+            value: The userfield to set or None to clear it.
+
+        """
         if value is None:
             self.webi_userfield = ""
         else:
             self.webi_userfield = value
 
     @userfield.expression
-    def userfield(cls) -> Mapped[str | None]:
+    def userfield(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the userfield.
+
+        Returns:
+            A SQL expression that returns NULL if webi_userfield is empty.
+
+        """
         return func.nullif(cls.webi_userfield, "")
 
-    @property
+    @hybrid_property
     def lastname(self) -> str | None:
-        """The lastname."""
+        """Get the lastname.
+
+        Returns:
+            The lastname or None if empty.
+
+        """
         if self.webi_lastname == "":
             return None
         return self.webi_lastname
 
     @lastname.setter
     def lastname(self, value: str | None) -> None:
-        """Set the lastname."""
+        """Set the lastname.
+
+        Args:
+            value: The lastname to set or None to clear it.
+
+        """
         if value is None:
             self.webi_lastname = ""
         else:
             self.webi_lastname = value
 
     @lastname.expression
-    def lastname(cls) -> Mapped[str | None]:
+    def lastname(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the lastname.
+
+        Returns:
+            A SQL expression that returns NULL if webi_lastname is empty.
+
+        """
         return func.nullif(cls.webi_lastname, "")
 
-    @property
+    @hybrid_property
     def description(self) -> str | None:
-        """The description."""
+        """Get the description.
+
+        Returns:
+            The description or None if empty.
+
+        """
         if self.webi_description == "":
             return None
         return self.webi_description
 
     @description.setter
     def description(self, value: str | None) -> None:
-        """Set the description."""
+        """Set the description.
+
+        Args:
+            value: The description to set or None to clear it.
+
+        """
         if value is None:
             self.webi_description = ""
         else:
             self.webi_description = value
 
     @description.expression
-    def description(cls) -> Mapped[str | None]:
+    def description(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the description.
+
+        Returns:
+            A SQL expression that returns NULL if webi_description is empty.
+
+        """
         return func.nullif(cls.webi_description, "")
 
-    @property
+    @hybrid_property
     def template_id(self) -> int | None:
-        """The template ID."""
+        """Get the template ID.
+
+        Returns:
+            The template ID.
+
+        """
         return self.func_key_template_id
 
     @template_id.setter
     def template_id(self, value: int | None) -> None:
-        """Set the template ID."""
+        """Set the template ID.
+
+        Args:
+            value: The template ID to set.
+
+        """
         self.func_key_template_id = value
 
-    @property
+    @hybrid_property
     def private_template_id(self) -> int:
-        """The private template ID."""
+        """Get the private template ID.
+
+        Returns:
+            The private template ID.
+
+        """
         return self.func_key_private_template_id
 
     @private_template_id.setter
     def private_template_id(self, value: int) -> None:
-        """Set the private template ID."""
+        """Set the private template ID.
+
+        Args:
+            value: The private template ID to set.
+
+        """
         self.func_key_private_template_id = value
 
-    @property
+    @hybrid_property
     def incallfilter_enabled(self) -> bool:
-        """Indicates if incall filtering is enabled."""
-        return self.incallfilter == 1
+        """Indicate if incall filtering is enabled.
+
+        Returns:
+            True if incall filtering is enabled, False otherwise.
+
+        """
+        return bool(self.incallfilter == 1)
 
     @incallfilter_enabled.setter
     def incallfilter_enabled(self, value: bool | None) -> None:
-        """Set whether incall filtering is enabled."""
-        self.incallfilter = int(value == 1) if value is not None else None
+        """Set whether incall filtering is enabled.
 
-    @property
+        Args:
+            value: True to enable incall filtering, False to disable it.
+
+        """
+        self.incallfilter = 1 if value else 0
+
+    @hybrid_property
     def dnd_enabled(self) -> bool:
-        """Indicates if Do Not Disturb is enabled."""
-        return self.enablednd == 1
+        """Indicate if Do Not Disturb is enabled.
+
+        Returns:
+            True if Do Not Disturb is enabled, False otherwise.
+
+        """
+        return bool(self.enablednd == 1)
 
     @dnd_enabled.setter
     def dnd_enabled(self, value: bool | None) -> None:
-        """Set whether Do Not Disturb is enabled."""
-        self.enablednd = int(value == 1) if value is not None else None
+        """Set whether Do Not Disturb is enabled.
 
-    @property
+        Args:
+            value: True to enable Do Not Disturb, False to disable it.
+
+        """
+        self.enablednd = 1 if value else 0
+
+    @hybrid_property
     def supervision_enabled(self) -> bool | None:
-        """Indicates if call supervision is enabled."""
+        """Indicate if call supervision is enabled.
+
+        Returns:
+            True if call supervision is enabled, False otherwise, None if not set.
+
+        """
         if self.enablehint is None:
             return None
-        return self.enablehint == 1
+        return bool(self.enablehint == 1)
 
     @supervision_enabled.setter
     def supervision_enabled(self, value: bool | None) -> None:
-        """Set whether call supervision is enabled."""
-        self.enablehint = int(value == 1) if value is not None else None
+        """Set whether call supervision is enabled.
 
-    @property
+        Args:
+            value: True to enable call supervision, False to disable it, None to clear.
+
+        """
+        self.enablehint = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def call_transfer_enabled(self) -> bool | None:
-        """Indicates if call transfer is enabled."""
+        """Indicate if call transfer is enabled.
+
+        Returns:
+            True if call transfer is enabled, False otherwise, None if not set.
+
+        """
         if self.enablexfer is None:
             return None
-        return self.enablexfer == 1
+        return bool(self.enablexfer == 1)
 
     @call_transfer_enabled.setter
     def call_transfer_enabled(self, value: bool | None) -> None:
-        """Set whether call transfer is enabled."""
-        self.enablexfer = int(value == 1) if value is not None else None
+        """Set whether call transfer is enabled.
 
-    @property
+        Args:
+            value: True to enable call transfer, False to disable it, None to clear.
+
+        """
+        self.enablexfer = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def dtmf_hangup_enabled(self) -> bool | None:
-        """Indicates if DTMF hangup is enabled."""
+        """Indicate if DTMF hangup is enabled.
+
+        Returns:
+            True if DTMF hangup is enabled, False otherwise, None if not set.
+
+        """
         if self.dtmf_hangup is None:
             return None
-        return self.dtmf_hangup == 1
+        return bool(self.dtmf_hangup == 1)
 
     @dtmf_hangup_enabled.setter
     def dtmf_hangup_enabled(self, value: bool | None) -> None:
-        """Set whether DTMF hangup is enabled."""
-        self.dtmf_hangup = int(value == 1) if value is not None else None
+        """Set whether DTMF hangup is enabled.
 
-    @property
+        Args:
+            value: True to enable DTMF hangup, False to disable it, None to clear.
+
+        """
+        self.dtmf_hangup = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def online_call_record_enabled(self) -> bool | None:
-        """Indicates if online call recording is enabled."""
+        """Indicate if online call recording is enabled.
+
+        Returns:
+            True if online call recording is enabled,
+            False otherwise, None if not set.
+
+        """
         if self.enableonlinerec is None:
             return None
-        return self.enableonlinerec == 1
+        return bool(self.enableonlinerec == 1)
 
     @online_call_record_enabled.setter
     def online_call_record_enabled(self, value: bool | None) -> None:
-        """Set whether online call recording is enabled."""
-        self.enableonlinerec = int(value == 1) if value is not None else None
+        """Set whether online call recording is enabled.
 
-    @property
+        Args:
+            value: True to enable online call recording,
+            False to disable it, None to clear.
+
+        """
+        self.enableonlinerec = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def ring_seconds(self) -> int:
-        """The number of seconds to ring."""
+        """Get the number of seconds to ring.
+
+        Returns:
+            The number of seconds to ring.
+
+        """
         return self.ringseconds
 
     @ring_seconds.setter
     def ring_seconds(self, value: int) -> None:
-        """Set the number of seconds to ring."""
+        """Set the number of seconds to ring.
+
+        Args:
+            value: The number of seconds to set.
+
+        """
         self.ringseconds = value
 
-    @property
+    @hybrid_property
     def simultaneous_calls(self) -> int:
-        """The number of simultaneous calls allowed."""
+        """Get the number of simultaneous calls allowed.
+
+        Returns:
+            The number of simultaneous calls allowed.
+
+        """
         return self.simultcalls
 
     @simultaneous_calls.setter
     def simultaneous_calls(self, value: int) -> None:
-        """Set the number of simultaneous calls allowed."""
+        """Set the number of simultaneous calls allowed.
+
+        Args:
+            value: The number of simultaneous calls to set.
+
+        """
         self.simultcalls = value
 
-    @property
+    @hybrid_property
     def cti_enabled(self) -> bool | None:
-        """Indicates if CTI is enabled."""
+        """Indicate if CTI is enabled.
+
+        Returns:
+            True if CTI is enabled, False otherwise, None if not set.
+
+        """
         if self.enableclient is None:
             return None
-        return self.enableclient == 1
+        return bool(self.enableclient == 1)
 
     @cti_enabled.setter
     def cti_enabled(self, value: bool | None) -> None:
-        """Set whether CTI is enabled."""
-        self.enableclient = int(value == 1) if value is not None else None
+        """Set whether CTI is enabled.
 
-    @property
+        Args:
+            value: True to enable CTI, False to disable it, None to clear.
+
+        """
+        self.enableclient = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def busy_enabled(self) -> bool | None:
-        """Indicates if call forwarding on busy is enabled."""
+        """Indicate if call forwarding on busy is enabled.
+
+        Returns:
+            True if call forwarding on busy is enabled,
+            False otherwise, None if not set.
+
+        """
         if self.enablebusy is None:
             return None
-        return self.enablebusy == 1
+        return bool(self.enablebusy == 1)
 
     @busy_enabled.setter
     def busy_enabled(self, value: bool | None) -> None:
-        """Set whether call forwarding on busy is enabled."""
-        self.enablebusy = int(value == 1) if value is not None else None
+        """Set whether call forwarding on busy is enabled.
 
-    @property
+        Args:
+            value: True to enable call forwarding on busy,
+            False to disable it, None to clear.
+
+        """
+        self.enablebusy = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def busy_destination(self) -> str | None:
-        """The destination for call forwarding on busy."""
+        """Get the destination for call forwarding on busy.
+
+        Returns:
+            The destination for call forwarding on busy or None if empty.
+
+        """
         if self.destbusy == "":
             return None
         return self.destbusy
 
     @busy_destination.setter
     def busy_destination(self, value: str | None) -> None:
-        """Set the destination for call forwarding on busy."""
+        """Set the destination for call forwarding on busy.
+
+        Args:
+            value: The destination to set or None to clear it.
+
+        """
         if value is None:
             self.destbusy = ""
         else:
             self.destbusy = value
 
     @busy_destination.expression
-    def busy_destination(cls) -> Mapped[str | None]:
+    def busy_destination(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the busy destination.
+
+        Returns:
+            A SQL expression that returns NULL if destbusy is empty.
+
+        """
         return func.nullif(cls.destbusy, "")
 
-    @property
+    @hybrid_property
     def noanswer_enabled(self) -> bool | None:
-        """Indicates if call forwarding on no answer is enabled."""
+        """Indicate if call forwarding on no answer is enabled.
+
+        Returns:
+            True if call forwarding on no answer is enabled,
+            False otherwise, None if not set.
+
+        """
         if self.enablerna is None:
             return None
-        return self.enablerna == 1
+        return bool(self.enablerna == 1)
 
     @noanswer_enabled.setter
     def noanswer_enabled(self, value: bool | None) -> None:
-        """Set whether call forwarding on no answer is enabled."""
-        self.enablerna = int(value == 1) if value is not None else None
+        """Set whether call forwarding on no answer is enabled.
 
-    @property
+        Args:
+            value: True to enable call forwarding on no answer,
+            False to disable it, None to clear.
+
+        """
+        self.enablerna = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def noanswer_destination(self) -> str | None:
-        """The destination for call forwarding on no answer."""
+        """Get the destination for call forwarding on no answer.
+
+        Returns:
+            The destination for call forwarding on no answer or None if empty.
+
+        """
         if self.destrna == "":
             return None
         return self.destrna
 
     @noanswer_destination.setter
     def noanswer_destination(self, value: str | None) -> None:
-        """Set the destination for call forwarding on no answer."""
+        """Set the destination for call forwarding on no answer.
+
+        Args:
+            value: The destination to set or None to clear it.
+
+        """
         if value is None:
             self.destrna = ""
         else:
             self.destrna = value
 
     @noanswer_destination.expression
-    def noanswer_destination(cls) -> Mapped[str | None]:
+    def noanswer_destination(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the no answer destination.
+
+        Returns:
+            A SQL expression that returns NULL if destrna is empty.
+
+        """
         return func.nullif(cls.destrna, "")
 
-    @property
+    @hybrid_property
     def unconditional_enabled(self) -> bool | None:
-        """Indicates if unconditional call forwarding is enabled."""
+        """Indicate if unconditional call forwarding is enabled.
+
+        Returns:
+            True if unconditional call forwarding is enabled,
+            False otherwise, None if not set.
+
+        """
         if self.enableunc is None:
             return None
-        return self.enableunc == 1
+        return bool(self.enableunc == 1)
 
     @unconditional_enabled.setter
     def unconditional_enabled(self, value: bool | None) -> None:
-        """Set whether unconditional call forwarding is enabled."""
-        self.enableunc = int(value == 1) if value is not None else None
+        """Set whether unconditional call forwarding is enabled.
 
-    @property
+        Args:
+            value: True to enable unconditional call forwarding,
+            False to disable it, None to clear.
+
+        """
+        self.enableunc = 1 if value else 0 if value is not None else None
+
+    @hybrid_property
     def unconditional_destination(self) -> str | None:
-        """The destination for unconditional call forwarding."""
+        """Get the destination for unconditional call forwarding.
+
+        Returns:
+            The destination for unconditional call forwarding or None if empty.
+
+        """
         if self.destunc == "":
             return None
         return self.destunc
 
     @unconditional_destination.setter
     def unconditional_destination(self, value: str | None) -> None:
-        """Set the destination for unconditional call forwarding."""
+        """Set the destination for unconditional call forwarding.
+
+        Args:
+            value: The destination to set or None to clear it.
+
+        """
         if value is None:
             self.destunc = ""
         else:
             self.destunc = value
 
     @unconditional_destination.expression
-    def unconditional_destination(cls) -> Mapped[str | None]:
+    def unconditional_destination(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the unconditional destination.
+
+        Returns:
+            A SQL expression that returns NULL if destunc is empty.
+
+        """
         return func.nullif(cls.destunc, "")
 
-    @property
+    @hybrid_property
     def enabled(self) -> bool | None:
-        """Indicates if the user features are enabled."""
+        """Indicate if the user features are enabled.
+
+        Returns:
+            True if the user features are enabled, False otherwise, None if not set.
+
+        """
         if self.commented is None:
             return None
-        return self.commented == 0
+        return bool(self.commented == 0)
+
+    @enabled.expression
+    def enabled(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the enabled flag.
+
+        Returns:
+            A SQL expression that returns TRUE if commented is 0.
+
+        """
+        return sql.not_(cast(cls.commented, Boolean))
 
     @enabled.setter
     def enabled(self, value: bool | None) -> None:
-        """Enable or disables the user features."""
-        self.commented = int(not value) if value is not None else None
+        """Enable or disable the user features.
 
-    @enabled.expression
-    def enabled(cls) -> Mapped[bool]:
-        return func.not_(cast(cls.commented, Boolean))
+        Args:
+            value: True to enable, False to disable, None to clear.
 
-    @property
+        """
+        if value is None:
+            self.commented = None
+        else:
+            self.commented = int(not value)
+
+    @hybrid_property
     def call_permission_password(self) -> str | None:
-        """The password for call permissions."""
-        if self.rightcallcode == "":
+        """Get the password for call permissions.
+
+        Returns:
+            The password for call permissions or None if empty.
+
+        """
+        if not self.rightcallcode:
             return None
         return self.rightcallcode
 
+    @call_permission_password.expression
+    def call_permission_password(cls) -> sql.elements.ColumnElement:
+        """Get the SQL expression for the call permission password.
+
+        Returns:
+            A SQL expression that returns NULL if rightcallcode is empty.
+
+        """
+        return func.nullif(cls.rightcallcode, "")
+
     @call_permission_password.setter
     def call_permission_password(self, value: str | None) -> None:
-        """Set the password for call permissions."""
+        """Set the password for call permissions.
+
+        Args:
+            value: The password to set or None to clear it.
+
+        """
         if value == "":  # Allow empty string, but treat as None
             self.rightcallcode = None
         else:
             self.rightcallcode = value
 
-    @call_permission_password.expression
-    def call_permission_password(cls) -> Mapped[str | None]:
-        return func.nullif(cls.rightcallcode, "")
-
     @property
     def forwards(self) -> "UserFeatures":
-        """Returns the UserFeatures object itself (for compatibility)."""
-        return self  # For compatibility
+        """Get a reference to this user's forwarding settings.
+
+        Returns:
+            A reference to this user features object (for compatibility).
+
+        """
+        return self
 
     @property
     def services(self) -> "UserFeatures":
-        """Returns the UserFeatures object itself (for compatibility)."""
-        return self  # For compatibility
+        """Get a reference to this user's service settings.
+
+        Returns:
+            A reference to this user features object (for compatibility).
+
+        """
+        return self
 
     @property
     def country(self) -> str | None:
-        """The country code associated with the user (from the tenant)."""
+        """Get the country code associated with this user.
+
+        Returns:
+            The country code from the tenant or None if not available.
+
+        """
+        if not hasattr(self, "tenant") or not self.tenant:
+            return None
         return self.tenant.country
+
+    def set_lines(self, value: list["LineFeatures"]) -> None:
+        """Set the lines for the user.
+
+        Args:
+            value: A list of LineFeatures objects to associate with the user.
+
+        """
+        new_user_lines: list[UserLine] = []
+        main_set = False
+        for line in value:
+            is_main = not main_set
+            new_user_lines.append(
+                UserLine(line=line, user=self, main_user=False, main_line=is_main)
+            )
+            if is_main:
+                main_set = True
+        self.user_lines = new_user_lines
+
+    # For API compatibility, create a property using the set_lines method
+    @lines.setter
+    def lines(self, value: list["LineFeatures"]) -> None:
+        """Set the lines for this user.
+
+        Args:
+            value: List of LineFeatures to associate with this user
+
+        """
+        self.set_lines(value)
+
+    @call_permissions.setter
+    def call_permissions(self, value: list["RightCall"]) -> None:
+        """Set the call permissions for this user.
+
+        Args:
+            value: List of RightCall objects to associate with this user
+
+        """
+        from .rightcallmember import RightCallMember
+
+        self.rightcall_members = [
+            RightCallMember(type="user", typeval=str(self.id), rightcall=permission)
+            for permission in value
+        ]

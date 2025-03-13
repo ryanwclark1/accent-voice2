@@ -6,14 +6,13 @@
 import logging
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
-from typing import TypedDict
+from typing import Protocol, TypedDict, cast
 
 from sqlalchemy import (
     and_,
     between,
     distinct,
     func,
-    literal_column,
     or_,
     select,
     text,
@@ -22,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import min as sql_min
 
 from accent_dao.alchemy.queue_log import QueueLog
-from accent_dao.helpers.db_manager import async_session
+from accent_dao.helpers.db_manager import async_daosession
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +43,16 @@ class CallEventResult(TypedDict):
     event: str
     talktime: int
     waittime: int | None
+
+
+class QueueLogRow(Protocol):
+    """Protocol for queue log row data."""
+
+    event: str
+    callid: str
+    queuename: str
+    data3: str | None
+    time: datetime
 
 
 async def get_wrapup_times(
@@ -80,16 +89,13 @@ AND
   queue_log.time BETWEEN :start AND :end
 """
 
-    periods = list(_enumerate_periods(start, end, interval))
+    # Convert generator to list to avoid the asyncgenerator issue
+    periods = [period async for period in _enumerate_periods(start, end, interval)]
     formatted_start = before_start.strftime("%Y-%m-%d %H:%M:%S%z")
     formatted_end = end.strftime("%Y-%m-%d %H:%M:%S%z")
 
-    stmt = select(
-        [literal_column("start"), literal_column("end"), literal_column("agent_id")]
-    ).from_statement(
-        text(wrapup_times_query).bindparams(start=formatted_start, end=formatted_end)
-    )
-
+    # Updated select syntax for SQLAlchemy 2.x
+    stmt = text(wrapup_times_query).bindparams(start=formatted_start, end=formatted_end)
     result = await session.execute(stmt)
     rows = result.all()
 
@@ -100,14 +106,16 @@ AND
         starting_period = _find_including_period(periods, wstart)
         ending_period = _find_including_period(periods, wend)
 
-        if starting_period and starting_period not in results:
+        # Handle None values with proper type checking
+        if starting_period is not None and starting_period not in results:
             results[starting_period] = {}
-        if ending_period and ending_period not in results:
+        if ending_period is not None and ending_period not in results:
             results[ending_period] = {}
 
         if starting_period is not None:
             range_end = starting_period + interval
-            wend_in_start = wend if wend < range_end else range_end
+            # Use min() instead of conditional expression
+            wend_in_start = min(range_end, wend)
             time_in_period = wend_in_start - wstart
             if agent_id not in results[starting_period]:
                 results[starting_period][agent_id] = {
@@ -115,13 +123,11 @@ AND
                 }
             results[starting_period][agent_id]["wrapup_time"] += time_in_period
 
-        if ending_period == starting_period:
-            continue
-
-        time_in_period = wend - ending_period
-        if agent_id not in results[ending_period]:
-            results[ending_period][agent_id] = {"wrapup_time": timedelta(seconds=0)}
-        results[ending_period][agent_id]["wrapup_time"] += time_in_period
+        if ending_period is not None and ending_period != starting_period:
+            time_in_period = wend - ending_period
+            if agent_id not in results[ending_period]:
+                results[ending_period][agent_id] = {"wrapup_time": timedelta(seconds=0)}
+            results[ending_period][agent_id]["wrapup_time"] += time_in_period
 
     return results
 
@@ -144,7 +150,7 @@ def _find_including_period(periods: list[datetime], t: datetime) -> datetime | N
     return match
 
 
-def _enumerate_periods(
+async def _enumerate_periods(
     start: datetime, end: datetime, interval: timedelta
 ) -> AsyncGenerator[datetime, None]:
     """Generate time periods between start and end.
@@ -184,8 +190,9 @@ async def _get_ended_call(
         Call event results
 
     """
-    pairs: list[tuple[QueueLog, QueueLog]] = []
-    enter_queue_event: QueueLog | None = None
+    # Use proper tuple typing for pairs
+    pairs: list[tuple[QueueLogRow, QueueLogRow]] = []
+    enter_queue_event: QueueLogRow | None = None
 
     higher_boundary = end + timedelta(days=1)
     end_str = higher_boundary.strftime(_STR_TIME_FMT)
@@ -217,7 +224,7 @@ async def _get_ended_call(
         if enter_queue_event is None and queue_log.event != "ENTERQUEUE":
             continue
 
-        # When a callid reaches the end of the range, skip all other queue_log for this callid
+        # When callid reaches end of the range, skip all other queue_log for this callid
         if to_skip and queue_log.callid == to_skip:
             continue
 
@@ -231,14 +238,14 @@ async def _get_ended_call(
             enter_queue_event = queue_log
             continue
 
-        # Only ended calls can reach this line
+        # Only ended calls can reach this line - ensure it's not None
         end_event = queue_log
 
-        # Does it have a matching ENTERQUEUE?
-        if end_event.callid != enter_queue_event.callid:  # type: ignore  # noqa: PGH003
+        # Does it have a matching ENTERQUEUE? - handle None properly
+        if enter_queue_event is None or end_event.callid != enter_queue_event.callid:
             continue
 
-        pairs.append((enter_queue_event, end_event))  # type: ignore  # noqa: PGH003
+        pairs.append((enter_queue_event, end_event))
 
     for enter_queue, end_event in pairs:
         # NOTE: data3 should be a valid waittime integer value as per asterisk doc,
@@ -251,10 +258,11 @@ async def _get_ended_call(
             )
             waittime = None
 
+        # Ensure all fields have the correct non-optional types for TypedDict
         yield {
-            "callid": enter_queue.callid,
-            "queue_name": enter_queue.queuename,
-            "time": enter_queue.time,
+            "callid": str(enter_queue.callid),
+            "queue_name": str(enter_queue.queuename),
+            "time": cast(datetime, enter_queue.time),
             "event": stat_event,
             "talktime": 0,
             "waittime": waittime,
@@ -323,7 +331,8 @@ async def get_first_time(session: AsyncSession) -> datetime:
     if res is None:
         msg = "Table is empty"
         raise LookupError(msg)
-    return res
+    # Cast the SQLAlchemy DateTime to Python datetime
+    return cast(datetime, res)
 
 
 async def get_queue_names_in_range(
@@ -348,7 +357,7 @@ async def get_queue_names_in_range(
     )
 
     result = await session.execute(stmt)
-    return [r[0] for r in result.all() if r[0] is not None]
+    return [str(r[0]) for r in result.all() if r[0] is not None]
 
 
 async def delete_event_by_queue_between(
@@ -465,7 +474,7 @@ async def hours_with_calls(
 
     result = await session.execute(stmt)
     for hour in result.all():
-        yield hour.time
+        yield cast(datetime, hour.time)
 
 
 async def get_last_callid_with_event_for_agent(
@@ -492,16 +501,17 @@ async def get_last_callid_with_event_for_agent(
     result = await session.execute(stmt)
     row = result.first()
 
-    return row[0] if row else None
+    return str(row[0]) if row else None
 
 
-@async_session
+@async_daosession
 async def get_last_callid_with_event_for_agent_session(
-    event: str, agent: str
+    session: AsyncSession, event: str, agent: str
 ) -> str | None:
-    """Get the last call ID with a specific event for an agent using a session decorator.
+    """Get the last callid with a specific event for agent using a session decorator.
 
     Args:
+        session: Async database session (injected by decorator)
         event: The event type
         agent: The agent name
 
@@ -509,5 +519,4 @@ async def get_last_callid_with_event_for_agent_session(
         The call ID or None if not found
 
     """
-    async with AsyncSession() as session:
-        return await get_last_callid_with_event_for_agent(session, event, agent)
+    return await get_last_callid_with_event_for_agent(session, event, agent)

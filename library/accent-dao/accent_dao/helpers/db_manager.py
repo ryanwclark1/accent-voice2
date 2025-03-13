@@ -113,9 +113,7 @@ class IntAsString(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def process_bind_param(
-        self, value: int | str | None, dialect: Any
-    ) -> str | None:
+    def process_bind_param(self, value: int | str | None, dialect: Any) -> str | None:
         """Process a value before binding to the database.
 
         Args:
@@ -397,4 +395,3 @@ def cached_query(
         return wrapped
 
     return decorator
-

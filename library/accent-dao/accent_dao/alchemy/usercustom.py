@@ -1,4 +1,4 @@
-# file: accent_dao/alchemy/usercustom.py
+# file: accent_dao/alchemy/usercustom.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 from typing import TYPE_CHECKING, Literal
 
@@ -85,14 +85,20 @@ class UserCustom(Base):
 
     @enabled.expression
     def enabled(cls) -> Mapped[bool]:
+        """Determine if the user is enabled based on the 'commented' attribute.
+
+        Returns:
+            Mapped[bool]: True if the user is enabled, False otherwise.
+
+        """
         return func.not_(cast(cls.commented, Boolean))
 
     def endpoint_protocol(self) -> str:
-        """Returns the protocol used by the endpoint (always 'custom')."""
+        """Return the protocol used by the endpoint (always 'custom')."""
         return "custom"
 
     def same_protocol(self, protocol: str, protocolid: str | int) -> bool:
-        """Checks if the given protocol and ID match this custom endpoint."""
+        """Check if the given protocol and ID match this custom endpoint."""
         return protocol == "custom" and self.id == int(protocolid)
 
     @property
@@ -112,4 +118,10 @@ class UserCustom(Base):
 
     @interface_suffix.expression
     def interface_suffix(cls) -> Mapped[str | None]:
+        """Return the interface suffix of the user, or None suffix is an empty string.
+
+        Returns:
+            Mapped[str | None]: The interface suffix if it exists, otherwise None.
+
+        """
         return func.nullif(cls.intfsuffix, "")
