@@ -1,11 +1,8 @@
 # file: accent_dao/alchemy/endpoint_sip_options_view.py  # noqa: ERA001
 # Copyright 2025 Accent Communications
 
-from typing import Any
-
-from sqlalchemy import Index, String, func, join, literal, select, text
+from sqlalchemy import Index, String, Subquery, func, join, literal, select, text
 from sqlalchemy.dialects.postgresql import aggregate_order_by
-from sqlalchemy.orm import Mapped
 from sqlalchemy_utils import create_materialized_view
 
 from accent_dao.helpers.db_manager import Base
@@ -15,7 +12,7 @@ from .endpoint_sip_section import EndpointSIPSection
 from .endpoint_sip_section_option import EndpointSIPSectionOption
 
 
-def _generate_selectable() -> Any:
+def _generate_selectable() -> Subquery:
     """Generate the selectable for the materialized view."""
     cte = select(
         EndpointSIP.uuid.label("uuid"),
@@ -84,16 +81,17 @@ class EndpointSIPOptionsView:
     Taking into account inheritance from templates.
     """
 
-    __view_dependencies__ = (EndpointSIPSectionOption, EndpointSIP)
+    __view_dependencies__ = (EndpointSIPSectionOption, EndpointSIP)  # Kept
 
     @classmethod
     def create_view(cls, metadata: Base.metadata) -> None:  # type: ignore
-        """Create the materialized view 'endpoint_sip_options_view'.
+        """Create the materialized view "endpoint_sip_options_view".
 
         Args:
             metadata: The metadata object from sqlalchemy
 
         """
+        # Added a check to see if the view already exists.
         mat_view = create_materialized_view(
             "endpoint_sip_options_view",
             _generate_selectable(),
@@ -102,21 +100,24 @@ class EndpointSIPOptionsView:
                 Index("endpoint_sip_options_view__idx_root", text("root"), unique=True),
             ],
         )
-        if "endpoint_sip_options_view" not in metadata.tables:
-            mat_view.create(metadata.bind, checkfirst=True)
+        # Instead of using metatdata.tables which is a MutableMapping, check for view using reflection.
+        with metadata.bind.connect() as connection:  # type: ignore
+            insp = reflection.Inspector.from_engine(connection)
+            if "endpoint_sip_options_view" not in insp.get_view_names():
+                mat_view.create(metadata.bind, checkfirst=True)  # type: ignore
 
     @classmethod
     def get_option_value(
-        cls, options: Mapped[dict[str, str]], option: str
-    ) -> str | None:
+        cls, options: dict[str, str], option: str
+    ) -> str | None:  # Added Options
         """Retrieve the value of a specific option from the options dictionary.
 
         Args:
-            options: Options
+            options: The dictionary of options.
             option: The name of the option.
 
         Returns:
             The value of the option, or None if the option is not found.
 
         """
-        return options.get(option)
+        return options.get(option, None)
