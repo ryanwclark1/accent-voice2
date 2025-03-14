@@ -1,41 +1,29 @@
 # accent_bus/consumer.py
-import asyncio
-import logging
-from collections.abc import Callable, Coroutine
-from typing import Any
+# Copyright 2025 Accent Communications
 
-from aiopika.abc import AbstractIncomingMessage
-from pydantic import ValidationError
+"""AMQP Consumer."""
 
-from accent_bus.resources.common.schemas import Event
+from __future__ import annotations
+
+from typing import Any, TypedDict
 
 from .base import Base
-from .mixins import AiopikaConnectionMixin
-
-logger = logging.getLogger(__name__)
-
-
-async def process_message(message: AbstractIncomingMessage) -> None:
-    """Process an incoming message, attempting to parse it using Pydantic.
-
-    Args:
-        message (AbstractIncomingMessage): The incoming message.
-
-    """
-    async with message.process():  # Acknowledge message upon *successful* processing
-        try:
-            event = Event.model_validate_json(message.body)
-            logger.info("Received event: %s, Data: %s", event.name, event.data)
-            # ... further processing (e.g., dispatch to handlers) ...
-        except ValidationError as e:
-            logger.error(f"Invalid message format: {e}")
-            # Consider sending to a dead-letter queue (DLQ) here.
-        except Exception:
-            logger.exception("Error while processing message")
+from .mixins import (
+    AccentEventMixin,
+    ConsumerMixin,
+    # ThreadableMixin,  # Removed ThreadableMixin
+)
 
 
-class BusConsumer(AiopikaConnectionMixin, Base):
-    """Asynchronous message consumer using aiopika."""
+class SubscribeExchangeDict(TypedDict):
+    """Exchange information."""
+
+    exchange_name: str
+    exchange_type: str
+
+
+class BusConsumer(AccentEventMixin, ConsumerMixin, Base):
+    """AMQP Bus Consumer."""
 
     def __init__(
         self,
@@ -46,66 +34,31 @@ class BusConsumer(AiopikaConnectionMixin, Base):
         port: int = 5672,
         exchange_name: str = "",
         exchange_type: str = "",
+        subscribe: SubscribeExchangeDict | None = None,
         **kwargs: Any,
-    ):
+    ) -> None:
         """Initialize the BusConsumer.
 
         Args:
-            name (str | None): Consumer name.
-            username (str): RabbitMQ username.
-            password (str): RabbitMQ password.
-            host (str): RabbitMQ host.
-            port (int): RabbitMQ port.
-            exchange_name (str): Exchange to bind to.
-            exchange_type (str): Type of the exchange.
-            **kwargs: Other parameters.
+           name (str, optional): Consumer name
+           username (str, optional): AMQP Username
+           password (str, optional): AMQP Password
+           host (str, optional): AMQP Host
+           port (int, optional): AMQP Port
+           exchange_name (str, optional): exchange name to subscribe.
+           exchange_type (str, optional): exchange type.
+           subscribe (SubscribeExchangeDict, optional): Subscription details.
+           **kwargs: Additional keyword arguments
 
         """
         super().__init__(
-            name, username, password, host, port, exchange_name, exchange_type, **kwargs
+            name=name,
+            username=username,
+            password=password,
+            host=host,
+            port=port,
+            exchange_name=exchange_name,
+            exchange_type=exchange_type,
+            subscribe=subscribe,
+            **kwargs,
         )
-        self.running = False
-
-    async def start_consuming(
-        self,
-        queue_name: str,
-        event_name: str,
-        callback: Callable[
-            [AbstractIncomingMessage], Coroutine[Any, Any, None]
-        ] = process_message,
-    ) -> None:
-        """Start the consumer to continuously listen for messages.
-
-        Args:
-            queue_name (str): The name of the queue.
-            event_name (str): Event to bind to.
-            callback (Callable): The callback function.
-
-        """
-        channel = await self.get_channel()
-        await channel.set_qos(prefetch_count=1)
-        exchange = await channel.declare_exchange(
-            self._default_exchange_name, self._default_exchange_type
-        )  # Declare exchange
-        queue = await channel.declare_queue(queue_name, auto_delete=True)
-
-        await queue.bind(exchange, routing_key=event_name)
-
-        async with queue.iterator() as queue_iter:
-            async for message in queue_iter:
-                await callback(message)
-
-    async def run(self) -> None:
-        """Start up the connection."""
-        # Connection will close when this context manager exits
-        async with await self.get_connection():
-            self.running = True
-            while self.running:  # Keep the connection alive (simplified).
-                await asyncio.sleep(1)  # Prevent busy-looping.
-
-    async def stop(self) -> None:
-        """Stop the running connection."""
-        self.running = False
-        if self._connection:
-            await self._connection.close()
-            self._connection = None

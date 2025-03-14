@@ -1,44 +1,64 @@
-# resources/ivr/event.py
-from typing import ClassVar
+# accent_bus/resources/ivr/event.py
+# Copyright 2025 Accent Communications
+
+"""IVR events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class IVREvent(TenantEvent):
-    """Base class for IVR events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class IVRCreatedEvent(IVREvent):
+class IVRCreatedEvent(TenantEvent):
     """Event for when an IVR is created."""
 
-    name: ClassVar[str] = "ivr_created"
-    routing_key_fmt: ClassVar[str] = "config.ivr.created"
+    service = "confd"
+    name = "ivr_created"
+    routing_key_fmt = "config.ivr.created"
 
-    def __init__(self, ivr_id: int, **data):
+    def __init__(self, ivr_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+            ivr_id (int): The ID of the IVR.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
         content = {"id": ivr_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class IVRDeletedEvent(IVREvent):
+class IVRDeletedEvent(TenantEvent):
     """Event for when an IVR is deleted."""
 
-    name: ClassVar[str] = "ivr_deleted"
-    routing_key_fmt: ClassVar[str] = "config.ivr.deleted"
+    service = "confd"
+    name = "ivr_deleted"
+    routing_key_fmt = "config.ivr.deleted"
 
-    def __init__(self, ivr_id: int, **data):
+    def __init__(self, ivr_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Event.
+
+        Args:
+          ivr_id: IVR ID
+          tenant_uuid: tenant UUID
+
+        """
         content = {"id": ivr_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class IVREditedEvent(IVREvent):
+class IVREditedEvent(TenantEvent):
     """Event for when an IVR is edited."""
 
-    name: ClassVar[str] = "ivr_edited"
-    routing_key_fmt: ClassVar[str] = "config.ivr.edited"
+    service = "confd"
+    name = "ivr_edited"
+    routing_key_fmt = "config.ivr.edited"
 
-    def __init__(self, ivr_id: int, **data):
+    def __init__(self, ivr_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+           ivr_id: IVR ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {"id": ivr_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

@@ -1,45 +1,63 @@
-# resources/agent_skill/event.py
-from typing import ClassVar
+# accent_bus/resources/agent_skill/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import Field  # Import Field
+"""Agent skill events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class AgentSkillEvent(TenantEvent):
-    """Base class for Agent Skill events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class AgentSkillAssociatedEvent(AgentSkillEvent):
+class AgentSkillAssociatedEvent(TenantEvent):
     """Event for when an agent skill is associated."""
 
-    name: ClassVar[str] = "agent_skill_associated"
-    routing_key_fmt: ClassVar[str] = "config.agents.skills.updated"
-    agent_id: int = Field(...)
-    skill_id: int = Field(...)
+    service = "confd"
+    name = "agent_skill_associated"
+    routing_key_fmt = "config.agents.skills.updated"
 
-    def __init__(self, agent_id: int, skill_id: int, **data):
+    def __init__(
+        self,
+        agent_id: int,
+        skill_id: int,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            agent_id (int): The agent ID.
+            skill_id (int): The skill ID.
+            tenant_uuid (UUIDStr): tenant UUID
+
+        """
         content = {
             "agent_id": agent_id,
             "skill_id": skill_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class AgentSkillDissociatedEvent(AgentSkillEvent):
+class AgentSkillDissociatedEvent(TenantEvent):
     """Event for when an agent skill is dissociated."""
 
-    name: ClassVar[str] = "agent_skill_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.agents.skills.deleted"
-    agent_id: int = Field(...)
-    skill_id: int = Field(...)
+    service = "confd"
+    name = "agent_skill_dissociated"
+    routing_key_fmt = "config.agents.skills.deleted"
 
-    def __init__(self, agent_id: int, skill_id: int, **data):
+    def __init__(
+        self,
+        agent_id: int,
+        skill_id: int,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           agent_id: Agent ID
+           skill_id: Skill ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "agent_id": agent_id,
             "skill_id": skill_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

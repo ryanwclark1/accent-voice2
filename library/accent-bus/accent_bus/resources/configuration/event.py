@@ -1,22 +1,24 @@
-# resources/configuration/event.py
-from typing import ClassVar
+# accent_bus/resources/configuration/event.py
+# Copyright 2025 Accent Communications
+
+"""Configuration events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class ConfigurationEvent(ServiceEvent):
-    """Base class for configuration events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class LiveReloadEditedEvent(ConfigurationEvent):
+class LiveReloadEditedEvent(ServiceEvent):
     """Event for when live reload configuration is edited."""
 
-    name: ClassVar[str] = "live_reload_edited"
-    routing_key_fmt: ClassVar[str] = "config.live_reload.edited"
+    service = "confd"
+    name = "live_reload_edited"
+    routing_key_fmt = "config.live_reload.edited"
 
-    def __init__(self, live_reload_enabled: bool):
+    def __init__(self, live_reload_enabled: bool) -> None:
+        """Initialize the event.
+
+        Args:
+          live_reload_enabled: Live Reload Enabled.
+
+        """
         content = {"live_reload_enabled": live_reload_enabled}
-        super().__init__(content=content)
+        super().__init__(content)

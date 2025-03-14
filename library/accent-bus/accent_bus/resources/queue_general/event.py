@@ -1,18 +1,18 @@
-# resources/queue_general/event.py
-from typing import ClassVar
+# accent_bus/resources/queue_general/event.py
+# Copyright 2025 Accent Communications
+
+"""Queue general events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class QueueGeneralEvent(ServiceEvent):
-    """Base class for general Queue configuration events."""
+class QueueGeneralEditedEvent(ServiceEvent):
+    """Event for when general queue settings are edited."""
 
-    service: ClassVar[str] = "confd"
-    content: dict = {}  # ServiceEvent needs a content attribute
+    service = "confd"
+    name = "queue_general_edited"
+    routing_key_fmt = "config.queue_general.edited"
 
-
-class QueueGeneralEditedEvent(QueueGeneralEvent):
-    """Event for when the general queue configuration is edited."""
-
-    name: ClassVar[str] = "queue_general_edited"
-    routing_key_fmt: ClassVar[str] = "config.queue_general.edited"
+    def __init__(self) -> None:
+        """Initialize the event."""
+        super().__init__()

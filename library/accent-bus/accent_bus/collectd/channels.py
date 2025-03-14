@@ -1,10 +1,13 @@
-# collectd/channels.py
+# accent_bus/collectd/channels.py
+# Copyright 2025 Accent Communications
+
+"""Collectd events for channels."""
 
 from .common import CollectdEvent
 
 
 class _BaseChannelCollectdEvent(CollectdEvent):
-    """Base class for Channel based Collectd Events."""
+    """Base class for channel-related Collectd events."""
 
     routing_key_fmt = "collectd.channels"
     plugin = "channels"

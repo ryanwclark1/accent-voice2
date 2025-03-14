@@ -1,55 +1,69 @@
-# resources/group_schedule/event.py
-from typing import ClassVar
+# accent_bus/resources/group_schedule/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Group schedule events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class GroupScheduleEvent(TenantEvent):
-    """Base class for Group Schedule events."""
+class GroupScheduleAssociatedEvent(TenantEvent):
+    """Event for when a group schedule is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class GroupScheduleAssociatedEvent(GroupScheduleEvent):
-    """Event for when a schedule is associated with a group."""
-
-    name: ClassVar[str] = "group_schedule_associated"
-    routing_key_fmt: ClassVar[str] = "config.groups.schedules.updated"
+    service = "confd"
+    name = "group_schedule_associated"
+    routing_key_fmt = "config.groups.schedules.updated"
 
     def __init__(
         self,
         group_id: int,
-        group_uuid: UUID4,
+        group_uuid: UUIDStr,
         schedule_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+           group_id: Group ID
+           group_uuid: Group UUID
+           schedule_id: Schedule ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "group_id": group_id,
             "group_uuid": str(group_uuid),
             "schedule_id": schedule_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class GroupScheduleDissociatedEvent(GroupScheduleEvent):
-    """Event for when a schedule is dissociated from a group."""
+class GroupScheduleDissociatedEvent(TenantEvent):
+    """Event for when a group schedule is dissociated."""
 
-    name: ClassVar[str] = "group_schedule_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.groups.schedules.deleted"
+    service = "confd"
+    name = "group_schedule_dissociated"
+    routing_key_fmt = "config.groups.schedules.deleted"
 
     def __init__(
         self,
         group_id: int,
-        group_uuid: UUID4,
+        group_uuid: UUIDStr,
         schedule_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           group_id: Group ID
+           group_uuid: Group UUID
+           schedule_id: Schedule ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "group_id": group_id,
             "group_uuid": str(group_uuid),
             "schedule_id": schedule_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

@@ -1,37 +1,42 @@
-# resources/meeting/types.py
-from typing import TypedDict
+# accent_bus/resources/meeting/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Meeting types."""
 
-from accent_bus.resources.common.types import DateTimeStr
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
 class MeetingDict(TypedDict, total=False):
-    """Represents meeting information."""
+    """Dictionary representing a meeting."""
 
-    uuid: UUID4
+    uuid: UUIDStr
     name: str
-    owner_uuids: list[UUID4]
+    owner_uuids: list[UUIDStr]
     ingress_http_uri: str
     guest_sip_authorization: str | None  # b64 encoded
 
 
 class MeetingAuthorizationDict(TypedDict, total=False):
-    """Represents a meeting authorization."""
+    """Dictionary representing a meeting authorization."""
 
-    uuid: UUID4
-    meeting_uuid: UUID4
-    guest_uuid: UUID4
+    uuid: UUIDStr
+    meeting_uuid: UUIDStr
+    guest_uuid: UUIDStr
     guest_name: str
     status: str
-    creation_time: DateTimeStr
+    creation_time: str
 
 
 class MeetingParticipantDict(TypedDict, total=False):
-    """Represents a participant in a meeting."""
+    """Dictionary representing a meeting participant."""
 
     id: str
     caller_id_name: str
     caller_id_number: str
     call_id: str
-    user_uuid: UUID4 | None
+    user_uuid: UUIDStr | None

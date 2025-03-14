@@ -1,43 +1,75 @@
-# resources/ingress_http/event.py
-from typing import ClassVar
+# accent_bus/resources/ingress_http/event.py
+# Copyright 2025 Accent Communications
+
+"""Ingress HTTP events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 from .types import IngressHTTPDict
 
 
-class IngressHTTPEvent(TenantEvent):
-    """Base class for Ingress HTTP events."""
+class IngressHTTPCreatedEvent(TenantEvent):
+    """Event for when an HTTP ingress is created."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
+    service = "confd"
+    name = "ingress_http_created"
+    routing_key_fmt = "config.ingresses.http.created"
 
+    def __init__(
+        self,
+        ingress_http: IngressHTTPDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
 
-class IngressHTTPCreatedEvent(IngressHTTPEvent):
-    """Event for when an Ingress HTTP configuration is created."""
+        Args:
+            ingress_http (IngressHTTPDict):  ingress HTTP details.
+            tenant_uuid (UUIDStr): tenant UUID.
 
-    name: ClassVar[str] = "ingress_http_created"
-    routing_key_fmt: ClassVar[str] = "config.ingresses.http.created"
-
-    def __init__(self, ingress_http: IngressHTTPDict, **data):
-        super().__init__(content=ingress_http, **data)
-
-
-class IngressHTTPDeletedEvent(IngressHTTPEvent):
-    """Event for when an Ingress HTTP configuration is deleted."""
-
-    name: ClassVar[str] = "ingress_http_deleted"
-    routing_key_fmt: ClassVar[str] = "config.ingresses.http.deleted"
-
-    def __init__(self, ingress_http: IngressHTTPDict, **data):
-        super().__init__(content=ingress_http, **data)
+        """
+        super().__init__(ingress_http, tenant_uuid)
 
 
-class IngressHTTPEditedEvent(IngressHTTPEvent):
-    """Event for when an Ingress HTTP configuration is edited."""
+class IngressHTTPDeletedEvent(TenantEvent):
+    """Event for when an HTTP ingress is deleted."""
 
-    name: ClassVar[str] = "ingress_http_edited"
-    routing_key_fmt: ClassVar[str] = "config.ingresses.http.edited"
+    service = "confd"
+    name = "ingress_http_deleted"
+    routing_key_fmt = "config.ingresses.http.deleted"
 
-    def __init__(self, ingress_http: IngressHTTPDict, **data):
-        super().__init__(content=ingress_http, **data)
+    def __init__(
+        self,
+        ingress_http: IngressHTTPDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          ingress_http: Ingress Http
+          tenant_uuid: tenant UUID
+
+        """
+        super().__init__(ingress_http, tenant_uuid)
+
+
+class IngressHTTPEditedEvent(TenantEvent):
+    """Event for when an HTTP ingress is edited."""
+
+    service = "confd"
+    name = "ingress_http_edited"
+    routing_key_fmt = "config.ingresses.http.edited"
+
+    def __init__(
+        self,
+        ingress_http: IngressHTTPDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           ingress_http (IngressHTTPDict):  ingress HTTP details.
+           tenant_uuid (UUIDStr):  tenant UUID.
+
+        """
+        super().__init__(ingress_http, tenant_uuid)

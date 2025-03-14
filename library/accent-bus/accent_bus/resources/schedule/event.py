@@ -1,44 +1,64 @@
-# resources/schedule/event.py
-from typing import ClassVar
+# accent_bus/resources/schedule/event.py
+# Copyright 2025 Accent Communications
+
+"""Schedule events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class ScheduleEvent(TenantEvent):
-    """Base class for Schedule events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class ScheduleCreatedEvent(ScheduleEvent):
+class ScheduleCreatedEvent(TenantEvent):
     """Event for when a schedule is created."""
 
-    name: ClassVar[str] = "schedule_created"
-    routing_key_fmt: ClassVar[str] = "config.schedules.created"
+    service = "confd"
+    name = "schedule_created"
+    routing_key_fmt = "config.schedules.created"
 
-    def __init__(self, schedule_id: int, **data):
+    def __init__(self, schedule_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+            schedule_id: Schedule ID
+            tenant_uuid: tenant UUID
+
+        """
         content = {"id": int(schedule_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class ScheduleDeletedEvent(ScheduleEvent):
+class ScheduleDeletedEvent(TenantEvent):
     """Event for when a schedule is deleted."""
 
-    name: ClassVar[str] = "schedule_deleted"
-    routing_key_fmt: ClassVar[str] = "config.schedules.deleted"
+    service = "confd"
+    name = "schedule_deleted"
+    routing_key_fmt = "config.schedules.deleted"
 
-    def __init__(self, schedule_id: int, **data):
+    def __init__(self, schedule_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+            schedule_id (int):  schedule ID.
+            tenant_uuid (UUIDStr): tenant UUID.
+
+        """
         content = {"id": int(schedule_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class ScheduleEditedEvent(ScheduleEvent):
+class ScheduleEditedEvent(TenantEvent):
     """Event for when a schedule is edited."""
 
-    name: ClassVar[str] = "schedule_edited"
-    routing_key_fmt: ClassVar[str] = "config.schedules.edited"
+    service = "confd"
+    name = "schedule_edited"
+    routing_key_fmt = "config.schedules.edited"
 
-    def __init__(self, schedule_id: int, **data):
+    def __init__(self, schedule_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+           schedule_id: Schedule ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {"id": int(schedule_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

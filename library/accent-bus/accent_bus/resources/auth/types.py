@@ -1,12 +1,20 @@
-# resources/auth/types.py
+# accent_bus/resources/auth/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4, BaseModel, Field
+"""Auth types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class TenantDict(BaseModel):
-    """Represents a Tenant."""
+class TenantDict(TypedDict, total=False):
+    """Dictionary representing a tenant."""
 
-    uuid: UUID4
+    uuid: UUIDStr
     name: str
     slug: str
-    domain_names: list[str] = Field(default_factory=list)
+    domain_names: list[str]

@@ -1,44 +1,64 @@
-# resources/incall/event.py
-from typing import ClassVar
+# accent_bus/resources/incall/event.py
+# Copyright 2025 Accent Communications
+
+"""Incall events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class IncallEvent(TenantEvent):
-    """Base class for Incall events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class IncallCreatedEvent(IncallEvent):
+class IncallCreatedEvent(TenantEvent):
     """Event for when an incall is created."""
 
-    name: ClassVar[str] = "incall_created"
-    routing_key_fmt: ClassVar[str] = "config.incalls.created"
+    service = "confd"
+    name = "incall_created"
+    routing_key_fmt = "config.incalls.created"
 
-    def __init__(self, incall_id: int, **data):
+    def __init__(self, incall_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+            incall_id (int): The ID of the incall.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
         content = {"id": incall_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class IncallDeletedEvent(IncallEvent):
+class IncallDeletedEvent(TenantEvent):
     """Event for when an incall is deleted."""
 
-    name: ClassVar[str] = "incall_deleted"
-    routing_key_fmt: ClassVar[str] = "config.incalls.deleted"
+    service = "confd"
+    name = "incall_deleted"
+    routing_key_fmt = "config.incalls.deleted"
 
-    def __init__(self, incall_id: int, **data):
+    def __init__(self, incall_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+            incall_id (int): The ID of the incall.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
         content = {"id": incall_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class IncallEditedEvent(IncallEvent):
+class IncallEditedEvent(TenantEvent):
     """Event for when an incall is edited."""
 
-    name: ClassVar[str] = "incall_edited"
-    routing_key_fmt: ClassVar[str] = "config.incalls.edited"
+    service = "confd"
+    name = "incall_edited"
+    routing_key_fmt = "config.incalls.edited"
 
-    def __init__(self, incall_id: int, **data):
+    def __init__(self, incall_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+          incall_id: Incall ID
+          tenant_uuid: tenant UUID
+
+        """
         content = {"id": incall_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

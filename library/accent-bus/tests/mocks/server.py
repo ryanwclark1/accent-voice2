@@ -1,6 +1,7 @@
 # tests/mock_server/server.py
-from fastapi import FastAPI, HTTPException, Header, Depends, Body
 from typing import Annotated, Any
+
+from fastapi import Body, Depends, FastAPI, Header, HTTPException
 
 app = FastAPI()
 
@@ -12,30 +13,31 @@ async def get_token_header(x_token: Annotated[str | None, Header()] = None):
 
 
 # Mock data (using the same constants as conftest.py for consistency)
-from ..conftest import (
-    AGENT_ID,
-    AGENT_NUMBER,
-    EXTENSION,
-    CONTEXT,
-    LINE_ID,
-    QUEUE_ID,
-    TENANT_UUID,
-    AGENT_STATUS_RESPONSE,
-    AGENT_STATUSES_RESPONSE,
-)
 from accent_agentd_client.error import (  # Import error consts.
     ALREADY_IN_QUEUE,
     ALREADY_IN_USE,
     ALREADY_LOGGED,
     CONTEXT_DIFFERENT_TENANT,
-    NOT_IN_QUEUE,
-    NOT_LOGGED,
     NO_SUCH_AGENT,
     NO_SUCH_EXTEN,
     NO_SUCH_LINE,
     NO_SUCH_QUEUE,
+    NOT_IN_QUEUE,
+    NOT_LOGGED,
     QUEUE_DIFFERENT_TENANT,
     UNAUTHORIZED,
+)
+
+from tests.conftest import (
+    AGENT_ID,
+    AGENT_NUMBER,
+    AGENT_STATUS_RESPONSE,
+    AGENT_STATUSES_RESPONSE,
+    CONTEXT,
+    EXTENSION,
+    LINE_ID,
+    QUEUE_ID,
+    TENANT_UUID,
 )
 
 
@@ -106,8 +108,6 @@ async def add_agent_to_queue(
     if queue_data.get("queue_id") != QUEUE_ID:  # Simulate queue not found
         raise HTTPException(status_code=404, detail=NO_SUCH_QUEUE)
 
-    return  # Simulate success (204 No Content)
-
 
 @app.post(
     "/api/agentd/1.0/by-id/{agent_id}/remove", dependencies=[Depends(get_token_header)]
@@ -122,8 +122,6 @@ async def remove_agent_from_queue(
         raise HTTPException(status_code=404, detail=NO_SUCH_AGENT)
     if queue_data.get("queue_id") != QUEUE_ID:
         raise HTTPException(status_code=404, detail=NO_SUCH_QUEUE)
-
-    return  # Simulate success (204 No Content)
 
 
 # --- Agent Login/Logoff Endpoints ---
@@ -142,7 +140,6 @@ async def login_agent(
         raise HTTPException(status_code=404, detail=NO_SUCH_AGENT)
     if login_data.get("extension") != EXTENSION or login_data.get("context") != CONTEXT:
         raise HTTPException(status_code=404, detail=NO_SUCH_EXTEN)
-    return
 
 
 @app.post(
@@ -160,8 +157,6 @@ async def login_agent_by_number(
     if login_data.get("extension") != EXTENSION or login_data.get("context") != CONTEXT:
         raise HTTPException(status_code=404, detail=NO_SUCH_EXTEN)
 
-    return
-
 
 @app.post(
     "/api/agentd/1.0/by-id/{agent_id}/logoff", dependencies=[Depends(get_token_header)]
@@ -172,7 +167,6 @@ async def logoff_agent(
     await check_tenant(accent_tenant)
     if agent_id != AGENT_ID:
         raise HTTPException(status_code=404, detail=NO_SUCH_AGENT)
-    return
 
 
 @app.post(
@@ -185,7 +179,6 @@ async def logoff_agent_by_number(
     await check_tenant(accent_tenant)
     if agent_number != AGENT_NUMBER:
         raise HTTPException(status_code=404, detail=NO_SUCH_AGENT)
-    return
 
 
 @app.post("/api/agentd/1.0/logoff", dependencies=[Depends(get_token_header)])
@@ -194,7 +187,6 @@ async def logoff_all_agents(
 ):
     await check_tenant(accent_tenant)
     # 'recurse' would be used in a real implementation
-    return
 
 
 @app.post("/api/agentd/1.0/relog", dependencies=[Depends(get_token_header)])
@@ -203,7 +195,6 @@ async def relog_all_agents(
 ):
     await check_tenant(accent_tenant)
     # 'recurse' would be used in a real implementation
-    return
 
 
 # --- User Agent Endpoints ---
@@ -217,7 +208,6 @@ async def login_user_agent(
     await check_tenant(accent_tenant)
     if login_data.get("line_id") != LINE_ID:
         raise HTTPException(status_code=404, detail=NO_SUCH_LINE)
-    return
 
 
 @app.post(
@@ -225,7 +215,6 @@ async def login_user_agent(
 )
 async def logoff_user_agent(accent_tenant: Annotated[str | None, Header()] = None):
     await check_tenant(accent_tenant)
-    return
 
 
 @app.post(
@@ -233,7 +222,6 @@ async def logoff_user_agent(accent_tenant: Annotated[str | None, Header()] = Non
 )
 async def pause_user_agent(accent_tenant: Annotated[str | None, Header()] = None):
     await check_tenant(accent_tenant)
-    return
 
 
 @app.post(
@@ -241,7 +229,6 @@ async def pause_user_agent(accent_tenant: Annotated[str | None, Header()] = None
 )
 async def unpause_user_agent(accent_tenant: Annotated[str | None, Header()] = None):
     await check_tenant(accent_tenant)
-    return
 
 
 # --- Agent Pause/Unpause by Number ---
@@ -257,7 +244,6 @@ async def pause_agent_by_number(
     await check_tenant(accent_tenant)
     if agent_number != AGENT_NUMBER:
         raise HTTPException(status_code=404, detail=NO_SUCH_AGENT)
-    return
 
 
 @app.post(
@@ -270,4 +256,3 @@ async def unpause_agent_by_number(
     await check_tenant(accent_tenant)
     if agent_number != AGENT_NUMBER:
         raise HTTPException(status_code=404, detail=NO_SUCH_AGENT)
-    return

@@ -1,49 +1,56 @@
-# resources/trunk_endpoint/types.py
-from typing import TypedDict
+# accent_bus/resources/trunk_endpoint/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Trunk endpoint types."""
 
+from __future__ import annotations
 
-class EndpointSIPAuthSectionOptionsDict(TypedDict, total=False):
-    """Represents authentication options for a SIP endpoint."""
+from typing import TYPE_CHECKING, TypedDict
 
-    username: str
-
-
-class EndpointSIPRegistrationSectionOptionsDict(TypedDict, total=False):
-    """Represents registration options for a SIP endpoint."""
-
-    client_uri: str
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
 class EndpointSIPDict(TypedDict, total=False):
-    """Represents a SIP endpoint."""
+    """Dictionary representing a SIP endpoint."""
 
-    uuid: UUID4
-    tenant_uuid: UUID4
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr
     name: str
     auth_section_options: EndpointSIPAuthSectionOptionsDict
     registration_section_options: EndpointSIPRegistrationSectionOptionsDict
 
 
+class EndpointSIPAuthSectionOptionsDict(TypedDict, total=False):
+    """Dictionary representing auth section options for a SIP endpoint."""
+
+    username: str
+
+
+class EndpointSIPRegistrationSectionOptionsDict(TypedDict, total=False):
+    """Dictionary representing registration section options for a SIP endpoint."""
+
+    client_uri: str
+
+
 class EndpointIAXDict(TypedDict, total=False):
-    """Represents an IAX endpoint."""
+    """Dictionary representing an IAX endpoint."""
 
     id: int
-    tenant_uuid: UUID4
+    tenant_uuid: UUIDStr
     name: str
 
 
 class EndpointCustomDict(TypedDict, total=False):
-    """Represents a custom endpoint."""
+    """Dictionary representing a custom endpoint."""
 
     id: int
-    tenant_uuid: UUID4
+    tenant_uuid: UUIDStr
     interface: str
 
 
 class TrunkDict(TypedDict, total=False):
-    """Represents a trunk."""
+    """Dictionary representing a trunk."""
 
     id: int
-    tenant_uuid: UUID4
+    tenant_uuid: UUIDStr

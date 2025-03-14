@@ -1,47 +1,64 @@
-# resources/access_feature/event.py
-from typing import ClassVar
+# accent_bus/resources/access_feature/event.py
+# Copyright 2025 Accent Communications
 
-# from pydantic import BaseModel  <-- No longer needed here
-from accent_bus.resources.common.event import TenantEvent
+"""Access Feature events."""
 
-from .types import AccessFeatureDict  # Import the Pydantic model
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
 
-class AccessFeatureEvent(TenantEvent):
-    """Base class for Access Feature events."""
+from accent_bus.resources.common.event import ServiceEvent
 
-    service: ClassVar[str] = "confd"
-    content: AccessFeatureDict
-
-
-class AccessFeatureCreatedEvent(AccessFeatureEvent):
-    """Event triggered when an Access Feature is created."""
-
-    name: ClassVar[str] = "access_feature_created"
-    routing_key_fmt: ClassVar[str] = "config.access_feature.created"
-
-    def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(
-            content=access_feature_info, **data
-        )  # Pass the Pydantic model directly.
-        # Crucially, we are passing access_feature_info, not the dict.
+if TYPE_CHECKING:
+    from .types import AccessFeatureDict
 
 
-class AccessFeatureDeletedEvent(AccessFeatureEvent):
-    """Event triggered when an Access Feature is deleted."""
+class AccessFeatureCreatedEvent(ServiceEvent):
+    """Event for when an access feature is created."""
 
-    name: ClassVar[str] = "access_feature_deleted"
-    routing_key_fmt: ClassVar[str] = "config.access_feature.deleted"
+    service = "confd"
+    name = "access_feature_created"
+    routing_key_fmt = "config.access_feature.created"
 
-    def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info, **data)  # Pass the model
+    def __init__(self, access_feature_info: AccessFeatureDict) -> None:
+        """Initialize the event.
+
+        Args:
+            access_feature_info (AccessFeatureDict): The access feature information.
+
+        """
+        super().__init__(content=access_feature_info)
 
 
-class AccessFeatureEditedEvent(AccessFeatureEvent):
-    """Event triggered when an Access Feature is edited."""
+class AccessFeatureDeletedEvent(ServiceEvent):
+    """Event for when an access feature is deleted."""
 
-    name: ClassVar[str] = "access_feature_edited"
-    routing_key_fmt: ClassVar[str] = "config.access_feature.edited"
+    service = "confd"
+    name = "access_feature_deleted"
+    routing_key_fmt = "config.access_feature.deleted"
 
-    def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info, **data)  # Pass the model
+    def __init__(self, access_feature_info: AccessFeatureDict) -> None:
+        """Initialize the event.
+
+        Args:
+            access_feature_info (AccessFeatureDict): The access feature information.
+
+        """
+        super().__init__(content=access_feature_info)
+
+
+class AccessFeatureEditedEvent(ServiceEvent):
+    """Event for when an access feature is edited."""
+
+    service = "confd"
+    name = "access_feature_edited"
+    routing_key_fmt = "config.access_feature.edited"
+
+    def __init__(self, access_feature_info: AccessFeatureDict) -> None:
+        """Initialize the event.
+
+        Args:
+            access_feature_info (AccessFeatureDict): The access feature information.
+
+        """
+        super().__init__(content=access_feature_info)

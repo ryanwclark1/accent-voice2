@@ -1,16 +1,15 @@
+from unittest.mock import AsyncMock  # Import AsyncMock
+
 import pytest
+from example import Event, RabbitMQConfig, app, get_rabbitmq_connection
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-from example import app, RabbitMQConfig, get_rabbitmq_connection, Event
-from unittest.mock import AsyncMock  # Import AsyncMock
 
 
 # Example of overriding a dependency for testing.
 @pytest.fixture
 async def mock_rabbitmq_connection():
-    """
-    Fixture for mocking aiopika connection.
-    """
+    """Fixture for mocking aiopika connection."""
     mock_connection = AsyncMock()
     mock_channel = AsyncMock()
 
@@ -26,13 +25,14 @@ async def mock_rabbitmq_connection():
 
 @pytest.fixture
 def test_client(mock_rabbitmq_connection) -> TestClient:
-    """
-    Fixture to provide a test client that uses mocked services.
+    """Fixture to provide a test client that uses mocked services.
+
     Args:
         mock_rabbitmq_connection: Mocked aiopika connection.
 
     Returns:
         TestClient: Returns a test client.
+
     """
     app.dependency_overrides[get_rabbitmq_connection] = mock_rabbitmq_connection
     return TestClient(app)
@@ -63,7 +63,6 @@ async def test_publish_event_success(
 @pytest.mark.asyncio
 async def test_publish_event_failure(test_client, mock_rabbitmq_connection):
     """Test event publishing failure due to exception."""
-
     # Mock the channel to raise an exception.
     mock_rabbitmq_connection.return_value.channel.return_value.declare_exchange.side_effect = Exception(
         "Mocked exception"
@@ -82,7 +81,6 @@ async def test_subscribe_event_success(
     test_client: TestClient, mock_rabbitmq_connection
 ):
     """Test successful event subscription."""
-
     # Prepare the mock.
     mock_queue = AsyncMock()  # Use AsyncMock
     mock_rabbitmq_connection.return_value.channel.return_value.declare_queue.return_value = mock_queue
@@ -101,7 +99,6 @@ async def test_subscribe_event_success(
 @pytest.mark.asyncio
 async def test_subscribe_event_failure(test_client, mock_rabbitmq_connection):
     """Test failure during event subscription."""
-
     # Setup mock to simulate failure.
     mock_rabbitmq_connection.return_value.channel.return_value.declare_queue.side_effect = Exception(
         "Mocked exception"
@@ -119,7 +116,7 @@ async def test_process_message_success(test_client):
     class MockMessage:
         """Mock AbstractIncomingMessage."""
 
-        def __init__(self, body):
+        def __init__(self, body) -> None:
             self.body = body
 
         async def process(self):
@@ -145,7 +142,7 @@ async def test_process_message_validation_error(test_client):
     class MockMessage:
         """Mock AbstractIncomingMessage."""
 
-        def __init__(self, body):
+        def __init__(self, body) -> None:
             self.body = body
 
         async def process(self):

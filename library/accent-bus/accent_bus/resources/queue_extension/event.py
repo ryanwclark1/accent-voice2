@@ -1,49 +1,63 @@
-# resources/queue_extension/event.py
-from typing import ClassVar
+# accent_bus/resources/queue_extension/event.py
+# Copyright 2025 Accent Communications
+
+"""Queue extension events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class QueueExtensionEvent(TenantEvent):
-    """Base class for Queue Extension events."""
+class QueueExtensionAssociatedEvent(TenantEvent):
+    """Event for when a queue extension is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class QueueExtensionAssociatedEvent(QueueExtensionEvent):
-    """Event for when an extension is associated with a queue."""
-
-    name: ClassVar[str] = "queue_extension_associated"
-    routing_key_fmt: ClassVar[str] = "config.queues.extensions.updated"
+    service = "confd"
+    name = "queue_extension_associated"
+    routing_key_fmt = "config.queues.extensions.updated"
 
     def __init__(
         self,
         queue_id: int,
         extension_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+           queue_id: Queue ID
+           extension_id: Extension ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "queue_id": queue_id,
             "extension_id": extension_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class QueueExtensionDissociatedEvent(QueueExtensionEvent):
-    """Event for when an extension is dissociated from a queue."""
+class QueueExtensionDissociatedEvent(TenantEvent):
+    """Event for when a queue extension is dissociated."""
 
-    name: ClassVar[str] = "queue_extension_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.queues.extensions.deleted"
+    service = "confd"
+    name = "queue_extension_dissociated"
+    routing_key_fmt = "config.queues.extensions.deleted"
 
     def __init__(
         self,
         queue_id: int,
         extension_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           queue_id: Queue ID
+           extension_id: Extension ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "queue_id": queue_id,
             "extension_id": extension_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

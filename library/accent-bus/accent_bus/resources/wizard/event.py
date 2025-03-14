@@ -1,18 +1,18 @@
-# resources/wizard/event.py
-from typing import ClassVar
+# accent_bus/resources/wizard/event.py
+# Copyright 2025 Accent Communications
+
+"""Wizard events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class WizardEvent(ServiceEvent):
-    """Base class for Wizard events."""
+class WizardCreatedEvent(ServiceEvent):
+    """Event for when a wizard is created."""
 
-    service: ClassVar[str] = "confd"
-    content: dict = {}  # ServiceEvents should define a content attribute
+    service = "confd"
+    name = "wizard_created"
+    routing_key_fmt = "config.wizard.created"
 
-
-class WizardCreatedEvent(WizardEvent):
-    """Event for when the wizard is created."""
-
-    name: ClassVar[str] = "wizard_created"
-    routing_key_fmt: ClassVar[str] = "config.wizard.created"
+    def __init__(self) -> None:
+        """Initialize the event."""
+        super().__init__()

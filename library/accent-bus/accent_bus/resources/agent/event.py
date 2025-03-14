@@ -1,153 +1,174 @@
-# resources/agent/event.py
-from typing import ClassVar
+# accent_bus/resources/agent/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import BaseModel, Field
+"""Agent events."""
 
-from accent_bus.resources.common.event import (
-    MultiUserEvent,
-    TenantEvent,
-)  # Import base classes
+from __future__ import annotations
 
+from typing import TYPE_CHECKING
 
-class AgentEvent(TenantEvent):
-    """Base class for Agent events."""
+from accent_bus.resources.common.event import MultiUserEvent, TenantEvent
 
-    # tenant_uuid is already defined in the parent class.
-    content: dict  # Use dict when no specific Pydantic model for content
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class TenantAgentEvent(AgentEvent):
-    """Base class for Tenant Agent events."""
+class AgentCreatedEvent(TenantEvent):
+    """A new agent has been created."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
+    service = "confd"
+    name = "agent_created"
+    routing_key_fmt = "config.agent.created"
 
+    def __init__(self, agent_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Agent Created Event.
 
-class AgentCreatedEvent(TenantAgentEvent):
-    """Event for when a new agent has been created."""
+        Args:
+           agent_id: ID of the new agent.
+           tenant_uuid: Tenant UUID.
 
-    name: ClassVar[str] = "agent_created"
-    routing_key_fmt: ClassVar[str] = "config.agent.created"
-    agent_id: int = Field(alias="id")  # Keep original "id" field name
-    content: dict = {}
-
-    def __init__(self, agent_id: int, **data):
-        content = {"id": agent_id}
-        super().__init__(content=content, **data)
-
-
-class AgentDeletedEvent(TenantAgentEvent):
-    """Event for when an agent has been deleted."""
-
-    name: ClassVar[str] = "agent_deleted"
-    routing_key_fmt: ClassVar[str] = "config.agent.deleted"
-    agent_id: int = Field(alias="id")
-    content: dict = {}
-
-    def __init__(self, agent_id: int, **data):
-        content = {"id": agent_id}
-        super().__init__(content=content, **data)
+        """
+        content = {"id": int(agent_id)}
+        super().__init__(content, tenant_uuid)
 
 
-class AgentEditedEvent(TenantAgentEvent):
-    """Event for when an agent has been edited."""
+class AgentDeletedEvent(TenantEvent):
+    """An agent has been deleted."""
 
-    name: ClassVar[str] = "agent_edited"
-    routing_key_fmt: ClassVar[str] = "config.agent.edited"
-    agent_id: int = Field(alias="id")
-    content: dict = {}
+    service = "confd"
+    name = "agent_deleted"
+    routing_key_fmt = "config.agent.deleted"
 
-    def __init__(self, agent_id: int, **data):
-        content = {"id": agent_id}
-        super().__init__(content=content, **data)
+    def __init__(self, agent_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Agent Deleted Event.
 
+        Args:
+           agent_id: ID of the deleted agent.
+           tenant_uuid: Tenant UUID
 
-class MultiUserAgentEvent(MultiUserEvent):
-    """Base class for Agent events targeting multiple users."""
-
-    service: ClassVar[str] = "agentd"  # Using agentd as in original.
-    # user_uuids is already defined in MultiUserEvent
-    content: dict = {}
+        """
+        content = {"id": int(agent_id)}
+        super().__init__(content, tenant_uuid)
 
 
-class AgentPausedContent(BaseModel):
-    """Content model for AgentPausedEvent."""
+class AgentEditedEvent(TenantEvent):
+    """An agent has been edited."""
 
-    agent_id: int
-    agent_number: str
-    queue: str
-    paused: bool = True
-    paused_reason: str
+    service = "confd"
+    name = "agent_edited"
+    routing_key_fmt = "config.agent.edited"
+
+    def __init__(self, agent_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Agent Edited Event.
+
+        Args:
+           agent_id: Agent ID
+           tenant_uuid: Tenant UUID
+
+        """
+        content = {"id": int(agent_id)}
+        super().__init__(content, tenant_uuid)
 
 
-class AgentPausedEvent(MultiUserAgentEvent):
-    """Event for when an agent was paused."""
+class AgentPausedEvent(MultiUserEvent):
+    """An agent was paused."""
 
-    name: ClassVar[str] = "agent_paused"
-    routing_key_fmt: ClassVar[str] = "status.agent.pause"
-    content: AgentPausedContent
+    service = "agentd"
+    name = "agent_paused"
+    routing_key_fmt = "status.agent.pause"
+    required_acl_fmt = "events.statuses.agents"
 
     def __init__(
-        self, agent_id: int, agent_number: str, queue: str, reason: str, **data
-    ):
-        content = AgentPausedContent(
-            agent_id=agent_id,
-            agent_number=agent_number,
-            queue=queue,
-            paused_reason=reason,
-        )
-        super().__init__(content=content, **data)  # Pass the *instance*
+        self,
+        agent_id: int,
+        agent_number: str,
+        queue: str,
+        reason: str,
+        tenant_uuid: UUIDStr,
+        user_uuids: list[UUIDStr],
+    ) -> None:
+        """Initialize Agent Paused Event.
+
+        Args:
+            agent_id: Agent ID
+            agent_number: Agent Number
+            queue: Queue name
+            reason: Pause reason
+            tenant_uuid: Tenant UUID
+            user_uuids: List of User UUIDs
+
+        """
+        content = {
+            "agent_id": agent_id,
+            "agent_number": agent_number,
+            "paused": True,
+            "paused_reason": reason or "",
+            "queue": queue,
+        }
+        super().__init__(content, tenant_uuid, user_uuids)
 
 
-class AgentUnpausedContent(BaseModel):
-    """Content model for AgentUnpausedEvent."""
+class AgentUnpausedEvent(MultiUserEvent):
+    """An agent was unpaused."""
 
-    agent_id: int
-    agent_number: str
-    queue: str
-    paused: bool = False  # Explicitly set to False
-    paused_reason: str
-
-
-class AgentUnpausedEvent(MultiUserAgentEvent):
-    """Event for when an agent was unpaused."""
-
-    name: ClassVar[str] = "agent_unpaused"
-    routing_key_fmt: ClassVar[str] = "status.agent.unpause"
-    content: AgentUnpausedContent  # Use the Pydantic model
+    service = "agentd"
+    name = "agent_unpaused"
+    routing_key_fmt = "status.agent.unpause"
+    required_acl_fmt = "events.statuses.agents"
 
     def __init__(
-        self, agent_id: int, agent_number: str, queue: str, reason: str, **data
-    ):
-        content = AgentUnpausedContent(
-            agent_id=agent_id,
-            agent_number=agent_number,
-            queue=queue,
-            paused_reason=reason,
-        )
-        super().__init__(content=content, **data)  # Pass instance
+        self,
+        agent_id: int,
+        agent_number: str,
+        queue: str,
+        reason: str,
+        tenant_uuid: UUIDStr,
+        user_uuids: list[UUIDStr],
+    ) -> None:
+        """Initialize Agent Unpaused Event.
+
+        Args:
+            agent_id: Agent ID.
+            agent_number: Agent Number.
+            queue: Queue name.
+            reason: Unpause reason.
+            tenant_uuid: Tenant UUID
+            user_uuids: List of User UUIDs.
+
+        """
+        content = {
+            "agent_id": agent_id,
+            "agent_number": agent_number,
+            "paused": False,
+            "paused_reason": reason or "",
+            "queue": queue,
+        }
+        super().__init__(content, tenant_uuid, user_uuids)
 
 
-class AgentStatusUpdatedContent(BaseModel):
-    """Content for agent status updated.
+class AgentStatusUpdatedEvent(MultiUserEvent):
+    """An agent status has changed."""
 
-    Attributes:
-        agent_id (int): Agent ID.
-        status (str): Status.
+    service = "calld"
+    name = "agent_status_update"
+    routing_key_fmt = "status.agent"
+    required_acl_fmt = "events.statuses.agents"
 
-    """
+    def __init__(
+        self,
+        agent_id: int,
+        status: str,
+        tenant_uuid: UUIDStr,
+        user_uuids: list[UUIDStr],
+    ) -> None:
+        """Initialize Agent Status Updated Event.
 
-    agent_id: int
-    status: str
+        Args:
+            agent_id: Agent ID.
+            status: Agent status
+            tenant_uuid: Tenant UUID.
+            user_uuids: List of user UUIDs.
 
-
-class AgentStatusUpdatedEvent(MultiUserAgentEvent):
-    """Event for when an agent status has changed."""
-
-    name: ClassVar[str] = "agent_status_update"
-    routing_key_fmt: ClassVar[str] = "status.agent"
-    content: AgentStatusUpdatedContent
-
-    def __init__(self, agent_id: int, status: str, **data):
-        content = AgentStatusUpdatedContent(agent_id=agent_id, status=status)
-        super().__init__(content=content, **data)  # Pass instance
+        """
+        content = {"agent_id": int(agent_id), "status": status}
+        super().__init__(content, tenant_uuid, user_uuids)

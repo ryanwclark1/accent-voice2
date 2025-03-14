@@ -1,32 +1,42 @@
-# resources/features/event.py
-from typing import ClassVar
+# accent_bus/resources/features/event.py
+# Copyright 2025 Accent Communications
+
+"""Feature events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class FeaturesEvent(ServiceEvent):
-    """Base class for Features events."""
+class FeaturesApplicationmapEditedEvent(ServiceEvent):
+    """Event for when features application map is edited."""
 
-    service: ClassVar[str] = "confd"
-    content: dict = {}
+    service = "confd"
+    name = "features_applicationmap_edited"
+    routing_key_fmt = "config.features_applicationmap.edited"
 
-
-class FeaturesApplicationmapEditedEvent(FeaturesEvent):
-    """Event for when the application map feature is edited."""
-
-    name: ClassVar[str] = "features_applicationmap_edited"
-    routing_key_fmt: ClassVar[str] = "config.features_applicationmap.edited"
+    def __init__(self) -> None:
+        """Initialize event."""
+        super().__init__()
 
 
-class FeaturesFeaturemapEditedEvent(FeaturesEvent):
-    """Event for when the feature map is edited."""
+class FeaturesFeaturemapEditedEvent(ServiceEvent):
+    """Event for when features feature map is edited."""
 
-    name: ClassVar[str] = "features_featuremap_edited"
-    routing_key_fmt: ClassVar[str] = "config.features_featuremap.edited"
+    service = "confd"
+    name = "features_featuremap_edited"
+    routing_key_fmt = "config.features_featuremap.edited"
+
+    def __init__(self) -> None:
+        """Initialize event."""
+        super().__init__()
 
 
-class FeaturesGeneralEditedEvent(FeaturesEvent):
+class FeaturesGeneralEditedEvent(ServiceEvent):
     """Event for when general features are edited."""
 
-    name: ClassVar[str] = "features_general_edited"
-    routing_key_fmt: ClassVar[str] = "config.features_general.edited"
+    service = "confd"
+    name = "features_general_edited"
+    routing_key_fmt = "config.features_general.edited"
+
+    def __init__(self) -> None:
+        """Initialize Event."""
+        super().__init__()

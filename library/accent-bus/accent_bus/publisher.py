@@ -1,104 +1,109 @@
 # accent_bus/publisher.py
-import logging
-from typing import TYPE_CHECKING, Any
+# Copyright 2025 Accent Communications
 
-import aiopika
-from pydantic import BaseModel
+"""AMQP Publisher."""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from .base import Base
-from .mixins import AiopikaConnectionMixin
-
-if TYPE_CHECKING:
-    from accent_bus.collectd.common import CollectdEvent
+from .mixins import (
+    AccentEventMixin,
+    PublisherMixin,
+    QueuePublisherMixin,
+    # ThreadableMixin,  # Removed ThreadableMixin
+)
 
 logger = logging.getLogger(__name__)
 
 
-class BusPublisher(AiopikaConnectionMixin, Base):
-    """Asynchronous message publisher using aiopika."""
+class BusPublisher(AccentEventMixin, PublisherMixin, Base):
+    """AMQP Bus Publisher."""
 
     def __init__(
         self,
         name: str | None = None,
+        service_uuid: str | None = None,
         username: str = "guest",
         password: str = "guest",
         host: str = "localhost",
         port: int = 5672,
         exchange_name: str = "",
         exchange_type: str = "",
-        service_uuid: str | None = None,
         **kwargs: Any,
-    ):
-        """Initialize the BusPublisher with connection parameters and opt service UUID.
+    ) -> None:
+        """Initialize the BusPublisher.
 
         Args:
-            name (str | None): Publisher name.
-            username (str): RabbitMQ username.
-            password (str): RabbitMQ password.
-            host (str): RabbitMQ host.
-            port (int): RabbitMQ port.
-            exchange_name (str):  Exchange name.
-            exchange_type (str):  Exchange type.
-            service_uuid (str, optional): Unique identifier for this service instance.
-            **kwargs:  Other parameters.
+           name: Publisher name.
+           service_uuid: Service UUID.
+           username: AMQP username.
+           password: AMQP password.
+           host: AMQP host.
+           port: AMQP port.
+           exchange_name: Exchange name.
+           exchange_type: Exchange type.
+           **kwargs: Additional keyword arguments.
 
         """
         super().__init__(
-            name, username, password, host, port, exchange_name, exchange_type, **kwargs
+            name=name,
+            service_uuid=service_uuid,
+            username=username,
+            password=password,
+            host=host,
+            port=port,
+            exchange_name=exchange_name,
+            exchange_type=exchange_type,
+            **kwargs,
         )
-        self.service_uuid = service_uuid  # Needed for collectd
 
-    async def publish(
-        self, event_name: str, event: BaseModel, routing_key: str | None = None
+
+# Deprecated, thread should be avoided to respect WPEP-0004
+class BusPublisherWithQueue(
+    AccentEventMixin,
+    # ThreadableMixin,  # Removed ThreadableMixin
+    QueuePublisherMixin,
+    Base,
+):
+    """AMQP Bus Publisher with Queue (Deprecated)."""
+
+    def __init__(
+        self,
+        name: str | None = None,
+        service_uuid: str | None = None,
+        username: str = "guest",
+        password: str = "guest",
+        host: str = "localhost",
+        port: int = 5672,
+        exchange_name: str = "",
+        exchange_type: str = "",
+        **kwargs: Any,
     ) -> None:
-        """Publish an event to the configured RabbitMQ exchange.
+        """Initialize BusPublisherWithQueue.
 
         Args:
-            event_name (str): The name of the event (for routing).
-            event (BaseModel): The event data (Pydantic model).
-            routing_key (str, optional): The routing key to use. Defaults to event_name.
+           name: Publisher Name
+           service_uuid: Service UUID
+           username: AMQP Username
+           password: AMQP Password
+           host: AMQP Host
+           port: AMQP Port
+           exchange_name: Exchange Name
+           exchange_type: Exchange Type
+           **kwargs: Keyword Arguments
 
         """
-        channel = await self.get_channel()
-        exchange = await channel.declare_exchange(
-            self._default_exchange_name, self._default_exchange_type
+        super().__init__(
+            name=name,
+            service_uuid=service_uuid,
+            username=username,
+            password=password,
+            host=host,
+            port=port,
+            exchange_name=exchange_name,
+            exchange_type=exchange_type,
+            **kwargs,
         )
-
-        message_body = event.model_dump_json().encode()  # Use Pydantic's json()
-        message = aiopika.Message(
-            body=message_body,
-            content_type="application/json",
-            headers={
-                "event_name": event_name,
-                "routing_key": routing_key or event_name,
-            },  # Add a header (optional) and routing key.
-        )
-
-        await exchange.publish(
-            message, routing_key=routing_key or event_name
-        )  # Use routing_key, fallback to event_name
-        logger.info("Published event: %s, Data: %s", event_name, message_body.decode())
-
-    async def publish_collectd(self, event: "CollectdEvent") -> None:  # type: ignore
-        """Publish a Collectd event."""
-        # The type is commented because it creates a circular dependency.
-        if not self.service_uuid:
-            msg = "service_uuid must be set for Collectd events"
-            raise ValueError(msg)
-
-        channel = await self.get_channel()
-        exchange = await channel.declare_exchange(
-            self._default_exchange_name, self._default_exchange_type
-        )  # Or a dedicated collectd exchange
-
-        payload: str = event.generate_payload(self.service_uuid)
-        message = aiopika.Message(
-            body=payload.encode(),
-            content_type="text/plain",  # As per collectd network protocol
-            headers={"event_name": event.name},
-        )
-
-        await exchange.publish(
-            message, routing_key=event.routing_key_fmt
-        )  # Use routing key from event
-        logger.info("Publish Collectd event: %s - %s", event.name, payload)

@@ -1,55 +1,69 @@
-# resources/group_extension/event.py
-from typing import ClassVar
+# accent_bus/resources/group_extension/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Group extension events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class GroupExtensionEvent(TenantEvent):
-    """Base class for Group Extension events."""
+class GroupExtensionAssociatedEvent(TenantEvent):
+    """Event for when a group extension is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class GroupExtensionAssociatedEvent(GroupExtensionEvent):
-    """Event for when an extension is associated with a group."""
-
-    name: ClassVar[str] = "group_extension_associated"
-    routing_key_fmt: ClassVar[str] = "config.groups.extensions.updated"
+    service = "confd"
+    name = "group_extension_associated"
+    routing_key_fmt = "config.groups.extensions.updated"
 
     def __init__(
         self,
         group_id: int,
-        group_uuid: UUID4,
+        group_uuid: UUIDStr,
         extension_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           group_id: Group ID
+           group_uuid: Group UUID
+           extension_id: Extension ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "group_id": group_id,
             "group_uuid": str(group_uuid),
             "extension_id": extension_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class GroupExtensionDissociatedEvent(GroupExtensionEvent):
-    """Event for when an extension is dissociated from a group."""
+class GroupExtensionDissociatedEvent(TenantEvent):
+    """Event for when a group extension is dissociated."""
 
-    name: ClassVar[str] = "group_extension_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.groups.extensions.deleted"
+    service = "confd"
+    name = "group_extension_dissociated"
+    routing_key_fmt = "config.groups.extensions.deleted"
 
     def __init__(
         self,
         group_id: int,
-        group_uuid: UUID4,
+        group_uuid: UUIDStr,
         extension_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            group_id (int):  group ID.
+            group_uuid (UUIDStr): group UUID.
+            extension_id (int): Extension ID.
+            tenant_uuid (UUIDStr): tenant UUID.
+
+        """
         content = {
             "group_id": group_id,
             "group_uuid": str(group_uuid),
             "extension_id": extension_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

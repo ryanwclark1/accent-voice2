@@ -1,17 +1,25 @@
-# resources/endpoint_sccp/types.py
+# accent_bus/resources/endpoint_sccp/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4, BaseModel
+"""SCCP endpoint types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class EndpointSCCPLineDict(BaseModel):
-    """Represents an SCCP line."""
+class EndpointSCCPLineDict(TypedDict, total=False):
+    """Dictionary representing an SCCP endpoint line."""
 
     id: int
 
 
-class EndpointSCCPDict(BaseModel):
-    """Represents an SCCP endpoint."""
+class EndpointSCCPDict(TypedDict, total=False):
+    """Dictionary representing an SCCP endpoint."""
 
     id: int
-    tenant_uuid: UUID4
-    line: EndpointSCCPLineDict | None = None
+    tenant_uuid: UUIDStr
+    line: EndpointSCCPLineDict

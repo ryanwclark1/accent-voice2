@@ -1,60 +1,64 @@
-# resources/outcall/event.py
-from typing import ClassVar
+# accent_bus/resources/outcall/event.py
+# Copyright 2025 Accent Communications
+
+"""Outcall events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class OutcallEvent(TenantEvent):
-    """Base class for Outcall events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class OutcallCreatedEvent(OutcallEvent):
+class OutcallCreatedEvent(TenantEvent):
     """Event for when an outcall is created."""
 
-    name: ClassVar[str] = "outcall_created"
-    routing_key_fmt: ClassVar[str] = "config.outcalls.created"
+    service = "confd"
+    name = "outcall_created"
+    routing_key_fmt = "config.outcalls.created"
 
-    def __init__(self, outcall_id: int, **data):  # noqa: ANN204
-        """Initialize an Event instance with the given outcall ID and additional data.
+    def __init__(self, outcall_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Event.
 
         Args:
-            outcall_id (int): The ID of the outcall.
-            **data: Additional keyword arguments to be passed to the
-                superclass initializer.
+            outcall_id (int): outcall ID.
+            tenant_uuid (UUIDStr):  tenant UUID.
 
         """
         content = {"id": outcall_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class OutcallDeletedEvent(OutcallEvent):
+class OutcallDeletedEvent(TenantEvent):
     """Event for when an outcall is deleted."""
 
-    name: ClassVar[str] = "outcall_deleted"
-    routing_key_fmt: ClassVar[str] = "config.outcalls.deleted"
+    service = "confd"
+    name = "outcall_deleted"
+    routing_key_fmt = "config.outcalls.deleted"
 
-    def __init__(self, outcall_id: int, **data):
-        content = {"id": outcall_id}
-        super().__init__(content=content, **data)
-
-
-class OutcallEditedEvent(OutcallEvent):
-    """Event for when an outcall is edited."""
-
-    name: ClassVar[str] = "outcall_edited"
-    routing_key_fmt: ClassVar[str] = "config.outcalls.edited"
-
-    def __init__(self, outcall_id: int, **data):
-        """Initialize an instance of class with given outcall ID and additional data.
+    def __init__(self, outcall_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
 
         Args:
-            outcall_id (int): The ID of the outcall.
-            **data: Additional keyword arguments to be passed to the
-                superclass initializer.
+          outcall_id: Outcall ID
+          tenant_uuid: tenant UUID
 
         """
         content = {"id": outcall_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
+
+
+class OutcallEditedEvent(TenantEvent):
+    """Event for when an outcall is edited."""
+
+    service = "confd"
+    name = "outcall_edited"
+    routing_key_fmt = "config.outcalls.edited"
+
+    def __init__(self, outcall_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+            outcall_id (int): outcall ID.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
+        content = {"id": outcall_id}
+        super().__init__(content, tenant_uuid)

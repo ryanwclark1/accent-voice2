@@ -1,7 +1,10 @@
-# resources/line_endpoint/event.py
-from typing import ClassVar
+# accent_bus/resources/line_endpoint/event.py
+# Copyright 2025 Accent Communications
+
+"""Line endpoint events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 from .types import (
     LineDict,
@@ -11,18 +14,12 @@ from .types import (
 )
 
 
-class LineEndpointEvent(TenantEvent):
-    """Base class for Line Endpoint events."""
+class LineEndpointSIPAssociatedEvent(TenantEvent):
+    """Event for when a SIP line endpoint is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class LineEndpointSIPAssociatedEvent(LineEndpointEvent):
-    """Event for when a SIP endpoint is associated with a line."""
-
-    name: ClassVar[str] = "line_endpoint_sip_associated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "line_endpoint_sip_associated"
+    routing_key_fmt = (
         "config.lines.{line[id]}.endpoints.sip.{endpoint_sip[uuid]}.updated"
     )
 
@@ -30,30 +27,53 @@ class LineEndpointSIPAssociatedEvent(LineEndpointEvent):
         self,
         line: LineDict,
         sip: LineEndpointSIPDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          line: Line
+          sip: SIP
+          tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "endpoint_sip": sip}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class LineEndpointSIPDissociatedEvent(LineEndpointEvent):
-    """Event for when a SIP endpoint is dissociated from a line."""
+class LineEndpointSIPDissociatedEvent(TenantEvent):
+    """Event for when a SIP line endpoint is dissociated."""
 
-    name: ClassVar[str] = "line_endpoint_sip_dissociated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "line_endpoint_sip_dissociated"
+    routing_key_fmt = (
         "config.lines.{line[id]}.endpoints.sip.{endpoint_sip[uuid]}.deleted"
     )
 
-    def __init__(self, line: LineDict, sip: LineEndpointSIPDict, **data):
+    def __init__(
+        self,
+        line: LineDict,
+        sip: LineEndpointSIPDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           line: Line
+           sip: SIP
+           tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "endpoint_sip": sip}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class LineEndpointSCCPAssociatedEvent(LineEndpointEvent):
-    """Event for when an SCCP endpoint is associated with a line."""
+class LineEndpointSCCPAssociatedEvent(TenantEvent):
+    """Event for when an SCCP line endpoint is associated."""
 
-    name: ClassVar[str] = "line_endpoint_sccp_associated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "line_endpoint_sccp_associated"
+    routing_key_fmt = (
         "config.lines.{line[id]}.endpoints.sccp.{endpoint_sccp[id]}.updated"
     )
 
@@ -61,46 +81,96 @@ class LineEndpointSCCPAssociatedEvent(LineEndpointEvent):
         self,
         line: LineDict,
         sccp: LineEndpointSCCPDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          line: Line
+          sccp: SCCP
+          tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "endpoint_sccp": sccp}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class LineEndpointSCCPDissociatedEvent(LineEndpointEvent):
-    """Event for when an SCCP endpoint is dissociated from a line."""
+class LineEndpointSCCPDissociatedEvent(TenantEvent):
+    """Event for when an SCCP line endpoint is dissociated."""
 
-    name: ClassVar[str] = "line_endpoint_sccp_dissociated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "line_endpoint_sccp_dissociated"
+    routing_key_fmt = (
         "config.lines.{line[id]}.endpoints.sccp.{endpoint_sccp[id]}.deleted"
     )
 
-    def __init__(self, line: LineDict, sccp: LineEndpointSCCPDict, **data):
+    def __init__(
+        self,
+        line: LineDict,
+        sccp: LineEndpointSCCPDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          line: Line
+          sccp: SCCP
+          tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "endpoint_sccp": sccp}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class LineEndpointCustomAssociatedEvent(LineEndpointEvent):
-    """Event for when a custom endpoint is associated with a line."""
+class LineEndpointCustomAssociatedEvent(TenantEvent):
+    """Event for when a custom line endpoint is associated."""
 
-    name: ClassVar[str] = "line_endpoint_custom_associated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "line_endpoint_custom_associated"
+    routing_key_fmt = (
         "config.lines.{line[id]}.endpoints.custom.{endpoint_custom[id]}.updated"
     )
 
-    def __init__(self, line: LineDict, custom: LineEndpointCustomDict, **data):
+    def __init__(
+        self,
+        line: LineDict,
+        custom: LineEndpointCustomDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           line: Line
+           custom: Custom
+           tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "endpoint_custom": custom}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class LineEndpointCustomDissociatedEvent(LineEndpointEvent):
-    """Event for when a custom endpoint is dissociated from a line."""
+class LineEndpointCustomDissociatedEvent(TenantEvent):
+    """Event for when a custom line endpoint is dissociated."""
 
-    name: ClassVar[str] = "line_endpoint_custom_dissociated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "line_endpoint_custom_dissociated"
+    routing_key_fmt = (
         "config.lines.{line[id]}.endpoints.custom.{endpoint_custom[id]}.deleted"
     )
 
-    def __init__(self, line: LineDict, custom: LineEndpointCustomDict, **data):
+    def __init__(
+        self,
+        line: LineDict,
+        custom: LineEndpointCustomDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            line (LineDict): The line details.
+            custom (LineEndpointCustomDict): The custom endpoint details.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
         content = {"line": line, "endpoint_custom": custom}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

@@ -1,11 +1,19 @@
-# resources/pjsip/types.py
+# accent_bus/resources/pjsip/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import BaseModel, UUID4, Field
+"""PJSIP types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class PJSIPTransportDict(BaseModel):
-    """Represents a PJSIP transport."""
+class PJSIPTransportDict(TypedDict, total=False):
+    """Dictionary representing a PJSIP transport."""
 
-    uuid: UUID4
+    uuid: UUIDStr
     name: str
-    options: list[str] = Field(default_factory=list)
+    options: list[str]

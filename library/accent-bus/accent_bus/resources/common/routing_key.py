@@ -1,12 +1,17 @@
-# resources/common/routing_key.py
+# accent_bus/resources/common/routing_key.py
+# Copyright 2025 Accent Communications
+
+"""Routing key utility functions."""
+
+
 def escape(routing_key_part: str) -> str:
-    """Escapes special characters in a routing key part.
+    """Escape a routing key part.
 
     Args:
-        routing_key_part: The routing key part to escape.
+       routing_key_part (str): The routing key part to escape.
 
     Returns:
-        The escaped routing key part.
+        str: The escaped routing key part.
 
     """
     return (

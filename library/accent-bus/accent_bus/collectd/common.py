@@ -1,11 +1,16 @@
-# collectd/common.py
+# accent_bus/collectd/common.py
+# Copyright 2025 Accent Communications
+
+"""Common Collectd event definitions."""
+
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import ClassVar
 
-from pydantic import BaseModel, field_validator
+from accent_bus.resources.common.abstract import EventProtocol
 
 
-class CollectdEvent(BaseModel):
+class CollectdEvent(EventProtocol):
     """Base Collectd Event.
 
     Subclasses must define the following attributes:
@@ -13,45 +18,49 @@ class CollectdEvent(BaseModel):
       * routing_key_fmt
       * plugin
       * type_
-
-    Args:
-        content (dict | None, optional): Content of the collectd event.
-
     """
 
-    routing_key_fmt: ClassVar[str]
+    routing_key_fmt: str
     interval: int = 10
     plugin_instance: str | None = None
     time: str | int = "N"
     type_instance: str | None = None
     values: tuple[str, ...] = ()
-    content: dict | None = None
+
+    def __init__(self, content: dict | None = None) -> None:
+        """Initialize a CollectdEvent.
+
+        Args:
+            content (dict, optional): The event content. Defaults to {}.
+
+        """
+        self.content = content or {}
 
     @property
     @abstractmethod
     def plugin(self) -> str:
-        """Returns the plugin name. To be implemented by subclasses."""
-        ...
+        """Return the plugin name.
+
+        Returns:
+            str: plugin name
+
+        """
 
     @property
     @abstractmethod
     def type_(self) -> str:
-        """Returns the type. To be implemented by subclasses."""
-        ...
-
-    @field_validator("time")
-    def time_must_be_valid(cls, v: str | int) -> str | int:
-        """Validate the time attribute."""
-        if v != "N" and not isinstance(v, int):
-            msg = "time must be 'N' or an integer"
-            raise ValueError(msg)
-        return v
-
-    def is_valid(self) -> bool:
-        """Check if the CollectdEvent is valid.
+        """Return the type.
 
         Returns:
-           bool: True if valid, False otherwise.
+           str: type
+
+        """
+
+    def is_valid(self) -> bool:
+        """Check if the event is valid.
+
+        Returns:
+           bool: if the event is valid
 
         """
         return (
@@ -64,12 +73,12 @@ class CollectdEvent(BaseModel):
         )
 
     def __str__(self) -> str:
-        """String representation of the Collectd event.
+        """Return a string representation of the event.
 
         Returns:
-            str: String describing the Collectd Event.
+           str: String representation.
 
-        """  # noqa: D401
+        """
         content = ", ".join(
             [
                 f"plugin='{self.plugin}'",
@@ -80,32 +89,3 @@ class CollectdEvent(BaseModel):
             ]
         )
         return f"CollectdEvent({content})"
-
-    def generate_payload(self, service_uuid: str) -> str:
-        """Generate the collectd payload string.
-
-        Args:
-            service_uuid: The UUID of the service.
-
-        Returns:
-            str: collectd formatted string
-
-        Raises:
-            ValueError: If event is not valid.
-
-        """
-        if not self.is_valid():
-            raise ValueError(self)
-
-        host = service_uuid
-
-        plugin = self.plugin
-        if self.plugin_instance:
-            plugin = f"{self.plugin}-{self.plugin_instance}"
-
-        type_ = f"{self.type_}-{self.type_instance}"
-        interval = self.interval
-        time = self.time
-        values = ":".join(self.values)
-
-        return f"PUTVAL {host}/{plugin}/{type_} interval={interval} {time}:{values}"

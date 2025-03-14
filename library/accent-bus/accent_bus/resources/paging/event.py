@@ -1,44 +1,64 @@
-# resources/paging/event.py
-from typing import ClassVar
+# accent_bus/resources/paging/event.py
+# Copyright 2025 Accent Communications
+
+"""Paging events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class PagingEvent(TenantEvent):
-    """Base class for Paging events."""
+class PagingCreatedEvent(TenantEvent):
+    """Event for when a paging is created."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
+    service = "confd"
+    name = "paging_created"
+    routing_key_fmt = "config.pagings.created"
 
+    def __init__(self, paging_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
 
-class PagingCreatedEvent(PagingEvent):
-    """Event for when a paging group is created."""
+        Args:
+            paging_id (int): The ID of the paging.
+            tenant_uuid (UUIDStr): The tenant UUID.
 
-    name: ClassVar[str] = "paging_created"
-    routing_key_fmt: ClassVar[str] = "config.pagings.created"
-
-    def __init__(self, paging_id: int, **data):
+        """
         content = {"id": paging_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class PagingDeletedEvent(PagingEvent):
-    """Event for when a paging group is deleted."""
+class PagingDeletedEvent(TenantEvent):
+    """Event for when a paging is deleted."""
 
-    name: ClassVar[str] = "paging_deleted"
-    routing_key_fmt: ClassVar[str] = "config.pagings.deleted"
+    service = "confd"
+    name = "paging_deleted"
+    routing_key_fmt = "config.pagings.deleted"
 
-    def __init__(self, paging_id: int, **data):
+    def __init__(self, paging_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+            paging_id (int): The ID of the paging.
+            tenant_uuid (UUIDStr):  tenant UUID.
+
+        """
         content = {"id": paging_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class PagingEditedEvent(PagingEvent):
-    """Event for when a paging group is edited."""
+class PagingEditedEvent(TenantEvent):
+    """Event for when a paging is edited."""
 
-    name: ClassVar[str] = "paging_edited"
-    routing_key_fmt: ClassVar[str] = "config.pagings.edited"
+    service = "confd"
+    name = "paging_edited"
+    routing_key_fmt = "config.pagings.edited"
 
-    def __init__(self, paging_id: int, **data):
+    def __init__(self, paging_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+           paging_id: Paging ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {"id": paging_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

@@ -1,348 +1,499 @@
-# resources/calls/event.py
-from typing import ClassVar
+# accent_bus/resources/calls/event.py
+# Copyright 2025 Accent Communications
+
+"""Call events."""
 
 from accent_bus.resources.common.event import UserEvent
+from accent_bus.resources.common.types import UUIDStr
 
 from .types import CallDict, RelocateDict, TransferDict
 
 
-class CallEvent(UserEvent):
-    """Base class for Call events."""
-
-    service: ClassVar[str] = "calld"
-    required_acl_fmt: ClassVar[str] = "events.calls.{user_uuid}"
-    content: dict
-
-
-class CallCreatedEvent(CallEvent):
+class CallCreatedEvent(UserEvent):
     """Event for when a call is created."""
 
-    name: ClassVar[str] = "call_created"
-    routing_key_fmt: ClassVar[str] = "calls.call.created"
-    content: CallDict
+    service = "calld"
+    name = "call_created"
+    routing_key_fmt = "calls.call.created"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call: CallDict,
-        **data,
-    ):
-        super().__init__(content=call, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           call: Call
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(call, tenant_uuid, user_uuid)
 
 
-class CallEndedEvent(CallEvent):
+class CallEndedEvent(UserEvent):
     """Event for when a call ends."""
 
-    name: ClassVar[str] = "call_ended"
-    routing_key_fmt: ClassVar[str] = "calls.call.ended"
-    content: CallDict
+    service = "calld"
+    name = "call_ended"
+    routing_key_fmt = "calls.call.ended"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call: CallDict,
-        **data,
-    ):
-        super().__init__(content=call, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          call: Call
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(call, tenant_uuid, user_uuid)
 
 
-class CallUpdatedEvent(CallEvent):
+class CallUpdatedEvent(UserEvent):
     """Event for when a call is updated."""
 
-    name: ClassVar[str] = "call_updated"
-    routing_key_fmt: ClassVar[str] = "calls.call.updated"
-    content: CallDict
+    service = "calld"
+    name = "call_updated"
+    routing_key_fmt = "calls.call.updated"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call: CallDict,
-        **data,
-    ):
-        super().__init__(content=call, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          call: Call
+          tenant_uuid:  tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(call, tenant_uuid, user_uuid)
 
 
-class CallAnsweredEvent(CallEvent):
+class CallAnsweredEvent(UserEvent):
     """Event for when a call is answered."""
 
-    name: ClassVar[str] = "call_answered"
-    routing_key_fmt: ClassVar[str] = "calls.call.answered"
-    content: CallDict
+    service = "calld"
+    name = "call_answered"
+    routing_key_fmt = "calls.call.answered"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call: CallDict,
-        **data,
-    ):
-        super().__init__(content=call, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          call: Call
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(call, tenant_uuid, user_uuid)
 
 
-class CallDTMFContent(BaseModel):
-    """Content for DTMF events"""
+class CallDTMFEvent(UserEvent):
+    """Event for when a DTMF is received on a call."""
 
-    call_id: str
-    digit: str
-    user_uuid: str
-
-
-class CallDTMFEvent(CallEvent):
-    """Event for when a DTMF digit is received on a call."""
-
-    name: ClassVar[str] = "call_dtmf_created"
-    routing_key_fmt: ClassVar[str] = "calls.dtmf.created"
-    content: CallDTMFContent
+    service = "calld"
+    name = "call_dtmf_created"
+    routing_key_fmt = "calls.dtmf.created"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call_id: str,
         digit_number: str,
-        **data,
-    ):
-        content = CallDTMFContent(
-            call_id=call_id,
-            digit=digit_number,
-            user_uuid=str(data["user_uuid"]),
-        )
-        super().__init__(content=content, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           call_id: Call ID
+           digit_number: DTMF Digit
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        content = {
+            "call_id": call_id,
+            "digit": digit_number,
+            "user_uuid": str(user_uuid),
+        }
+        super().__init__(content, tenant_uuid, user_uuid)
 
 
-class CallHeldContent(BaseModel):
-    """Content of Call Held Event"""
+class CallHeldEvent(UserEvent):
+    """Event for when a call is held."""
 
-    call_id: str
-    user_uuid: str
-
-
-class CallHeldEvent(CallEvent):
-    """Event for when a call is put on hold."""
-
-    name: ClassVar[str] = "call_held"
-    routing_key_fmt: ClassVar[str] = "calls.hold.created"
-    content: CallHeldContent
-
-    def __init__(
-        self,
-        call_id: str,
-        **data,
-    ):
-        content = CallHeldContent(
-            call_id=call_id,
-            user_uuid=str(data["user_uuid"]),
-        )
-        super().__init__(content=content, **data)
-
-
-class CallResumedContent(BaseModel):
-    """Content of Call Resumed Event."""
-
-    call_id: str
-    user_uuid: str
-
-
-class CallResumedEvent(CallEvent):
-    """Event for when a call is resumed from hold."""
-
-    name: ClassVar[str] = "call_resumed"
-    routing_key_fmt: ClassVar[str] = "calls.hold.deleted"
-    content: CallResumedContent
+    service = "calld"
+    name = "call_held"
+    routing_key_fmt = "calls.hold.created"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call_id: str,
-        **data,
-    ):
-        content = CallResumedContent(
-            call_id=call_id,
-            user_uuid=str(data["user_uuid"]),
-        )
-        super().__init__(content=content, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          call_id: Call ID
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        content = {
+            "call_id": call_id,
+            "user_uuid": str(user_uuid),
+        }
+        super().__init__(content, tenant_uuid, user_uuid)
 
 
-class MissedCallEvent(CallEvent):
+class CallResumedEvent(UserEvent):
+    """Event for when a call is resumed."""
+
+    service = "calld"
+    name = "call_resumed"
+    routing_key_fmt = "calls.hold.deleted"
+    required_acl_fmt = "events.calls.{user_uuid}"
+
+    def __init__(
+        self,
+        call_id: str,
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          call_id: Call ID
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        content = {
+            "call_id": call_id,
+            "user_uuid": str(user_uuid),
+        }
+        super().__init__(content, tenant_uuid, user_uuid)
+
+
+class MissedCallEvent(UserEvent):
     """Event for when a call is missed."""
 
-    name: ClassVar[str] = "user_missed_call"
-    routing_key_fmt: ClassVar[str] = "calls.missed"
-    content: CallDict
+    service = "calld"
+    name = "user_missed_call"
+    routing_key_fmt = "calls.missed"
+    required_acl_fmt = "events.calls.{user_uuid}"
 
     def __init__(
         self,
         call: CallDict,
-        **data,
-    ):
-        super().__init__(content=call, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          call: Call
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(call, tenant_uuid, user_uuid)
 
 
-class CallRelocateInitiatedEvent(CallEvent):
+class CallRelocateInitiatedEvent(UserEvent):
     """Event for when a call relocation is initiated."""
 
-    name: ClassVar[str] = "relocate_initiated"
-    routing_key_fmt: ClassVar[str] = "calls.relocate.created"
-    required_acl_fmt: ClassVar[str] = (
-        "events.relocates.{user_uuid}"  # Override, different prefix.
-    )
-    content: RelocateDict
+    service = "calld"
+    name = "relocate_initiated"
+    routing_key_fmt = "calls.relocate.created"
+    required_acl_fmt = "events.relocates.{user_uuid}"
 
     def __init__(
         self,
         relocate: RelocateDict,
-        **data,
-    ):
-        super().__init__(content=relocate, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           relocate: Relocate data
+           tenant_uuid:  tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(relocate, tenant_uuid, user_uuid)
 
 
-class CallRelocateAnsweredEvent(CallEvent):
-    """Event for when a relocated call is answered."""
+class CallRelocateAnsweredEvent(UserEvent):
+    """Event for when a call relocation is answered."""
 
-    name: ClassVar[str] = "relocate_answered"
-    routing_key_fmt: ClassVar[str] = "calls.relocate.edited"
-    required_acl_fmt: ClassVar[str] = "events.relocates.{user_uuid}"
-    content: RelocateDict
+    service = "calld"
+    name = "relocate_answered"
+    routing_key_fmt = "calls.relocate.edited"
+    required_acl_fmt = "events.relocates.{user_uuid}"
 
     def __init__(
         self,
         relocate: RelocateDict,
-        **data,
-    ):
-        super().__init__(content=relocate, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           relocate: Relocate data
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(relocate, tenant_uuid, user_uuid)
 
 
-class CallRelocateCompletedEvent(CallEvent):
+class CallRelocateCompletedEvent(UserEvent):
     """Event for when a call relocation is completed."""
 
-    name: ClassVar[str] = "relocate_completed"
-    routing_key_fmt: ClassVar[str] = "calls.relocate.edited"
-    required_acl_fmt: ClassVar[str] = "events.relocates.{user_uuid}"
-    content: RelocateDict
+    service = "calld"
+    name = "relocate_completed"
+    routing_key_fmt = "calls.relocate.edited"
+    required_acl_fmt = "events.relocates.{user_uuid}"
 
     def __init__(
         self,
         relocate: RelocateDict,
-        **data,
-    ):
-        super().__init__(content=relocate, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           relocate: Relocate data
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(relocate, tenant_uuid, user_uuid)
 
 
-class CallRelocateEndedEvent(CallEvent):
-    """Event for when a call relocation ends."""
+class CallRelocateEndedEvent(UserEvent):
+    """Event for when a call relocation is ended."""
 
-    name: ClassVar[str] = "relocate_ended"
-    routing_key_fmt: ClassVar[str] = "calls.relocate.deleted"
-    required_acl_fmt: ClassVar[str] = "events.relocates.{user_uuid}"
-    content: RelocateDict
+    service = "calld"
+    name = "relocate_ended"
+    routing_key_fmt = "calls.relocate.deleted"
+    required_acl_fmt = "events.relocates.{user_uuid}"
 
     def __init__(
         self,
         relocate: RelocateDict,
-        **data,
-    ):
-        super().__init__(content=relocate, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+          relocate: Relocate data
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(relocate, tenant_uuid, user_uuid)
 
 
-class CallTransferCreatedEvent(CallEvent):
+class CallTransferCreatedEvent(UserEvent):
     """Event for when a call transfer is created."""
 
-    name: ClassVar[str] = "transfer_created"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.created"
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_created"
+    routing_key_fmt = "calls.transfer.created"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          transfer: Transfer
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)
 
 
-class CallTransferUpdatedEvent(CallEvent):
+class CallTransferUpdatedEvent(UserEvent):
     """Event for when a call transfer is updated."""
 
-    name: ClassVar[str] = "transfer_updated"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.created"  # Same as created
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_updated"
+    routing_key_fmt = "calls.transfer.created"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           transfer: Transfer
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)
 
 
-class CallTransferAnsweredEvent(CallEvent):
-    """Event for when a transferred call is answered."""
+class CallTransferAnsweredEvent(UserEvent):
+    """Event for when a call transfer is answered."""
 
-    name: ClassVar[str] = "transfer_answered"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.edited"
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_answered"
+    routing_key_fmt = "calls.transfer.edited"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            transfer (TransferDict):  transfer details.
+            tenant_uuid (UUIDStr):  tenant UUID.
+            user_uuid (UUIDStr): user UUID.
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)
 
 
-class CallTransferCancelledEvent(CallEvent):
+class CallTransferCancelledEvent(UserEvent):
     """Event for when a call transfer is cancelled."""
 
-    name: ClassVar[str] = "transfer_cancelled"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.edited"  # Same as answered
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_cancelled"
+    routing_key_fmt = "calls.transfer.edited"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            transfer (TransferDict):  transfer details.
+            tenant_uuid (UUIDStr):  tenant UUID.
+            user_uuid (UUIDStr):  user UUID.
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)
 
 
-class CallTransferCompletedEvent(CallEvent):
+class CallTransferCompletedEvent(UserEvent):
     """Event for when a call transfer is completed."""
 
-    name: ClassVar[str] = "transfer_completed"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.edited"  # Same as answered
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_completed"
+    routing_key_fmt = "calls.transfer.edited"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+           transfer: Transfer
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)
 
 
-class CallTransferAbandonedEvent(CallEvent):
+class CallTransferAbandonedEvent(UserEvent):
     """Event for when a call transfer is abandoned."""
 
-    name: ClassVar[str] = "transfer_abandoned"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.edited"  # Same as answered
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_abandoned"
+    routing_key_fmt = "calls.transfer.edited"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           transfer: Transfer
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)
 
 
-class CallTransferEndedEvent(CallEvent):
-    """Event for when a call transfer ends."""
+class CallTransferEndedEvent(UserEvent):
+    """Event for when a call transfer is ended."""
 
-    name: ClassVar[str] = "transfer_ended"
-    routing_key_fmt: ClassVar[str] = "calls.transfer.deleted"
-    required_acl_fmt: ClassVar[str] = "events.transfers.{user_uuid}"
-    content: TransferDict
+    service = "calld"
+    name = "transfer_ended"
+    routing_key_fmt = "calls.transfer.deleted"
+    required_acl_fmt = "events.transfers.{user_uuid}"
 
     def __init__(
         self,
         transfer: TransferDict,
-        **data,
-    ):
-        super().__init__(content=transfer, **data)
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          transfer: Transfer
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        super().__init__(transfer, tenant_uuid, user_uuid)

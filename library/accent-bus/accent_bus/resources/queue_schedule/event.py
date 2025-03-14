@@ -1,49 +1,63 @@
-# resources/queue_schedule/event.py
-from typing import ClassVar
+# accent_bus/resources/queue_schedule/event.py
+# Copyright 2025 Accent Communications
+
+"""Queue schedule events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class QueueScheduleEvent(TenantEvent):
-    """Base class for Queue Schedule events."""
+class QueueScheduleAssociatedEvent(TenantEvent):
+    """Event for when a queue schedule is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class QueueScheduleAssociatedEvent(QueueScheduleEvent):
-    """Event for when a schedule is associated with a queue."""
-
-    name: ClassVar[str] = "queue_schedule_associated"
-    routing_key_fmt: ClassVar[str] = "config.queues.schedules.updated"
+    service = "confd"
+    name = "queue_schedule_associated"
+    routing_key_fmt = "config.queues.schedules.updated"
 
     def __init__(
         self,
         queue_id: int,
         schedule_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+            queue_id (int): queue ID.
+            schedule_id (int): schedule ID.
+            tenant_uuid (UUIDStr):  tenant UUID.
+
+        """
         content = {
             "queue_id": queue_id,
             "schedule_id": schedule_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class QueueScheduleDissociatedEvent(QueueScheduleEvent):
-    """Event for when a schedule is dissociated from a queue."""
+class QueueScheduleDissociatedEvent(TenantEvent):
+    """Event for when a queue schedule is dissociated."""
 
-    name: ClassVar[str] = "queue_schedule_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.queues.schedules.deleted"
+    service = "confd"
+    name = "queue_schedule_dissociated"
+    routing_key_fmt = "config.queues.schedules.deleted"
 
     def __init__(
         self,
         queue_id: int,
         schedule_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           queue_id: Queue ID
+           schedule_id: Schedule ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "queue_id": queue_id,
             "schedule_id": schedule_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

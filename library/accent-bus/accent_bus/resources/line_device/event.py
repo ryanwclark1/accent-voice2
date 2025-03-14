@@ -1,44 +1,59 @@
-# resources/line_device/event.py
-from typing import ClassVar
+# accent_bus/resources/line_device/event.py
+# Copyright 2025 Accent Communications
+
+"""Line device events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 from .types import DeviceDict, LineDict
 
 
-class LineDeviceEvent(TenantEvent):
-    """Base class for Line Device events."""
+class LineDeviceAssociatedEvent(TenantEvent):
+    """Event for when a line device is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class LineDeviceAssociatedEvent(LineDeviceEvent):
-    """Event for when a device is associated with a line."""
-
-    name: ClassVar[str] = "line_device_associated"
-    routing_key_fmt: ClassVar[str] = (
-        "config.lines.{line[id]}.devices.{device[id]}.updated"
-    )
+    service = "confd"
+    name = "line_device_associated"
+    routing_key_fmt = "config.lines.{line[id]}.devices.{device[id]}.updated"
 
     def __init__(
         self,
         line: LineDict,
         device: DeviceDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           line: Line
+           device: Device
+           tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "device": device}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class LineDeviceDissociatedEvent(LineDeviceEvent):
-    """Event for when a device is dissociated from a line."""
+class LineDeviceDissociatedEvent(TenantEvent):
+    """Event for when a line device is dissociated."""
 
-    name: ClassVar[str] = "line_device_dissociated"
-    routing_key_fmt: ClassVar[str] = (
-        "config.lines.{line[id]}.devices.{device[id]}.deleted"
-    )
+    service = "confd"
+    name = "line_device_dissociated"
+    routing_key_fmt = "config.lines.{line[id]}.devices.{device[id]}.deleted"
 
-    def __init__(self, line: LineDict, device: DeviceDict, **data):
+    def __init__(
+        self,
+        line: LineDict,
+        device: DeviceDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           line: Line
+           device: Device
+           tenant_uuid: tenant UUID
+
+        """
         content = {"line": line, "device": device}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

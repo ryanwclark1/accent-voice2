@@ -1,14 +1,19 @@
-# core/base.py
+# accent_bus/base.py
+# Copyright 2025 Accent Communications
+
+"""Base classes for AMQP consumers and publishers."""
+
+from __future__ import annotations
+
 import logging
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, Self
 
-from pydantic import BaseModel, Field
-
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class ConnectionParams(NamedTuple):
-    """Connection parameters for RabbitMQ."""
+    """Connection parameters for AMQP."""
 
     user: str
     password: str
@@ -16,8 +21,33 @@ class ConnectionParams(NamedTuple):
     port: int
 
 
-class BaseProtocol:
-    """Base class for publishers/consumers (to be extended by mixins)."""
+class EventProtocol(Protocol):
+    """Protocol for events."""
+
+    name: str
+    content: dict
+
+    def is_valid(self) -> bool:
+        """Check if the event is valid."""
+        ...
+
+    def marshal(self) -> dict:
+        """Marshal the event to a dictionary."""
+        ...
+
+    @property
+    def routing_key(self) -> str:
+        """Return the routing key for the event."""
+        ...
+
+    @property
+    def headers(self) -> dict:
+        """Return the headers for the event."""
+        ...
+
+
+class BaseProtocol(Protocol):
+    """Base protocol for AMQP consumers and publishers."""
 
     _name: str
     _logger: logging.Logger
@@ -35,19 +65,51 @@ class BaseProtocol:
         exchange_name: str = "",
         exchange_type: str = "",
         **kwargs: Any,
-    ): ...  # remove definition
+    ) -> None: ...
 
-    @property  # Correct.  This *is* a property.
+    @property
     def url(self) -> str:
-        """Returns the AMQP URL (must be implemented by subclasses)."""
-        msg = "Subclasses must implement 'url'"
-        raise NotImplementedError(msg)
+        """Return the AMQP URL."""
+        ...
 
-    @property  # Correct. This *is* a property.
+    @property
     def log(self) -> logging.Logger:
-        """Returns the logger (must be implemented by subclasses)."""
-        msg = "Subclasses must implement 'log'"
-        raise NotImplementedError(msg)
+        """Return the logger."""
+        ...
+
+    @property
+    async def is_running(self) -> bool:
+        """Check if the consumer/publisher is running."""
+        ...
+
+    def _marshal(
+        self,
+        event: EventProtocol,
+        headers: dict | None,
+        payload: dict | None,
+        routing_key: str | None = None,
+    ) -> tuple[dict | None, dict | None, str | None]:
+        """Marshal an event into headers, payload, and routing key."""
+        ...
+
+    def _unmarshal(
+        self, event_name: str, headers: dict, payload: dict
+    ) -> tuple[dict, dict]:
+        """Unmarshal headers and payload into a dictionary."""
+        ...
+
+    async def __aenter__(self) -> Self:
+        """Enter the context."""
+        ...
+
+    async def __aexit__(
+        self,
+        exc: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Exit the context."""
+        ...
 
 
 class Base(BaseProtocol):
@@ -55,7 +117,7 @@ class Base(BaseProtocol):
 
     def __init__(
         self,
-        name: str | None,
+        name: str | None = None,
         username: str = "guest",
         password: str = "guest",
         host: str = "localhost",
@@ -63,7 +125,20 @@ class Base(BaseProtocol):
         exchange_name: str = "",
         exchange_type: str = "",
         **kwargs: Any,
-    ):
+    ) -> None:
+        """Initialize the Base class.
+
+        Args:
+            name (str, optional): The name of the consumer/publisher. Defaults to class name.
+            username (str, optional): The username for AMQP connection. Defaults to 'guest'.
+            password (str, optional): The password for AMQP connection. Defaults to 'guest'.
+            host (str, optional): The AMQP host. Defaults to 'localhost'.
+            port (int, optional): The AMQP port. Defaults to 5672.
+            exchange_name (str, optional): The default exchange name. Defaults to ''.
+            exchange_type (str, optional): The default exchange type. Defaults to ''.
+            **kwargs: Additional keyword arguments.
+
+        """
         self._name = name or type(self).__name__
         self._logger = logging.getLogger(type(self).__name__)
         self._connection_params = ConnectionParams(username, password, host, port)
@@ -72,7 +147,12 @@ class Base(BaseProtocol):
 
     @property
     def url(self) -> str:
-        """Constructs the RabbitMQ connection URL."""
+        """Return the AMQP URL.
+
+        Returns:
+            str: The AMQP URL.
+
+        """
         return (
             f"amqp://{self._connection_params.user}:{self._connection_params.password}@"
             f"{self._connection_params.host}:{self._connection_params.port}/"
@@ -80,23 +160,81 @@ class Base(BaseProtocol):
 
     @property
     def log(self) -> logging.Logger:
-        """Returns the logger instance."""
+        """Return the logger.
+
+        Returns:
+           logging.Logger: The logger instance.
+
+        """
         return self._logger
 
-
-class RabbitMQConfig(BaseModel):
-    """Configuration settings for RabbitMQ connection."""
-
-    user: str = Field(default="guest", description="RabbitMQ username")
-    password: str = Field(default="guest", description="RabbitMQ password")
-    host: str = Field(default="localhost", description="RabbitMQ host")
-    port: int = Field(default=5672, description="RabbitMQ port")
-    exchange_name: str = Field(
-        default="accent_bus_exchange", description="Default exchange name"
-    )
-    exchange_type: str = Field(default="topic", description="Default exchange type")
-
     @property
-    def url(self) -> str:
-        """Constructs the RabbitMQ connection URL."""
-        return f"amqp://{self.user}:{self.password}@{self.host}:{self.port}/"
+    async def is_running(self) -> bool:
+        """Check if running.  Placeholder for more specific checks in subclasses.
+
+        Returns:
+             bool: Always returns True.
+
+        """
+        return True
+
+    def _marshal(
+        self,
+        event: EventProtocol,
+        headers: dict | None,
+        payload: dict | None,
+        routing_key: str | None = None,
+    ) -> tuple[dict | None, dict | None, str | None]:
+        """Marshal an event into headers, payload, and routing key.
+
+        Args:
+            event (EventProtocol): The event to marshal.
+            headers (dict | None): Optional headers.
+            payload (dict | None): Optional payload.
+            routing_key (str | None): Optional routing key.
+
+        Returns:
+            tuple[dict | None, dict | None, str | None]: The marshaled headers, payload, and routing key.
+
+        """
+        return headers, payload, routing_key
+
+    def _unmarshal(
+        self, event_name: str, headers: dict, payload: dict
+    ) -> tuple[dict, dict]:
+        """Unmarshal headers and payload.
+
+        Args:
+            event_name (str): The name of the event.
+            headers (dict): The headers.
+            payload (dict): The payload.
+
+        Returns:
+            tuple[dict, dict]: The unmarshaled headers and payload.
+
+        """
+        return headers, payload
+
+    async def __aenter__(self) -> Self:
+        """Asynchronous context manager entry.
+
+        Returns:
+            Self: Returns self.
+
+        """
+        return self
+
+    async def __aexit__(
+        self,
+        exc: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
+        """Asynchronous context manager exit.
+
+        Args:
+            exc (type[BaseException] | None): Exception type.
+            exc_value (BaseException | None): Exception value.
+            traceback (TracebackType | None): Traceback object.
+
+        """

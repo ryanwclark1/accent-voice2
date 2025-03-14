@@ -1,17 +1,23 @@
-# collectd/calls.py
+# accent_bus/collectd/calls.py
+# Copyright 2025 Accent Communications
+
+"""Collectd events for calls."""
+
+from __future__ import annotations
+
 import string
 
 from .common import CollectdEvent
 
 
 def _validate_plugin_instance_fragment(plugin_instance_fragment: str) -> str:
-    """Validate and sanitize a plugin instance fragment.
+    """Validate a fragment of the plugin instance.
 
     Args:
-        plugin_instance_fragment (str): the fragment to be validate.
+        plugin_instance_fragment: The fragment to validate.
 
     Returns:
-        str: A validated plugin instance fragment.
+        str: The validated fragment.
 
     """
     result = "".join(
@@ -23,14 +29,7 @@ def _validate_plugin_instance_fragment(plugin_instance_fragment: str) -> str:
 
 
 class _BaseCallCollectdEvent(CollectdEvent):
-    """Base class for Call related Collectd Events.
-
-    Args:
-        application (str): The application.
-        application_id (str | None): the application id, if any.
-        time (str | int | None): Timestamp for the event.
-
-    """
+    """Base class for call-related Collectd events."""
 
     routing_key_fmt = "collectd.calls"
     plugin = "calls"
@@ -42,7 +41,15 @@ class _BaseCallCollectdEvent(CollectdEvent):
         application: str,
         application_id: str | None,
         time: int | str | None = None,
-    ):
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            application (str): The application name.
+            application_id (str | None): The application ID.
+            time (int | str | None): The timestamp.
+
+        """
         super().__init__()
         if time:
             self.time = int(time)
@@ -56,71 +63,35 @@ class _BaseCallCollectdEvent(CollectdEvent):
 
 
 class CallStartCollectdEvent(_BaseCallCollectdEvent):
-    """Event for when a call starts.
-
-    Args:
-        application (str): The application.
-        application_id (str | None): the application id, if any.
-        time (str | int | None): Timestamp for the event.
-
-    """
+    """Event for when a call starts."""
 
     name = "collectd_call_started"
     type_instance = "start"
 
 
 class CallConnectCollectdEvent(_BaseCallCollectdEvent):
-    """Event for when a call connects.
-
-    Args:
-        application (str): The application.
-        application_id (str | None): the application id, if any.
-        time (str | int | None): Timestamp for the event.
-
-    """
+    """Event for when a call connects."""
 
     name = "collectd_call_connected"
     type_instance = "connect"
 
 
 class CallEndCollectdEvent(_BaseCallCollectdEvent):
-    """Event for when a call ends.
-
-    Args:
-        application (str): The application.
-        application_id (str | None): the application id, if any.
-        time (str | int | None): Timestamp for the event.
-
-    """
+    """Event for when a call ends."""
 
     name = "collectd_call_ended"
     type_instance = "end"
 
 
 class CallAbandonedCollectdEvent(_BaseCallCollectdEvent):
-    """Event for when a call is abandoned.
-
-    Args:
-        application (str): The application.
-        application_id (str | None): the application id, if any.
-        time (str | int | None): Timestamp for the event.
-
-    """
+    """Event for when a call is abandoned."""
 
     name = "collectd_call_abandoned"
     type_instance = "abandoned"
 
 
 class CallDurationCollectdEvent(_BaseCallCollectdEvent):
-    """Event for tracking call duration.
-
-    Args:
-        application (str): The application.
-        application_id (str | None): the application id, if any.
-        duration (int): Call duration.
-        time (str | int | None): Timestamp for the event.
-
-    """
+    """Event for call duration."""
 
     name = "collectd_call_duration"
     type_ = "gauge"
@@ -132,6 +103,15 @@ class CallDurationCollectdEvent(_BaseCallCollectdEvent):
         application_id: str | None,
         duration: int,
         time: str | int | None = None,
-    ):
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           application (str): The application name.
+           application_id (str | None): The application ID.
+           duration (int): The call duration.
+           time (str | int | None): The event timestamp
+
+        """
         super().__init__(application, application_id, time)
         self.values = (str(round(duration, 3)),)

@@ -1,11 +1,17 @@
-# resources/access_feature/types.py
-from pydantic import BaseModel, Field
+# accent_bus/resources/access_feature/types.py
+# Copyright 2025 Accent Communications
+
+"""Access Feature Types."""
+
+from __future__ import annotations
+
+from typing import TypedDict
 
 
-class AccessFeatureDict(BaseModel):
-    """Represents the data for an Access Feature."""
+class AccessFeatureDict(TypedDict, total=False):
+    """Dictionary representing an access feature."""
 
-    id: int = Field(..., description="The unique ID of the access feature.")
-    host: str = Field(..., description="The host associated with the feature.")
-    feature: str = Field(..., description="The name of the feature.")
-    enabled: bool = Field(..., description="Whether the feature is enabled.")
+    id: int
+    host: str
+    feature: str
+    enabled: bool

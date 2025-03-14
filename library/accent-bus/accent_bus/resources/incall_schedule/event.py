@@ -1,39 +1,63 @@
-# resources/incall_schedule/event.py
-from typing import ClassVar
+# accent_bus/resources/incall_schedule/event.py
+# Copyright 2025 Accent Communications
+
+"""Incall schedule events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class IncallScheduleEvent(TenantEvent):
-    """Base class for Incall Schedule events."""
+class IncallScheduleAssociatedEvent(TenantEvent):
+    """Event for when an incall schedule is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
+    service = "confd"
+    name = "incall_schedule_associated"
+    routing_key_fmt = "config.incalls.schedules.updated"
 
+    def __init__(
+        self,
+        incall_id: int,
+        schedule_id: int,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
 
-class IncallScheduleAssociatedEvent(IncallScheduleEvent):
-    """Event for when a schedule is associated with an incall."""
+        Args:
+           incall_id: Incall ID
+           schedule_id: Schedule ID
+           tenant_uuid: tenant UUID
 
-    name: ClassVar[str] = "incall_schedule_associated"
-    routing_key_fmt: ClassVar[str] = "config.incalls.schedules.updated"
-
-    def __init__(self, incall_id: int, schedule_id: int, **data):
+        """
         content = {
             "incall_id": incall_id,
             "schedule_id": schedule_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class IncallScheduleDissociatedEvent(IncallScheduleEvent):
-    """Event for when a schedule is dissociated from an incall."""
+class IncallScheduleDissociatedEvent(TenantEvent):
+    """Event for when an incall schedule is dissociated."""
 
-    name: ClassVar[str] = "incall_schedule_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.incalls.schedules.deleted"
+    service = "confd"
+    name = "incall_schedule_dissociated"
+    routing_key_fmt = "config.incalls.schedules.deleted"
 
-    def __init__(self, incall_id: int, schedule_id: int, **data):
+    def __init__(
+        self,
+        incall_id: int,
+        schedule_id: int,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          incall_id: Incall ID
+          schedule_id: Schedule ID
+          tenant_uuid: tenant UUID
+
+        """
         content = {
             "incall_id": incall_id,
             "schedule_id": schedule_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

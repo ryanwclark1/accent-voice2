@@ -1,9 +1,15 @@
-# resources/registrar/types.py
-from pydantic import BaseModel, Field
+# accent_bus/resources/registrar/types.py
+# Copyright 2025 Accent Communications
+
+"""Registrar types."""
+
+from __future__ import annotations
+
+from typing import TypedDict
 
 
-class RegistrarDict(BaseModel):
-    """Represents registrar configuration."""
+class RegistrarDict(TypedDict, total=False):
+    """Dictionary representing a registrar."""
 
     id: str
     deletable: bool

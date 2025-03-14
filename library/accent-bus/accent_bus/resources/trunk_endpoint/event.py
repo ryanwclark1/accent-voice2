@@ -1,23 +1,20 @@
-# resources/trunk_endpoint/event.py
-from typing import ClassVar
+# accent_bus/resources/trunk_endpoint/event.py
+# Copyright 2025 Accent Communications
+
+"""Trunk endpoint events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 from .types import EndpointCustomDict, EndpointIAXDict, EndpointSIPDict, TrunkDict
 
 
-class TrunkEndpointEvent(TenantEvent):
-    """Base class for Trunk Endpoint events."""
+class TrunkEndpointSIPAssociatedEvent(TenantEvent):
+    """Event for when a SIP trunk endpoint is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class TrunkEndpointSIPAssociatedEvent(TrunkEndpointEvent):
-    """Event for when a SIP endpoint is associated with a trunk."""
-
-    name: ClassVar[str] = "trunk_endpoint_sip_associated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "trunk_endpoint_sip_associated"
+    routing_key_fmt = (
         "config.trunks.{trunk[id]}.endpoints.sip.{endpoint_sip[uuid]}.updated"
     )
 
@@ -25,20 +22,29 @@ class TrunkEndpointSIPAssociatedEvent(TrunkEndpointEvent):
         self,
         trunk: TrunkDict,
         sip: EndpointSIPDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           trunk: Trunk
+           sip: SIP
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "trunk": trunk,
             "endpoint_sip": sip,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class TrunkEndpointSIPDissociatedEvent(TrunkEndpointEvent):
-    """Event for when a SIP endpoint is dissociated from a trunk."""
+class TrunkEndpointSIPDissociatedEvent(TenantEvent):
+    """Event for when a SIP trunk endpoint is dissociated."""
 
-    name: ClassVar[str] = "trunk_endpoint_sip_dissociated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "trunk_endpoint_sip_dissociated"
+    routing_key_fmt = (
         "config.trunks.{trunk[id]}.endpoints.sip.{endpoint_sip[uuid]}.deleted"
     )
 
@@ -46,20 +52,29 @@ class TrunkEndpointSIPDissociatedEvent(TrunkEndpointEvent):
         self,
         trunk: TrunkDict,
         sip: EndpointSIPDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            trunk (TrunkDict): The trunk details.
+            sip (EndpointSIPDict): SIP endpoint details.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
         content = {
             "trunk": trunk,
             "endpoint_sip": sip,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class TrunkEndpointIAXAssociatedEvent(TrunkEndpointEvent):
-    """Event for when an IAX endpoint is associated with a trunk."""
+class TrunkEndpointIAXAssociatedEvent(TenantEvent):
+    """Event for when an IAX trunk endpoint is associated."""
 
-    name: ClassVar[str] = "trunk_endpoint_iax_associated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "trunk_endpoint_iax_associated"
+    routing_key_fmt = (
         "config.trunks.{trunk[id]}.endpoints.iax.{endpoint_iax[id]}.updated"
     )
 
@@ -67,20 +82,29 @@ class TrunkEndpointIAXAssociatedEvent(TrunkEndpointEvent):
         self,
         trunk: TrunkDict,
         iax: EndpointIAXDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize Event.
+
+        Args:
+            trunk: Trunk.
+            iax: IAX.
+            tenant_uuid: The tenant UUID.
+
+        """
         content = {
             "trunk": trunk,
             "endpoint_iax": iax,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class TrunkEndpointIAXDissociatedEvent(TrunkEndpointEvent):
-    """Event for when an IAX endpoint is dissociated from a trunk."""
+class TrunkEndpointIAXDissociatedEvent(TenantEvent):
+    """Event for when an IAX trunk endpoint is dissociated."""
 
-    name: ClassVar[str] = "trunk_endpoint_iax_dissociated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "trunk_endpoint_iax_dissociated"
+    routing_key_fmt = (
         "config.trunks.{trunk[id]}.endpoints.iax.{endpoint_iax[id]}.deleted"
     )
 
@@ -88,20 +112,29 @@ class TrunkEndpointIAXDissociatedEvent(TrunkEndpointEvent):
         self,
         trunk: TrunkDict,
         iax: EndpointIAXDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            trunk: Trunk
+            iax: IAX
+            tenant_uuid: tenant UUID
+
+        """
         content = {
             "trunk": trunk,
             "endpoint_iax": iax,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class TrunkEndpointCustomAssociatedEvent(TrunkEndpointEvent):
-    """Event for when a custom endpoint is associated with a trunk."""
+class TrunkEndpointCustomAssociatedEvent(TenantEvent):
+    """Event for when a custom trunk endpoint is associated."""
 
-    name: ClassVar[str] = "trunk_endpoint_custom_associated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "trunk_endpoint_custom_associated"
+    routing_key_fmt = (
         "config.trunks.{trunk[id]}.endpoints.custom.{endpoint_custom[id]}.updated"
     )
 
@@ -109,26 +142,48 @@ class TrunkEndpointCustomAssociatedEvent(TrunkEndpointEvent):
         self,
         trunk: TrunkDict,
         custom: EndpointCustomDict,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           trunk: Trunk
+           custom: Custom
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "trunk": trunk,
             "endpoint_custom": custom,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class TrunkEndpointCustomDissociatedEvent(TrunkEndpointEvent):
-    """Event for when a custom endpoint is dissociated from a trunk."""
+class TrunkEndpointCustomDissociatedEvent(TenantEvent):
+    """Event for when a custom trunk endpoint is dissociated."""
 
-    name: ClassVar[str] = "trunk_endpoint_custom_dissociated"
-    routing_key_fmt: ClassVar[str] = (
+    service = "confd"
+    name = "trunk_endpoint_custom_dissociated"
+    routing_key_fmt = (
         "config.trunks.{trunk[id]}.endpoints.custom.{endpoint_custom[id]}.deleted"
     )
 
-    def __init__(self, trunk: TrunkDict, custom: EndpointCustomDict, **data):
+    def __init__(
+        self,
+        trunk: TrunkDict,
+        custom: EndpointCustomDict,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            trunk (TrunkDict): The trunk details.
+            custom (EndpointCustomDict): custom endpoint details.
+            tenant_uuid (UUIDStr):  tenant UUID.
+
+        """
         content = {
             "trunk": trunk,
             "endpoint_custom": custom,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

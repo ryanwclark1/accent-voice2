@@ -1,51 +1,69 @@
-# resources/plugins/events.py
-from typing import ClassVar
+# accent_bus/resources/plugins/events.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4, BaseModel
+"""Plugin events."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from accent_bus.resources.common.event import ServiceEvent
 
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
-class PluginProgressContent(BaseModel):
-    """Content for plugin install/uninstall progress events.
-
-    Attributes:
-        uuid (UUID4): Plugin UUID
-        status (str): Installation status.
-        errors (dict, optional): Error details.
-
-    """
-
-    uuid: UUID4
-    status: str
-    errors: dict | None = None
+    from .types import PluginErrorDict
 
 
 class PluginInstallProgressEvent(ServiceEvent):
-    """Event for reporting plugin installation progress."""
+    """Event for plugin installation progress."""
 
-    service: ClassVar[str] = "plugind"
-    name: ClassVar[str] = "plugin_install_progress"
-    routing_key_fmt: ClassVar[str] = "plugin.install.{uuid}.{status}"
-    content: PluginProgressContent
+    service = "plugind"
+    name = "plugin_install_progress"
+    routing_key_fmt = "plugin.install.{uuid}.{status}"
 
     def __init__(
-        self, plugin_uuid: UUID4, status: str, errors: dict | None = None, **data
-    ):
-        content = PluginProgressContent(uuid=plugin_uuid, status=status, errors=errors)
-        super().__init__(content=content.model_dump(), **data)
+        self,
+        plugin_uuid: UUIDStr,
+        status: str,
+        errors: PluginErrorDict | None = None,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            plugin_uuid (UUIDStr): plugin UUID.
+            status (str): Installation status.
+            errors (PluginErrorDict | None): Optional error details.
+
+        """
+        content = {"uuid": plugin_uuid, "status": status}
+        if errors:
+            content.update(errors=errors)  # type: ignore[call-overload]
+        super().__init__(content)
 
 
 class PluginUninstallProgressEvent(ServiceEvent):
-    """Event for reporting plugin uninstallation progress."""
+    """Event for plugin uninstallation progress."""
 
-    service: ClassVar[str] = "plugind"
-    name: ClassVar[str] = "plugin_uninstall_progress"
-    routing_key_fmt: ClassVar[str] = "plugin.uninstall.{uuid}.{status}"
-    content: PluginProgressContent
+    service = "plugind"
+    name = "plugin_uninstall_progress"
+    routing_key_fmt = "plugin.uninstall.{uuid}.{status}"
 
     def __init__(
-        self, plugin_uuid: UUID4, status: str, errors: dict | None = None, **data
-    ):
-        content = PluginProgressContent(uuid=plugin_uuid, status=status, errors=errors)
-        super().__init__(content=content.model_dump(), **data)
+        self,
+        plugin_uuid: UUIDStr,
+        status: str,
+        errors: PluginErrorDict | None = None,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            plugin_uuid (UUIDStr): plugin UUID.
+            status (str):  uninstallation status.
+            errors (PluginErrorDict | None): Optional error details.
+
+        """
+        content = {"uuid": plugin_uuid, "status": status}
+        if errors:
+            content.update(errors=errors)  # type: ignore[call-overload]
+        super().__init__(content)

@@ -1,23 +1,27 @@
-# resources/localization/event.py
-from typing import ClassVar
+# accent_bus/resources/localization/event.py
+# Copyright 2025 Accent Communications
+
+"""Localization events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 from .types import LocalizationDict
 
 
-class LocalizationEvent(TenantEvent):
-    """Base class for Localization events."""
+class LocalizationEditedEvent(TenantEvent):
+    """Event for when localization is edited."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
+    service = "confd"
+    name = "localization_edited"
+    routing_key_fmt = "config.localization.edited"
 
+    def __init__(self, localization: LocalizationDict, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
 
-class LocalizationEditedEvent(LocalizationEvent):
-    """Event for when localization settings are edited."""
+        Args:
+            localization (LocalizationDict): localization.
+            tenant_uuid (UUIDStr): The tenant UUID.
 
-    name: ClassVar[str] = "localization_edited"
-    routing_key_fmt: ClassVar[str] = "config.localization.edited"
-
-    def __init__(self, localization: LocalizationDict, **data):
-        super().__init__(content=localization.model_dump(), **data)
+        """
+        super().__init__(localization, tenant_uuid)

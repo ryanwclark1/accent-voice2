@@ -1,9 +1,11 @@
-# Copyright 2023 Accent Communications
+# Copyright 2025 Accent Communications
+
+"""Bus module."""
 
 from .consumer import BusConsumer
 from .publisher import BusPublisher
 
 __all__ = [
-    'BusConsumer',
-    'BusPublisher',
+    "BusConsumer",
+    "BusPublisher",
 ]

@@ -1,13 +1,17 @@
-# resources/plugins/types.py
-from typing import Literal
+# accent_bus/resources/plugins/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import BaseModel, Field
+"""Plugin types."""
+
+from __future__ import annotations
+
+from typing import Literal, TypedDict
 
 
-class PluginErrorDict(BaseModel):
-    """Represents an error from a plugin."""
+class PluginErrorDict(TypedDict, total=False):
+    """Dictionary representing a plugin error."""
 
-    error_id: str = Field(...)
-    message: str = Field(...)
-    resource: Literal["plugins"] = Field(...)
-    details: dict = Field(default_factory=dict)
+    error_id: str
+    message: str
+    resource: Literal["plugins"]
+    details: dict

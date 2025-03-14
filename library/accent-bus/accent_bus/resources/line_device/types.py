@@ -1,37 +1,45 @@
-# resources/line_device/types.py
-from pydantic import UUID4, BaseModel
+# accent_bus/resources/line_device/types.py
+# Copyright 2025 Accent Communications
+
+"""Line device types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class DeviceDict(BaseModel):
-    """Represents a device."""
+class DeviceDict(TypedDict, total=False):
+    """Dictionary representing a device."""
 
     id: str
 
 
-class LineEndpointSIPDict(BaseModel):
-    """Represents a SIP endpoint associated with a line."""
+class LineEndpointSIPDict(TypedDict, total=False):
+    """Dictionary representing a SIP line endpoint."""
 
-    uuid: UUID4
-
-
-class LineEndpointSCCPDict(BaseModel):
-    """Represents an SCCP endpoint associated with a line."""
-
-    id: int
+    uuid: UUIDStr
 
 
-class LineEndpointCustomDict(BaseModel):
-    """Represents a custom endpoint associated with a line."""
+class LineEndpointSCCPDict(TypedDict, total=False):
+    """Dictionary representing an SCCP line endpoint."""
 
     id: int
 
 
-class LineDict(BaseModel):
-    """Represents a line with associated endpoint information."""
+class LineEndpointCustomDict(TypedDict, total=False):
+    """Dictionary representing a custom line endpoint."""
+
+    id: int
+
+
+class LineDict(TypedDict, total=False):
+    """Dictionary representing a line."""
 
     id: int
     name: str
-    endpoint_sip: LineEndpointSIPDict | None = None
-    endpoint_sccp: LineEndpointSCCPDict | None = None
-    endpoint_custom: LineEndpointCustomDict | None = None
-    tenant_uuid: UUID4 | None = None
+    endpoint_sip: LineEndpointSIPDict
+    endpoint_sccp: LineEndpointSCCPDict
+    endpoint_custom: LineEndpointCustomDict

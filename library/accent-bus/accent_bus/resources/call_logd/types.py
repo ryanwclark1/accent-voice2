@@ -1,11 +1,18 @@
-# resources/call_logd/types.py
-from pydantic import BaseModel
+# accent_bus/resources/call_logd/types.py
+# Copyright 2025 Accent Communications
 
-from accent_bus.resources.common.types import DateTimeStr, UUIDStr
+"""Call logd types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import DateTimeStr, UUIDStr
 
 
-class CallLogExportDataDict(BaseModel):
-    """Represents the data for a call log export."""
+class CallLogExportDataDict(TypedDict, total=False):
+    """Dictionary representing call log export data."""
 
     uuid: UUIDStr
     tenant_uuid: UUIDStr

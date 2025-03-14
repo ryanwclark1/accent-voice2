@@ -1,24 +1,25 @@
-# resources/extension_feature/event.py
-from typing import ClassVar
+# accent_bus/resources/extension_feature/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Extension feature events."""
 
 from accent_bus.resources.common.event import ServiceEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class ExtensionFeatureEvent(ServiceEvent):
-    """Base class for Extension Feature events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class ExtensionFeatureEditedEvent(ExtensionFeatureEvent):
+class ExtensionFeatureEditedEvent(ServiceEvent):
     """Event for when an extension feature is edited."""
 
-    name: ClassVar[str] = "extension_feature_edited"
-    routing_key_fmt: ClassVar[str] = "config.extension_feature.edited"
+    service = "confd"
+    name = "extension_feature_edited"
+    routing_key_fmt = "config.extension_feature.edited"
 
-    def __init__(self, feature_extension_uuid: UUID4, **data):
-        content = {"uuid": str(feature_extension_uuid)}
-        super().__init__(content=content, **data)
+    def __init__(self, feature_extension_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+          feature_extension_uuid: Feature extension UUID
+
+        """
+        content = {"uuid": feature_extension_uuid}
+        super().__init__(content)

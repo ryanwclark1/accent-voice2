@@ -1,49 +1,63 @@
-# resources/parking_lot_extension/event.py
-from typing import ClassVar
+# accent_bus/resources/parking_lot_extension/event.py
+# Copyright 2025 Accent Communications
+
+"""Parking lot extension events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class ParkingLotExtensionEvent(TenantEvent):
-    """Base class for Parking Lot Extension events."""
+class ParkingLotExtensionAssociatedEvent(TenantEvent):
+    """Event for when a parking lot extension is associated."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class ParkingLotExtensionAssociatedEvent(ParkingLotExtensionEvent):
-    """Event for when an extension is associated with a parking lot."""
-
-    name: ClassVar[str] = "parking_lot_extension_associated"
-    routing_key_fmt: ClassVar[str] = "config.parkinglots.extensions.updated"
+    service = "confd"
+    name = "parking_lot_extension_associated"
+    routing_key_fmt = "config.parkinglots.extensions.updated"
 
     def __init__(
         self,
         parking_id: int,
         extension_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           parking_id: Parking Lot ID
+           extension_id: Extension ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {
             "parking_lot_id": parking_id,
             "extension_id": extension_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class ParkingLotExtensionDissociatedEvent(ParkingLotExtensionEvent):
-    """Event for when an extension is dissociated from a parking lot."""
+class ParkingLotExtensionDissociatedEvent(TenantEvent):
+    """Event for when a parking lot extension is dissociated."""
 
-    name: ClassVar[str] = "parking_lot_extension_dissociated"
-    routing_key_fmt: ClassVar[str] = "config.parkinglots.extensions.deleted"
+    service = "confd"
+    name = "parking_lot_extension_dissociated"
+    routing_key_fmt = "config.parkinglots.extensions.deleted"
 
     def __init__(
         self,
         parking_id: int,
         extension_id: int,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          parking_id: Parking Lot ID
+          extension_id: Extension ID
+          tenant_uuid: tenant UUID
+
+        """
         content = {
             "parking_lot_id": parking_id,
             "extension_id": extension_id,
         }
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

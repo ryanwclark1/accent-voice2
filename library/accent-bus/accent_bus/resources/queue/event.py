@@ -1,55 +1,83 @@
-# resources/queue/event.py
-from typing import ClassVar
+# accent_bus/resources/queue/event.py
+# Copyright 2025 Accent Communications
+
+"""Queue events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class QueueEvent(TenantEvent):
-    """Base class for Queue events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class QueueCreatedEvent(QueueEvent):
+class QueueCreatedEvent(TenantEvent):
     """Event for when a queue is created."""
 
-    name: ClassVar[str] = "queue_created"
-    routing_key_fmt: ClassVar[str] = "config.queues.created"
+    service = "confd"
+    name = "queue_created"
+    routing_key_fmt = "config.queues.created"
 
-    def __init__(self, queue_id: int, **data):
+    def __init__(self, queue_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Event.
+
+        Args:
+           queue_id: Queue ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {"id": int(queue_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class QueueDeletedEvent(QueueEvent):
+class QueueDeletedEvent(TenantEvent):
     """Event for when a queue is deleted."""
 
-    name: ClassVar[str] = "queue_deleted"
-    routing_key_fmt: ClassVar[str] = "config.queues.deleted"
+    service = "confd"
+    name = "queue_deleted"
+    routing_key_fmt = "config.queues.deleted"
 
-    def __init__(self, queue_id: int, **data):
+    def __init__(self, queue_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+           queue_id: Queue ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {"id": int(queue_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class QueueEditedEvent(QueueEvent):
+class QueueEditedEvent(TenantEvent):
     """Event for when a queue is edited."""
 
-    name: ClassVar[str] = "queue_edited"
-    routing_key_fmt: ClassVar[str] = "config.queues.edited"
+    service = "confd"
+    name = "queue_edited"
+    routing_key_fmt = "config.queues.edited"
 
-    def __init__(self, queue_id: int, **data):
+    def __init__(self, queue_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+           queue_id: Queue ID
+           tenant_uuid: tenant UUID
+
+        """
         content = {"id": int(queue_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class QueueFallbackEditedEvent(QueueEvent):
-    """Event for queue fallback is edited."""
+class QueueFallbackEditedEvent(TenantEvent):
+    """Event for when a queue fallback is edited."""
 
-    name: ClassVar[str] = "queue_fallback_edited"
-    routing_key_fmt: ClassVar[str] = "config.queues.fallbacks.edited"
+    service = "confd"
+    name = "queue_fallback_edited"
+    routing_key_fmt = "config.queues.fallbacks.edited"
 
-    def __init__(self, queue_id: int, **data):
+    def __init__(self, queue_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Event.
+
+        Args:
+            queue_id (int): The ID of the queue.
+            tenant_uuid (UUIDStr): tenant UUID.
+
+        """
         content = {"id": int(queue_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

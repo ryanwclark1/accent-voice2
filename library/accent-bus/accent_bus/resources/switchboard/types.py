@@ -1,11 +1,18 @@
-# resources/switchboard/types.py
-from typing import TypedDict, Any, List
+# accent_bus/resources/switchboard/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Switchboard types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
 class ExtensionDict(TypedDict, total=False):
-    """Represents an extension."""
+    """Dictionary representing an extension."""
 
     id: int
     exten: str
@@ -13,14 +20,14 @@ class ExtensionDict(TypedDict, total=False):
 
 
 class IncallDict(TypedDict, total=False):
-    """Represents an incall."""
+    """Dictionary representing an incall."""
 
     id: int
     extensions: list[ExtensionDict]
 
 
 class HeldCallDict(TypedDict, total=False):
-    """Represents a held call."""
+    """Dictionary representing a held call."""
 
     id: str
     caller_id_name: str
@@ -28,32 +35,18 @@ class HeldCallDict(TypedDict, total=False):
 
 
 class QueuedCallDict(TypedDict, total=False):
-    """Represents a queued call."""
+    """Dictionary representing a queued call."""
 
     id: str
     caller_id_name: str
     caller_id_number: str
 
 
-class SwitchboardFallbackDict(TypedDict, total=False):
-    """Represents a switchboard fallback."""
-
-    noanswer_destination: Any
-
-
-class UserDict(TypedDict, total=False):
-    """Represents a user."""
-
-    uuid: UUID4
-    firstname: str
-    lastname: str
-
-
 class SwitchboardDict(TypedDict, total=False):
-    """Represents a switchboard."""
+    """Dictionary representing a switchboard."""
 
-    uuid: UUID4
-    tenant_uuid: UUID4
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr
     name: str
     timeout: int
     queue_music_on_hold: str
@@ -62,3 +55,17 @@ class SwitchboardDict(TypedDict, total=False):
     incalls: list[IncallDict]
     user_members: list[UserDict]
     fallbacks: list[SwitchboardFallbackDict]
+
+
+class SwitchboardFallbackDict(TypedDict, total=False):
+    """Dictionary representing a switchboard fallback."""
+
+    noanswer_destination: Any
+
+
+class UserDict(TypedDict, total=False):
+    """Dictionary representing a user."""
+
+    uuid: UUIDStr
+    firstname: str
+    lastname: str

@@ -20,18 +20,18 @@ class Bus(ThreadableMixin, QueuePublisherMixin, ConsumerMixin, Base):
 
 
 class MessageBroker:
-    Handler = namedtuple('Handler', 'handler, headers, routing_key')
+    Handler = namedtuple("Handler", "handler, headers, routing_key")
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._messages = defaultdict(list)
         self._handlers = defaultdict(list)
         self.lock = Lock()
 
     def _filter_headers(self, headers):
         headers = headers or {}
-        return {k: v for k, v in headers.items() if not k.startswith('x-')}
+        return {k: v for k, v in headers.items() if not k.startswith("x-")}
 
-    def enqueue(self, event, message):
+    def enqueue(self, event, message) -> None:
         with self.lock:
             self._messages[event].append(message)
 
@@ -43,7 +43,7 @@ class MessageBroker:
         with self.lock:
             return len(self._messages[event])
 
-    def bind_handler(self, event, handler, headers=None, routing_key=None):
+    def bind_handler(self, event, handler, headers=None, routing_key=None) -> None:
         handler = self.Handler(handler, self._filter_headers(headers), routing_key)
         with self.lock:
             self._handlers[event].append(handler)
@@ -59,114 +59,115 @@ class MessageBroker:
                 if handler.headers == headers and handler.routing_key == routing_key:
                     self._handlers[event].pop(idx)
                     return handler.handler
+            return None
 
 
 info, error = logger.info, logger.error
-app = Flask('remote-bus-pilot')
+app = Flask("remote-bus-pilot")
 bus = Bus(
-    name='remote-bus',
-    host='rabbitmq',
-    exchange_name=os.getenv('EXCHANGE_NAME'),
-    exchange_type=os.getenv('EXCHANGE_TYPE'),
+    name="remote-bus",
+    host="rabbitmq",
+    exchange_name=os.getenv("EXCHANGE_NAME"),
+    exchange_type=os.getenv("EXCHANGE_TYPE"),
 )
 broker = MessageBroker()
 
 
 def create_event_handler(event, headers=None, routing_key=None):
-    def _store_message(payload):
+    def _store_message(payload) -> None:
         broker.enqueue(event, payload)
 
-    info('created event handler for event \'%s\' with headers (%s)', event, headers)
+    info("created event handler for event '%s' with headers (%s)", event, headers)
     broker.bind_handler(event, _store_message, headers, routing_key)
     return _store_message
 
 
 def process_json(event, jsondata, use_match=False):
-    headers = dict(jsondata.get('headers', None) or {}, name=event)
-    payload = jsondata.get('payload', None) or {}
-    headers_match_all = jsondata.get('headers_match_all', True)
-    routing_key = jsondata.get('routing_key', None)
+    headers = dict(jsondata.get("headers", None) or {}, name=event)
+    payload = jsondata.get("payload", None) or {}
+    headers_match_all = jsondata.get("headers_match_all", True)
+    routing_key = jsondata.get("routing_key", None)
 
     if use_match:
-        headers.setdefault('x-match', 'all' if headers_match_all else 'any')
+        headers.setdefault("x-match", "all" if headers_match_all else "any")
 
     return headers, routing_key, payload
 
 
 def make_response(code, status=None, **kwargs):
-    return jsonify({'result': code, 'status': status, **kwargs}), code
+    return jsonify({"result": code, "status": status, **kwargs}), code
 
 
 #####################
 # Routes definition #
 #####################
-@app.route('/bus/status', methods=['GET'])
+@app.route("/bus/status", methods=["GET"])
 def status():
     return make_response(200, None, running=bus.consumer_connected())
 
 
-@app.route('/bus/<string:event>/publish', methods=['POST'])
+@app.route("/bus/<string:event>/publish", methods=["POST"])
 def publish(event):
     headers, routing_key, payload = process_json(event, request.json)
 
     try:
         bus.publish(event, headers=headers, routing_key=routing_key, payload=payload)
         info(
-            'Published to \'%s\' (headers: %s, routing_key: %s)',
+            "Published to '%s' (headers: %s, routing_key: %s)",
             event,
             headers,
             routing_key,
         )
     except Exception:
-        error('Publishing failed', exc_info=1)
-        return make_response(400, 'An error occured, message was not sent on bus')
+        error("Publishing failed", exc_info=1)
+        return make_response(400, "An error occured, message was not sent on bus")
 
     return make_response(
         200,
-        'Message succesfully sent on bus',
+        "Message succesfully sent on bus",
         message=payload,
         headers=headers,
         routing_key=routing_key,
     )
 
 
-@app.route('/bus/<string:event>/subscribe', methods=['POST'])
+@app.route("/bus/<string:event>/subscribe", methods=["POST"])
 def subscribe(event):
     headers, routing_key, _ = process_json(event, request.json, use_match=True)
     handler = create_event_handler(event, headers, routing_key)
     bus.subscribe(event, handler, headers, routing_key)
-    info('Subscribed to \'%s\' (headers: %s)', event, headers)
+    info("Subscribed to '%s' (headers: %s)", event, headers)
     return make_response(
         200,
-        'Registered event handler',
+        "Registered event handler",
         event=event,
         headers=headers,
         routing_key=routing_key,
     )
 
 
-@app.route('/bus/<string:event>/unsubscribe', methods=['POST'])
+@app.route("/bus/<string:event>/unsubscribe", methods=["POST"])
 def unsubscribe(event):
     headers, routing_key, _ = process_json(event, request.json)
 
     handler = broker.unbind_handler(event, headers, routing_key)
     if handler:
         bus.unsubscribe(event, handler)
-        info('Unsubscribed from \'%s\' (headers: %s)', event, headers)
-        return make_response(200, 'Unregistered event handler', event=event)
-    return make_response(400, 'Handler not found', event=event)
+        info("Unsubscribed from '%s' (headers: %s)", event, headers)
+        return make_response(200, "Unregistered event handler", event=event)
+    return make_response(400, "Handler not found", event=event)
 
 
-@app.route('/bus/<string:event>/messages', methods=['GET'])
+@app.route("/bus/<string:event>/messages", methods=["GET"])
 def get_messages(event):
     return jsonify(broker.dequeue(event))
 
 
-@app.route('/bus/<string:event>/messages/count', methods=['GET'])
+@app.route("/bus/<string:event>/messages/count", methods=["GET"])
 def get_messages_count(event):
     return jsonify(broker.count(event))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with bus:
-        app.run(host='0.0.0.0', port=5000)
+        app.run(host="0.0.0.0", port=5000)

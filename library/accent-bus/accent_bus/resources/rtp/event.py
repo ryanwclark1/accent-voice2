@@ -1,25 +1,30 @@
-# resources/rtp/event.py
-from typing import ClassVar
+# accent_bus/resources/rtp/event.py
+# Copyright 2025 Accent Communications
+
+"""RTP events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class RTPEvent(ServiceEvent):
-    """Base class for RTP (Real-time Transport Protocol) events."""
+class RTPGeneralEditedEvent(ServiceEvent):
+    """Event for when general RTP settings are edited."""
 
-    service: ClassVar[str] = "confd"
-    content: dict = {}
+    service = "confd"
+    name = "rtp_general_edited"
+    routing_key_fmt = "config.rtp_general.edited"
 
-
-class RTPGeneralEditedEvent(RTPEvent):
-    """Event for when general RTP configuration is edited."""
-
-    name: ClassVar[str] = "rtp_general_edited"
-    routing_key_fmt: ClassVar[str] = "config.rtp_general.edited"
+    def __init__(self) -> None:
+        """Initialize event."""
+        super().__init__()
 
 
-class RTPIceHostCandidatesEditedEvent(RTPEvent):
-    """Event for when ICE host candidates are edited."""
+class RTPIceHostCandidatesEditedEvent(ServiceEvent):
+    """Event for when RTP ICE host candidates are edited."""
 
-    name: ClassVar[str] = "rtp_ice_host_candidates_edited"
-    routing_key_fmt: ClassVar[str] = "config.rtp_ice_host_candidates.edited"
+    service = "confd"
+    name = "rtp_ice_host_candidates_edited"
+    routing_key_fmt = "config.rtp_ice_host_candidates.edited"
+
+    def __init__(self) -> None:
+        """Initialize event."""
+        super().__init__()

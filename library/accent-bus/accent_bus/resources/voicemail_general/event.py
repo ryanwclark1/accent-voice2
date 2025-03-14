@@ -1,18 +1,18 @@
-# resources/voicemail_general/event.py
-from typing import ClassVar
+# accent_bus/resources/voicemail_general/event.py
+# Copyright 2025 Accent Communications
+
+"""Voicemail general events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class VoicemailGeneralEvent(ServiceEvent):
-    """Base class for general Voicemail events."""
+class VoicemailGeneralEditedEvent(ServiceEvent):
+    """Event for when general voicemail settings are edited."""
 
-    service: ClassVar[str] = "confd"
-    content: dict = {}
+    service = "confd"
+    name = "voicemail_general_edited"
+    routing_key_fmt = "config.voicemail_general.edited"
 
-
-class VoicemailGeneralEditedEvent(VoicemailGeneralEvent):
-    """Event for when the general voicemail configuration is edited."""
-
-    name: ClassVar[str] = "voicemail_general_edited"
-    routing_key_fmt: ClassVar[str] = "config.voicemail_general.edited"
+    def __init__(self) -> None:
+        """Initialize the event."""
+        super().__init__()

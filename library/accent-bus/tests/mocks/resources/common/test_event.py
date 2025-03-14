@@ -15,38 +15,38 @@ USER3_UUID = uuid4()
 
 
 class SomeServiceEvent(ServiceEvent):
-    name = 'some_service_event'
-    routing_key_fmt = 'some.service.event'
+    name = "some_service_event"
+    routing_key_fmt = "some.service.event"
 
-    def __init__(self, a, b):
-        content = {'a': a, 'b': b}
+    def __init__(self, a, b) -> None:
+        content = {"a": a, "b": b}
         super().__init__(content)
 
 
 class SomeTenantEvent(TenantEvent):
-    name = 'some_tenant_event'
-    routing_key_fmt = 'some.tenant.event'
+    name = "some_tenant_event"
+    routing_key_fmt = "some.tenant.event"
 
-    def __init__(self, a, b, tenant_uuid):
-        content = {'a': a, 'b': b}
+    def __init__(self, a, b, tenant_uuid) -> None:
+        content = {"a": a, "b": b}
         super().__init__(content, tenant_uuid)
 
 
 class SomeUserEvent(UserEvent):
-    name = 'some_user_event'
-    routing_key_fmt = 'some.user.event'
+    name = "some_user_event"
+    routing_key_fmt = "some.user.event"
 
-    def __init__(self, a, b, tenant_uuid, user_uuid):
-        content = {'a': a, 'b': b}
+    def __init__(self, a, b, tenant_uuid, user_uuid) -> None:
+        content = {"a": a, "b": b}
         super().__init__(content, tenant_uuid, user_uuid)
 
 
 class SomeMultiUserEvent(MultiUserEvent):
-    name = 'some_multi_user_event'
-    routing_key_fmt = 'some.multi.user.event'
+    name = "some_multi_user_event"
+    routing_key_fmt = "some.multi.user.event"
 
-    def __init__(self, a, b, tenant_uuid, user_uuids):
-        content = {'a': a, 'b': b}
+    def __init__(self, a, b, tenant_uuid, user_uuids) -> None:
+        content = {"a": a, "b": b}
         super().__init__(content, tenant_uuid, user_uuids)
 
 
@@ -55,15 +55,15 @@ class TestServiceEvent(TestCase):
         self.event = SomeServiceEvent(1, 2)
 
     def test_headers(self):
-        assert_that(self.event.headers, equal_to({'name': 'some_service_event'}))
+        assert_that(self.event.headers, equal_to({"name": "some_service_event"}))
 
     def test_marshal(self):
         assert_that(
             self.event.marshal(),
             equal_to(
                 {
-                    'a': 1,
-                    'b': 2,
+                    "a": 1,
+                    "b": 2,
                 }
             ),
         )
@@ -78,9 +78,9 @@ class TestTenantEvent(TestCase):
             self.event.headers,
             equal_to(
                 {
-                    'name': 'some_tenant_event',
-                    'user_uuid:*': True,
-                    'tenant_uuid': str(TENANT_UUID),
+                    "name": "some_tenant_event",
+                    "user_uuid:*": True,
+                    "tenant_uuid": str(TENANT_UUID),
                 }
             ),
         )
@@ -90,8 +90,8 @@ class TestTenantEvent(TestCase):
             self.event.marshal(),
             equal_to(
                 {
-                    'a': 1,
-                    'b': 2,
+                    "a": 1,
+                    "b": 2,
                 }
             ),
         )
@@ -106,9 +106,9 @@ class TestUserEvent(TestCase):
             self.event.headers,
             equal_to(
                 {
-                    'name': 'some_user_event',
-                    'tenant_uuid': str(TENANT_UUID),
-                    f'user_uuid:{USER_UUID}': True,
+                    "name": "some_user_event",
+                    "tenant_uuid": str(TENANT_UUID),
+                    f"user_uuid:{USER_UUID}": True,
                 }
             ),
         )
@@ -118,8 +118,8 @@ class TestUserEvent(TestCase):
             self.event.marshal(),
             equal_to(
                 {
-                    'a': 1,
-                    'b': 2,
+                    "a": 1,
+                    "b": 2,
                 }
             ),
         )
@@ -136,11 +136,11 @@ class TestMultiUserEvent(TestCase):
             self.event.headers,
             equal_to(
                 {
-                    'name': 'some_multi_user_event',
-                    'tenant_uuid': str(TENANT_UUID),
-                    f'user_uuid:{USER_UUID}': True,
-                    f'user_uuid:{USER2_UUID}': True,
-                    f'user_uuid:{USER3_UUID}': True,
+                    "name": "some_multi_user_event",
+                    "tenant_uuid": str(TENANT_UUID),
+                    f"user_uuid:{USER_UUID}": True,
+                    f"user_uuid:{USER2_UUID}": True,
+                    f"user_uuid:{USER3_UUID}": True,
                 }
             ),
         )
@@ -150,8 +150,8 @@ class TestMultiUserEvent(TestCase):
             self.event.marshal(),
             equal_to(
                 {
-                    'a': 5,
-                    'b': 6,
+                    "a": 5,
+                    "b": 6,
                 }
             ),
         )

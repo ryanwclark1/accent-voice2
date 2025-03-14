@@ -1,13 +1,19 @@
-# resources/ingress_http/types.py
+# accent_bus/resources/ingress_http/types.py
+# Copyright 2025 Accent Communications
 
-from typing import TypedDict
+"""Ingress HTTP types."""
 
-from pydantic import UUID4
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
 class IngressHTTPDict(TypedDict, total=False):
-    """Represents an Ingress HTTP configuration (using TypedDict)."""
+    """Dictionary representing an HTTP ingress."""
 
-    uuid: UUID4
-    tenant_uuid: UUID4
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr
     uri: str

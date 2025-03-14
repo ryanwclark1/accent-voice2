@@ -1,44 +1,64 @@
-# resources/func_key/event.py
-from typing import ClassVar
+# accent_bus/resources/func_key/event.py
+# Copyright 2025 Accent Communications
+
+"""Function key events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class FuncKeyEvent(TenantEvent):
-    """Base class for Func Key events."""
+class FuncKeyTemplateCreatedEvent(TenantEvent):
+    """Event for when a function key template is created."""
 
-    service: ClassVar[str] = "confd"
-    content: dict
+    service = "confd"
+    name = "func_key_template_created"
+    routing_key_fmt = "config.funckey.template.created"
 
+    def __init__(self, template_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize Event.
 
-class FuncKeyTemplateCreatedEvent(FuncKeyEvent):
-    """Event for when a func key template is created."""
+        Args:
+          template_id: Template ID
+          tenant_uuid: tenant UUID
 
-    name: ClassVar[str] = "func_key_template_created"
-    routing_key_fmt: ClassVar[str] = "config.funckey.template.created"
-
-    def __init__(self, template_id: int, **data):
+        """
         content = {"id": template_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class FuncKeyTemplateDeletedEvent(FuncKeyEvent):
-    """Event for when a func key template is deleted."""
+class FuncKeyTemplateDeletedEvent(TenantEvent):
+    """Event for when a function key template is deleted."""
 
-    name: ClassVar[str] = "func_key_template_deleted"
-    routing_key_fmt: ClassVar[str] = "config.funckey.template.deleted"
+    service = "confd"
+    name = "func_key_template_deleted"
+    routing_key_fmt = "config.funckey.template.deleted"
 
-    def __init__(self, template_id: int, **data):
+    def __init__(self, template_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+            template_id (int): template ID.
+            tenant_uuid (UUIDStr): tenant UUID.
+
+        """
         content = {"id": template_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class FuncKeyTemplateEditedEvent(FuncKeyEvent):
-    """Event for when a func key template is edited."""
+class FuncKeyTemplateEditedEvent(TenantEvent):
+    """Event for when a function key template is edited."""
 
-    name: ClassVar[str] = "func_key_template_edited"
-    routing_key_fmt: ClassVar[str] = "config.funckey.template.edited"
+    service = "confd"
+    name = "func_key_template_edited"
+    routing_key_fmt = "config.funckey.template.edited"
 
-    def __init__(self, template_id: int, **data):
+    def __init__(self, template_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+            template_id (int): template ID.
+            tenant_uuid (UUIDStr):  tenant UUID.
+
+        """
         content = {"id": template_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

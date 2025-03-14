@@ -1,27 +1,16 @@
-# resources/services/event.py
-from typing import ClassVar
+# accent_bus/resources/services/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import BaseModel
+"""Service events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class ServiceRegisteredContent(BaseModel):
-    """Content of the service registered event"""
-
-    service_name: str
-    service_id: str
-    address: str
-    port: int
-    tags: list[str]
-
-
 class ServiceRegisteredEvent(ServiceEvent):
-    """Event for when a service registers."""
+    """Event for when a service is registered."""
 
-    name: ClassVar[str] = "service_registered"
-    routing_key_fmt: ClassVar[str] = "service.registered.{service_name}"
-    content: ServiceRegisteredContent
+    name = "service_registered"
+    routing_key_fmt = "service.registered.{service_name}"
 
     def __init__(
         self,
@@ -30,37 +19,45 @@ class ServiceRegisteredEvent(ServiceEvent):
         advertise_address: str,
         advertise_port: int,
         tags: list[str],
-        **data,
-    ):
-        content = ServiceRegisteredContent(
-            service_name=service_name,
-            service_id=service_id,
-            address=advertise_address,
-            port=advertise_port,
-            tags=tags,
-        )
-        super().__init__(content=content.model_dump(), **data)
+    ) -> None:
+        """Initialize the event.
 
+        Args:
+           service_name: Service Name
+           service_id: Service ID
+           advertise_address: Advertise Address
+           advertise_port: Advertise Port
+           tags: Tags
 
-class ServiceDeregisteredContent(BaseModel):
-    """Content for service de-registered events."""
-
-    service_name: str
-    service_id: str
-    tags: list[str]
+        """
+        content = {
+            "service_name": service_name,
+            "service_id": service_id,
+            "address": advertise_address,
+            "port": advertise_port,
+            "tags": tags,
+        }
+        super().__init__(content)
 
 
 class ServiceDeregisteredEvent(ServiceEvent):
-    """Event for when a service deregisters."""
+    """Event for when a service is deregistered."""
 
-    name: ClassVar[str] = "service_deregistered"
-    routing_key_fmt: ClassVar[str] = (
-        "service.registered.{service_name}"  # Inconsistency with the original, should be deregistered
-    )
-    content: ServiceDeregisteredContent
+    name = "service_deregistered"
+    routing_key_fmt = "service.registered.{service_name}"
 
-    def __init__(self, service_name: str, service_id: str, tags: list[str], **data):
-        content = ServiceDeregisteredContent(
-            service_name=service_name, service_id=service_id, tags=tags
-        )
-        super().__init__(content=content.model_dump(), **data)
+    def __init__(self, service_name: str, service_id: str, tags: list[str]) -> None:
+        """Initialize the event.
+
+        Args:
+           service_name: Service Name
+           service_id: Service ID
+           tags: Tags
+
+        """
+        content = {
+            "service_name": service_name,
+            "service_id": service_id,
+            "tags": tags,
+        }
+        super().__init__(content)

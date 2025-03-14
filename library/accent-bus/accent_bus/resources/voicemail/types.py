@@ -1,21 +1,27 @@
-# resources/voicemail/types.py
-from pydantic import BaseModel
+# accent_bus/resources/voicemail/types.py
+# Copyright 2025 Accent Communications
+
+"""Voicemail types."""
+
+from __future__ import annotations
+
+from typing import TypedDict
 
 
-class VoicemailFolderDict(BaseModel):
-    """Represents a voicemail folder."""
+class VoicemailFolderDict(TypedDict, total=False):
+    """Dictionary representing a voicemail folder."""
 
     id: int
     name: str
     type: str
 
 
-class VoicemailMessageDict(BaseModel):
-    """Represents a voicemail message."""
+class VoicemailMessageDict(TypedDict, total=False):
+    """Dictionary representing a voicemail message."""
 
     id: str
     caller_id_name: str
     caller_id_num: str
     duration: int
-    timestamp: int  # Changed from tiemstamp
+    tiemstamp: int
     folder: VoicemailFolderDict

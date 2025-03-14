@@ -1,11 +1,18 @@
-# resources/conference/types.py
-from typing import TypedDict
+# accent_bus/resources/conference/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Conference types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
 class ParticipantDict(TypedDict, total=False):
-    """Represents a participant in a conference."""
+    """Dictionary representing a conference participant."""
 
     id: str
     caller_id_name: str
@@ -15,4 +22,4 @@ class ParticipantDict(TypedDict, total=False):
     admin: bool
     language: str
     call_id: str
-    user_uuid: UUID4 | None
+    user_uuid: UUIDStr

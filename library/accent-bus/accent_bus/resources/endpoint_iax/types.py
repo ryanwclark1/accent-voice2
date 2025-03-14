@@ -1,16 +1,25 @@
-# resources/endpoint_iax/types.py
-from pydantic import UUID4, BaseModel
+# accent_bus/resources/endpoint_iax/types.py
+# Copyright 2025 Accent Communications
+
+"""IAX endpoint types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class EndpointIAXTrunkDict(BaseModel):
-    """Represents an IAX trunk."""
+class EndpointIAXTrunkDict(TypedDict, total=False):
+    """Dictionary representing an IAX endpoint trunk."""
 
     id: int
 
 
-class EndpointIAXDict(BaseModel):
-    """Represents an IAX endpoint."""
+class EndpointIAXDict(TypedDict, total=False):
+    """Dictionary representing an IAX endpoint."""
 
     id: int
-    tenant_uuid: UUID4
-    trunk: EndpointIAXTrunkDict | None = None
+    tenant_uuid: UUIDStr
+    trunk: EndpointIAXTrunkDict

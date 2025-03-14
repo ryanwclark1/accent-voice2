@@ -32,10 +32,11 @@ class SwitchboardEvent(TenantEvent):
         switchboard_uuid: UUID4,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> None:
         super().__init__(content, *args, **kwargs)
         if switchboard_uuid is None:
-            raise ValueError("switchboard_uuid must have a value")
+            msg = "switchboard_uuid must have a value"
+            raise ValueError(msg)
         self.switchboard_uuid = str(switchboard_uuid)
 
 
@@ -45,7 +46,7 @@ class SwitchboardCreatedEvent(SwitchboardEvent):
     name: ClassVar[str] = "switchboard_created"
     routing_key_fmt: ClassVar[str] = "config.switchboards.{switchboard_uuid}.created"
 
-    def __init__(self, switchboard: SwitchboardDict, **data):
+    def __init__(self, switchboard: SwitchboardDict, **data) -> None:
         super().__init__(
             content=switchboard, switchboard_uuid=switchboard["uuid"], **data
         )
@@ -57,7 +58,7 @@ class SwitchboardDeletedEvent(SwitchboardEvent):
     name: ClassVar[str] = "switchboard_deleted"
     routing_key_fmt: ClassVar[str] = "config.switchboards.{switchboard_uuid}.deleted"
 
-    def __init__(self, switchboard: SwitchboardDict, **data):
+    def __init__(self, switchboard: SwitchboardDict, **data) -> None:
         super().__init__(
             content=switchboard, switchboard_uuid=switchboard["uuid"], **data
         )
@@ -69,7 +70,7 @@ class SwitchboardEditedEvent(SwitchboardEvent):
     name: ClassVar[str] = "switchboard_edited"
     routing_key_fmt: ClassVar[str] = "config.switchboards.{switchboard_uuid}.edited"
 
-    def __init__(self, switchboard: SwitchboardDict, **data):
+    def __init__(self, switchboard: SwitchboardDict, **data) -> None:
         super().__init__(
             content=switchboard, switchboard_uuid=switchboard["uuid"], **data
         )
@@ -84,7 +85,7 @@ class SwitchboardFallbackEditedEvent(SwitchboardEvent):
         "switchboards.fallbacks.edited"  # No switchboard_uuid
     )
 
-    def __init__(self, fallback: SwitchboardFallbackDict, **data):
+    def __init__(self, fallback: SwitchboardFallbackDict, **data) -> None:
         super().__init__(
             content=fallback, switchboard_uuid=data["switchboard_uuid"], **data
         )
@@ -105,7 +106,7 @@ class SwitchboardMemberUserAssociatedEvent(
         switchboard_uuid: UUID4,
         user_uuids: list[str],
         **data,
-    ):
+    ) -> None:
         content = {
             "switchboard_uuid": str(switchboard_uuid),
             "users": [{"uuid": str(uuid)} for uuid in user_uuids],
@@ -130,7 +131,7 @@ class SwitchboardQueuedCallsUpdatedEvent(SwitchboardEvent):
         "events.switchboards.{switchboard_uuid}.calls.queued.updated"
     )
 
-    def __init__(self, items: list[QueuedCallDict], **data):
+    def __init__(self, items: list[QueuedCallDict], **data) -> None:
         content = {
             "switchboard_uuid": str(data["switchboard_uuid"]),
             "items": items,
@@ -152,7 +153,7 @@ class SwitchboardQueuedCallAnsweredEvent(SwitchboardEvent):
         "events.switchboards.{switchboard_uuid}.calls.queued.{queued_call_id}.answer.updated"
     )
 
-    def __init__(self, operator_call_id: str, queued_call_id: str, **data):
+    def __init__(self, operator_call_id: str, queued_call_id: str, **data) -> None:
         content = {
             "switchboard_uuid": str(data["switchboard_uuid"]),
             "operator_call_id": operator_call_id,
@@ -175,7 +176,7 @@ class SwitchboardHeldCallsUpdatedEvent(SwitchboardEvent):
         "events.switchboards.{switchboard_uuid}.calls.held.updated"
     )
 
-    def __init__(self, items: list[HeldCallDict], **data):
+    def __init__(self, items: list[HeldCallDict], **data) -> None:
         content = {
             "switchboard_uuid": str(data["switchboard_uuid"]),
             "items": items,
@@ -197,7 +198,7 @@ class SwitchboardHeldCallAnsweredEvent(SwitchboardEvent):
         "events.switchboards.{switchboard_uuid}.calls.held.{held_call_id}.answer.updated"
     )
 
-    def __init__(self, operator_call_id: str, held_call_id: str, **data):
+    def __init__(self, operator_call_id: str, held_call_id: str, **data) -> None:
         content = {
             "switchboard_uuid": str(data["switchboard_uuid"]),
             "operator_call_id": operator_call_id,

@@ -1,39 +1,47 @@
-# resources/user_line/types.py
-from pydantic import UUID4, BaseModel
+# accent_bus/resources/user_line/types.py
+# Copyright 2025 Accent Communications
+
+"""User line types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class EndpointCustomDict(BaseModel):
-    """Represents a custom endpoint."""
+class EndpointCustomDict(TypedDict, total=False):
+    """Dictionary representing a custom endpoint."""
 
     id: int
 
 
-class EndpointSCCPDict(BaseModel):
-    """Represents an SCCP endpoint."""
+class EndpointSCCPDict(TypedDict, total=False):
+    """Dictionary representing an SCCP endpoint."""
 
     id: int
 
 
-class EndpointSIPDict(BaseModel):
-    """Represents a SIP endpoint."""
+class EndpointSIPDict(TypedDict, total=False):
+    """Dictionary representing a SIP endpoint."""
 
-    uuid: UUID4
+    uuid: UUIDStr
 
 
-class LineDict(BaseModel):
-    """Represents a line."""
+class LineDict(TypedDict, total=False):
+    """Dictionary representing a line."""
 
     id: int
     name: str
-    endpoint_sip: EndpointSIPDict | None = None
-    endpoint_sccp: EndpointSCCPDict | None = None
-    endpoint_custom: EndpointCustomDict | None = None
-    # Removed tenant_uuid, as it is already in the base class
+    endpoint_sip: EndpointSIPDict
+    endpoint_sccp: EndpointSCCPDict
+    endpoint_custom: EndpointCustomDict
 
 
-class UserDict(BaseModel):
-    """Represents a user."""
+class UserDict(TypedDict, total=False):
+    """Dictionary representing a user."""
 
     id: int
-    uuid: UUID4
-    tenant_uuid: UUID4  # Include tenant_uuid here
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr

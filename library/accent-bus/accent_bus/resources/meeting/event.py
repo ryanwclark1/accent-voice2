@@ -1,297 +1,404 @@
-# resources/meeting/event.py
-from typing import ClassVar
+# accent_bus/resources/meeting/event.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4
+"""Meeting events."""
 
-from accent_bus.resources.common.event import (  # Import base classes
-    TenantEvent,
-    UserEvent,
-)
+from __future__ import annotations
 
-from .types import MeetingAuthorizationDict, MeetingDict, MeetingParticipantDict
+from typing import TYPE_CHECKING, Any
+
+from accent_bus.resources.common.event import TenantEvent, UserEvent
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from accent_bus.resources.common.types import UUIDStr
+
+    from .types import MeetingAuthorizationDict, MeetingDict, MeetingParticipantDict
 
 
-class MeetingEvent(TenantEvent):
-    """Base class for meeting events
-    Args:
-        meeting_uuid (UUID4): The UUID of the meeting.
-    """
-
-    service: ClassVar[str] = "confd"
-    content: dict
-    meeting_uuid: str
+class _MeetingMixin:
+    """Mixin for meeting-related events."""
 
     def __init__(
         self,
-        content: dict,
-        meeting_uuid: UUID4,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(content, *args, **kwargs)
+        content: Mapping,
+        meeting_uuid: UUIDStr,
+        *args: Any,
+    ) -> None:
+        super().__init__(content, *args)  # type: ignore[call-arg]
         if meeting_uuid is None:
-            raise ValueError("meeting_uuid must have a value")
+            msg = "meeting_uuid must have a value"
+            raise ValueError(msg)
         self.meeting_uuid = str(meeting_uuid)
 
 
-class MeetingCreatedEvent(MeetingEvent):
+class MeetingCreatedEvent(_MeetingMixin, TenantEvent):
     """Event for when a meeting is created."""
 
-    name: ClassVar[str] = "meeting_created"
-    routing_key_fmt: ClassVar[str] = "config.meetings.created"
+    service = "confd"
+    name = "meeting_created"
+    routing_key_fmt = "config.meetings.created"
 
-    def __init__(self, meeting: MeetingDict, **data):
-        super().__init__(content=meeting, meeting_uuid=meeting["uuid"], **data)
+    def __init__(self, meeting: MeetingDict, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+          meeting: Meeting
+          tenant_uuid: tenant UUID
+
+        """
+        super().__init__(meeting, meeting["uuid"], tenant_uuid)
 
 
-class MeetingDeletedEvent(MeetingEvent):
+class MeetingDeletedEvent(_MeetingMixin, TenantEvent):
     """Event for when a meeting is deleted."""
 
-    name: ClassVar[str] = "meeting_deleted"
-    routing_key_fmt: ClassVar[str] = "config.meetings.deleted"
+    service = "confd"
+    name = "meeting_deleted"
+    routing_key_fmt = "config.meetings.deleted"
 
-    def __init__(self, meeting: MeetingDict, **data):
-        super().__init__(content=meeting, meeting_uuid=meeting["uuid"], **data)
+    def __init__(self, meeting: MeetingDict, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
 
+        Args:
+            meeting (MeetingDict): meeting.
+            tenant_uuid (UUIDStr): tenant UUID.
 
-class MeetingEditedEvent(MeetingEvent):
-    """Event for when a meeting is updated."""
-
-    name: ClassVar[str] = "meeting_updated"
-    routing_key_fmt: ClassVar[str] = "config.meetings.updated"
-
-    def __init__(self, meeting: MeetingDict, **data):
-        super().__init__(content=meeting, meeting_uuid=meeting["uuid"], **data)
+        """
+        super().__init__(meeting, meeting["uuid"], tenant_uuid)
 
 
-class MeetingProgressEvent(MeetingEvent):
-    """Event for when a meeting changes status."""
+class MeetingEditedEvent(_MeetingMixin, TenantEvent):
+    """Event for when a meeting is edited."""
 
-    name: ClassVar[str] = "meeting_progress"
-    routing_key_fmt: ClassVar[str] = "config.meetings.progress"
+    service = "confd"
+    name = "meeting_updated"
+    routing_key_fmt = "config.meetings.updated"
+
+    def __init__(self, meeting: MeetingDict, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+          meeting: Meeting
+          tenant_uuid: tenant UUID
+
+        """
+        super().__init__(meeting, meeting["uuid"], tenant_uuid)
+
+
+class MeetingProgressEvent(_MeetingMixin, TenantEvent):
+    """Event for meeting progress."""
+
+    service = "confd"
+    name = "meeting_progress"
+    routing_key_fmt = "config.meetings.progress"
 
     def __init__(
         self,
         meeting: MeetingDict,
         status: str,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           meeting: Meeting
+           status: Status
+           tenant_uuid: tenant UUID
+
+        """
         content = dict(meeting)
         content["status"] = status
-        super().__init__(content=content, meeting_uuid=meeting["uuid"], **data)
+        super().__init__(content, meeting["uuid"], tenant_uuid)
 
 
-class MeetingUserProgressEvent(MeetingEvent, UserEvent):
+class MeetingUserProgressEvent(_MeetingMixin, UserEvent):
     """Event for user meeting progress."""
 
-    name: ClassVar[str] = "meeting_user_progress"
-    routing_key_fmt: ClassVar[str] = "config.users.{user_uuid}.meetings.progress"
+    service = "confd"
+    name = "meeting_user_progress"
+    routing_key_fmt = "config.users.{user_uuid}.meetings.progress"
 
     def __init__(
         self,
         meeting: MeetingDict,
         status: str,
-        **data,
-    ):
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          meeting: Meeting
+          status: Status
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
         content = dict(meeting)
         content["status"] = status
-        content["user_uuid"] = str(data["user_uuid"])
-        super().__init__(content=content, meeting_uuid=meeting["uuid"], **data)
+        content["user_uuid"] = user_uuid
+        super().__init__(content, meeting["uuid"], tenant_uuid, user_uuid)
 
 
-class MeetingParticipantEvent(MeetingEvent):
-    """Base class for participant events."""
-
-    service: ClassVar[str] = "calld"
-
-
-class MeetingParticipantJoinedEvent(MeetingParticipantEvent):
+class MeetingParticipantJoinedEvent(_MeetingMixin, TenantEvent):
     """Event for when a participant joins a meeting."""
 
-    name: ClassVar[str] = "meeting_participant_joined"
-    routing_key_fmt: ClassVar[str] = "meetings.{meeting_uuid}.participants.joined"
+    service = "calld"
+    name = "meeting_participant_joined"
+    routing_key_fmt = "meetings.{meeting_uuid}.participants.joined"
 
     def __init__(
         self,
         participant: MeetingParticipantDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(participant, meeting_uuid=str(meeting_uuid))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            participant (MeetingParticipantDict):  participant.
+            meeting_uuid (UUIDStr):  meeting UUID.
+            tenant_uuid (UUIDStr):  tenant UUID.
+
+        """
+        content = dict(participant, meeting_uuid=meeting_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid)
 
 
-class MeetingParticipantLeftEvent(MeetingParticipantEvent):
+class MeetingParticipantLeftEvent(_MeetingMixin, TenantEvent):
     """Event for when a participant leaves a meeting."""
 
-    name: ClassVar[str] = "meeting_participant_left"
-    routing_key_fmt: ClassVar[str] = "meetings.{meeting_uuid}.participants.left"
+    service = "calld"
+    name = "meeting_participant_left"
+    routing_key_fmt = "meetings.{meeting_uuid}.participants.left"
 
     def __init__(
         self,
         participant: MeetingParticipantDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(participant, meeting_uuid=str(meeting_uuid))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+           participant: Participant
+           meeting_uuid: Meeting UUID
+           tenant_uuid: tenant UUID
+
+        """
+        content = dict(participant, meeting_uuid=meeting_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid)
 
 
-class MeetingUserParticipantEvent(MeetingEvent, UserEvent):
-    service: ClassVar[str] = "calld"
-    required_acl_fmt: ClassVar[str] = (
-        "events.users.{user_uuid}.meetings.participants.{verb}"
-    )
-    # user_uuid is in base class
+class MeetingUserParticipantJoinedEvent(_MeetingMixin, UserEvent):
+    """Event for when a participant joins a user meeting."""
 
-
-class MeetingUserParticipantJoinedEvent(MeetingUserParticipantEvent):
-    """Event for when a user's participant joins a meeting."""
-
-    name: ClassVar[str] = "meeting_user_participant_joined"
-    routing_key_fmt: ClassVar[str] = "meetings.users.{user_uuid}.participants.joined"
-
-    def __init__(
-        self,
-        participant: MeetingParticipantDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(participant, meeting_uuid=str(meeting_uuid))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
-
-
-class MeetingUserParticipantLeftEvent(MeetingUserParticipantEvent):
-    """Event for when a user's participant leaves a meeting."""
-
-    name: ClassVar[str] = "meeting_user_participant_left"
-    routing_key_fmt: ClassVar[str] = "meetings.users.{user_uuid}.participants.left"
+    service = "calld"
+    name = "meeting_user_participant_joined"
+    routing_key_fmt = "meetings.users.{user_uuid}.participants.joined"
+    required_acl_fmt = "events.users.{user_uuid}.meetings.participants.joined"
 
     def __init__(
         self,
         participant: MeetingParticipantDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(participant, meeting_uuid=str(meeting_uuid))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            participant (MeetingParticipantDict): The participant details.
+            meeting_uuid (UUIDStr): The meeting UUID.
+            tenant_uuid (UUIDStr): The tenant UUID.
+            user_uuid (UUIDStr): The user UUID.
+
+        """
+        content = dict(participant, meeting_uuid=meeting_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid, user_uuid)
 
 
-class MeetingAuthorizationEvent(MeetingEvent):
-    """Base class for meeting authorization events."""
+class MeetingUserParticipantLeftEvent(_MeetingMixin, UserEvent):
+    """Event for when a participant leaves a user meeting."""
 
-    service: ClassVar[str] = "confd"
+    service = "calld"
+    name = "meeting_user_participant_left"
+    routing_key_fmt = "meetings.users.{user_uuid}.participants.left"
+    required_acl_fmt = "events.users.{user_uuid}.meetings.participants.left"
+
+    def __init__(
+        self,
+        participant: MeetingParticipantDict,
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            participant (MeetingParticipantDict): The participant details.
+            meeting_uuid (UUIDStr): meeting UUID.
+            tenant_uuid (UUIDStr):  tenant UUID.
+            user_uuid (UUIDStr):  user UUID.
+
+        """
+        content = dict(participant, meeting_uuid=meeting_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid, user_uuid)
 
 
-class MeetingAuthorizationCreatedEvent(MeetingAuthorizationEvent):
-    """Event for when a meeting guest authorization is created."""
+class MeetingAuthorizationCreatedEvent(_MeetingMixin, TenantEvent):
+    """Event for when a meeting authorization is created."""
 
-    name: ClassVar[str] = "meeting_guest_authorization_created"
-    routing_key_fmt: ClassVar[str] = "config.meeting_guest_authorizations.created"
+    service = "confd"
+    name = "meeting_guest_authorization_created"
+    routing_key_fmt = "config.meeting_guest_authorizations.created"
 
     def __init__(
         self,
         meeting_authorization: MeetingAuthorizationDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        super().__init__(
-            content=meeting_authorization, meeting_uuid=meeting_uuid, **data
-        )
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           meeting_authorization: Meeting Authorization
+           meeting_uuid: Meeting UUID
+           tenant_uuid: tenant UUID
+
+        """
+        super().__init__(meeting_authorization, meeting_uuid, tenant_uuid)
 
 
-class MeetingAuthorizationDeletedEvent(MeetingAuthorizationEvent):
-    """Event for when a meeting guest authorization is deleted."""
+class MeetingAuthorizationDeletedEvent(_MeetingMixin, TenantEvent):
+    """Event for when a meeting authorization is deleted."""
 
-    name: ClassVar[str] = "meeting_guest_authorization_deleted"
-    routing_key_fmt: ClassVar[str] = "config.meeting_guest_authorizations.deleted"
-
-    def __init__(
-        self,
-        meeting_authorization: MeetingAuthorizationDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        super().__init__(
-            content=meeting_authorization, meeting_uuid=meeting_uuid, **data
-        )
-
-
-class MeetingAuthorizationEditedEvent(MeetingAuthorizationEvent):
-    """Event for when a meeting guest authorization is updated."""
-
-    name: ClassVar[str] = "meeting_guest_authorization_updated"
-    routing_key_fmt: ClassVar[str] = "config.meeting_guest_authorizations.updated"
+    service = "confd"
+    name = "meeting_guest_authorization_deleted"
+    routing_key_fmt = "config.meeting_guest_authorizations.deleted"
 
     def __init__(
         self,
         meeting_authorization: MeetingAuthorizationDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        super().__init__(
-            content=meeting_authorization, meeting_uuid=meeting_uuid, **data
-        )
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+            meeting_authorization (MeetingAuthorizationDict): The meeting authorization details.
+            meeting_uuid (UUIDStr):  meeting UUID.
+            tenant_uuid (UUIDStr): The tenant UUID.
+
+        """
+        super().__init__(meeting_authorization, meeting_uuid, tenant_uuid)
 
 
-class MeetingUserAuthorizationEvent(MeetingEvent, UserEvent):
-    """Base class for user meeting authorization events."""
+class MeetingAuthorizationEditedEvent(_MeetingMixin, TenantEvent):
+    """Event for when a meeting authorization is edited."""
 
-    service: ClassVar[str] = "confd"
-    required_acl_fmt: ClassVar[str] = (
-        "events.users.{user_uuid}.meeting_guest_authorizations.{verb}"
-    )
-
-
-class MeetingUserAuthorizationCreatedEvent(MeetingUserAuthorizationEvent):
-    """Event for user meeting authorization creation."""
-
-    name: ClassVar[str] = "meeting_user_guest_authorization_created"
-    routing_key_fmt: ClassVar[str] = (
-        "config.users.{user_uuid}.meeting_guest_authorizations.created"
-    )
+    service = "confd"
+    name = "meeting_guest_authorization_updated"
+    routing_key_fmt = "config.meeting_guest_authorizations.updated"
 
     def __init__(
         self,
         meeting_authorization: MeetingAuthorizationDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(meeting_authorization, user_uuid=str(data["user_uuid"]))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          meeting_authorization: Meeting Authorization
+          meeting_uuid: Meeting UUID
+          tenant_uuid: tenant UUID
+
+        """
+        super().__init__(meeting_authorization, meeting_uuid, tenant_uuid)
 
 
-class MeetingUserAuthorizationDeletedEvent(MeetingUserAuthorizationEvent):
-    """Event for user meeting authorization deletion."""
+class MeetingUserAuthorizationCreatedEvent(_MeetingMixin, UserEvent):
+    """Event for when a user meeting authorization is created."""
 
-    name: ClassVar[str] = "meeting_user_guest_authorization_deleted"
-    routing_key_fmt: ClassVar[str] = (
-        "config.users.{user_uuid}.meeting_guest_authorizations.deleted"
-    )
-
-    def __init__(
-        self,
-        meeting_authorization: MeetingAuthorizationDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(meeting_authorization, user_uuid=str(data["user_uuid"]))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
-
-
-class MeetingUserAuthorizationEditedEvent(MeetingUserAuthorizationEvent):
-    """Event for user meeting authorization update."""
-
-    name: ClassVar[str] = "meeting_user_guest_authorization_updated"
-    routing_key_fmt: ClassVar[str] = (
-        "config.users.{user_uuid}.meeting_guest_authorizations.updated"
-    )
+    service = "confd"
+    name = "meeting_user_guest_authorization_created"
+    routing_key_fmt = "config.users.{user_uuid}.meeting_guest_authorizations.created"
+    required_acl_fmt = "events.users.{user_uuid}.meeting_guest_authorizations.created"
 
     def __init__(
         self,
         meeting_authorization: MeetingAuthorizationDict,
-        meeting_uuid: UUID4,
-        **data,
-    ):
-        content = dict(meeting_authorization, user_uuid=str(data["user_uuid"]))
-        super().__init__(content=content, meeting_uuid=meeting_uuid, **data)
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+          meeting_authorization: Meeting Authorization
+          meeting_uuid: Meeting UUID
+          tenant_uuid: tenant UUID
+          user_uuid: user UUID
+
+        """
+        content = dict(meeting_authorization, user_uuid=user_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid, user_uuid)
+
+
+class MeetingUserAuthorizationDeletedEvent(_MeetingMixin, UserEvent):
+    """Event for when a user meeting authorization is deleted."""
+
+    service = "confd"
+    name = "meeting_user_guest_authorization_deleted"
+    routing_key_fmt = "config.users.{user_uuid}.meeting_guest_authorizations.deleted"
+    required_acl_fmt = "events.users.{user_uuid}.meeting_guest_authorizations.deleted"
+
+    def __init__(
+        self,
+        meeting_authorization: MeetingAuthorizationDict,
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize the event.
+
+        Args:
+           meeting_authorization: Meeting Authorization
+           meeting_uuid: Meeting UUID
+           tenant_uuid: tenant UUID
+           user_uuid: user UUID
+
+        """
+        content = dict(meeting_authorization, user_uuid=user_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid, user_uuid)
+
+
+class MeetingUserAuthorizationEditedEvent(_MeetingMixin, UserEvent):
+    """Event for when a user meeting authorization is edited."""
+
+    service = "confd"
+    name = "meeting_user_guest_authorization_updated"
+    routing_key_fmt = "config.users.{user_uuid}.meeting_guest_authorizations.updated"
+    required_acl_fmt = "events.users.{user_uuid}.meeting_guest_authorizations.updated"
+
+    def __init__(
+        self,
+        meeting_authorization: MeetingAuthorizationDict,
+        meeting_uuid: UUIDStr,
+        tenant_uuid: UUIDStr,
+        user_uuid: UUIDStr,
+    ) -> None:
+        """Initialize event.
+
+        Args:
+            meeting_authorization (MeetingAuthorizationDict): meeting authorization details.
+            meeting_uuid (UUIDStr): The meeting UUID.
+            tenant_uuid (UUIDStr): tenant UUID.
+            user_uuid (UUIDStr): The user UUID.
+
+        """
+        content = dict(meeting_authorization, user_uuid=user_uuid)
+        super().__init__(content, meeting_uuid, tenant_uuid, user_uuid)

@@ -1,8 +1,14 @@
-# resources/localization/types.py
-from pydantic import BaseModel, Field
+# accent_bus/resources/localization/types.py
+# Copyright 2025 Accent Communications
+
+"""Localization types."""
+
+from __future__ import annotations
+
+from typing import TypedDict
 
 
-class LocalizationDict(BaseModel):
-    """Represents localization settings."""
+class LocalizationDict(TypedDict):
+    """Dictionary representing localization settings."""
 
-    country: str = Field(..., description="The country code for localization.")
+    country: str

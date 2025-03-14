@@ -1,50 +1,58 @@
-# resources/chatd/types.py
+# accent_bus/resources/chatd/types.py
+# Copyright 2025 Accent Communications
 
-from pydantic import UUID4, BaseModel, Field
+"""Chatd types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import UUIDStr
 
 
-class LinePresenceDict(BaseModel):
-    """Represents presence information for a line."""
+class LinePresenceDict(TypedDict, total=False):
+    """Dictionary representing line presence."""
 
     id: int
     state: str
 
 
-class RoomUserDict(BaseModel):
-    """Represents a user within a chat room."""
+class MessageDict(TypedDict, total=False):
+    """Dictionary representing a message."""
 
-    uuid: UUID4
-    tenant_uuid: UUID4
-    accent_uuid: UUID4
-
-
-class RoomDict(BaseModel):
-    """Represents a chat room."""
-
-    uuid: UUID4
-    tenant_uuid: UUID4
-    name: str
-    users: list[RoomUserDict] = Field(default_factory=list)
-
-
-class MessageDict(BaseModel):
-    """Represents a chat message."""
-
-    uuid: UUID4
+    uuid: UUIDStr
     content: str
     alias: str
-    user_uuid: UUID4
-    tenant_uuid: UUID4
-    accent_uuid: UUID4
+    user_uuid: UUIDStr
+    tenant_uuid: UUIDStr
+    accent_uuid: UUIDStr
     created_at: str
     room: RoomDict
 
 
-class UserPresenceDict(BaseModel):
-    """Represents the presence status of a user."""
+class RoomDict(TypedDict, total=False):
+    """Dictionary representing a room."""
 
-    uuid: UUID4
-    tenant_uuid: UUID4
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr
+    name: str
+    users: list[RoomUserDict]
+
+
+class RoomUserDict(TypedDict, total=False):
+    """Dictionary representing a room user."""
+
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr
+    accent_uuid: UUIDStr
+
+
+class UserPresenceDict(TypedDict, total=False):
+    """Dictionary representing user presence."""
+
+    uuid: UUIDStr
+    tenant_uuid: UUIDStr
     state: str
     status: str
     last_activity: str
@@ -52,4 +60,4 @@ class UserPresenceDict(BaseModel):
     mobile: bool
     do_not_disturb: bool
     connected: bool
-    lines: list[LinePresenceDict] = Field(default_factory=list)
+    lines: list[LinePresenceDict]

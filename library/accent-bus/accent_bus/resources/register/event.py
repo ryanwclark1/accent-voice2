@@ -1,77 +1,114 @@
-# resources/register/event.py
-from typing import ClassVar
+# accent_bus/resources/register/event.py
+# Copyright 2025 Accent Communications
+
+"""Register events."""
 
 from accent_bus.resources.common.event import ServiceEvent
 
 
-class RegisterEvent(ServiceEvent):
-    """Base class for Register events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class RegisterSIPCreated(RegisterEvent):
+class RegisterSIPCreated(ServiceEvent):
     """Event for when a SIP register is created."""
 
-    name: ClassVar[str] = "register_sip_created"
-    routing_key_fmt: ClassVar[str] = "config.register.sip.created"
+    service = "confd"
+    name = "register_sip_created"
+    routing_key_fmt = "config.register.sip.created"
 
-    def __init__(self, register_id: int, **data):
+    def __init__(self, register_id: int) -> None:
+        """Initialize the event.
+
+        Args:
+            register_id (int): The ID of the register.
+
+        """
         content = {"id": int(register_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content)
 
 
-class RegisterSIPDeleted(RegisterEvent):
+class RegisterSIPDeleted(ServiceEvent):
     """Event for when a SIP register is deleted."""
 
-    name: ClassVar[str] = "register_sip_deleted"
-    routing_key_fmt: ClassVar[str] = "config.register.sip.deleted"
+    service = "confd"
+    name = "register_sip_deleted"
+    routing_key_fmt = "config.register.sip.deleted"
 
-    def __init__(self, register_id: int, **data):
+    def __init__(self, register_id: int) -> None:
+        """Initialize Event.
+
+        Args:
+          register_id: Register ID
+
+        """
         content = {"id": int(register_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content)
 
 
-class RegisterSIPEditedEvent(RegisterEvent):
+class RegisterSIPEditedEvent(ServiceEvent):
     """Event for when a SIP register is edited."""
 
-    name: ClassVar[str] = "register_sip_edited"
-    routing_key_fmt: ClassVar[str] = "config.register.sip.edited"
+    service = "confd"
+    name = "register_sip_edited"
+    routing_key_fmt = "config.register.sip.edited"
 
-    def __init__(self, register_id: int, **data):
+    def __init__(self, register_id: int) -> None:
+        """Initialize event.
+
+        Args:
+          register_id: Register ID
+
+        """
         content = {"id": int(register_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content)
 
 
-class RegisterIAXCreatedEvent(RegisterEvent):
+class RegisterIAXCreatedEvent(ServiceEvent):
     """Event for when an IAX register is created."""
 
-    name: ClassVar[str] = "register_iax_created"
-    routing_key_fmt: ClassVar[str] = "config.register.iax.created"
+    service = "confd"
+    name = "register_iax_created"
+    routing_key_fmt = "config.register.iax.created"
 
-    def __init__(self, register_id: int, **data):
+    def __init__(self, register_id: int) -> None:
+        """Initialize event.
+
+        Args:
+           register_id: Register ID
+
+        """
         content = {"id": int(register_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content)
 
 
-class RegisterIAXDeletedEvent(RegisterEvent):
+class RegisterIAXDeletedEvent(ServiceEvent):
     """Event for when an IAX register is deleted."""
 
-    name: ClassVar[str] = "register_iax_deleted"
-    routing_key_fmt: ClassVar[str] = "config.register.iax.deleted"
+    service = "confd"
+    name = "register_iax_deleted"
+    routing_key_fmt = "config.register.iax.deleted"
 
-    def __init__(self, register_id: int, **data):
+    def __init__(self, register_id: int) -> None:
+        """Initialize event.
+
+        Args:
+            register_id (int):  register ID.
+
+        """
         content = {"id": int(register_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content)
 
 
-class RegisterIAXEditedEvent(RegisterEvent):
+class RegisterIAXEditedEvent(ServiceEvent):
     """Event for when an IAX register is edited."""
 
-    name: ClassVar[str] = "register_iax_edited"
-    routing_key_fmt: ClassVar[str] = "config.register.iax.edited"
+    service = "confd"
+    name = "register_iax_edited"
+    routing_key_fmt = "config.register.iax.edited"
 
-    def __init__(self, register_id: int, **data):
+    def __init__(self, register_id: int) -> None:
+        """Initialize the event.
+
+        Args:
+            register_id (int):  register ID.
+
+        """
         content = {"id": int(register_id)}
-        super().__init__(content=content, **data)
+        super().__init__(content)

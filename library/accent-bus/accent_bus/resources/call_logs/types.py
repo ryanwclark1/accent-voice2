@@ -1,72 +1,77 @@
-# resources/call_logs/types.py
+# accent_bus/resources/call_logs/types.py
+# Copyright 2025 Accent Communications
+
+"""Call log types."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from accent_bus.resources.common.types import DateTimeStr, UUIDStr
 
 
-from pydantic import UUID4, BaseModel, Field
-
-from accent_bus.resources.common.types import DateTimeStr
-
-
-class DestinationConferenceDict(BaseModel):
-    """Represents conference destination details."""
+class DestinationConferenceDict(TypedDict, total=False):
+    """Dictionary representing a destination conference."""
 
     conference_id: int
 
 
-class DestinationMeetingDict(BaseModel):
-    """Represents meeting destination details."""
+class DestinationMeetingDict(TypedDict, total=False):
+    """Dictionary representing a destination meeting."""
 
-    meeting_uuid: UUID4
+    meeting_uuid: UUIDStr
     meeting_name: str
 
 
-class DestinationUserDict(BaseModel):
-    """Represents user destination details."""
+class DestinationUserDict(TypedDict, total=False):
+    """Dictionary representing a destination user."""
 
-    user_uuid: UUID4
+    user_uuid: UUIDStr
     user_name: str
 
 
-class DestinationUnknownDict(BaseModel):
-    """Represents unknown destination details."""
+class DestinationUnknownDict(TypedDict, total=False):
+    """Dictionary representing an unknown destination."""
 
 
-class DestinationDetailsDict(BaseModel):
-    """Represents all possible destination details."""
+class DestinationDetailsDict(TypedDict, total=False):
+    """Dictionary representing destination details."""
 
-    conference: DestinationConferenceDict | None = None
-    meeting: DestinationMeetingDict | None = None
-    user: DestinationUserDict | None = None
-    unknown: DestinationUnknownDict | None = None
+    conference: DestinationConferenceDict
+    meeting: DestinationMeetingDict
+    user: DestinationUserDict
+    unknown: DestinationUnknownDict
 
 
-class RecordingDict(BaseModel):
-    """Represents recording details."""
+class RecordingDict(TypedDict, total=False):
+    """Dictionary representing a recording."""
 
-    uuid: UUID4
+    uuid: UUIDStr
     start_time: str
     end_time: str
     deleted: bool
     filename: str
 
 
-class CDRDataDict(BaseModel):
-    """Represents CDR data (Call Detail Record)."""
+class CDRDataDict(TypedDict, total=False):
+    """Dictionary representing CDR data."""
 
     id: int
-    tenant_uuid: UUID4
+    tenant_uuid: UUIDStr
     start: DateTimeStr
     end: DateTimeStr
     answered: bool
     duration: float
-    call_direction: str
+    call_drection: str
     conversation_id: str
-    destination_details: DestinationDetailsDict | None = None
+    destination_details: DestinationDetailsDict
     destination_extension: str
     destination_internal_context: str
     destination_internal_extension: str
     destination_line_id: int
     destination_name: str
-    destination_user_uuid: UUID4 | None = None
+    destination_user_uuid: UUIDStr
     requested_name: str
     requested_context: str
     requested_extension: str
@@ -78,6 +83,6 @@ class CDRDataDict(BaseModel):
     source_internal_extension: str
     source_line_id: int
     source_name: str
-    source_user_uuid: UUID4 | None = None
-    tags: list[str] = Field(default_factory=list)
-    recordings: list[RecordingDict] = Field(default_factory=list)
+    source_user_uuid: UUIDStr
+    tags: list[str]
+    recordings: list[RecordingDict]

@@ -13,6 +13,7 @@ dependencies = [
   "pydantic-settings>=2.8.1",
   "pydantic>=2.10.6",
   "uvicorn[standard]>=0.34.0",
+  "aio-pika>=9.5.5",
 ]
 
 [project.scripts]

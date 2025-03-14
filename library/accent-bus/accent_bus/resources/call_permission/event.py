@@ -1,44 +1,64 @@
-# resources/call_permission/event.py
-from typing import ClassVar
+# accent_bus/resources/call_permission/event.py
+# Copyright 2025 Accent Communications
+
+"""Call permission events."""
 
 from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.types import UUIDStr
 
 
-class CallPermissionEvent(TenantEvent):
-    """Base class for Call Permission events."""
-
-    service: ClassVar[str] = "confd"
-    content: dict
-
-
-class CallPermissionCreatedEvent(CallPermissionEvent):
+class CallPermissionCreatedEvent(TenantEvent):
     """Event for when a call permission is created."""
 
-    name: ClassVar[str] = "call_permission_created"
-    routing_key_fmt: ClassVar[str] = "config.callpermission.created"
+    service = "confd"
+    name = "call_permission_created"
+    routing_key_fmt = "config.callpermission.created"
 
-    def __init__(self, call_permission_id: int, **data):
+    def __init__(self, call_permission_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+          call_permission_id: Call permission ID.
+          tenant_uuid: tenant UUID.
+
+        """
         content = {"id": call_permission_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class CallPermissionDeletedEvent(CallPermissionEvent):
+class CallPermissionDeletedEvent(TenantEvent):
     """Event for when a call permission is deleted."""
 
-    name: ClassVar[str] = "call_permission_deleted"
-    routing_key_fmt: ClassVar[str] = "config.callpermission.deleted"
+    service = "confd"
+    name = "call_permission_deleted"
+    routing_key_fmt = "config.callpermission.deleted"
 
-    def __init__(self, call_permission_id: int, **data):
+    def __init__(self, call_permission_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize event.
+
+        Args:
+            call_permission_id: Call permission ID.
+            tenant_uuid:  tenant UUID
+
+        """
         content = {"id": call_permission_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)
 
 
-class CallPermissionEditedEvent(CallPermissionEvent):
+class CallPermissionEditedEvent(TenantEvent):
     """Event for when a call permission is edited."""
 
-    name: ClassVar[str] = "call_permission_edited"
-    routing_key_fmt: ClassVar[str] = "config.callpermission.edited"
+    service = "confd"
+    name = "call_permission_edited"
+    routing_key_fmt = "config.callpermission.edited"
 
-    def __init__(self, call_permission_id: int, **data):
+    def __init__(self, call_permission_id: int, tenant_uuid: UUIDStr) -> None:
+        """Initialize the event.
+
+        Args:
+          call_permission_id: Call Permission ID
+          tenant_uuid: tenant UUID
+
+        """
         content = {"id": call_permission_id}
-        super().__init__(content=content, **data)
+        super().__init__(content, tenant_uuid)

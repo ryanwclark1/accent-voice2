@@ -1,12 +1,17 @@
-# resources/common/acl.py
+# accent_bus/resources/common/acl.py
+# Copyright 2025 Accent Communications
+
+"""ACL utility functions."""
+
+
 def escape(acl_part: str) -> str:
-    """Escapes special characters in an ACL part.
+    """Escape an ACL part.
 
     Args:
-        acl_part: The ACL part to escape.
+       acl_part (str):  ACL part to escape.
 
     Returns:
-        The escaped ACL part.
+        str: The escaped ACL part.
 
     """
     return (
