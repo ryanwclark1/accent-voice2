@@ -1,4 +1,3 @@
-# resources/registrar/event.py
 from typing import ClassVar
 
 from resources.common.event import ServiceEvent
@@ -10,7 +9,7 @@ class RegistrarEvent(ServiceEvent):
     """Base class for Registrar events."""
 
     service: ClassVar[str] = "confd"
-    content: RegistrarDict  # Use the Pydantic model
+    content: RegistrarDict
 
 
 class RegistrarCreatedEvent(RegistrarEvent):
