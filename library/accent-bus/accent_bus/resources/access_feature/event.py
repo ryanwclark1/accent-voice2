@@ -1,8 +1,7 @@
 # resources/access_feature/event.py
 from typing import ClassVar
 
-# from pydantic import BaseModel  <-- No longer needed here, as we inherit from TenantEvent
-from accent_bus.resources.common.event import TenantEvent
+from accent_bus.resources.common.event import TenantEvent  # Import base classes
 
 from .types import AccessFeatureData  # Import the Pydantic model
 
@@ -24,7 +23,6 @@ class AccessFeatureCreatedEvent(AccessFeatureEvent):
         super().__init__(
             content=access_feature_info, **data
         )  # Pass the Pydantic model directly.
-        # Crucially, we are passing access_feature_info, not the dict.
 
 
 class AccessFeatureDeletedEvent(AccessFeatureEvent):
