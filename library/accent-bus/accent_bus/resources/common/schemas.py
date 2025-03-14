@@ -1,4 +1,4 @@
-# schemas.py
+# resources/common/schemas.py
 from typing import Any
 
 from pydantic import BaseModel

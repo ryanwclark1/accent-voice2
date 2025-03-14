@@ -1,4 +1,4 @@
-# base.py
+# core/base.py
 import logging
 from typing import Any, NamedTuple
 
@@ -17,9 +17,7 @@ class ConnectionParams(NamedTuple):
 
 
 class BaseProtocol:
-    """Base protocol for publishers and consumers.
-    Implements shared properties and abstract methods.
-    """
+    """Base protocol for publishers and consumers."""
 
     _name: str
     _logger: logging.Logger
@@ -37,54 +35,17 @@ class BaseProtocol:
         exchange_name: str = "",
         exchange_type: str = "",
         **kwargs: Any,
-    ):
-        """Initializes the BaseProtocol.
-
-        Args:
-            name (str | None): The name of the component.
-            username (str, optional): RabbitMQ username. Defaults to "guest".
-            password (str, optional): RabbitMQ password. Defaults to "guest".
-            host (str, optional): RabbitMQ host. Defaults to "localhost".
-            port (int, optional): RabbitMQ port. Defaults to 5672.
-            exchange_name (str, optional):  Name of the exchange.
-            exchange_type (str, optional):  Type of exchange (topic, direct, etc)
-            **kwargs: Additional keyword arguments.
-
-        """
+    ): ...  # remove definition
 
     @property
-    def url(self) -> str:
-        """Returns the AMQP URL.
-
-        Returns:
-            str: The AMQP URL.
-
-        """
+    def url(self) -> str: ...  # remove definition
 
     @property
-    def log(self) -> logging.Logger:
-        """Returns the logger instance.
-
-        Returns:
-            logging.Logger: The logger.
-
-        """
+    def log(self) -> logging.Logger: ...  # remove definition
 
 
 class Base(BaseProtocol):
-    """Base class for publishers/consumers (to be extended by mixins).
-
-    Args:
-        name (str | None): The name of the component.
-        username (str, optional): RabbitMQ username. Defaults to "guest".
-        password (str, optional): RabbitMQ password. Defaults to "guest".
-        host (str, optional): RabbitMQ host. Defaults to "localhost".
-        port (int, optional): RabbitMQ port. Defaults to 5672.
-        exchange_name (str, optional): Name of the exchange.
-        exchange_type (str, optional): Type of exchange.
-        **kwargs: Additional keyword arguments.
-
-    """
+    """Base class for publishers/consumers (to be extended by mixins)."""
 
     def __init__(
         self,
@@ -105,12 +66,7 @@ class Base(BaseProtocol):
 
     @property
     def url(self) -> str:
-        """Constructs the RabbitMQ connection URL.
-
-        Returns:
-            str: The complete AMQP URL.
-
-        """
+        """Constructs the RabbitMQ connection URL."""
         return (
             f"amqp://{self._connection_params.user}:{self._connection_params.password}@"
             f"{self._connection_params.host}:{self._connection_params.port}/"
@@ -118,12 +74,7 @@ class Base(BaseProtocol):
 
     @property
     def log(self) -> logging.Logger:
-        """Returns the logger instance.
-
-        Returns:
-            logging.Logger: The logger instance.
-
-        """
+        """Returns the logger instance."""
         return self._logger
 
 
@@ -141,10 +92,5 @@ class RabbitMQConfig(BaseModel):
 
     @property
     def url(self) -> str:
-        """Constructs the RabbitMQ connection URL.
-
-        Returns:
-            str: The complete AMQP URL.
-
-        """
+        """Constructs the RabbitMQ connection URL."""
         return f"amqp://{self.user}:{self.password}@{self.host}:{self.port}/"

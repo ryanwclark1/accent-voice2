@@ -1,4 +1,4 @@
-# consumer.py
+# core/consumer.py
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine
@@ -9,22 +9,19 @@ from pydantic import ValidationError
 
 from .base import Base
 from .mixins import AiopikaConnectionMixin
-from .resources.common.schemas import Event
+
+# NEW IMPORTS
+from .schemas import Event
 
 logger = logging.getLogger(__name__)
 
 
 async def process_message(message: AbstractIncomingMessage) -> None:
-    """Processes an incoming message, attempting to parse it using Pydantic.
-
-    Args:
-        message (AbstractIncomingMessage): The incoming message.
-
-    """
+    """Process an incoming message, attempting to parse it using Pydantic."""
     async with message.process():  # Acknowledge message upon *successful* processing
         try:
             event = Event.model_validate_json(message.body)
-            logger.info(f"Received event: {event.name}, Data: {event.data}")
+            logger.info("Received event: %s, Data: %s", event.name, event.data)
             # ... further processing (e.g., dispatch to handlers) ...
         except ValidationError as e:
             logger.error(f"Invalid message format: {e}")
@@ -47,23 +44,10 @@ class BusConsumer(AiopikaConnectionMixin, Base):
         exchange_type: str = "",
         **kwargs: Any,
     ):
-        """Initializes the BusConsumer.
-
-        Args:
-            name (str | None): Consumer name.
-            username (str): RabbitMQ username.
-            password (str): RabbitMQ password.
-            host (str): RabbitMQ host.
-            port (int): RabbitMQ port.
-            exchange_name (str): Exchange to bind to.
-            exchange_type (str): Type of the exchange.
-            **kwargs: Other parameters.
-
-        """
         super().__init__(
             name, username, password, host, port, exchange_name, exchange_type, **kwargs
         )
-        self.running = False
+        self.running = False  # Add a flag to control if consumer is running
 
     async def start_consuming(
         self,
@@ -73,16 +57,16 @@ class BusConsumer(AiopikaConnectionMixin, Base):
             [AbstractIncomingMessage], Coroutine[Any, Any, None]
         ] = process_message,
     ) -> None:
-        """Starts the consumer to continuously listen for messages.
+        """Start the consumer to continuously listen for messages.
 
         Args:
             queue_name (str): The name of the queue.
             event_name (str): Event to bind to.
-            callback (Callable): The callback function.
+            callback (Callable): Callback function to process the message.
 
         """
         channel = await self.get_channel()
-        await channel.set_qos(prefetch_count=1)
+        await channel.set_qos(prefetch_count=1)  # Process one message at a time
         exchange = await channel.declare_exchange(
             self._default_exchange_name, self._default_exchange_type
         )  # Declare exchange
@@ -94,18 +78,16 @@ class BusConsumer(AiopikaConnectionMixin, Base):
             async for message in queue_iter:
                 await callback(message)
 
-    async def run(self) -> None:
-        """Starts up the connection.
-        """
-        # Connection will close when this context manager exits
+    async def run(self):
+        """Start up the connection."""
+        # Connection will close when this context manager exits.
         async with await self.get_connection():
             self.running = True
             while self.running:  # Keep the connection alive (simplified).
                 await asyncio.sleep(1)  # Prevent busy-looping.
 
-    async def stop(self) -> None:
-        """Stops the running connection.
-        """
+    async def stop(self):
+        """Stop the running connection."""
         self.running = False
         if self._connection:
             await self._connection.close()

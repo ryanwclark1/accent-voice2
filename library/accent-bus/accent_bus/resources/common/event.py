@@ -19,10 +19,11 @@ class ServiceEvent(EventProtocol):
     content: dict = {}  # All events will, at least, have content.
 
     def __init__(self, content: dict | None = None, **data):
-        """Initializes ServiceEvent.
+        """Initialize ServiceEvent.
 
         Args:
-            content (dict): Content of the event.
+            content (dict, optional): Content of the event. Defaults to None.
+            **data: attributes of the event.
 
         """
         super().__init__(
@@ -50,6 +51,19 @@ class ServiceEvent(EventProtocol):
         }
         return self.routing_key_fmt.format(**variables)
 
+    @property
+    def headers(self) -> dict:
+        """Generates the headers for the event, adding necessary keys and values.
+        Removes the 'content' key, as it's not needed in headers.
+
+        Returns:
+            dict: A dictionary containing header information.
+
+        """
+        headers = super().headers
+        del headers["content"]
+        return headers
+
 
 class TenantEvent(ServiceEvent):
     """Base class for tenant-level events.
@@ -65,14 +79,9 @@ class TenantEvent(ServiceEvent):
 
     @property
     def headers(self) -> dict:
-        """Tenant events do not require user filtering, they go to all tenant.
-
-        Returns:
-             dict: The headers
-
-        """
+        """Tenant events do not require user filtering, they go to all tenant."""
         headers = super().headers
-        del headers["content"]
+        # del headers["content"]
         headers["tenant_uuid"] = str(self.tenant_uuid)  # Fixed
         return headers
 
@@ -91,17 +100,12 @@ class UserEvent(TenantEvent):
 
     @property
     def headers(self) -> dict:
-        """Adds user_uuid:{uuid} = True to the headers for user-specific events.
-
-        Returns:
-            dict: Headers of the event, with user filter.
-
-        """
+        """Adds user_uuid:{uuid} = True to the headers for user-specific events."""
         headers = super().headers
         uuid = self.user_uuid
         if uuid:
             headers[f"user_uuid:{uuid}"] = True
-        del headers["content"]
+        # del headers["content"]
         return headers
 
 
@@ -117,24 +121,13 @@ class MultiUserEvent(TenantEvent):
 
     @property
     def user_uuids_str(self) -> list[str]:
-        """Returns user_uuids as string.
-
-        Returns:
-             list[str]: user_uuids as strings
-
-        """
         return [str(user_uuid) for user_uuid in self.user_uuids]
 
     @property
     def headers(self) -> dict:
-        """Adds user_uuid:{uuid} = True for each user in user_uuids.
-
-        Returns:
-            dict:  The headers, with all user filters.
-
-        """
+        """Adds user_uuid:{uuid} = True for each user in user_uuids."""
         headers = super().headers
         for user_uuid in self.user_uuids_str:
             headers[f"user_uuid:{user_uuid}"] = True
-        del headers["content"]
+        # del headers["content"]
         return headers

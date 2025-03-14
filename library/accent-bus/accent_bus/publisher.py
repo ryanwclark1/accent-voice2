@@ -1,13 +1,12 @@
-# publisher.py
+# core/publisher.py
 import logging
 from typing import Any
 
 import aiopika
+from pydantic import BaseModel
 
 from .base import Base
 from .mixins import AiopikaConnectionMixin
-from .resources.common.schemas import Event
-from .collectd.common import CollectdEvent  # Import CollectdEvent
 
 logger = logging.getLogger(__name__)
 
@@ -27,57 +26,45 @@ class BusPublisher(AiopikaConnectionMixin, Base):
         service_uuid: str | None = None,
         **kwargs: Any,
     ):
-        """
-        Initializes the BusPublisher with connection parameters and optional service UUID.
-
-        Args:
-            name (str | None): Publisher name.
-            username (str): RabbitMQ username.
-            password (str): RabbitMQ password.
-            host (str): RabbitMQ host.
-            port (int): RabbitMQ port.
-            exchange_name (str):  Exchange name.
-            exchange_type (str):  Exchange type.
-            service_uuid (str, optional): Unique identifier for this service instance.
-            **kwargs:  Other parameters.
-        """
         super().__init__(
             name, username, password, host, port, exchange_name, exchange_type, **kwargs
         )
         self.service_uuid = service_uuid  # Needed for collectd
 
     async def publish(
-        self, event_name: str, event: Event, routing_key: str | None = None
+        self, event_name: str, event: BaseModel, routing_key: str | None = None
     ) -> None:
-        """Publishes an event to the configured RabbitMQ exchange.
+        """Publish an event to the configured RabbitMQ exchange.
 
         Args:
             event_name (str): The name of the event (for routing).
-            event (Event): The event data (Pydantic model).
-            routing_key (str, optional): The routing key. Defaults to event_name.
+            event (BaseModel): The event data (Pydantic model).
+            routing_key (str, optional): The routing key to use. Defaults to event_name.
+
         """
         channel = await self.get_channel()
         exchange = await channel.declare_exchange(
             self._default_exchange_name, self._default_exchange_type
         )
 
-        message_body = event.model_dump_json().encode()
+        message_body = event.model_dump_json().encode()  # Use Pydantic's json()
         message = aiopika.Message(
             body=message_body,
             content_type="application/json",
-            headers={"event_name": event_name},
+            headers={
+                "event_name": event_name,
+                "routing_key": routing_key or event_name,
+            },  # Add a header (optional) and routing key.
         )
 
-        await exchange.publish(message, routing_key=routing_key or event_name)
-        logger.info(f"Published event: {event_name}, Data: {event.data}")
+        await exchange.publish(
+            message, routing_key=routing_key or event_name
+        )  # Use routing_key, fallback to event_name
+        logger.info(f"Published event: {event_name}, Data: {message_body}")
 
-    async def publish_collectd(self, event: CollectdEvent) -> None:
-        """Publishes a Collectd event.
-
-        Args:
-            event (CollectdEvent): The Collectd event to publish.
-        """
-
+    async def publish_collectd(self, event: "CollectdEvent") -> None:  # type: ignore
+        """Publishes a Collectd event."""
+        # The type is commented because it creates a circular dependency.
         if not self.service_uuid:
             raise ValueError("service_uuid must be set for Collectd events")
 
@@ -90,6 +77,7 @@ class BusPublisher(AiopikaConnectionMixin, Base):
         message = aiopika.Message(
             body=payload.encode(),
             content_type="text/plain",  # As per collectd network protocol
+            headers={"event_name": event.name},
         )
 
         await exchange.publish(
