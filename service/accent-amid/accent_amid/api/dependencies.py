@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from fastapi import Depends, HTTPException, Request, status
 
@@ -11,7 +12,6 @@ from accent_amid.config import Settings
 from accent_amid.services.ajam import AJAMClient
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
 
     from accent_auth_client import Client as AuthClient
     from accent_auth_client.type_definitions import TokenDict
@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from accent_amid.config import Settings
 
 logger = logging.getLogger(__name__)
+
+F = TypeVar("F", bound=Callable[..., Any])
+
 
 async def get_settings(request: Request) -> Settings:
     """Dependency function to get the application settings.
@@ -77,11 +80,11 @@ async def verify_token_and_acl(
             token
         )  # Await the async call!
         return token_data
-    except Exception:  # Catch broader exception, log details (important!)
+    except Exception as e:  # Catch broader exception, log details (important!)
         logger.exception("Token verification failed")  # Log the exception!
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        ) from e
 
 
 async def verify_master_tenant(auth_client: AuthClient, token_data: dict) -> None:  # type: ignore[valid-type]
@@ -105,7 +108,15 @@ async def verify_master_tenant(auth_client: AuthClient, token_data: dict) -> Non
 
 
 async def get_auth_client(request: Request) -> AuthClient:
-    # ... (rest of get_auth_client remains the same)
+    """Dependency function to get an AuthClient instance.
+
+    Args:
+        request (Request): request object.
+
+    Returns:
+        AuthClient: auth client.
+
+    """
     return request.app.state.auth_client
 
 
@@ -117,7 +128,7 @@ def required_master_tenant() -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        async def wrapper(*args, **kwargs):  # noqa: ANN202
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Get auth_client and token_data from dependencies
             auth_client = kwargs.get("auth_client")
             token_data = kwargs.get("token_data")
@@ -130,7 +141,7 @@ def required_master_tenant() -> Callable[[F], F]:
             await verify_master_tenant(auth_client, token_data)  # type: ignore[arg-type]
             return await func(*args, **kwargs)
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper
 
     return decorator
 
@@ -150,7 +161,7 @@ def required_acl(acl_pattern: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             token_data = kwargs.get("token_data")
             if not token_data:
                 raise HTTPException(
@@ -166,6 +177,6 @@ def required_acl(acl_pattern: str) -> Callable[[F], F]:
                 )
             return await func(*args, **kwargs)
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper
 
     return decorator

@@ -8,13 +8,11 @@ structures in the Accent AMID client.
 
 from __future__ import annotations
 
-from typing import Any
-
 from accent_lib_rest_client.models import JSONResponse
 from pydantic import BaseModel, Field
 
 # Type alias for better readability
-JSON = dict[str, Any] | list[Any] | str | int | float | bool | None
+JSON = str | int | float | bool | None | list["JSON"] | dict[str, "JSON"]
 
 
 class AmidResponse(JSONResponse):

@@ -1,91 +1,64 @@
-# Copyright 2023 Accent Communications
+# resources/common/abstract.py
+from abc import ABC, abstractmethod
+from typing import ClassVar
 
-from __future__ import annotations
-
-from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping
-from typing import Any, Protocol
-
-from .acl import escape as escape_acl
-from .routing_key import escape as escape_key
+from pydantic import BaseModel, ConfigDict
 
 
-class EventProtocol(Protocol):
-    __slots__ = ('content',)
-    content: Mapping
+class EventProtocol(BaseModel, ABC):
+    """Protocol definition for events.
 
-    def __init__(self, content: Mapping | None = None):
-        self.content = content or {}
+    Ensures all events have necessary properties and methods.
+    """
 
-    def __eq__(self, other: Any) -> bool:
-        return (
-            self.__class__ == other.__class__
-            and self.content == other.content
-            and vars(self) == vars(other)
-        )
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True
+    )  # Needed for ClassVar, routing and acl.
 
-    def __ne__(self, other: Any) -> bool:
-        return not self == other
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def __str__(self) -> str:
-        return '<Event: {} (headers: {}, content: {})>'.format(
-            self.name,
-            self.headers,
-            self.content,
-        )
+    content: dict
+    name: ClassVar[str]
+    routing_key_fmt: ClassVar[str]
+    required_acl_fmt: ClassVar[str]
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
-
-    @property
-    @abstractmethod
-    def routing_key_fmt(self) -> str:
-        ...
-
-    @property
     def routing_key(self) -> str:
-        variables = dict(**self.content)
-        variables.update(vars(self), name=self.name)
-        variables = {
-            key: escape_key(value) if isinstance(value, str) else value
-            for key, value in variables.items()
-        }
-        return self.routing_key_fmt.format(**variables)
+        """Calculates the routing key for the event.
+
+        Returns:
+            str: The routing key.
+
+        """
+        ...
 
     @property
-    def required_acl(self) -> str:
-        """
-        Deprecated, use required_access instead
-        """
-        if hasattr(self, 'required_acl_fmt'):
-            variables = dict(**self.content)
-            variables.update(vars(self), name=self.name)
-            variables = {
-                key: escape_acl(value) if isinstance(value, str) else value
-                for key, value in variables.items()
-            }
-            return self.required_acl_fmt.format(**variables)
-        return f'events.{self.routing_key}'
-
-    @property
+    @abstractmethod
     def required_access(self) -> str:
-        return f'event.{self.name}'
+        """Defines the required access level for the event.
+
+        Returns:
+            str:  access level.
+
+        """
+        ...
 
     @property
     def headers(self) -> dict:
-        headers = dict(vars(self))
-        headers.update(name=self.name)
+        """Generates headers for the event message.
+
+        Returns:
+            dict: A dictionary of headers.
+
+        """
+        headers = dict(vars(self))  # instance attributes
+        headers["name"] = self.name  # Add the event name
         return headers
 
     def marshal(self) -> dict:
-        return dict(self.content)
+        """Marshals the event data into a dictionary.
 
-#  NOTE: Deprecated, use EventProtocol instead
-class AbstractEvent(EventProtocol, metaclass=ABCMeta):
-    def __init__(self, content: dict | None = None):
-        self.content = content or {}
+        Returns:
+             dict: The event data.
+
+        """
+        return self.model_dump()  # Use Pydantic's model_dump

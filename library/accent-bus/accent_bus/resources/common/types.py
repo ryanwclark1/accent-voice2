@@ -1,19 +1,23 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
-from dataclasses import dataclass, field
+# resources/common/types.py
 from typing import Annotated, Literal
 
-_string_formats = Literal['date', 'date-time', 'uuid']
+from pydantic import BaseModel, Field
+
+_string_formats = Literal["date", "date-time", "uuid"]
 
 
-@dataclass(frozen=True)
-class Format:
-    format: _string_formats | None = field(default=None)
+class Format(BaseModel):
+    """Pydantic model for string formats.
+
+    Attributes:
+        format: The format of the string.
+
+    """
+
+    format: _string_formats | None = Field(default=None)
 
 
 # Type aliases
-UUIDStr = Annotated[str, Format('uuid')]
-DateTimeStr = Annotated[str, Format('date-time')]
-DateStr = Annotated[str, Format('date')]
+UUIDStr = Annotated[str, Format(format="uuid")]
+DateTimeStr = Annotated[str, Format(format="date-time")]
+DateStr = Annotated[str, Format(format="date")]

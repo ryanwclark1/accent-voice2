@@ -1,106 +1,174 @@
-# Copyright 2023 Accent Communications
+# resources/common/event.py
+from typing import ClassVar
 
-from __future__ import annotations
+from pydantic import UUID4, Field
 
-from collections.abc import Mapping
-
-from .abstract import EventProtocol
-from .types import UUIDStr
+from .abstract import EventProtocol  # Import the protocol
+from .routing_key import escape as escape_key
 
 
 class ServiceEvent(EventProtocol):
-    '''
-    ### Service-level event base class
+    """Base class for service-level events (internal events).
 
-    These events are intended for internal use by services and will never
-    make it through the websocket.
-    '''
+    Args:
+        content (dict | None, optional): The content of the event.
+            Defaults to None.
 
-    def __init__(self, content: Mapping | None = None):
-        self.content = content or {}
+    """
+
+    service: ClassVar[str]  # Should be overridden in subclasses
+    content: dict = {}  # all events will, at least, have content.
+
+    def __init__(self, content: dict | None = None, **data):
+        """Initialize ServiceEvent.
+
+        Args:
+            content (dict): Content of the event.
+
+        """
+        super().__init__(
+            **data, content=content or {}
+        )  # Initialize BaseModel and set content
+
+    @property
+    def required_access(self) -> str:
+        """Returns the required access level (defaults to event name)."""
+        return f"event.{self.name}"
 
 
 class TenantEvent(ServiceEvent):
-    '''
-    ### Tenant-level event base class
+    """Base class for tenant-level events.
 
-    These events are intended for *all* users of the specified tenant.  They will be
-    dispatched to all it's connected users by setting `user_uuid:*` in the headers.
+    Attributes:
+        tenant_uuid: The UUID of the tenant.
 
-    #### Required property:
-        - tenant_uuid
-    '''
+    """
 
-    def __init__(self, content: Mapping | None, tenant_uuid: UUIDStr):
-        super().__init__(content)
-        if tenant_uuid is None:
-            raise ValueError('tenant_uuid must have a value')
-        self.tenant_uuid = str(tenant_uuid)
-        setattr(self, 'user_uuid:*', True)
+    tenant_uuid: UUID4 = Field(..., description="The UUID of the tenant")
+    # user_uuid is not a field here: it is part of the routing
+    # and will be included in the headers and routing key.
 
+    @property
+    def routing_key(self) -> str:
+        """Calculates the routing key, escaping necessary parts.
 
-class UserEvent(TenantEvent):
-    '''
-    ### User-level event base class
+        Returns:
+            str: The routing key.
 
-    These events are intended for a single user from a specific tenant.  They will be
-    dispatched through the websocket to the user by setting `user_uuid:{uuid}`
-    in the headers.
-
-    #### Required properties:
-        - tenant_uuid
-        - user_uuid
-    '''
-
-    def __init__(
-        self,
-        content: Mapping | None,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr | None,
-    ):
-        super().__init__(content, tenant_uuid)
-        delattr(self, 'user_uuid:*')
-        self.user_uuid = str(user_uuid) if user_uuid else None
+        """
+        variables = dict(**self.content)
+        variables.update(vars(self), name=self.name)
+        variables = {
+            key: escape_key(value) if isinstance(value, str) else value
+            for key, value in variables.items()
+        }
+        return self.routing_key_fmt.format(**variables)
 
     @property
     def headers(self) -> dict:
+        """Tenant events do not require user filtering, they go to all tenant.
+
+        Returns:
+             dict: The headers
+
+        """
         headers = super().headers
-        uuid = headers.pop('user_uuid')
+        del headers["content"]
+        return headers
+
+
+class UserEvent(TenantEvent):
+    """Base class for user-level events.
+
+    Attributes:
+        user_uuid: The UUID of the user.  Can be None.
+
+    """
+
+    user_uuid: UUID4 | None = Field(
+        default=None, description="The UUID of the user. Can be None."
+    )
+
+    @property
+    def routing_key(self) -> str:
+        """Calculates the routing key, escaping necessary parts.
+
+        Returns:
+            str: The routing key.
+
+        """
+        variables = dict(**self.content)
+        variables.update(vars(self), name=self.name)
+        variables = {
+            key: escape_key(value) if isinstance(value, str) else value
+            for key, value in variables.items()
+        }
+
+        return self.routing_key_fmt.format(**variables)
+
+    @property
+    def headers(self) -> dict:
+        """Adds user_uuid:{uuid} = True to the headers for user-specific events.
+
+        Returns:
+            dict: Headers of the event, with user filter.
+
+        """
+        headers = super().headers
+        uuid = self.user_uuid
         if uuid:
-            headers[f'user_uuid:{uuid}'] = True
+            headers[f"user_uuid:{uuid}"] = True
+        del headers["content"]
         return headers
 
 
 class MultiUserEvent(TenantEvent):
-    '''
-    ### User-level event base class (targetting multiple users)
+    """Base class for events targeting multiple users within a tenant.
 
-    These events are intended for multiple users from a specific tenant.
-    They will be dispatched through the websocket by setting `user_uuid:{uuid} = True`
-    in the headers for all intended users.
+    Attributes:
+        user_uuids: A list of user UUIDs.
 
-    #### Required properties:
-        - tenant_uuid
-        - list of user_uuids
-    '''
+    """
 
-    __slots__ = ('user_uuids',)
+    user_uuids: list[UUID4] = Field(..., description="List of user UUIDs")
 
-    def __init__(
-        self,
-        content: Mapping | None,
-        tenant_uuid: UUIDStr,
-        user_uuids: list[UUIDStr],
-    ):
-        super().__init__(content, tenant_uuid)
-        delattr(self, 'user_uuid:*')
-        if not isinstance(user_uuids, list):
-            raise ValueError('user_uuids must be a list of uuids')
-        self.user_uuids = [str(user_uuid) for user_uuid in user_uuids]
+    @property
+    def user_uuids_str(self) -> list[str]:
+        """Returns user_uuids as string.
+
+        Returns:
+             list[str]: user_uuids as strings
+
+        """
+        return [str(user_uuid) for user_uuid in self.user_uuids]
+
+    @property
+    def routing_key(self) -> str:
+        """Calculates the routing key, escaping necessary parts.
+
+        Returns:
+            str: The routing key.
+
+        """
+        variables = dict(**self.content)
+        variables.update(vars(self), name=self.name)
+        variables = {
+            key: escape_key(value) if isinstance(value, str) else value
+            for key, value in variables.items()
+        }
+
+        return self.routing_key_fmt.format(**variables)
 
     @property
     def headers(self) -> dict:
+        """Adds user_uuid:{uuid} = True for each user in user_uuids.
+
+        Returns:
+            dict:  The headers, with all user filters.
+
+        """
         headers = super().headers
-        for user_uuid in self.user_uuids:
-            headers[f'user_uuid:{user_uuid}'] = True
+        for user_uuid in self.user_uuids_str:
+            headers[f"user_uuid:{user_uuid}"] = True
+        del headers["content"]
         return headers

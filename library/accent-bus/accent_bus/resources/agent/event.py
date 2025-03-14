@@ -1,115 +1,84 @@
-# Copyright 2023 Accent Communications
+# resources/agent/event.py
+from typing import ClassVar
 
-from __future__ import annotations
+from pydantic import Field
 
-from ..common.event import MultiUserEvent, TenantEvent
-from ..common.types import UUIDStr
-
-
-class AgentCreatedEvent(TenantEvent):
-    """A new agent has been created"""
-
-    service = 'confd'
-    name = 'agent_created'
-    routing_key_fmt = 'config.agent.created'
-
-    def __init__(self, agent_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(agent_id)}
-        super().__init__(content, tenant_uuid)
+from accent_bus.resources.common.event import (  # Import base classes
+    MultiUserEvent,
+    TenantEvent,
+)
 
 
-class AgentDeletedEvent(TenantEvent):
-    """An agent has been deleted"""
+class AgentEvent(TenantEvent):
+    """Base class for Agent events."""
 
-    service = 'confd'
-    name = 'agent_deleted'
-    routing_key_fmt = 'config.agent.deleted'
-
-    def __init__(self, agent_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(agent_id)}
-        super().__init__(content, tenant_uuid)
+    # Tenant UUID is already defined in the parent class.
+    pass  # noqa: PIE790
 
 
-class AgentEditedEvent(TenantEvent):
-    """An agent has been edited"""
+class TenantAgentEvent(AgentEvent):
+    """Base class for Tenant Agent Events."""
 
-    service = 'confd'
-    name = 'agent_edited'
-    routing_key_fmt = 'config.agent.edited'
-
-    def __init__(self, agent_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(agent_id)}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
 
 
-class AgentPausedEvent(MultiUserEvent):
-    """An agent was paused"""
+class AgentCreatedEvent(TenantAgentEvent):
+    """Event for when a new agent has been created."""
 
-    service = 'agentd'
-    name = 'agent_paused'
-    routing_key_fmt = 'status.agent.pause'
-    required_acl_fmt = 'events.statuses.agents'
-
-    def __init__(
-        self,
-        agent_id: int,
-        agent_number: str,
-        queue: str,
-        reason: str,
-        tenant_uuid: UUIDStr,
-        user_uuids: list[UUIDStr],
-    ):
-        content = {
-            'agent_id': agent_id,
-            'agent_number': agent_number,
-            'paused': True,
-            'paused_reason': reason or '',
-            'queue': queue,
-        }
-        super().__init__(content, tenant_uuid, user_uuids)
+    name: ClassVar[str] = "agent_created"
+    routing_key_fmt: ClassVar[str] = "config.agent.created"
+    agent_id: int = Field(alias="id")
 
 
-class AgentUnpausedEvent(MultiUserEvent):
-    """An agent was unpaused"""
+class AgentDeletedEvent(TenantAgentEvent):
+    """Event for when an agent has been deleted."""
 
-    service = 'agentd'
-    name = 'agent_unpaused'
-    routing_key_fmt = 'status.agent.unpause'
-    required_acl_fmt = 'events.statuses.agents'
-
-    def __init__(
-        self,
-        agent_id: int,
-        agent_number: str,
-        queue: str,
-        reason: str,
-        tenant_uuid: UUIDStr,
-        user_uuids: list[UUIDStr],
-    ):
-        content = {
-            'agent_id': agent_id,
-            'agent_number': agent_number,
-            'paused': False,
-            'paused_reason': reason or '',
-            'queue': queue,
-        }
-        super().__init__(content, tenant_uuid, user_uuids)
+    name: ClassVar[str] = "agent_deleted"
+    routing_key_fmt: ClassVar[str] = "config.agent.deleted"
+    agent_id: int = Field(alias="id")
 
 
-class AgentStatusUpdatedEvent(MultiUserEvent):
-    """An agent status has changed"""
+class AgentEditedEvent(TenantAgentEvent):
+    """Event for when an agent has been edited."""
 
-    service = 'calld'
-    name = 'agent_status_update'
-    routing_key_fmt = 'status.agent'
-    required_acl_fmt = 'events.statuses.agents'
+    name: ClassVar[str] = "agent_edited"
+    routing_key_fmt: ClassVar[str] = "config.agent.edited"
+    agent_id: int = Field(alias="id")
 
-    def __init__(
-        self,
-        agent_id: int,
-        status: str,
-        tenant_uuid: UUIDStr,
-        user_uuids: list[UUIDStr],
-    ):
-        content = {'agent_id': int(agent_id), 'status': status}
-        super().__init__(content, tenant_uuid, user_uuids)
+
+class MultiUserAgentEvent(MultiUserEvent):
+    """Base class for Agent events targeting multiple users."""
+
+    service: ClassVar[str] = "agentd"  # Using agentd as in original.
+    # user_uuids is already defined in MultiUserEvent
+
+
+class AgentPausedEvent(MultiUserAgentEvent):
+    """Event for when an agent was paused."""
+
+    name: ClassVar[str] = "agent_paused"
+    routing_key_fmt: ClassVar[str] = "status.agent.pause"
+    agent_id: int
+    agent_number: str
+    queue: str
+    reason: str
+
+
+class AgentUnpausedEvent(MultiUserAgentEvent):
+    """Event for when an agent was unpaused."""
+
+    name: ClassVar[str] = "agent_unpaused"
+    routing_key_fmt: ClassVar[str] = "status.agent.unpause"
+    agent_id: int
+    agent_number: str
+    queue: str
+    reason: str
+
+
+class AgentStatusUpdatedEvent(MultiUserAgentEvent):
+    """Event for when an agent status has changed."""
+
+    name: ClassVar[str] = "agent_status_update"
+    routing_key_fmt: ClassVar[str] = "status.agent"
+    agent_id: int
+    status: str

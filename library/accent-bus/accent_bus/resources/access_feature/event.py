@@ -1,33 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/access_feature/event.py
+from typing import ClassVar
 
-from __future__ import annotations
+from accent_bus.resources.common.event import TenantEvent  # Import base classes
 
-from ..common.event import ServiceEvent
 from .types import AccessFeatureDict
 
 
-class AccessFeatureCreatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'access_feature_created'
-    routing_key_fmt = 'config.access_feature.created'
+class AccessFeatureEvent(TenantEvent):  # Inherit from TenantEvent
+    """Base class for Access Feature events."""
 
-    def __init__(self, access_feature_info: AccessFeatureDict):
-        super().__init__(content=access_feature_info)
+    service: ClassVar[str] = "confd"
+    content: AccessFeatureDict
 
 
-class AccessFeatureDeletedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'access_feature_deleted'
-    routing_key_fmt = 'config.access_feature.deleted'
+class AccessFeatureCreatedEvent(AccessFeatureEvent):
+    """Event triggered when an Access Feature is created."""
 
-    def __init__(self, access_feature_info: AccessFeatureDict):
-        super().__init__(content=access_feature_info)
+    name: ClassVar[str] = "access_feature_created"
+    routing_key_fmt: ClassVar[str] = "config.access_feature.created"
+
+    def __init__(self, access_feature_info: AccessFeatureDict, **data):
+        super().__init__(content=access_feature_info, **data)
 
 
-class AccessFeatureEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'access_feature_edited'
-    routing_key_fmt = 'config.access_feature.edited'
+class AccessFeatureDeletedEvent(AccessFeatureEvent):
+    """Event triggered when an Access Feature is deleted."""
 
-    def __init__(self, access_feature_info: AccessFeatureDict):
-        super().__init__(content=access_feature_info)
+    name: ClassVar[str] = "access_feature_deleted"
+    routing_key_fmt: ClassVar[str] = "config.access_feature.deleted"
+
+    def __init__(self, access_feature_info: AccessFeatureDict, **data):
+        super().__init__(content=access_feature_info, **data)
+
+
+class AccessFeatureEditedEvent(AccessFeatureEvent):
+    """Event triggered when an Access Feature is edited."""
+
+    name: ClassVar[str] = "access_feature_edited"
+    routing_key_fmt: ClassVar[str] = "config.access_feature.edited"
+
+    def __init__(self, access_feature_info: AccessFeatureDict, **data):
+        super().__init__(content=access_feature_info, **data)
