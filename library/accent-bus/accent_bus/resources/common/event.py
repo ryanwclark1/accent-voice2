@@ -1,11 +1,12 @@
 # resources/common/event.py
-from typing import ClassVar
+from typing import ClassVar, Any
 
 from pydantic import UUID4, Field
 
-from .abstract import EventProtocol  # Import the protocol
+# from .abstract import EventProtocol  # Import the protocol. No need to import here
+from .acl import escape as escape_acl
 from .routing_key import escape as escape_key
-
+from .abstract import EventProtocol
 
 class ServiceEvent(EventProtocol):
     """Base class for service-level events (internal events).
@@ -16,7 +17,7 @@ class ServiceEvent(EventProtocol):
     """
 
     service: ClassVar[str]  # Should be overridden in subclasses
-    content: dict = {}  # All events will, at least, have content.
+    content: dict = {}  # All events will have a content
 
     def __init__(self, content: dict | None = None, **data):
         """Initialize ServiceEvent.
@@ -75,14 +76,12 @@ class TenantEvent(ServiceEvent):
     """
 
     tenant_uuid: UUID4 = Field(..., description="The UUID of the tenant")
-    # user_uuid is not a field here: it is part of the routing
-    # and will be included in the headers and routing key.
+    # user_uuid is not a field here
 
     @property
     def headers(self) -> dict:
         """Tenant events do not require user filtering, they go to all tenant."""
         headers = super().headers
-        # del headers["content"]
         headers["tenant_uuid"] = str(self.tenant_uuid)  # Fixed
         return headers
 
