@@ -1,12 +1,13 @@
 # resources/common/event.py
-from typing import ClassVar, Any
+from typing import ClassVar
 
 from pydantic import UUID4, Field
 
-# from .abstract import EventProtocol  # Import the protocol. No need to import here
-from .acl import escape as escape_acl
-from .routing_key import escape as escape_key
 from .abstract import EventProtocol
+
+# from .abstract import EventProtocol  # Import the protocol. No need to import here
+from .routing_key import escape as escape_key
+
 
 class ServiceEvent(EventProtocol):
     """Base class for service-level events (internal events).
