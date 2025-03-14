@@ -16,7 +16,7 @@ class SIPEndpointCreatedEvent(TenantEvent):
     name = "sip_endpoint_created"
     routing_key_fmt = "config.sip_endpoint.created"
 
-    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr) -> None:
+    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr):
         """Initialize event.
 
         Args:
@@ -34,7 +34,7 @@ class SIPEndpointDeletedEvent(TenantEvent):
     name = "sip_endpoint_deleted"
     routing_key_fmt = "config.sip_endpoint.deleted"
 
-    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr) -> None:
+    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr):
         """Initialize the event.
 
         Args:
@@ -52,7 +52,7 @@ class SIPEndpointEditedEvent(TenantEvent):
     name = "sip_endpoint_edited"
     routing_key_fmt = "config.sip_endpoint.edited"
 
-    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr) -> None:
+    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr):
         """Initialize event.
 
         Args:
@@ -70,7 +70,7 @@ class SIPEndpointTemplateCreatedEvent(TenantEvent):
     name = "sip_endpoint_template_created"
     routing_key_fmt = "config.sip_endpoint_template.created"
 
-    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr) -> None:
+    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr):
         """Initialize Event.
 
         Args:
@@ -88,7 +88,7 @@ class SIPEndpointTemplateDeletedEvent(TenantEvent):
     name = "sip_endpoint_template_deleted"
     routing_key_fmt = "config.sip_endpoint_template.deleted"
 
-    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr) -> None:
+    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr):
         """Initialize event.
 
         Args:
@@ -106,7 +106,7 @@ class SIPEndpointTemplateEditedEvent(TenantEvent):
     name = "sip_endpoint_template_edited"
     routing_key_fmt = "config.sip_endpoint_template.edited"
 
-    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr) -> None:
+    def __init__(self, endpoint: EndpointSIPDict, tenant_uuid: UUIDStr):
         """Initialize Event.
 
         Args:
