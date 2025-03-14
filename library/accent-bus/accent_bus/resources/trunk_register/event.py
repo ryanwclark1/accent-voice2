@@ -1,37 +1,36 @@
-# Copyright 2023 Accent Communications
+# resources/trunk_register/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class TrunkRegisterIAXAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'trunk_register_iax_associated'
-    routing_key_fmt = 'config.trunks.registers.iax.updated'
-
-    def __init__(
-        self,
-        trunk_id: int,
-        register_id: int,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {'trunk_id': trunk_id, 'register_id': register_id}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import ServiceEvent, TenantEvent
 
 
-class TrunkRegisterIAXDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'trunk_register_iax_dissociated'
-    routing_key_fmt = 'config.trunks.registers.iax.deleted'
+class TrunkRegisterEvent(TenantEvent):
+    """Base class for Trunk Register events."""
 
-    def __init__(
-        self,
-        trunk_id: int,
-        register_id: int,
-        tenant_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class TrunkRegisterIAXAssociatedEvent(TrunkRegisterEvent):
+    """Event for when an IAX register is associated with a trunk."""
+
+    name: ClassVar[str] = "trunk_register_iax_associated"
+    routing_key_fmt: ClassVar[str] = "config.trunks.registers.iax.updated"
+
+    def __init__(self, trunk_id: int, register_id: int, **data):
+        content = {"trunk_id": trunk_id, "register_id": register_id}
+        super().__init__(content=content, **data)
+
+
+class TrunkRegisterIAXDissociatedEvent(TrunkRegisterEvent):
+    """Event for when an IAX register is dissociated from a trunk."""
+
+    name: ClassVar[str] = "trunk_register_iax_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.trunks.registers.iax.deleted"
+
+    def __init__(self, trunk_id: int, register_id: int, **data):
         content = {
-            'trunk_id': trunk_id,
-            'register_id': register_id,
+            "trunk_id": trunk_id,
+            "register_id": register_id,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)

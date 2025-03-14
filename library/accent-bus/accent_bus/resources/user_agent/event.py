@@ -1,40 +1,39 @@
-# Copyright 2023 Accent Communications
+# resources/user_agent/event.py
+from typing import ClassVar
 
-from ..common.event import UserEvent
-from ..common.types import UUIDStr
+from resources.common.event import UserEvent
 
 
-class UserAgentAssociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_agent_associated'
-    routing_key_fmt = 'config.users.{user_uuid}.agents.updated'
+class UserAgentEvent(UserEvent):
+    """Base class for User Agent events."""
 
-    def __init__(
-        self,
-        agent_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class UserAgentAssociatedEvent(UserAgentEvent):
+    """Event for when an agent is associated with a user."""
+
+    name: ClassVar[str] = "user_agent_associated"
+    routing_key_fmt: ClassVar[str] = "config.users.{user_uuid}.agents.updated"
+
+    def __init__(self, agent_id: int, **data):
         content = {
-            'user_uuid': str(user_uuid),
-            'agent_id': agent_id,
+            "user_uuid": str(data["user_uuid"]),
+            "agent_id": agent_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)
 
 
-class UserAgentDissociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_agent_dissociated'
-    routing_key_fmt = 'config.users.{user_uuid}.agents.deleted'
+class UserAgentDissociatedEvent(UserAgentEvent):
+    """Event for when an agent is dissociated from a user."""
 
-    def __init__(
-        self,
-        agent_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "user_agent_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.users.{user_uuid}.agents.deleted"
+
+    def __init__(self, agent_id: int, **data):
         content = {
-            'user_uuid': str(user_uuid),
-            'agent_id': agent_id,
+            "user_uuid": str(data["user_uuid"]),
+            "agent_id": agent_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)

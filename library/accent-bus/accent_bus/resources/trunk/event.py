@@ -1,43 +1,55 @@
-# Copyright 2023 Accent Communications
+# resources/trunk/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class TrunkCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'trunk_created'
-    routing_key_fmt = 'config.trunk.created'
-
-    def __init__(self, trunk_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(trunk_id)}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import TenantEvent
 
 
-class TrunkDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'trunk_deleted'
-    routing_key_fmt = 'config.trunk.deleted'
+class TrunkEvent(TenantEvent):
+    """Base class for Trunk events."""
 
-    def __init__(self, trunk_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(trunk_id)}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class TrunkEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'trunk_edited'
-    routing_key_fmt = 'config.trunk.edited'
+class TrunkCreatedEvent(TrunkEvent):
+    """Event for when a trunk is created."""
 
-    def __init__(self, trunk_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(trunk_id)}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "trunk_created"
+    routing_key_fmt: ClassVar[str] = "config.trunk.created"
+
+    def __init__(self, trunk_id: int, **data):
+        content = {"id": int(trunk_id)}
+        super().__init__(content=content, **data)
 
 
-class TrunkStatusUpdatedEvent(TenantEvent):
-    service = 'calld'
-    name = 'trunk_status_updated'
-    routing_key_fmt = 'trunks.{id}.status.updated'
+class TrunkDeletedEvent(TrunkEvent):
+    """Event for when a trunk is deleted."""
+
+    name: ClassVar[str] = "trunk_deleted"
+    routing_key_fmt: ClassVar[str] = "config.trunk.deleted"
+
+    def __init__(self, trunk_id: int, **data):
+        content = {"id": int(trunk_id)}
+        super().__init__(content=content, **data)
+
+
+class TrunkEditedEvent(TrunkEvent):
+    """Event for when a trunk is edited."""
+
+    name: ClassVar[str] = "trunk_edited"
+    routing_key_fmt: ClassVar[str] = "config.trunk.edited"
+
+    def __init__(self, trunk_id: int, **data):
+        content = {"id": int(trunk_id)}
+        super().__init__(content=content, **data)
+
+
+class TrunkStatusUpdatedEvent(TrunkEvent):
+    """Event for when a trunk status is updated."""
+
+    service: ClassVar[str] = "calld"  # Different service
+    name: ClassVar[str] = "trunk_status_updated"
+    routing_key_fmt: ClassVar[str] = "trunks.{id}.status.updated"
 
     def __init__(
         self,
@@ -46,13 +58,13 @@ class TrunkStatusUpdatedEvent(TenantEvent):
         endpoint_name: str,
         endpoint_registered: bool,
         endpoint_current_call_count: int,
-        tenant_uuid: UUIDStr,
+        **data,
     ):
         content = {
-            'id': trunk_id,
-            'technology': technology,
-            'name': endpoint_name,
-            'registered': endpoint_registered,
-            'current_call_count': endpoint_current_call_count,
+            "id": trunk_id,
+            "technology": technology,
+            "name": endpoint_name,
+            "registered": endpoint_registered,
+            "current_call_count": endpoint_current_call_count,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)

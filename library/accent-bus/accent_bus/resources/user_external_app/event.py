@@ -1,32 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/user_external_app/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
+
 from .types import ExternalAppDict
 
 
-class UserExternalAppCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'user_external_app_created'
-    routing_key_fmt = 'config.user_external_apps.created'
+class UserExternalAppEvent(TenantEvent):
+    """Base class for User External App events."""
 
-    def __init__(self, app: ExternalAppDict, tenant_uuid: UUIDStr):
-        super().__init__(app, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class UserExternalAppDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'user_external_app_deleted'
-    routing_key_fmt = 'config.user_external_apps.deleted'
+class UserExternalAppCreatedEvent(UserExternalAppEvent):
+    """Event for when an external application is created for a user."""
 
-    def __init__(self, app: ExternalAppDict, tenant_uuid: UUIDStr):
-        super().__init__(app, tenant_uuid)
+    name: ClassVar[str] = "user_external_app_created"
+    routing_key_fmt: ClassVar[str] = "config.user_external_apps.created"
+
+    def __init__(self, app: ExternalAppDict, **data):
+        super().__init__(content=app.model_dump(), **data)
 
 
-class UserExternalAppEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'user_external_app_edited'
-    routing_key_fmt = 'config.user_external_apps.edited'
+class UserExternalAppDeletedEvent(UserExternalAppEvent):
+    """Event for when an external application is deleted for a user."""
 
-    def __init__(self, app: ExternalAppDict, tenant_uuid: UUIDStr):
-        super().__init__(app, tenant_uuid)
+    name: ClassVar[str] = "user_external_app_deleted"
+    routing_key_fmt: ClassVar[str] = "config.user_external_apps.deleted"
+
+    def __init__(self, app: ExternalAppDict, **data):
+        super().__init__(content=app.model_dump(), **data)
+
+
+class UserExternalAppEditedEvent(UserExternalAppEvent):
+    """Event for when an external application is edited for a user."""
+
+    name: ClassVar[str] = "user_external_app_edited"
+    routing_key_fmt: ClassVar[str] = "config.user_external_apps.edited"
+
+    def __init__(self, app: ExternalAppDict, **data):
+        super().__init__(content=app.model_dump(), **data)

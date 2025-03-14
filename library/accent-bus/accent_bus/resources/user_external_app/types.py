@@ -1,9 +1,8 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
-from typing import TypedDict
+# resources/user_external_app/types.py
+from pydantic import BaseModel
 
 
-class ExternalAppDict(TypedDict, total=False):
+class ExternalAppDict(BaseModel):
+    """Represents an external application."""
+
     name: str
