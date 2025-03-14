@@ -10,7 +10,7 @@ class AgentSkillEvent(TenantEvent):
     """Base class for Agent Skill events."""
 
     service: ClassVar[str] = "confd"
-    content: dict  # It will be a dict, since the content is not typed
+    content: dict
 
 
 class AgentSkillAssociatedEvent(AgentSkillEvent):

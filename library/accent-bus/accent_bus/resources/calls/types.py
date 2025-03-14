@@ -1,12 +1,12 @@
 # resources/calls/types.py
-from typing import TypedDict
 
-from pydantic import UUID4
+
+from pydantic import UUID4, BaseModel, Field
 
 from accent_bus.resources.common.types import DateTimeStr
 
 
-class ApplicationCallDict(TypedDict, total=False):
+class ApplicationCallDict(BaseModel):
     """Represents an application call."""
 
     id: str
@@ -18,16 +18,16 @@ class ApplicationCallDict(TypedDict, total=False):
     on_hold: bool
     is_caller: bool
     dialed_extension: str
-    variables: dict[str, str]
+    variables: dict[str, str] = Field(default_factory=dict)
     node_uuid: UUID4
     moh_uuid: UUID4
     muted: bool
-    snoops: dict[str, str]
+    snoops: dict[str, str] = Field(default_factory=dict)
     user_uuid: UUID4
     tenant_uuid: UUID4
 
 
-class ApplicationCallPlayDict(TypedDict, total=False):
+class ApplicationCallPlayDict(BaseModel):
     """Represents an application call play action."""
 
     uuid: UUID4
@@ -35,20 +35,20 @@ class ApplicationCallPlayDict(TypedDict, total=False):
     language: str
 
 
-class ApplicationNodeCallDict(TypedDict, total=False):
+class ApplicationNodeCallDict(BaseModel):
     """Represents a call within an application node."""
 
     id: str
 
 
-class ApplicationNodeDict(TypedDict, total=False):
+class ApplicationNodeDict(BaseModel):
     """Represents an application node."""
 
     uuid: UUID4
-    calls: list[ApplicationNodeCallDict]
+    calls: list[ApplicationNodeCallDict] = Field(default_factory=list)
 
 
-class ApplicationSnoopDict(TypedDict, total=False):
+class ApplicationSnoopDict(BaseModel):
     """Represents an application snoop."""
 
     uuid: UUID4
@@ -56,10 +56,10 @@ class ApplicationSnoopDict(TypedDict, total=False):
     snooping_call_id: str
 
 
-class CallDict(TypedDict, total=False):
+class CallDict(BaseModel):
     """Represents general call information."""
 
-    bridges: list[str]
+    bridges: list[str] = Field(default_factory=list)
     call_id: str
     caller_id_name: str
     caller_id_number: str
@@ -71,18 +71,18 @@ class CallDict(TypedDict, total=False):
     on_hold: bool
     muted: bool
     record_state: str
-    talking_to: dict[str, str]
+    talking_to: dict[str, str] = Field(default_factory=dict)
     user_uuid: UUID4
     is_caller: bool
     is_video: bool
     dialed_extension: str
     line_id: int
-    answer_time: str
-    hangup_time: str
+    answer_time: str | None = None
+    hangup_time: str | None = None
     direction: str
 
 
-class ParkedCallDict(TypedDict, total=False):
+class ParkedCallDict(BaseModel):
     """Represents information about a parked call."""
 
     parking_id: int
@@ -94,10 +94,10 @@ class ParkedCallDict(TypedDict, total=False):
     parker_caller_id_num: str
     slot: str
     parked_at: DateTimeStr
-    timeout_at: DateTimeStr | None
+    timeout_at: DateTimeStr | None = None
 
 
-class UnparkedCallDict(ParkedCallDict, total=False):
+class UnparkedCallDict(ParkedCallDict):
     """Represents details of an unparked call (inherits from ParkedCallDict)."""
 
     retriever_call_id: str
@@ -105,26 +105,26 @@ class UnparkedCallDict(ParkedCallDict, total=False):
     retriever_caller_id_num: str
 
 
-class ParkedCallTimedOutDict(ParkedCallDict, total=False):
+class ParkedCallTimedOutDict(ParkedCallDict):
     """Represents details of a parked call that timed out."""
 
     dialed_extension: str
 
 
-class RelocateDict(TypedDict, total=False):
+class RelocateDict(BaseModel):
     """Represents details of a call relocation."""
 
     uuid: UUID4
     relocated_call: str
     initiator_call: str
     recipient_call: str
-    completions: list[str]
+    completions: list[str] = Field(default_factory=list)
     initiator: str
     timeout: int
     auto_answer: bool
 
 
-class TransferDict(TypedDict, total=False):
+class TransferDict(BaseModel):
     """Represents details of a call transfer."""
 
     id: str

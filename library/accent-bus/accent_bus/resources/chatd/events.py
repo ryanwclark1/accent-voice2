@@ -12,7 +12,7 @@ class ChatdEvent(TenantEvent):
     """Base class for chatd events."""
 
     service: ClassVar[str] = "chatd"
-    content: dict
+    content: dict  # Will be a specific Pydantic model in subclasses
 
 
 class PresenceUpdatedEvent(ChatdEvent):
@@ -20,16 +20,26 @@ class PresenceUpdatedEvent(ChatdEvent):
 
     name: ClassVar[str] = "chatd_presence_updated"
     routing_key_fmt: ClassVar[str] = "chatd.users.{uuid}.presences.updated"
+    content: UserPresenceDict
 
-    def __init__(self, user_presence_data: UserPresenceDict, **data):
+    def __init__(
+        self,
+        user_presence_data: UserPresenceDict,
+        **data,
+    ):
         super().__init__(content=user_presence_data, **data)
 
 
 class ChatdUserEvent(UserEvent):
-    """Base class for chatd User events."""
+    """Base class for chatd User events.
+
+    Args:
+        content (dict): Content of the event.
+
+    """
 
     service: ClassVar[str] = "chatd"
-    content: dict
+    content: dict  # Will be specified on subclasses
 
 
 class UserRoomCreatedEvent(ChatdUserEvent):
@@ -37,8 +47,13 @@ class UserRoomCreatedEvent(ChatdUserEvent):
 
     name: ClassVar[str] = "chatd_user_room_created"
     routing_key_fmt: ClassVar[str] = "chatd.users.{user_uuid}.rooms.created"
+    content: RoomDict
 
-    def __init__(self, room_data: RoomDict, **data):
+    def __init__(
+        self,
+        room_data: RoomDict,
+        **data,
+    ):
         super().__init__(content=room_data, **data)
 
 
@@ -50,8 +65,14 @@ class UserRoomMessageCreatedEvent(ChatdUserEvent):
         "chatd.users.{user_uuid}.rooms.{room_uuid}.messages.created"
     )
     room_uuid: str
+    content: MessageDict
 
-    def __init__(self, message_data: MessageDict, room_uuid: UUID4, **data):
+    def __init__(
+        self,
+        message_data: MessageDict,
+        room_uuid: UUID4,
+        **data,
+    ):
         super().__init__(content=message_data, **data)
         if room_uuid is None:
             raise ValueError("room_uuid must have a value")

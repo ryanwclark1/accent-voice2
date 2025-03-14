@@ -1,7 +1,7 @@
 # resources/call_logd/events.py
 from typing import ClassVar
 
-from accent_bus.resources.common.event import TenantEvent  # Import base classes
+from accent_bus.resources.common.event import TenantEvent
 
 from .types import CallLogExportDataDict
 
@@ -18,8 +18,13 @@ class CallLogExportCreatedEvent(CallLogdEvent):
 
     name: ClassVar[str] = "call_logd_export_created"
     routing_key_fmt: ClassVar[str] = "call_logd.export.created"
+    content: CallLogExportDataDict
 
-    def __init__(self, export_data: CallLogExportDataDict, **data):
+    def __init__(
+        self,
+        export_data: CallLogExportDataDict,
+        **data,
+    ):
         super().__init__(content=export_data, **data)
 
 
@@ -28,8 +33,13 @@ class CallLogExportUpdatedEvent(CallLogdEvent):
 
     name: ClassVar[str] = "call_logd_export_updated"
     routing_key_fmt: ClassVar[str] = "call_logd.export.updated"
+    content: CallLogExportDataDict
 
-    def __init__(self, export_data: CallLogExportDataDict, **data):
+    def __init__(
+        self,
+        export_data: CallLogExportDataDict,
+        **data,
+    ):
         super().__init__(content=export_data, **data)
 
 
@@ -38,6 +48,11 @@ class CallLogRetentionUpdatedEvent(CallLogdEvent):
 
     name: ClassVar[str] = "call_logd_retention_updated"
     routing_key_fmt: ClassVar[str] = "call_logd.retention.updated"
+    content: CallLogExportDataDict
 
-    def __init__(self, retention_data: CallLogExportDataDict, **data):
+    def __init__(
+        self,
+        retention_data: CallLogExportDataDict,
+        **data,
+    ):
         super().__init__(content=retention_data, **data)

@@ -1,14 +1,16 @@
 # resources/common/abstract.py
 import logging
-from typing import ClassVar
+from typing import ClassVar, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
+# Define a TypeVar for the content.  This is the key!
+ContentType = TypeVar("ContentType", bound=BaseModel)
 
 # --- Event Protocol ---
-class EventProtocol(BaseModel):
+class EventProtocol(BaseModel, Generic[ContentType]):
     """Protocol definition for events.
 
     Ensures all events have necessary properties and methods.
@@ -18,7 +20,7 @@ class EventProtocol(BaseModel):
         arbitrary_types_allowed=True
     )  # Needed for ClassVar, routing and acl.
 
-    content: dict
+    content: ContentType
     name: ClassVar[str]
     routing_key_fmt: ClassVar[str]
     required_acl_fmt: ClassVar[str]

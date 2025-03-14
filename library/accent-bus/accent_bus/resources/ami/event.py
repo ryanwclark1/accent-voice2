@@ -1,7 +1,15 @@
 # resources/ami/event.py
 from typing import ClassVar
 
+from pydantic import BaseModel
+
 from accent_bus.resources.common.event import ServiceEvent
+
+
+class AMIEventContent(BaseModel):
+    """Content of the AMI Event."""
+
+    variables: dict[str, str]
 
 
 class AMIEvent(ServiceEvent):
@@ -18,12 +26,12 @@ class AMIEvent(ServiceEvent):
     service: ClassVar[str] = "amid"
     name: ClassVar[str] = "{ami_event}"
     routing_key_fmt: ClassVar[str] = "ami.{name}"
-    content: dict
+    content: AMIEventContent
 
     def __init__(self, ami_event: str, variables: dict[str, str], **data):
-        content = variables
         self.name = self.name.format(ami_event=ami_event)
-        super().__init__(content=content, **data)
+        content = AMIEventContent(variables=variables)
+        super().__init__(content=content.model_dump(), **data)
 
     @property
     def routing_key(self) -> str:

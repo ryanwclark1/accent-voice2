@@ -4,47 +4,31 @@ from typing import ClassVar
 from pydantic import UUID4, Field
 
 from .abstract import EventProtocol
-
-# from .abstract import EventProtocol  # Import the protocol. No need to import here
+from .acl import escape as escape_acl
 from .routing_key import escape as escape_key
 
 
-class ServiceEvent(EventProtocol):
-    """Base class for service-level events (internal events).
-
-    Args:
-        content (dict): Content of the event.
-
-    """
+class ServiceEvent(EventProtocol[dict]):  # ServiceEvent uses a dict for content
+    """Base class for service-level events (internal events)."""
 
     service: ClassVar[str]  # Should be overridden in subclasses
-    content: dict = {}  # All events will have a content
 
     def __init__(self, content: dict | None = None, **data):
-        """Initialize ServiceEvent.
-
-        Args:
-            content (dict, optional): Content of the event. Defaults to None.
-            **data: attributes of the event.
-
-        """
-        super().__init__(
-            **data, content=content or {}
-        )  # Initialize BaseModel and set content
+        super().__init__(content=content or {}, **data)
 
     @property
     def required_access(self) -> str:
-        """Returns the required access level (defaults to event name)."""
+        """Returns the required access level for the event.
+
+        Returns:
+            str: A string representing the required access level in the format "event.<event_name>".
+
+        """
         return f"event.{self.name}"
 
     @property
     def routing_key(self) -> str:
-        """Calculates the routing key, escaping necessary parts.
-
-        Returns:
-            str: The routing key.
-
-        """
+        """Calculates the routing key, escaping necessary parts."""
         variables = dict(**self.content)
         variables.update(vars(self), name=self.name)
         variables = {
@@ -55,45 +39,27 @@ class ServiceEvent(EventProtocol):
 
     @property
     def headers(self) -> dict:
-        """Generate the headers for the event, adding necessary keys and values.
-
-        Removes the 'content' key, as it's not needed in headers.
-
-        Returns:
-            dict: A dictionary containing header information.
-
-        """
+        """Generates headers, excluding 'content'."""
         headers = super().headers
         del headers["content"]
         return headers
 
 
 class TenantEvent(ServiceEvent):
-    """Base class for tenant-level events.
-
-    Attributes:
-        tenant_uuid: The UUID of the tenant.
-
-    """
+    """Base class for tenant-level events."""
 
     tenant_uuid: UUID4 = Field(..., description="The UUID of the tenant")
-    # user_uuid is not a field here
 
     @property
     def headers(self) -> dict:
-        """Tenant events do not require user filtering, they go to all tenant."""
+        """Adds tenant_uuid to headers."""
         headers = super().headers
-        headers["tenant_uuid"] = str(self.tenant_uuid)  # Fixed
+        headers["tenant_uuid"] = str(self.tenant_uuid)
         return headers
 
 
 class UserEvent(TenantEvent):
-    """Base class for user-level events.
-
-    Attributes:
-        user_uuid: The UUID of the user.  Can be None.
-
-    """
+    """Base class for user-level events."""
 
     user_uuid: UUID4 | None = Field(
         default=None, description="The UUID of the user. Can be None."
@@ -101,34 +67,27 @@ class UserEvent(TenantEvent):
 
     @property
     def headers(self) -> dict:
-        """Adds user_uuid:{uuid} = True to the headers for user-specific events."""
+        """Adds user_uuid:{uuid} = True to headers."""
         headers = super().headers
-        uuid = self.user_uuid
-        if uuid:
-            headers[f"user_uuid:{uuid}"] = True
-        # del headers["content"]
+        if self.user_uuid:
+            headers[f"user_uuid:{self.user_uuid}"] = True
         return headers
 
 
 class MultiUserEvent(TenantEvent):
-    """Base class for events targeting multiple users within a tenant.
-
-    Attributes:
-        user_uuids: A list of user UUIDs.
-
-    """
+    """Base class for events targeting multiple users."""
 
     user_uuids: list[UUID4] = Field(..., description="List of user UUIDs")
 
     @property
     def user_uuids_str(self) -> list[str]:
+        """Returns user_uuids as strings."""
         return [str(user_uuid) for user_uuid in self.user_uuids]
 
     @property
     def headers(self) -> dict:
-        """Adds user_uuid:{uuid} = True for each user in user_uuids."""
+        """Adds user_uuid:{uuid} = True for each user."""
         headers = super().headers
         for user_uuid in self.user_uuids_str:
             headers[f"user_uuid:{user_uuid}"] = True
-        # del headers["content"]
         return headers

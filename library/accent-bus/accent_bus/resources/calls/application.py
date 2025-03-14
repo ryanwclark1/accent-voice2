@@ -1,7 +1,7 @@
 # resources/calls/application.py
 from typing import Any, ClassVar
 
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel
 
 from accent_bus.resources.common.event import TenantEvent, UserEvent
 
@@ -14,15 +14,7 @@ from .types import (
 
 
 class _ApplicationMixin:
-    """Mixin for application-related events.
-
-    Args:
-        content: Content of the event.
-        application_uuid (UUID4): Application UUID.
-        *args:
-        **kwargs:
-
-    """
+    """Mixin for application-related events."""
 
     def __init__(
         self,
@@ -31,10 +23,20 @@ class _ApplicationMixin:
         *args: Any,
         **kwargs: Any,
     ):
-        super().__init__(content, *args, **kwargs)
+        super().__init__(content, *args, **kwargs)  # type: ignore[call-arg]
         if application_uuid is None:
-            raise ValueError("application_uuid must have a value")
+            msg = "application_uuid must have a value"
+            raise ValueError(msg)
         self.application_uuid = str(application_uuid)
+
+
+class ApplicationCallDTMFReceivedContent(BaseModel):
+    """Content for Application Call DTMF Received Event."""
+
+    application_uuid: str
+    call_id: str
+    conversation_id: str
+    dtmf: str
 
 
 class ApplicationCallDTMFReceivedEvent(_ApplicationMixin, TenantEvent):
@@ -45,7 +47,7 @@ class ApplicationCallDTMFReceivedEvent(_ApplicationMixin, TenantEvent):
     routing_key_fmt: ClassVar[str] = (
         "applications.{application_uuid}.calls.{call_id}.dtmf.created"
     )
-    content: dict
+    content: ApplicationCallDTMFReceivedContent
 
     def __init__(
         self,
@@ -55,13 +57,13 @@ class ApplicationCallDTMFReceivedEvent(_ApplicationMixin, TenantEvent):
         application_uuid: UUID4,
         **data,
     ):
-        content = {
-            "application_uuid": str(application_uuid),
-            "call_id": call_id,
-            "conversation_id": conversation_id,
-            "dtmf": dtmf,
-        }
-        super().__init__(content, application_uuid, **data)
+        content = ApplicationCallDTMFReceivedContent(
+            application_uuid=str(application_uuid),
+            call_id=call_id,
+            conversation_id=conversation_id,
+            dtmf=dtmf,
+        )
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallEnteredEvent(_ApplicationMixin, UserEvent):
@@ -76,7 +78,7 @@ class ApplicationCallEnteredEvent(_ApplicationMixin, UserEvent):
         self, application_call: ApplicationCallDict, application_uuid: UUID4, **data
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallInitiatedEvent(_ApplicationMixin, UserEvent):
@@ -91,7 +93,7 @@ class ApplicationCallInitiatedEvent(_ApplicationMixin, UserEvent):
         self, application_call: ApplicationCallDict, application_uuid: UUID4, **data
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallDeletedEvent(_ApplicationMixin, UserEvent):
@@ -108,7 +110,7 @@ class ApplicationCallDeletedEvent(_ApplicationMixin, UserEvent):
         self, application_call: ApplicationCallDict, application_uuid: UUID4, **data
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallUpdatedEvent(_ApplicationMixin, UserEvent):
@@ -128,7 +130,7 @@ class ApplicationCallUpdatedEvent(_ApplicationMixin, UserEvent):
         **data,
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallAnsweredEvent(_ApplicationMixin, UserEvent):
@@ -145,7 +147,7 @@ class ApplicationCallAnsweredEvent(_ApplicationMixin, UserEvent):
         self, application_call: ApplicationCallDict, application_uuid: UUID4, **data
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallProgressStartedEvent(_ApplicationMixin, UserEvent):
@@ -162,7 +164,7 @@ class ApplicationCallProgressStartedEvent(_ApplicationMixin, UserEvent):
         self, application_call: ApplicationCallDict, application_uuid: UUID4, **data
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationCallProgressStoppedEvent(_ApplicationMixin, UserEvent):
@@ -179,7 +181,7 @@ class ApplicationCallProgressStoppedEvent(_ApplicationMixin, UserEvent):
         self, application_call: ApplicationCallDict, application_uuid: UUID4, **data
     ):
         content = {"application_uuid": str(application_uuid), "call": application_call}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationDestinationNodeCreatedEvent(_ApplicationMixin, TenantEvent):
@@ -197,7 +199,7 @@ class ApplicationDestinationNodeCreatedEvent(_ApplicationMixin, TenantEvent):
         **data,
     ):
         content = {"application_uuid": str(application_uuid), "node": node}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationNodeCreatedEvent(_ApplicationMixin, TenantEvent):
@@ -210,7 +212,7 @@ class ApplicationNodeCreatedEvent(_ApplicationMixin, TenantEvent):
 
     def __init__(self, node: ApplicationNodeDict, application_uuid: UUID4, **data):
         content = {"application_uuid": str(application_uuid), "node": node}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationNodeUpdatedEvent(_ApplicationMixin, TenantEvent):
@@ -225,7 +227,7 @@ class ApplicationNodeUpdatedEvent(_ApplicationMixin, TenantEvent):
 
     def __init__(self, node: ApplicationNodeDict, application_uuid: UUID4, **data):
         content = {"application_uuid": str(application_uuid), "node": node}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationNodeDeletedEvent(_ApplicationMixin, TenantEvent):
@@ -245,7 +247,7 @@ class ApplicationNodeDeletedEvent(_ApplicationMixin, TenantEvent):
         **data,
     ):
         content = {"application_uuid": str(application_uuid), "node": node}
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationPlaybackCreatedEvent(_ApplicationMixin, TenantEvent):
@@ -272,7 +274,7 @@ class ApplicationPlaybackCreatedEvent(_ApplicationMixin, TenantEvent):
             "conversation_id": conversation_id,
             "playback": playback,
         }
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationPlaybackDeletedEvent(_ApplicationMixin, TenantEvent):
@@ -299,7 +301,7 @@ class ApplicationPlaybackDeletedEvent(_ApplicationMixin, TenantEvent):
             "conversation_id": conversation_id,
             "playback": playback,
         }
-        super().__init__(content, application_uuid, **data)
+        super().__init__(content=content, application_uuid=application_uuid, **data)
 
 
 class ApplicationSnoopCreatedEvent(_ApplicationMixin, TenantEvent):
@@ -314,59 +316,3 @@ class ApplicationSnoopCreatedEvent(_ApplicationMixin, TenantEvent):
 
     def __init__(self, snoop: ApplicationSnoopDict, application_uuid: UUID4, **data):
         content = {"application_uuid": str(application_uuid), "snoop": snoop}
-        super().__init__(content, application_uuid, **data)
-
-
-class ApplicationSnoopUpdatedEvent(_ApplicationMixin, TenantEvent):
-    """Event for when a snoop is updated within an application."""
-
-    service: ClassVar[str] = "calld"
-    name: ClassVar[str] = "application_snoop_updated"
-    routing_key_fmt: ClassVar[str] = (
-        "applications.{application_uuid}.snoops.{snoop[uuid]}.updated"
-    )
-    content: dict
-
-    def __init__(
-        self,
-        snoop: ApplicationSnoopDict,
-        application_uuid: UUID4,
-        **data,
-    ):
-        content = {"application_uuid": str(application_uuid), "snoop": snoop}
-        super().__init__(content, application_uuid, **data)
-
-
-class ApplicationSnoopDeletedEvent(_ApplicationMixin, TenantEvent):
-    """Event for when a snoop is deleted within an application."""
-
-    service: ClassVar[str] = "calld"
-    name: ClassVar[str] = "application_snoop_deleted"
-    routing_key_fmt: ClassVar[str] = (
-        "applications.{application_uuid}.snoops.{snoop[uuid]}.deleted"
-    )
-    content: dict
-
-    def __init__(
-        self,
-        snoop: ApplicationSnoopDict,
-        application_uuid: UUID4,
-        **data,
-    ):
-        content = {"application_uuid": str(application_uuid), "snoop": snoop}
-        super().__init__(content, application_uuid, **data)
-
-
-class ApplicationUserOutgoingCallCreatedEvent(_ApplicationMixin, UserEvent):
-    """Event for when an outgoing call is created for a user within an application."""
-
-    service: ClassVar[str] = "calld"
-    name: ClassVar[str] = "application_user_outgoing_call_created"
-    routing_key_fmt: ClassVar[str] = (
-        "applications.{application_uuid}.user_outgoing_call.{call[id]}.created"
-    )
-    content: dict
-
-    def __init__(self, call: ApplicationCallDict, application_uuid: UUID4, **data):
-        content = {"application_uuid": str(application_uuid), "call": call}
-        super().__init__(content, application_uuid, **data)

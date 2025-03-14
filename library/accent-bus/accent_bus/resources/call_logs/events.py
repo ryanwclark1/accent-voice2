@@ -1,28 +1,35 @@
-# Copyright 2023 Accent Communications
+# resources/call_logs/events.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent, UserEvent
-from ..common.types import UUIDStr
-from .types import CDRDataDict
+from accent_bus.resources.common.event import TenantEvent, UserEvent
+
+from .types import CDRDataDict  # Assuming this is now a Pydantic model
 
 
-class CallLogCreatedEvent(TenantEvent):
-    service = 'call_logd'
-    name = 'call_log_created'
-    routing_key_fmt = 'call_log.created'
+class CallLogEvent(TenantEvent):
+    """Base class for call log events."""
 
-    def __init__(self, cdr_data: CDRDataDict, tenant_uuid: UUIDStr):
-        super().__init__(cdr_data, tenant_uuid)
+    service: ClassVar[str] = "call_logd"
+    content: CDRDataDict
+
+
+class CallLogCreatedEvent(CallLogEvent):
+    """Event for when a call log is created."""
+
+    name: ClassVar[str] = "call_log_created"
+    routing_key_fmt: ClassVar[str] = "call_log.created"
+
+    def __init__(self, cdr_data: CDRDataDict, **data):
+        super().__init__(content=cdr_data, **data)
 
 
 class CallLogUserCreatedEvent(UserEvent):
-    service = 'call_logd'
-    name = 'call_log_user_created'
-    routing_key_fmt = 'call_log.user.{user_uuid}.created'
+    """Event for when a call log is created, targeted at a specific user."""
 
-    def __init__(
-        self,
-        cdr_data: CDRDataDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        super().__init__(cdr_data, tenant_uuid, user_uuid)
+    name: ClassVar[str] = "call_log_user_created"
+    routing_key_fmt: ClassVar[str] = "call_log.user.{user_uuid}.created"
+    service: ClassVar[str] = "call_logd"
+    content: CDRDataDict
+
+    def __init__(self, cdr_data: CDRDataDict, **data):
+        super().__init__(content=cdr_data, **data)

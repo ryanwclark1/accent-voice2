@@ -1,17 +1,33 @@
 # resources/chatd/types.py
-from typing import TypedDict
 
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel, Field
 
 
-class LinePresenceDict(TypedDict, total=False):
+class LinePresenceDict(BaseModel):
     """Represents presence information for a line."""
 
     id: int
     state: str
 
 
-class MessageDict(TypedDict, total=False):
+class RoomUserDict(BaseModel):
+    """Represents a user within a chat room."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
+    accent_uuid: UUID4
+
+
+class RoomDict(BaseModel):
+    """Represents a chat room."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
+    name: str
+    users: list[RoomUserDict] = Field(default_factory=list)
+
+
+class MessageDict(BaseModel):
     """Represents a chat message."""
 
     uuid: UUID4
@@ -21,27 +37,10 @@ class MessageDict(TypedDict, total=False):
     tenant_uuid: UUID4
     accent_uuid: UUID4
     created_at: str
-    room: "RoomDict"  # Forward reference for circular dependency
+    room: RoomDict
 
 
-class RoomUserDict(TypedDict, total=False):
-    """Represents a user within a chat room."""
-
-    uuid: UUID4
-    tenant_uuid: UUID4
-    accent_uuid: UUID4
-
-
-class RoomDict(TypedDict, total=False):
-    """Represents a chat room."""
-
-    uuid: UUID4
-    tenant_uuid: UUID4
-    name: str
-    users: list[RoomUserDict]
-
-
-class UserPresenceDict(TypedDict, total=False):
+class UserPresenceDict(BaseModel):
     """Represents the presence status of a user."""
 
     uuid: UUID4
@@ -53,4 +52,4 @@ class UserPresenceDict(TypedDict, total=False):
     mobile: bool
     do_not_disturb: bool
     connected: bool
-    lines: list[LinePresenceDict]
+    lines: list[LinePresenceDict] = Field(default_factory=list)

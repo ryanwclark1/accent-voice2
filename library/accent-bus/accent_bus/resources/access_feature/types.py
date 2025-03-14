@@ -2,7 +2,7 @@
 from pydantic import BaseModel, Field
 
 
-class AccessFeatureData(BaseModel):
+class AccessFeatureDict(BaseModel):
     """Represents the data for an Access Feature."""
 
     id: int = Field(..., description="The unique ID of the access feature.")

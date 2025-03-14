@@ -821,6 +821,24 @@ dependencies = [
     { name = "pydantic" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+    { name = "types-cachetools" },
+]
+test = [
+    { name = "coverage" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aio-pika", specifier = ">=9.5.5" },
@@ -828,7 +846,22 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+    { name = "types-cachetools", specifier = ">=5.5.0.20240820" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+]
 
 [[package]]
 name = "accent-call-logd"

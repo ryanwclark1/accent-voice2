@@ -23,7 +23,7 @@ class TenantCreatedEvent(AuthTenantEvent):
     content: TenantDict  # Using the Pydantic model
 
     def __init__(self, tenant_data: TenantDict, **data):
-        super().__init__(content=tenant_data.model_dump(), **data)
+        super().__init__(content=tenant_data, **data)
 
 
 class TenantContent(BaseModel):

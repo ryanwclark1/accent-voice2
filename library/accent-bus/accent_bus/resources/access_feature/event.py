@@ -1,16 +1,17 @@
 # resources/access_feature/event.py
 from typing import ClassVar
 
-from accent_bus.resources.common.event import TenantEvent  # Import base classes
+# from pydantic import BaseModel  <-- No longer needed here
+from accent_bus.resources.common.event import TenantEvent
 
-from .types import AccessFeatureData  # Import the Pydantic model
+from .types import AccessFeatureDict  # Import the Pydantic model
 
 
 class AccessFeatureEvent(TenantEvent):
     """Base class for Access Feature events."""
 
     service: ClassVar[str] = "confd"
-    content: AccessFeatureData  # Use Pydantic Model
+    content: AccessFeatureDict
 
 
 class AccessFeatureCreatedEvent(AccessFeatureEvent):
@@ -19,10 +20,11 @@ class AccessFeatureCreatedEvent(AccessFeatureEvent):
     name: ClassVar[str] = "access_feature_created"
     routing_key_fmt: ClassVar[str] = "config.access_feature.created"
 
-    def __init__(self, access_feature_info: AccessFeatureData, **data):
+    def __init__(self, access_feature_info: AccessFeatureDict, **data):
         super().__init__(
             content=access_feature_info, **data
         )  # Pass the Pydantic model directly.
+        # Crucially, we are passing access_feature_info, not the dict.
 
 
 class AccessFeatureDeletedEvent(AccessFeatureEvent):
@@ -31,7 +33,7 @@ class AccessFeatureDeletedEvent(AccessFeatureEvent):
     name: ClassVar[str] = "access_feature_deleted"
     routing_key_fmt: ClassVar[str] = "config.access_feature.deleted"
 
-    def __init__(self, access_feature_info: AccessFeatureData, **data):
+    def __init__(self, access_feature_info: AccessFeatureDict, **data):
         super().__init__(content=access_feature_info, **data)  # Pass the model
 
 
@@ -41,5 +43,5 @@ class AccessFeatureEditedEvent(AccessFeatureEvent):
     name: ClassVar[str] = "access_feature_edited"
     routing_key_fmt: ClassVar[str] = "config.access_feature.edited"
 
-    def __init__(self, access_feature_info: AccessFeatureData, **data):
+    def __init__(self, access_feature_info: AccessFeatureDict, **data):
         super().__init__(content=access_feature_info, **data)  # Pass the model
