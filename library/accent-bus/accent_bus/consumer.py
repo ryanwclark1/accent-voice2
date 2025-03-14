@@ -36,7 +36,7 @@ class BusConsumer(AccentEventMixin, ConsumerMixin, Base):
         exchange_type: str = "",
         subscribe: SubscribeExchangeDict | None = None,
         **kwargs: Any,
-    ) -> None:
+    ):
         """Initialize the BusConsumer.
 
         Args:

@@ -11,7 +11,8 @@ from collections import defaultdict
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Protocol, Self, TypedDict
+from types import TracebackType  # Import TracebackType
+from typing import Any, ClassVar, NamedTuple, Protocol, Self, TypedDict
 
 import aiopika
 from aiopika import (
@@ -22,23 +23,17 @@ from aiopika import (
     RobustExchange,
     RobustQueue,
 )
+from aiopika.abc import AbstractRobustConnection
 
 from .base import BaseProtocol
-
-if TYPE_CHECKING:
-    from aiopika.abc import AbstractRobustConnection
-
-    from .collectd.common import CollectdEvent
-    from .resources.common.abstract import EventProtocol
-
-EventHandlerType = Callable[[dict], None]
+from .collectd.common import CollectdEvent
+from .resources.common.abstract import EventProtocol
 
 
 class BusThread(NamedTuple):
     """Thread information."""
 
     # Removed for asyncio
-
 
 class SubscribeExchangeDict(TypedDict):
     """Exchange to subscribe."""
@@ -145,6 +140,7 @@ class ConsumerMixin(BaseProtocol):
         self.__queue: RobustQueue | None = None
         self.log.debug("setting consuming exchange as '%s'", self.__exchange_name)
 
+
     async def consumer_connected(self) -> bool:
         """Check if the consumer is connected.
 
@@ -171,6 +167,7 @@ class ConsumerMixin(BaseProtocol):
                 self.__exchange_name, self.__exchange_type, durable=True
             )
         return self.__exchange
+
 
     async def _get_queue(self) -> RobustQueue:
         """Return or create the queue.
@@ -206,9 +203,9 @@ class ConsumerMixin(BaseProtocol):
         else:
             await queue.bind(exchange, arguments=headers)
 
-    async def __remove_binding(
-        self, routing_key: str | None, headers: dict | None = None
-    ) -> None:
+
+
+    async def __remove_binding(self,  routing_key: str | None, headers: dict | None = None) -> None:
         """Remove a binding.
 
         Args:
@@ -224,12 +221,9 @@ class ConsumerMixin(BaseProtocol):
                 await queue.unbind(exchange, routing_key=routing_key)
             else:
                 await queue.unbind(exchange, arguments=headers)
-        except (
-            aiopika.exceptions.ChannelInvalidStateError
-        ):  # pragma: no cover - defensive
-            self.log.warning(
-                "Attempted to unbind from an exchange on a closed channel."
-            )
+        except aiopika.exceptions.ChannelInvalidStateError: # pragma: no cover - defensive
+            self.log.warning("Attempted to unbind from an exchange on a closed channel.")
+
 
     async def __dispatch(
         self, event_name: str, payload: dict, headers: dict | None = None
@@ -261,6 +255,7 @@ class ConsumerMixin(BaseProtocol):
                     event_name,
                 )
 
+
     def __extract_event_from_message(self, message: Message) -> tuple[str, dict, dict]:
         """Extract event information from a message.
 
@@ -289,9 +284,7 @@ class ConsumerMixin(BaseProtocol):
 
         if "name" in headers:
             event_name = headers["name"]
-        elif (
-            isinstance(payload, dict) and "name" in payload
-        ):  # pragma: no cover - defensive (kombu-specific check)
+        elif isinstance(payload, dict) and "name" in payload:  # pragma: no cover - defensive (kombu-specific check)
             event_name = payload["name"]
         else:
             msg = "Received invalid messsage; no event name could be found."
@@ -324,7 +317,7 @@ class ConsumerMixin(BaseProtocol):
 
         await self.__create_binding(headers, routing_key)
 
-        subscription = Subscription(handler, None)
+        subscription = Subscription(handler, None) # Remove binding
         self.__subscriptions[event_name].append(subscription)
         self.log.debug(
             "Registered handler '%s' to event '%s'",
@@ -348,10 +341,8 @@ class ConsumerMixin(BaseProtocol):
         for subscription in subscriptions:
             if subscription.handler == handler:
                 self.__subscriptions[event_name].remove(subscription)
-                await self.__remove_binding(
-                    routing_key=subscription.binding,
-                    headers=subscription.binding.arguments,
-                )  # type: ignore[attr-defined]
+                # await self.__remove_binding(routing_key=subscription.binding, headers=subscription.binding.arguments) # type: ignore[attr-defined]
+                await self.__remove_binding(routing_key=routing_key, headers=headers) # Remove the binding
                 self.log.debug(
                     "Unregistered handler '%s' from '%s'",
                     getattr(handler, "__name__", handler),
@@ -371,13 +362,14 @@ class ConsumerMixin(BaseProtocol):
         """Connects to the AMQP broker."""
         self.__connection = await aiopika.connect_robust(self.url)
         self.__channel = await self.__connection.channel()
-        await self.__channel.set_qos(prefetch_count=1)  # Fair dispatch of messages.
+        await self.__channel.set_qos(prefetch_count=1) # Fair dispatch of messages.
         exchange = await self._get_exchange()
         queue = await self._get_queue()
 
         # Declaring queue
         await queue.bind(exchange)  # Bind to the default exchange.
         await queue.consume(self.__on_message_received)
+
 
     async def __on_message_received(self, message: Message) -> None:
         """Handle received messages.
@@ -411,6 +403,7 @@ class ConsumerMixin(BaseProtocol):
             interval,
         )
 
+
     async def close(self) -> None:
         """Closes the connection."""
         if self.__connection:
@@ -431,7 +424,7 @@ class ConsumerMixin(BaseProtocol):
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_tb: TracebackType | None
     ) -> None:
         """Asynchronous context manager exit.
 
@@ -472,6 +465,7 @@ class PublisherMixin(BaseProtocol):
         else:
             exchange_name = self._default_exchange_name
             exchange_type = self._default_exchange_type
+
 
         self.__connection: AbstractRobustConnection | None = None
         self.__channel: Channel | None = None
@@ -667,7 +661,7 @@ class QueuePublisherMixin(PublisherMixin, ThreadableProtocol):
                     await publish(payload, headers=headers, routing_key=routing_key)
                 self.__queue.task_done()
             except aiopika.exceptions.ChannelInvalidStateError:
-                self.log.exception(
+                self.log.error(
                     "Channel closed while processing the queue"
                 )  # pragma: no cover - defensive
             except Exception as e:
@@ -928,3 +922,4 @@ class CollectdMixin:
         collectd_payload: str = self.__generate_payload(event)
 
         return headers, collectd_payload, routing_key
+

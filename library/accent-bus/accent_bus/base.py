@@ -84,7 +84,7 @@ class BaseProtocol(Protocol):
 
     def _marshal(
         self,
-        event: EventProtocol,
+        event: EventProtocol,  # Use the correct EventProtocol
         headers: dict | None,
         payload: dict | None,
         routing_key: str | None = None,
@@ -106,7 +106,7 @@ class BaseProtocol(Protocol):
         self,
         exc: type[BaseException] | None,
         exc_value: BaseException | None,
-        traceback: TracebackType | None,
+        traceback: TracebackType | None,  # Corrected variable name
     ) -> None:
         """Exit the context."""
         ...
@@ -129,13 +129,18 @@ class Base(BaseProtocol):
         """Initialize the Base class.
 
         Args:
-            name (str, optional): The name of the consumer/publisher. Defaults to class name.
-            username (str, optional): The username for AMQP connection. Defaults to 'guest'.
-            password (str, optional): The password for AMQP connection. Defaults to 'guest'.
+            name (str, optional): The name of the consumer/publisher.
+                Defaults to class name.
+            username (str, optional): The username for AMQP connection.
+                Defaults to 'guest'.
+            password (str, optional): The password for AMQP connection.
+                Defaults to 'guest'.
             host (str, optional): The AMQP host. Defaults to 'localhost'.
             port (int, optional): The AMQP port. Defaults to 5672.
-            exchange_name (str, optional): The default exchange name. Defaults to ''.
-            exchange_type (str, optional): The default exchange type. Defaults to ''.
+            exchange_name (str, optional): The default exchange name.
+                Defaults to ''.
+            exchange_type (str, optional): The default exchange type.
+                Defaults to ''.
             **kwargs: Additional keyword arguments.
 
         """
@@ -194,7 +199,8 @@ class Base(BaseProtocol):
             routing_key (str | None): Optional routing key.
 
         Returns:
-            tuple[dict | None, dict | None, str | None]: The marshaled headers, payload, and routing key.
+            tuple[dict | None, dict | None, str | None]: The marshaled headers,
+                payload, and routing key.
 
         """
         return headers, payload, routing_key

@@ -20,12 +20,12 @@ class CollectdEvent(EventProtocol):
       * type_
     """
 
-    routing_key_fmt: str
-    interval: int = 10
-    plugin_instance: str | None = None
-    time: str | int = "N"
-    type_instance: str | None = None
-    values: tuple[str, ...] = ()
+    routing_key_fmt: str  # Class variable
+    interval: int = 10  # Class variable
+    plugin_instance: str | None = None  # instance variable
+    time: str | int = "N"  # instance variable
+    type_instance: str | None = None  # instance variable
+    values: tuple[str, ...] = ()  # instance variable
 
     def __init__(self, content: dict | None = None) -> None:
         """Initialize a CollectdEvent.
@@ -34,6 +34,7 @@ class CollectdEvent(EventProtocol):
             content (dict, optional): The event content. Defaults to {}.
 
         """
+        # Leave as instance variable. Okay to override in subclasses.
         self.content = content or {}
 
     @property
@@ -45,6 +46,7 @@ class CollectdEvent(EventProtocol):
             str: plugin name
 
         """
+        pass  # noqa: PIE790
 
     @property
     @abstractmethod
@@ -55,6 +57,7 @@ class CollectdEvent(EventProtocol):
            str: type
 
         """
+        pass  # noqa: PIE790
 
     def is_valid(self) -> bool:
         """Check if the event is valid.

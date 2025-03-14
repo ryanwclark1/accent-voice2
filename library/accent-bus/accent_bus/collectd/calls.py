@@ -31,10 +31,10 @@ def _validate_plugin_instance_fragment(plugin_instance_fragment: str) -> str:
 class _BaseCallCollectdEvent(CollectdEvent):
     """Base class for call-related Collectd events."""
 
-    routing_key_fmt = "collectd.calls"
-    plugin = "calls"
-    type_ = "counter"
-    values = ("1",)
+    routing_key_fmt: str = "collectd.calls"  # Class variable
+    plugin: str = "calls"  # Class variable
+    type_: str = "counter"  # Class variable
+    values: tuple[str, ...] = ("1",)  # Class variable
 
     def __init__(
         self,
@@ -65,37 +65,37 @@ class _BaseCallCollectdEvent(CollectdEvent):
 class CallStartCollectdEvent(_BaseCallCollectdEvent):
     """Event for when a call starts."""
 
-    name = "collectd_call_started"
-    type_instance = "start"
+    name: str = "collectd_call_started"  # Class variable
+    type_instance: str = "start"  # Class variable
 
 
 class CallConnectCollectdEvent(_BaseCallCollectdEvent):
     """Event for when a call connects."""
 
-    name = "collectd_call_connected"
-    type_instance = "connect"
+    name: str = "collectd_call_connected"  # Class variable
+    type_instance: str = "connect"  # Class variable
 
 
 class CallEndCollectdEvent(_BaseCallCollectdEvent):
     """Event for when a call ends."""
 
-    name = "collectd_call_ended"
-    type_instance = "end"
+    name: str = "collectd_call_ended"  # Class variable
+    type_instance: str = "end"  # Class variable
 
 
 class CallAbandonedCollectdEvent(_BaseCallCollectdEvent):
     """Event for when a call is abandoned."""
 
-    name = "collectd_call_abandoned"
-    type_instance = "abandoned"
+    name: str = "collectd_call_abandoned"  # Class variable
+    type_instance: str = "abandoned"  # Class variable
 
 
 class CallDurationCollectdEvent(_BaseCallCollectdEvent):
     """Event for call duration."""
 
-    name = "collectd_call_duration"
-    type_ = "gauge"
-    type_instance = "duration"
+    name: str = "collectd_call_duration"  # Class variable
+    type_: str = "gauge"  # Class variable
+    type_instance: str = "duration"  # Class variable
 
     def __init__(
         self,
@@ -103,7 +103,7 @@ class CallDurationCollectdEvent(_BaseCallCollectdEvent):
         application_id: str | None,
         duration: int,
         time: str | int | None = None,
-    ) -> None:
+    ):
         """Initialize the event.
 
         Args:
