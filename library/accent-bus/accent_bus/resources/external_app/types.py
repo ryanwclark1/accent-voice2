@@ -1,9 +1,8 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/external_app/types.py
 from typing import TypedDict
 
 
 class ExternalAppDict(TypedDict, total=False):
+    """Represents an external application."""
+
     name: str

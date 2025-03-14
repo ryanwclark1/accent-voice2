@@ -1,13 +1,13 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/calls/types.py
 from typing import TypedDict
 
-from ..common.types import DateTimeStr, UUIDStr
+from pydantic import UUID4
+from resources.common.types import DateTimeStr
 
 
 class ApplicationCallDict(TypedDict, total=False):
+    """Represents an application call."""
+
     id: str
     caller_id_name: str
     caller_id_number: str
@@ -18,36 +18,46 @@ class ApplicationCallDict(TypedDict, total=False):
     is_caller: bool
     dialed_extension: str
     variables: dict[str, str]
-    node_uuid: UUIDStr
-    moh_uuid: UUIDStr
+    node_uuid: UUID4
+    moh_uuid: UUID4
     muted: bool
     snoops: dict[str, str]
-    user_uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    user_uuid: UUID4
+    tenant_uuid: UUID4
 
 
 class ApplicationCallPlayDict(TypedDict, total=False):
-    uuid: UUIDStr
+    """Represents an application call play action."""
+
+    uuid: UUID4
     uri: str
     language: str
 
 
 class ApplicationNodeCallDict(TypedDict, total=False):
+    """Represents a call within an application node."""
+
     id: str
 
 
 class ApplicationNodeDict(TypedDict, total=False):
-    uuid: UUIDStr
+    """Represents an application node."""
+
+    uuid: UUID4
     calls: list[ApplicationNodeCallDict]
 
 
 class ApplicationSnoopDict(TypedDict, total=False):
-    uuid: UUIDStr
+    """Represents an application snoop."""
+
+    uuid: UUID4
     snooped_call_id: str
     snooping_call_id: str
 
 
 class CallDict(TypedDict, total=False):
+    """Represents general call information."""
+
     bridges: list[str]
     call_id: str
     caller_id_name: str
@@ -61,7 +71,7 @@ class CallDict(TypedDict, total=False):
     muted: bool
     record_state: str
     talking_to: dict[str, str]
-    user_uuid: UUIDStr
+    user_uuid: UUID4
     is_caller: bool
     is_video: bool
     dialed_extension: str
@@ -72,6 +82,8 @@ class CallDict(TypedDict, total=False):
 
 
 class ParkedCallDict(TypedDict, total=False):
+    """Represents information about a parked call."""
+
     parking_id: int
     call_id: str
     conversation_id: str
@@ -85,17 +97,23 @@ class ParkedCallDict(TypedDict, total=False):
 
 
 class UnparkedCallDict(ParkedCallDict, total=False):
+    """Represents details of an unparked call (inherits from ParkedCallDict)."""
+
     retriever_call_id: str
     retriever_caller_id_name: str
     retriever_caller_id_num: str
 
 
 class ParkedCallTimedOutDict(ParkedCallDict, total=False):
+    """Represents details of a parked call that timed out."""
+
     dialed_extension: str
 
 
 class RelocateDict(TypedDict, total=False):
-    uuid: UUIDStr
+    """Represents details of a call relocation."""
+
+    uuid: UUID4
     relocated_call: str
     initiator_call: str
     recipient_call: str
@@ -106,9 +124,11 @@ class RelocateDict(TypedDict, total=False):
 
 
 class TransferDict(TypedDict, total=False):
+    """Represents details of a call transfer."""
+
     id: str
-    initiator_uuid: UUIDStr
-    initiator_tenant_uuid: UUIDStr
+    initiator_uuid: UUID4
+    initiator_tenant_uuid: UUID4
     transferred_call: str
     initiator_call: str
     recipient_call: str

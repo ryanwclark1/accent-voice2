@@ -1,13 +1,12 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/conference/types.py
 from typing import TypedDict
 
-from ..common.types import UUIDStr
+from pydantic import UUID4
 
 
 class ParticipantDict(TypedDict, total=False):
+    """Represents a participant in a conference."""
+
     id: str
     caller_id_name: str
     caller_id_number: str
@@ -16,4 +15,4 @@ class ParticipantDict(TypedDict, total=False):
     admin: bool
     language: str
     call_id: str
-    user_uuid: UUIDStr
+    user_uuid: UUID4 | None

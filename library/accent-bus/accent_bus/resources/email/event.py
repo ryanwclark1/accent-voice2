@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/email/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class EmailConfigUpdatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'email_config_updated'
-    routing_key_fmt = 'config.email.updated'
+class EmailEvent(ServiceEvent):
+    """Base class for Email events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}  # All ServiceEvents should define 'content'
+
+
+class EmailConfigUpdatedEvent(EmailEvent):
+    """Event for when email configuration is updated."""
+
+    name: ClassVar[str] = "email_config_updated"
+    routing_key_fmt: ClassVar[str] = "config.email.updated"

@@ -1,15 +1,14 @@
-# Copyright 2023 Accent Communications
+# resources/application/types.py
+from typing import Dict, TypedDict
 
-from __future__ import annotations
-
-from typing import TypedDict
-
-from ..common.types import UUIDStr
+from pydantic import UUID4
 
 
 class ApplicationDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    """Represents the structure of an Application dictionary."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
     name: str
     destination: str | None
     destination_options: dict[str, str]

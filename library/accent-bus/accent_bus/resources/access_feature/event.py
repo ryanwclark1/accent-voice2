@@ -1,16 +1,17 @@
 # resources/access_feature/event.py
 from typing import ClassVar
 
-from accent_bus.resources.common.event import TenantEvent  # Import base classes
+from pydantic import BaseModel
 
-from .types import AccessFeatureDict
+from resources.common.event import ServiceEvent, TenantEvent  # Import base classes
+from .types import AccessFeatureDict  # Now a Pydantic model
 
 
 class AccessFeatureEvent(TenantEvent):  # Inherit from TenantEvent
     """Base class for Access Feature events."""
 
     service: ClassVar[str] = "confd"
-    content: AccessFeatureDict
+    content: AccessFeatureDict  # Use the Pydantic model
 
 
 class AccessFeatureCreatedEvent(AccessFeatureEvent):
@@ -20,7 +21,7 @@ class AccessFeatureCreatedEvent(AccessFeatureEvent):
     routing_key_fmt: ClassVar[str] = "config.access_feature.created"
 
     def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info, **data)
+        super().__init__(content=access_feature_info.model_dump(), **data)
 
 
 class AccessFeatureDeletedEvent(AccessFeatureEvent):
@@ -30,7 +31,7 @@ class AccessFeatureDeletedEvent(AccessFeatureEvent):
     routing_key_fmt: ClassVar[str] = "config.access_feature.deleted"
 
     def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info, **data)
+        super().__init__(content=access_feature_info.model_dump(), **data)
 
 
 class AccessFeatureEditedEvent(AccessFeatureEvent):
@@ -40,4 +41,4 @@ class AccessFeatureEditedEvent(AccessFeatureEvent):
     routing_key_fmt: ClassVar[str] = "config.access_feature.edited"
 
     def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info, **data)
+        super().__init__(content=access_feature_info.model_dump(), **data)

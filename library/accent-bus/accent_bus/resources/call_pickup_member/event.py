@@ -1,76 +1,67 @@
-# Copyright 2023 Accent Communications
+# resources/call_pickup_member/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
 
 
-class CallPickupInterceptorUsersAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'call_pickup_interceptor_users_associated'
-    routing_key_fmt = 'config.callpickups.interceptors.users.updated'
+class CallPickupMemberEvent(TenantEvent):
+    """Base class for Call Pickup Member events."""
 
-    def __init__(
-        self,
-        call_pickup_id: int,
-        users: list[str],
-        tenant_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class CallPickupInterceptorUsersAssociatedEvent(CallPickupMemberEvent):
+    """Event for when interceptor users are associated with a call pickup."""
+
+    name: ClassVar[str] = "call_pickup_interceptor_users_associated"
+    routing_key_fmt: ClassVar[str] = "config.callpickups.interceptors.users.updated"
+
+    def __init__(self, call_pickup_id: int, users: list[str], **data):
         content = {
-            'call_pickup_id': call_pickup_id,
-            'user_uuids': users,
+            "call_pickup_id": call_pickup_id,
+            "user_uuids": users,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
 
 
-class CallPickupTargetUsersAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'call_pickup_target_users_associated'
-    routing_key_fmt = 'config.callpickups.targets.users.updated'
+class CallPickupTargetUsersAssociatedEvent(CallPickupMemberEvent):
+    """Event for when target users are associated with a call pickup."""
 
-    def __init__(
-        self,
-        call_pickup_id: int,
-        users: list[str],
-        tenant_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "call_pickup_target_users_associated"
+    routing_key_fmt: ClassVar[str] = "config.callpickups.targets.users.updated"
+
+    def __init__(self, call_pickup_id: int, users: list[str], **data):
         content = {
-            'call_pickup_id': call_pickup_id,
-            'user_uuids': users,
+            "call_pickup_id": call_pickup_id,
+            "user_uuids": users,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
 
 
-class CallPickupInterceptorGroupsAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'call_pickup_interceptor_groups_associated'
-    routing_key_fmt = 'config.callpickups.interceptors.groups.updated'
+class CallPickupInterceptorGroupsAssociatedEvent(CallPickupMemberEvent):
+    """Event for when interceptor groups are associated."""
 
-    def __init__(
-        self,
-        call_pickup_id: int,
-        group_ids: list[int],
-        tenant_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "call_pickup_interceptor_groups_associated"
+    routing_key_fmt: ClassVar[str] = "config.callpickups.interceptors.groups.updated"
+
+    def __init__(self, call_pickup_id: int, group_ids: list[int], **data):
         content = {
-            'call_pickup_id': call_pickup_id,
-            'group_ids': group_ids,
+            "call_pickup_id": call_pickup_id,
+            "group_ids": group_ids,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
 
 
-class CallPickupTargetGroupsAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'call_pickup_target_groups_associated'
-    routing_key_fmt = 'config.callpickups.targets.groups.updated'
+class CallPickupTargetGroupsAssociatedEvent(CallPickupMemberEvent):
+    """Event for when target groups are associated."""
 
-    def __init__(
-        self,
-        call_pickup_id: int,
-        group_ids: list[int],
-        tenant_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "call_pickup_target_groups_associated"
+    routing_key_fmt: ClassVar[str] = "config.callpickups.targets.groups.updated"
+
+    def __init__(self, call_pickup_id: int, group_ids: list[int], **data):
         content = {
-            'call_pickup_id': call_pickup_id,
-            'group_ids': group_ids,
+            "call_pickup_id": call_pickup_id,
+            "group_ids": group_ids,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)

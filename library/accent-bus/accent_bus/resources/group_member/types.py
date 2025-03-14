@@ -1,10 +1,9 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/group_member/types.py
 from typing import TypedDict
 
 
 class GroupExtensionDict(TypedDict, total=False):
+    """Represents a group extension."""
+
     exten: str
     context: str

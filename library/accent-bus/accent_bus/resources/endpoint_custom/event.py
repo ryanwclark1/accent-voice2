@@ -1,44 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/endpoint_custom/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
+
 from .types import EndpointCustomDict
 
 
-class CustomEndpointCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'custom_endpoint_created'
-    routing_key_fmt = 'config.custom_endpoint.created'
+class CustomEndpointEvent(TenantEvent):
+    """Base class for Custom Endpoint events."""
 
-    def __init__(
-        self,
-        endpoint: EndpointCustomDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(endpoint, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class CustomEndpointDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'custom_endpoint_deleted'
-    routing_key_fmt = 'config.custom_endpoint.deleted'
+class CustomEndpointCreatedEvent(CustomEndpointEvent):
+    """Event for when a custom endpoint is created."""
 
-    def __init__(
-        self,
-        endpoint: EndpointCustomDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(endpoint, tenant_uuid)
+    name: ClassVar[str] = "custom_endpoint_created"
+    routing_key_fmt: ClassVar[str] = "config.custom_endpoint.created"
+
+    def __init__(self, endpoint: EndpointCustomDict, **data):
+        super().__init__(content=endpoint, **data)
 
 
-class CustomEndpointEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'custom_endpoint_edited'
-    routing_key_fmt = 'config.custom_endpoint.edited'
+class CustomEndpointDeletedEvent(CustomEndpointEvent):
+    """Event for when a custom endpoint is deleted."""
 
-    def __init__(
-        self,
-        endpoint: EndpointCustomDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(endpoint, tenant_uuid)
+    name: ClassVar[str] = "custom_endpoint_deleted"
+    routing_key_fmt: ClassVar[str] = "config.custom_endpoint.deleted"
+
+    def __init__(self, endpoint: EndpointCustomDict, **data):
+        super().__init__(content=endpoint, **data)
+
+
+class CustomEndpointEditedEvent(CustomEndpointEvent):
+    """Event for when a custom endpoint is edited."""
+
+    name: ClassVar[str] = "custom_endpoint_edited"
+    routing_key_fmt: ClassVar[str] = "config.custom_endpoint.edited"
+
+    def __init__(self, endpoint: EndpointCustomDict, **data):
+        super().__init__(content=endpoint, **data)

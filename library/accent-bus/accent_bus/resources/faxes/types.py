@@ -1,13 +1,12 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/faxes/types.py
 from typing import TypedDict
 
-from ..common.types import UUIDStr
+from pydantic import UUID4
 
 
 class FaxDict(TypedDict, total=False):
+    """Represents fax information."""
+
     id: str
     call_id: str
     extension: str
@@ -15,5 +14,5 @@ class FaxDict(TypedDict, total=False):
     caller_id: str
     ivr_extension: str
     wait_time: int
-    user_uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    user_uuid: UUID4
+    tenant_uuid: UUID4

@@ -1,32 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/context/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
+
 from .types import ContextDict
 
 
-class ContextCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'context_created'
-    routing_key_fmt = 'config.contexts.created'
+class ContextEvent(TenantEvent):
+    """Base class for Context events."""
 
-    def __init__(self, context_data: ContextDict, tenant_uuid: UUIDStr):
-        super().__init__(context_data, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class ContextDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'context_deleted'
-    routing_key_fmt = 'config.contexts.deleted'
+class ContextCreatedEvent(ContextEvent):
+    """Event for when a context is created."""
 
-    def __init__(self, context_data: ContextDict, tenant_uuid: UUIDStr):
-        super().__init__(context_data, tenant_uuid)
+    name: ClassVar[str] = "context_created"
+    routing_key_fmt: ClassVar[str] = "config.contexts.created"
+
+    def __init__(self, context_data: ContextDict, **data):
+        super().__init__(content=context_data, **data)
 
 
-class ContextEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'context_edited'
-    routing_key_fmt = 'config.contexts.edited'
+class ContextDeletedEvent(ContextEvent):
+    """Event for when a context is deleted."""
 
-    def __init__(self, context_data: ContextDict, tenant_uuid: UUIDStr):
-        super().__init__(context_data, tenant_uuid)
+    name: ClassVar[str] = "context_deleted"
+    routing_key_fmt: ClassVar[str] = "config.contexts.deleted"
+
+    def __init__(self, context_data: ContextDict, **data):
+        super().__init__(content=context_data, **data)
+
+
+class ContextEditedEvent(ContextEvent):
+    """Event for when a context is edited."""
+
+    name: ClassVar[str] = "context_edited"
+    routing_key_fmt: ClassVar[str] = "config.contexts.edited"
+
+    def __init__(self, context_data: ContextDict, **data):
+        super().__init__(content=context_data, **data)

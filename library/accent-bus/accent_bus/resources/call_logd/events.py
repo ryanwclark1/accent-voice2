@@ -1,44 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/call_logd/events.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent  # Import base classes
+
 from .types import CallLogExportDataDict
 
 
-class CallLogExportCreatedEvent(TenantEvent):
-    service = 'call_logd'
-    name = 'call_logd_export_created'
-    routing_key_fmt = 'call_logd.export.created'
+class CallLogdEvent(TenantEvent):
+    """Base class for call_logd events."""
 
-    def __init__(
-        self,
-        export_data: CallLogExportDataDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(export_data, tenant_uuid)
+    service: ClassVar[str] = "call_logd"
+    content: dict
 
 
-class CallLogExportUpdatedEvent(TenantEvent):
-    service = 'call_logd'
-    name = 'call_logd_export_updated'
-    routing_key_fmt = 'call_logd.export.updated'
+class CallLogExportCreatedEvent(CallLogdEvent):
+    """Event for when a call log export is created."""
 
-    def __init__(
-        self,
-        export_data: CallLogExportDataDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(export_data, tenant_uuid)
+    name: ClassVar[str] = "call_logd_export_created"
+    routing_key_fmt: ClassVar[str] = "call_logd.export.created"
+
+    def __init__(self, export_data: CallLogExportDataDict, **data):
+        super().__init__(content=export_data, **data)
 
 
-class CallLogRetentionUpdatedEvent(TenantEvent):
-    service = 'call_logd'
-    name = 'call_logd_retention_updated'
-    routing_key_fmt = 'call_logd.retention.updated'
+class CallLogExportUpdatedEvent(CallLogdEvent):
+    """Event for when a call log export is updated."""
 
-    def __init__(
-        self,
-        retention_data: CallLogExportDataDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(retention_data, tenant_uuid)
+    name: ClassVar[str] = "call_logd_export_updated"
+    routing_key_fmt: ClassVar[str] = "call_logd.export.updated"
+
+    def __init__(self, export_data: CallLogExportDataDict, **data):
+        super().__init__(content=export_data, **data)
+
+
+class CallLogRetentionUpdatedEvent(CallLogdEvent):
+    """Event for when the call logs retention is updated."""
+
+    name: ClassVar[str] = "call_logd_retention_updated"
+    routing_key_fmt: ClassVar[str] = "call_logd.retention.updated"
+
+    def __init__(self, retention_data: CallLogExportDataDict, **data):
+        super().__init__(content=retention_data, **data)

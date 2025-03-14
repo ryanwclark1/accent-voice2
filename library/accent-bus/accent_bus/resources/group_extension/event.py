@@ -1,44 +1,54 @@
-# Copyright 2023 Accent Communications
+# resources/group_extension/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class GroupExtensionAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'group_extension_associated'
-    routing_key_fmt = 'config.groups.extensions.updated'
-
-    def __init__(
-        self,
-        group_id: int,
-        group_uuid: UUIDStr,
-        extension_id: int,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {
-            'group_id': group_id,
-            'group_uuid': str(group_uuid),
-            'extension_id': extension_id,
-        }
-        super().__init__(content, tenant_uuid)
+from pydantic import UUID4
+from resources.common.event import TenantEvent
 
 
-class GroupExtensionDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'group_extension_dissociated'
-    routing_key_fmt = 'config.groups.extensions.deleted'
+class GroupExtensionEvent(TenantEvent):
+    """Base class for Group Extension events."""
+
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class GroupExtensionAssociatedEvent(GroupExtensionEvent):
+    """Event for when an extension is associated with a group."""
+
+    name: ClassVar[str] = "group_extension_associated"
+    routing_key_fmt: ClassVar[str] = "config.groups.extensions.updated"
 
     def __init__(
         self,
         group_id: int,
-        group_uuid: UUIDStr,
+        group_uuid: UUID4,
         extension_id: int,
-        tenant_uuid: UUIDStr,
+        **data,
     ):
         content = {
-            'group_id': group_id,
-            'group_uuid': str(group_uuid),
-            'extension_id': extension_id,
+            "group_id": group_id,
+            "group_uuid": str(group_uuid),
+            "extension_id": extension_id,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
+
+
+class GroupExtensionDissociatedEvent(GroupExtensionEvent):
+    """Event for when an extension is dissociated from a group."""
+
+    name: ClassVar[str] = "group_extension_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.groups.extensions.deleted"
+
+    def __init__(
+        self,
+        group_id: int,
+        group_uuid: UUID4,
+        extension_id: int,
+        **data,
+    ):
+        content = {
+            "group_id": group_id,
+            "group_uuid": str(group_uuid),
+            "extension_id": extension_id,
+        }
+        super().__init__(content=content, **data)

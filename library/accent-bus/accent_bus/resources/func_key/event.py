@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/func_key/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class FuncKeyTemplateCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'func_key_template_created'
-    routing_key_fmt = 'config.funckey.template.created'
-
-    def __init__(self, template_id: int, tenant_uuid: UUIDStr):
-        content = {'id': template_id}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import TenantEvent
 
 
-class FuncKeyTemplateDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'func_key_template_deleted'
-    routing_key_fmt = 'config.funckey.template.deleted'
+class FuncKeyEvent(TenantEvent):
+    """Base class for Func Key events."""
 
-    def __init__(self, template_id: int, tenant_uuid: UUIDStr):
-        content = {'id': template_id}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class FuncKeyTemplateEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'func_key_template_edited'
-    routing_key_fmt = 'config.funckey.template.edited'
+class FuncKeyTemplateCreatedEvent(FuncKeyEvent):
+    """Event for when a func key template is created."""
 
-    def __init__(self, template_id: int, tenant_uuid: UUIDStr):
-        content = {'id': template_id}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "func_key_template_created"
+    routing_key_fmt: ClassVar[str] = "config.funckey.template.created"
+
+    def __init__(self, template_id: int, **data):
+        content = {"id": template_id}
+        super().__init__(content=content, **data)
+
+
+class FuncKeyTemplateDeletedEvent(FuncKeyEvent):
+    """Event for when a func key template is deleted."""
+
+    name: ClassVar[str] = "func_key_template_deleted"
+    routing_key_fmt: ClassVar[str] = "config.funckey.template.deleted"
+
+    def __init__(self, template_id: int, **data):
+        content = {"id": template_id}
+        super().__init__(content=content, **data)
+
+
+class FuncKeyTemplateEditedEvent(FuncKeyEvent):
+    """Event for when a func key template is edited."""
+
+    name: ClassVar[str] = "func_key_template_edited"
+    routing_key_fmt: ClassVar[str] = "config.funckey.template.edited"
+
+    def __init__(self, template_id: int, **data):
+        content = {"id": template_id}
+        super().__init__(content=content, **data)

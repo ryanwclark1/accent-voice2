@@ -1,14 +1,12 @@
-# Copyright 2023 Accent Communications
+# resources/auth/types.py
 
-from __future__ import annotations
-
-from typing import TypedDict
-
-from ..common.types import UUIDStr
+from pydantic import BaseModel, UUID4, Field
 
 
-class TenantDict(TypedDict, total=False):
-    uuid: UUIDStr
+class TenantDict(BaseModel):
+    """Represents a Tenant."""
+
+    uuid: UUID4
     name: str
     slug: str
-    domain_names: list[str]
+    domain_names: list[str] = Field(default_factory=list)

@@ -1,30 +1,32 @@
-# Copyright 2023 Accent Communications
+# resources/features/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
-
-
-class FeaturesApplicationmapEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'features_applicationmap_edited'
-    routing_key_fmt = 'config.features_applicationmap.edited'
-
-    def __init__(self) -> None:
-        super().__init__()
+from resources.common.event import ServiceEvent
 
 
-class FeaturesFeaturemapEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'features_featuremap_edited'
-    routing_key_fmt = 'config.features_featuremap.edited'
+class FeaturesEvent(ServiceEvent):
+    """Base class for Features events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}
 
 
-class FeaturesGeneralEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'features_general_edited'
-    routing_key_fmt = 'config.features_general.edited'
+class FeaturesApplicationmapEditedEvent(FeaturesEvent):
+    """Event for when the application map feature is edited."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    name: ClassVar[str] = "features_applicationmap_edited"
+    routing_key_fmt: ClassVar[str] = "config.features_applicationmap.edited"
+
+
+class FeaturesFeaturemapEditedEvent(FeaturesEvent):
+    """Event for when the feature map is edited."""
+
+    name: ClassVar[str] = "features_featuremap_edited"
+    routing_key_fmt: ClassVar[str] = "config.features_featuremap.edited"
+
+
+class FeaturesGeneralEditedEvent(FeaturesEvent):
+    """Event for when general features are edited."""
+
+    name: ClassVar[str] = "features_general_edited"
+    routing_key_fmt: ClassVar[str] = "config.features_general.edited"

@@ -1,17 +1,18 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/endpoint_sccp/types.py
 from typing import TypedDict
 
-from ..common.types import UUIDStr
+from pydantic import UUID4
 
 
 class EndpointSCCPLineDict(TypedDict, total=False):
+    """Represents an SCCP line."""
+
     id: int
 
 
 class EndpointSCCPDict(TypedDict, total=False):
+    """Represents an SCCP endpoint."""
+
     id: int
-    tenant_uuid: UUIDStr
+    tenant_uuid: UUID4
     line: EndpointSCCPLineDict

@@ -1,12 +1,11 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/group/types.py
 from typing import TypedDict
 
-from ..common.types import UUIDStr
+from pydantic import UUID4
 
 
 class GroupDict(TypedDict, total=False):
+    """Represents a group."""
+
     id: int
-    uuid: UUIDStr
+    uuid: UUID4

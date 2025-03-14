@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/hep/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class HEPGeneralEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'hep_general_edited'
-    routing_key_fmt = 'config.hep_general.edited'
+class HEPEvent(ServiceEvent):
+    """Base class for HEP (Homer Encapsulation Protocol) events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}  # ServiceEvents must define content
+
+
+class HEPGeneralEditedEvent(HEPEvent):
+    """Event for when general HEP configuration is edited."""
+
+    name: ClassVar[str] = "hep_general_edited"
+    routing_key_fmt: ClassVar[str] = "config.hep_general.edited"

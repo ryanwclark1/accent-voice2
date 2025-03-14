@@ -1,44 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/application/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent  # Import TenantEvent
+
 from .types import ApplicationDict
 
 
-class ApplicationCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'application_created'
-    routing_key_fmt = 'config.applications.created'
+class ApplicationEvent(TenantEvent):
+    """Base class for Application events."""
 
-    def __init__(
-        self,
-        application: ApplicationDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(application, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: ApplicationDict
 
 
-class ApplicationDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'application_deleted'
-    routing_key_fmt = 'config.applications.deleted'
+class ApplicationCreatedEvent(ApplicationEvent):
+    """Event for when an application is created."""
 
-    def __init__(
-        self,
-        application: ApplicationDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(application, tenant_uuid)
+    name: ClassVar[str] = "application_created"
+    routing_key_fmt: ClassVar[str] = "config.applications.created"
+
+    def __init__(self, application: ApplicationDict, **data):
+        super().__init__(content=application, **data)
 
 
-class ApplicationEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'application_edited'
-    routing_key_fmt = 'config.applications.edited'
+class ApplicationDeletedEvent(ApplicationEvent):
+    """Event for when an application is deleted."""
 
-    def __init__(
-        self,
-        application: ApplicationDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(application, tenant_uuid)
+    name: ClassVar[str] = "application_deleted"
+    routing_key_fmt: ClassVar[str] = "config.applications.deleted"
+
+    def __init__(self, application: ApplicationDict, **data):
+        super().__init__(content=application, **data)
+
+
+class ApplicationEditedEvent(ApplicationEvent):
+    """Event for when an application is edited."""
+
+    name: ClassVar[str] = "application_edited"
+    routing_key_fmt: ClassVar[str] = "config.applications.edited"
+
+    def __init__(self, application: ApplicationDict, **data):
+        super().__init__(content=application, **data)

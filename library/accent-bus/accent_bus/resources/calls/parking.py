@@ -1,47 +1,54 @@
-# Copyright 2023 Accent Communications
+# resources/calls/parking.py
+from typing import ClassVar
 
-from __future__ import annotations
+from resources.common.event import TenantEvent
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
 from .types import ParkedCallDict, ParkedCallTimedOutDict, UnparkedCallDict
 
 
-class CallParkedEvent(TenantEvent):
-    service = 'calld'
-    name = 'call_parked'
-    routing_key_fmt = 'parkings.{parking_id}.calls.updated'
-    required_acl_fmt = 'events.parkings.{parking_id}.calls.updated'
+class CallParkingEvent(TenantEvent):
+    """Base class for Call Parking events."""
 
-    def __init__(self, parked_call: ParkedCallDict, tenant_uuid: UUIDStr):
-        super().__init__(parked_call, tenant_uuid)
+    service: ClassVar[str] = "calld"
+    required_acl_fmt: ClassVar[str] = "events.parkings.{parking_id}.calls.updated"
+    content: dict
 
 
-class CallUnparkedEvent(TenantEvent):
-    service = 'calld'
-    name = 'call_unparked'
-    routing_key_fmt = 'parkings.{parking_id}.calls.updated'
-    required_acl_fmt = 'events.parkings.{parking_id}.calls.updated'
+class CallParkedEvent(CallParkingEvent):
+    """Event for when a call is parked."""
 
-    def __init__(self, unparked_call: UnparkedCallDict, tenant_uuid: str):
-        super().__init__(unparked_call, tenant_uuid)
+    name: ClassVar[str] = "call_parked"
+    routing_key_fmt: ClassVar[str] = "parkings.{parking_id}.calls.updated"
 
-
-class ParkedCallHungupEvent(TenantEvent):
-    service = 'calld'
-    name = 'parked_call_hungup'
-    routing_key_fmt = 'parkings.{parking_id}.calls.updated'
-    required_acl_fmt = 'events.parkings.{parking_id}.calls.updated'
-
-    def __init__(self, parked_call: ParkedCallDict, tenant_uuid: str):
-        super().__init__(parked_call, tenant_uuid)
+    def __init__(self, parked_call: ParkedCallDict, **data):
+        super().__init__(content=parked_call, **data)
 
 
-class ParkedCallTimedOutEvent(TenantEvent):
-    service = 'calld'
-    name = 'parked_call_timed_out'
-    routing_key_fmt = 'parkings.{parking_id}.calls.updated'
-    required_acl_fmt = 'events.parkings.{parking_id}.calls.updated'
+class CallUnparkedEvent(CallParkingEvent):
+    """Event for when a call is unparked."""
 
-    def __init__(self, parked_call: ParkedCallTimedOutDict, tenant_uuid: str):
-        super().__init__(parked_call, tenant_uuid)
+    name: ClassVar[str] = "call_unparked"
+    routing_key_fmt: ClassVar[str] = "parkings.{parking_id}.calls.updated"
+
+    def __init__(self, unparked_call: UnparkedCallDict, **data):
+        super().__init__(content=unparked_call, **data)
+
+
+class ParkedCallHungupEvent(CallParkingEvent):
+    """Event for when a parked call is hung up."""
+
+    name: ClassVar[str] = "parked_call_hungup"
+    routing_key_fmt: ClassVar[str] = "parkings.{parking_id}.calls.updated"
+
+    def __init__(self, parked_call: ParkedCallDict, **data):
+        super().__init__(content=parked_call, **data)
+
+
+class ParkedCallTimedOutEvent(CallParkingEvent):
+    """Event for when a parked call times out."""
+
+    name: ClassVar[str] = "parked_call_timed_out"
+    routing_key_fmt: ClassVar[str] = "parkings.{parking_id}.calls.updated"
+
+    def __init__(self, parked_call: ParkedCallTimedOutDict, **data):
+        super().__init__(content=parked_call, **data)

@@ -1,40 +1,39 @@
-# Copyright 2023 Accent Communications
+# resources/conference_extension/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
 
 
-class ConferenceExtensionAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'conference_extension_associated'
-    routing_key_fmt = 'config.conferences.extensions.updated'
+class ConferenceExtensionEvent(TenantEvent):
+    """Base class for Conference Extension events."""
 
-    def __init__(
-        self,
-        conference_id: int,
-        extension_id: int,
-        tenant_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class ConferenceExtensionAssociatedEvent(ConferenceExtensionEvent):
+    """Event for when a conference extension is associated."""
+
+    name: ClassVar[str] = "conference_extension_associated"
+    routing_key_fmt: ClassVar[str] = "config.conferences.extensions.updated"
+
+    def __init__(self, conference_id: int, extension_id: int, **data):
         content = {
-            'conference_id': conference_id,
-            'extension_id': extension_id,
+            "conference_id": conference_id,
+            "extension_id": extension_id,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
 
 
-class ConferenceExtensionDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'conference_extension_dissociated'
-    routing_key_fmt = 'config.conferences.extensions.deleted'
+class ConferenceExtensionDissociatedEvent(ConferenceExtensionEvent):
+    """Event for when a conference extension is dissociated."""
 
-    def __init__(
-        self,
-        conference_id: int,
-        extension_id: int,
-        tenant_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "conference_extension_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.conferences.extensions.deleted"
+
+    def __init__(self, conference_id: int, extension_id: int, **data):
         content = {
-            'conference_id': conference_id,
-            'extension_id': extension_id,
+            "conference_id": conference_id,
+            "extension_id": extension_id,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)

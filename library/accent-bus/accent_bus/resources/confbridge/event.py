@@ -1,21 +1,25 @@
-# Copyright 2023 Accent Communications
+# resources/confbridge/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
-
-
-class ConfBridgeAccentDefaultBridgeEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'confbridge_accent_default_bridge_edited'
-    routing_key_fmt = 'config.confbridge_accent_default_bridge.edited'
-
-    def __init__(self) -> None:
-        super().__init__()
+from resources.common.event import ServiceEvent
 
 
-class ConfBridgeAccentDefaultUserEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'confbridge_accent_default_user_edited'
-    routing_key_fmt = 'config.confbridge_accent_default_user.edited'
+class ConfBridgeEvent(ServiceEvent):
+    """Base class for confbridge events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}  # All service events should define content.
+
+
+class ConfBridgeAccentDefaultBridgeEditedEvent(ConfBridgeEvent):
+    """Event for when the default confbridge bridge is edited."""
+
+    name: ClassVar[str] = "confbridge_accent_default_bridge_edited"
+    routing_key_fmt: ClassVar[str] = "config.confbridge_accent_default_bridge.edited"
+
+
+class ConfBridgeAccentDefaultUserEditedEvent(ConfBridgeEvent):
+    """Event for when the default confbridge user is edited."""
+
+    name: ClassVar[str] = "confbridge_accent_default_user_edited"
+    routing_key_fmt: ClassVar[str] = "config.confbridge_accent_default_user.edited"

@@ -1,32 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/external_app/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
+
 from .types import ExternalAppDict
 
 
-class ExternalAppCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'external_app_created'
-    routing_key_fmt = 'config.external_apps.created'
+class ExternalAppEvent(TenantEvent):
+    """Base class for External Application events."""
 
-    def __init__(self, app: ExternalAppDict, tenant_uuid: UUIDStr):
-        super().__init__(app, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class ExternalAppDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'external_app_deleted'
-    routing_key_fmt = 'config.external_apps.deleted'
+class ExternalAppCreatedEvent(ExternalAppEvent):
+    """Event for when an external application is created."""
 
-    def __init__(self, app: ExternalAppDict, tenant_uuid: UUIDStr):
-        super().__init__(app, tenant_uuid)
+    name: ClassVar[str] = "external_app_created"
+    routing_key_fmt: ClassVar[str] = "config.external_apps.created"
+
+    def __init__(self, app: ExternalAppDict, **data):
+        super().__init__(content=app, **data)
 
 
-class ExternalAppEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'external_app_edited'
-    routing_key_fmt = 'config.external_apps.edited'
+class ExternalAppDeletedEvent(ExternalAppEvent):
+    """Event for when an external application is deleted."""
 
-    def __init__(self, app: ExternalAppDict, tenant_uuid: UUIDStr):
-        super().__init__(app, tenant_uuid)
+    name: ClassVar[str] = "external_app_deleted"
+    routing_key_fmt: ClassVar[str] = "config.external_apps.deleted"
+
+    def __init__(self, app: ExternalAppDict, **data):
+        super().__init__(content=app, **data)
+
+
+class ExternalAppEditedEvent(ExternalAppEvent):
+    """Event for when an external application is edited."""
+
+    name: ClassVar[str] = "external_app_edited"
+    routing_key_fmt: ClassVar[str] = "config.external_apps.edited"
+
+    def __init__(self, app: ExternalAppDict, **data):
+        super().__init__(content=app, **data)

@@ -1,48 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/directory/event.py
+from typing import ClassVar
 
-from ..common.event import UserEvent
-from ..common.types import UUIDStr
+from pydantic import UUID4
+from resources.common.event import UserEvent
 
 
-class FavoriteAddedEvent(UserEvent):
-    service = 'dird'
-    name = 'favorite_added'
-    routing_key_fmt = 'directory.{user_uuid}.favorite.created'
+class DirectoryEvent(UserEvent):
+    """Base class for Directory events."""
 
-    def __init__(
-        self,
-        source_name: str,
-        entry_id: str,
-        accent_uuid: UUIDStr,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "dird"
+    content: dict
+
+
+class FavoriteAddedEvent(DirectoryEvent):
+    """Event for when a favorite is added."""
+
+    name: ClassVar[str] = "favorite_added"
+    routing_key_fmt: ClassVar[str] = "directory.{user_uuid}.favorite.created"
+
+    def __init__(self, source_name: str, entry_id: str, accent_uuid: UUID4, **data):
         content = {
-            'accent_uuid': str(accent_uuid),
-            'user_uuid': str(user_uuid),
-            'source': source_name,
-            'source_entry_id': entry_id,
+            "accent_uuid": str(accent_uuid),
+            "user_uuid": str(data["user_uuid"]),
+            "source": source_name,
+            "source_entry_id": entry_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)
 
 
-class FavoriteDeletedEvent(UserEvent):
-    service = 'dird'
-    name = 'favorite_deleted'
-    routing_key_fmt = 'directory.{user_uuid}.favorite.deleted'
+class FavoriteDeletedEvent(DirectoryEvent):
+    """Event for when a favorite is deleted."""
 
-    def __init__(
-        self,
-        source_name: str,
-        entry_id: str,
-        accent_uuid: UUIDStr,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "favorite_deleted"
+    routing_key_fmt: ClassVar[str] = "directory.{user_uuid}.favorite.deleted"
+
+    def __init__(self, source_name: str, entry_id: str, accent_uuid: UUID4, **data):
         content = {
-            'accent_uuid': str(accent_uuid),
-            'user_uuid': str(user_uuid),
-            'source': source_name,
-            'source_entry_id': entry_id,
+            "accent_uuid": str(accent_uuid),
+            "user_uuid": str(data["user_uuid"]),
+            "source": source_name,
+            "source_entry_id": entry_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)

@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/device/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class DeviceCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'device_created'
-    routing_key_fmt = 'config.device.created'
-
-    def __init__(self, device_id: str, tenant_uuid: UUIDStr):
-        content = {'id': device_id}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import TenantEvent
 
 
-class DeviceDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'device_deleted'
-    routing_key_fmt = 'config.device.deleted'
+class DeviceEvent(TenantEvent):
+    """Base class for Device events."""
 
-    def __init__(self, device_id: str, tenant_uuid: UUIDStr):
-        content = {'id': device_id}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class DeviceEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'device_edited'
-    routing_key_fmt = 'config.device.edited'
+class DeviceCreatedEvent(DeviceEvent):
+    """Event for when a device is created."""
 
-    def __init__(self, device_id: str, tenant_uuid: UUIDStr):
-        content = {'id': device_id}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "device_created"
+    routing_key_fmt: ClassVar[str] = "config.device.created"
+
+    def __init__(self, device_id: str, **data):
+        content = {"id": device_id}
+        super().__init__(content=content, **data)
+
+
+class DeviceDeletedEvent(DeviceEvent):
+    """Event for when a device is deleted."""
+
+    name: ClassVar[str] = "device_deleted"
+    routing_key_fmt: ClassVar[str] = "config.device.deleted"
+
+    def __init__(self, device_id: str, **data):
+        content = {"id": device_id}
+        super().__init__(content=content, **data)
+
+
+class DeviceEditedEvent(DeviceEvent):
+    """Event for when a device is edited."""
+
+    name: ClassVar[str] = "device_edited"
+    routing_key_fmt: ClassVar[str] = "config.device.edited"
+
+    def __init__(self, device_id: str, **data):
+        content = {"id": device_id}
+        super().__init__(content=content, **data)

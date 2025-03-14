@@ -1,52 +1,58 @@
-# Copyright 2023 Accent Communications
+# resources/chatd/events.py
+from typing import ClassVar
 
-from __future__ import annotations
+from pydantic import UUID4
+from resources.common.event import TenantEvent, UserEvent
 
-from ..common.event import TenantEvent, UserEvent
-from ..common.types import UUIDStr
 from .types import MessageDict, RoomDict, UserPresenceDict
 
 
-class PresenceUpdatedEvent(TenantEvent):
-    service = 'chatd'
-    name = 'chatd_presence_updated'
-    routing_key_fmt = 'chatd.users.{uuid}.presences.updated'
+class ChatdEvent(TenantEvent):
+    """Base class for chatd events."""
 
-    def __init__(
-        self,
-        user_presence_data: UserPresenceDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(user_presence_data, tenant_uuid)
+    service: ClassVar[str] = "chatd"
+    content: dict
 
 
-class UserRoomCreatedEvent(UserEvent):
-    service = 'chatd'
-    name = 'chatd_user_room_created'
-    routing_key_fmt = 'chatd.users.{user_uuid}.rooms.created'
+class PresenceUpdatedEvent(ChatdEvent):
+    """Event for when a user's presence is updated."""
 
-    def __init__(
-        self,
-        room_data: RoomDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        super().__init__(room_data, tenant_uuid, user_uuid)
+    name: ClassVar[str] = "chatd_presence_updated"
+    routing_key_fmt: ClassVar[str] = "chatd.users.{uuid}.presences.updated"
+
+    def __init__(self, user_presence_data: UserPresenceDict, **data):
+        super().__init__(content=user_presence_data, **data)
 
 
-class UserRoomMessageCreatedEvent(UserEvent):
-    service = 'chatd'
-    name = 'chatd_user_room_message_created'
-    routing_key_fmt = 'chatd.users.{user_uuid}.rooms.{room_uuid}.messages.created'
+class ChatdUserEvent(UserEvent):
+    """Base class for chatd User events.
+    """
 
-    def __init__(
-        self,
-        message_data: MessageDict,
-        room_uuid: UUIDStr,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        super().__init__(message_data, tenant_uuid, user_uuid)
+    service: ClassVar[str] = "chatd"
+    content: dict
+
+
+class UserRoomCreatedEvent(ChatdUserEvent):
+    """Event for when a user creates a chat room."""
+
+    name: ClassVar[str] = "chatd_user_room_created"
+    routing_key_fmt: ClassVar[str] = "chatd.users.{user_uuid}.rooms.created"
+
+    def __init__(self, room_data: RoomDict, **data):
+        super().__init__(content=room_data, **data)
+
+
+class UserRoomMessageCreatedEvent(ChatdUserEvent):
+    """Event for when a message is created in a user's chat room."""
+
+    name: ClassVar[str] = "chatd_user_room_message_created"
+    routing_key_fmt: ClassVar[str] = (
+        "chatd.users.{user_uuid}.rooms.{room_uuid}.messages.created"
+    )
+    room_uuid: str
+
+    def __init__(self, message_data: MessageDict, room_uuid: UUID4, **data):
+        super().__init__(content=message_data, **data)
         if room_uuid is None:
-            raise ValueError('room_uuid must have a value')
+            raise ValueError("room_uuid must have a value")
         self.room_uuid = str(room_uuid)

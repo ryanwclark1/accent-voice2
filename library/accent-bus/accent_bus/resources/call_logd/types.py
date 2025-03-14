@@ -1,13 +1,12 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/call_logd/types.py
 from typing import TypedDict
 
-from ..common.types import DateTimeStr, UUIDStr
+from resources.common.types import DateTimeStr, UUIDStr
 
 
 class CallLogExportDataDict(TypedDict, total=False):
+    """Represents the data for a call log export."""
+
     uuid: UUIDStr
     tenant_uuid: UUIDStr
     user_uuid: UUIDStr

@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/ha/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class HAEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'ha_edited'
-    routing_key_fmt = 'config.ha.edited'
+class HAEvent(ServiceEvent):
+    """Base class for HA (High Availability) events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}  # All ServiceEvents must define 'content'.
+
+
+class HAEditedEvent(HAEvent):
+    """Event for when HA configuration is edited."""
+
+    name: ClassVar[str] = "ha_edited"
+    routing_key_fmt: ClassVar[str] = "config.ha.edited"

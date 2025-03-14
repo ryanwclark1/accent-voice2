@@ -2,18 +2,17 @@
 from typing import ClassVar
 
 from pydantic import Field
-
-from accent_bus.resources.common.event import (  # Import base classes
+from resources.common.event import (
     MultiUserEvent,
     TenantEvent,
-)
+)  # Import base classes
 
 
 class AgentEvent(TenantEvent):
     """Base class for Agent events."""
 
-    # Tenant UUID is already defined in the parent class.
-    pass  # noqa: PIE790
+    # tenant_uuid is already defined.
+    # No longer needed, but good practice to keep as a marker
 
 
 class TenantAgentEvent(AgentEvent):
@@ -28,6 +27,7 @@ class AgentCreatedEvent(TenantAgentEvent):
     name: ClassVar[str] = "agent_created"
     routing_key_fmt: ClassVar[str] = "config.agent.created"
     agent_id: int = Field(alias="id")
+    content: dict = {}  # Add a content attribute, as all events should have it
 
 
 class AgentDeletedEvent(TenantAgentEvent):
@@ -36,6 +36,7 @@ class AgentDeletedEvent(TenantAgentEvent):
     name: ClassVar[str] = "agent_deleted"
     routing_key_fmt: ClassVar[str] = "config.agent.deleted"
     agent_id: int = Field(alias="id")
+    content: dict = {}
 
 
 class AgentEditedEvent(TenantAgentEvent):
@@ -44,6 +45,7 @@ class AgentEditedEvent(TenantAgentEvent):
     name: ClassVar[str] = "agent_edited"
     routing_key_fmt: ClassVar[str] = "config.agent.edited"
     agent_id: int = Field(alias="id")
+    content: dict = {}
 
 
 class MultiUserAgentEvent(MultiUserEvent):
@@ -51,6 +53,7 @@ class MultiUserAgentEvent(MultiUserEvent):
 
     service: ClassVar[str] = "agentd"  # Using agentd as in original.
     # user_uuids is already defined in MultiUserEvent
+    content: dict = {}
 
 
 class AgentPausedEvent(MultiUserAgentEvent):
@@ -62,6 +65,7 @@ class AgentPausedEvent(MultiUserAgentEvent):
     agent_number: str
     queue: str
     reason: str
+    content: dict = {}
 
 
 class AgentUnpausedEvent(MultiUserAgentEvent):
@@ -73,6 +77,7 @@ class AgentUnpausedEvent(MultiUserAgentEvent):
     agent_number: str
     queue: str
     reason: str
+    content: dict = {}
 
 
 class AgentStatusUpdatedEvent(MultiUserAgentEvent):
@@ -82,3 +87,4 @@ class AgentStatusUpdatedEvent(MultiUserAgentEvent):
     routing_key_fmt: ClassVar[str] = "status.agent"
     agent_id: int
     status: str
+    content: dict = {}

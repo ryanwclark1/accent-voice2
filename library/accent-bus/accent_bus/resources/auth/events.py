@@ -1,183 +1,278 @@
-# Copyright 2023 Accent Communications
+# resources/auth/events.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent, UserEvent
-from ..common.types import UUIDStr
+from pydantic import BaseModel, UUID4, Field
+
+from resources.common.event import TenantEvent, UserEvent
 from .types import TenantDict
 
 
-class TenantCreatedEvent(TenantEvent):
-    service = 'auth'
-    name = 'auth_tenant_added'
-    routing_key_fmt = 'auth.tenants.{tenant_uuid}.created'
+class AuthTenantEvent(TenantEvent):
+    """Base class for auth tenant events."""
 
-    def __init__(self, tenant_data: TenantDict, tenant_uuid: UUIDStr):
-        super().__init__(tenant_data, tenant_uuid)
+    service: ClassVar[str] = "auth"
+    content: dict  # Will be replaced by specific models in subclasses
 
 
-class TenantUpdatedEvent(TenantEvent):
-    service = 'auth'
-    name = 'auth_tenant_updated'
-    routing_key_fmt = 'auth.tenants.{tenant_uuid}.updated'
+class TenantCreatedEvent(AuthTenantEvent):
+    """Event for when a tenant is created."""
 
-    def __init__(self, name: str, tenant_uuid: UUIDStr):
-        content = {'uuid': tenant_uuid, 'name': name}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "auth_tenant_added"
+    routing_key_fmt: ClassVar[str] = "auth.tenants.{tenant_uuid}.created"
+    content: TenantDict  # Using the Pydantic model
 
-
-class TenantDeletedEvent(TenantEvent):
-    service = 'auth'
-    name = 'auth_tenant_deleted'
-    routing_key_fmt = 'auth.tenants.{tenant_uuid}.deleted'
-
-    def __init__(self, tenant_uuid: UUIDStr):
-        content = {'uuid': tenant_uuid}
-        super().__init__(content, tenant_uuid)
+    def __init__(self, tenant_data: TenantDict, **data):
+        super().__init__(content=tenant_data.model_dump(), **data)
 
 
-class UserExternalAuthAddedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_user_external_auth_added'
-    routing_key_fmt = 'auth.users.{user_uuid}.external.{external_auth_name}.created'
+class TenantContent(BaseModel):
+    """
+    Content for tenant update.
 
-    def __init__(
-        self,
-        external_auth_name: str,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {'user_uuid': user_uuid, 'external_auth_name': external_auth_name}
-        super().__init__(content, tenant_uuid, user_uuid)
+    Attributes:
+        uuid (UUID4): The tenant UUID.
+        name (str): The tenant name.
+    """
+
+    uuid: UUID4
+    name: str
 
 
-class UserExternalAuthAuthorizedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_user_external_auth_authorized'
-    routing_key_fmt = 'auth.users.{user_uuid}.external.{external_auth_name}.authorized'
+class TenantUpdatedEvent(AuthTenantEvent):
+    """Event for when a tenant is updated."""
 
-    def __init__(
-        self,
-        external_auth_name: str,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {'user_uuid': user_uuid, 'external_auth_name': external_auth_name}
-        super().__init__(content, tenant_uuid, user_uuid)
+    name: ClassVar[str] = "auth_tenant_updated"
+    routing_key_fmt: ClassVar[str] = "auth.tenants.{tenant_uuid}.updated"
+    content: TenantContent
+
+    def __init__(self, name: str, **data):
+        content = TenantContent(uuid=data["tenant_uuid"], name=name)
+        super().__init__(content=content.model_dump(), **data)
 
 
-class UserExternalAuthDeletedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_user_external_auth_deleted'
-    routing_key_fmt = 'auth.users.{user_uuid}.external.{external_auth_name}.deleted'
+class TenantDeletedContent(BaseModel):
+    """
+    Content for tenant deletion.
+    Attributes:
+        uuid (UUID4): The tenant UUID.
+    """
 
-    def __init__(
-        self,
-        external_auth_name: str,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {'user_uuid': user_uuid, 'external_auth_name': external_auth_name}
-        super().__init__(content, tenant_uuid, user_uuid)
+    uuid: UUID4
 
 
-class RefreshTokenCreatedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_refresh_token_created'
-    routing_key_fmt = 'auth.users.{user_uuid}.tokens.{client_id}.created'
+class TenantDeletedEvent(AuthTenantEvent):
+    """Event for when a tenant is deleted."""
 
-    def __init__(
-        self,
-        client_id: str,
-        is_mobile: bool,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'client_id': client_id,
-            'mobile': bool(is_mobile),
-            'user_uuid': user_uuid,
-            'tenant_uuid': tenant_uuid,
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
+    name: ClassVar[str] = "auth_tenant_deleted"
+    routing_key_fmt: ClassVar[str] = "auth.tenants.{tenant_uuid}.deleted"
+    content: TenantDeletedContent
+
+    def __init__(self, **data):
+        content = TenantDeletedContent(uuid=data["tenant_uuid"])
+        super().__init__(content=content.model_dump(), **data)
 
 
-class RefreshTokenDeletedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_refresh_token_deleted'
-    routing_key_fmt = 'auth.users.{user_uuid}.tokens.{client_id}.deleted'
+class AuthUserEvent(UserEvent):
+    """Base class for Auth User Events."""
 
-    def __init__(
-        self,
-        client_id: str,
-        is_mobile: bool,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'client_id': client_id,
-            'mobile': bool(is_mobile),
-            'user_uuid': user_uuid,
-            'tenant_uuid': tenant_uuid,
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
+    service: ClassVar[str] = "auth"
+    content: dict  # Will be replaced in subclasses
 
 
-class SessionCreatedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_session_created'
-    routing_key_fmt = 'auth.sessions.{session_uuid}.created'
+class ExternalAuthContent(BaseModel):
+    """
+    Content for external auth events.
+    Attributes:
+        user_uuid (str): UUID of the user.
+        external_auth_name (str): External auth provider name.
+    """
 
-    def __init__(
-        self,
-        session_uuid: UUIDStr,
-        is_mobile: bool,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'uuid': session_uuid,
-            'tenant_uuid': tenant_uuid,
-            'user_uuid': user_uuid,
-            'mobile': bool(is_mobile),
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
+    user_uuid: str
+    external_auth_name: str
+
+
+class UserExternalAuthAddedEvent(AuthUserEvent):
+    """Event for when an external auth is added to a user."""
+
+    name: ClassVar[str] = "auth_user_external_auth_added"
+    routing_key_fmt: ClassVar[str] = (
+        "auth.users.{user_uuid}.external.{external_auth_name}.created"
+    )
+    content: ExternalAuthContent
+
+    def __init__(self, external_auth_name: str, **data):
+        content = ExternalAuthContent(
+            user_uuid=str(data["user_uuid"]), external_auth_name=external_auth_name
+        )
+        super().__init__(content=content.model_dump(), **data)
+
+
+class UserExternalAuthAuthorizedEvent(AuthUserEvent):
+    """Event for when a user is authorized by an external auth."""
+
+    name: ClassVar[str] = "auth_user_external_auth_authorized"
+    routing_key_fmt: ClassVar[str] = (
+        "auth.users.{user_uuid}.external.{external_auth_name}.authorized"
+    )
+    content: ExternalAuthContent
+
+    def __init__(self, external_auth_name: str, **data):
+        content = ExternalAuthContent(
+            user_uuid=str(data["user_uuid"]), external_auth_name=external_auth_name
+        )
+        super().__init__(content=content.model_dump(), **data)
+
+
+class UserExternalAuthDeletedEvent(AuthUserEvent):
+    """Event for when an external auth is deleted for a user."""
+
+    name: ClassVar[str] = "auth_user_external_auth_deleted"
+    routing_key_fmt: ClassVar[str] = (
+        "auth.users.{user_uuid}.external.{external_auth_name}.deleted"
+    )
+    content: ExternalAuthContent
+
+    def __init__(self, external_auth_name: str, **data):
+        content = ExternalAuthContent(
+            user_uuid=str(data["user_uuid"]), external_auth_name=external_auth_name
+        )
+        super().__init__(content=content.model_dump(), **data)
+
+
+class RefreshTokenContent(BaseModel):
+    """
+    Content for refresh token events.
+    Attributes:
+        client_id (str): Client id.
+        mobile (bool): If mobile.
+        user_uuid (str): User UUID.
+        tenant_uuid (str): Tenant UUID.
+    """
+
+    client_id: str
+    mobile: bool
+    user_uuid: str
+    tenant_uuid: str
+
+
+class RefreshTokenCreatedEvent(AuthUserEvent):
+    """Event for when a refresh token is created."""
+
+    name: ClassVar[str] = "auth_refresh_token_created"
+    routing_key_fmt: ClassVar[str] = "auth.users.{user_uuid}.tokens.{client_id}.created"
+    content: RefreshTokenContent
+
+    def __init__(self, client_id: str, is_mobile: bool, **data):
+        content = RefreshTokenContent(
+            client_id=client_id,
+            mobile=bool(is_mobile),
+            user_uuid=str(data["user_uuid"]),
+            tenant_uuid=str(data["tenant_uuid"]),
+        )
+        super().__init__(content=content.model_dump(), **data)
+
+
+class RefreshTokenDeletedEvent(AuthUserEvent):
+    """Event for when a refresh token is deleted."""
+
+    name: ClassVar[str] = "auth_refresh_token_deleted"
+    routing_key_fmt: ClassVar[str] = "auth.users.{user_uuid}.tokens.{client_id}.deleted"
+    content: RefreshTokenContent
+
+    def __init__(self, client_id: str, is_mobile: bool, **data):
+        content = RefreshTokenContent(
+            client_id=client_id,
+            mobile=bool(is_mobile),
+            user_uuid=str(data["user_uuid"]),
+            tenant_uuid=str(data["tenant_uuid"]),
+        )
+        super().__init__(content=content.model_dump(), **data)
+
+
+class SessionContent(BaseModel):
+    """
+    Content for Session events.
+    Attributes:
+        uuid (str): The session UUID.
+        tenant_uuid (str): Tenant UUID.
+        user_uuid (str): User UUID.
+        mobile (bool): If mobile.
+    """
+
+    uuid: str
+    tenant_uuid: str
+    user_uuid: str
+    mobile: bool
+
+
+class SessionCreatedEvent(AuthUserEvent):
+    """Event for when a session is created."""
+
+    name: ClassVar[str] = "auth_session_created"
+    routing_key_fmt: ClassVar[str] = "auth.sessions.{session_uuid}.created"
+    content: SessionContent
+    session_uuid: str  # Required by routing_key_fmt
+
+    def __init__(self, session_uuid: UUID4, is_mobile: bool, **data):
+        content = SessionContent(
+            uuid=str(session_uuid),
+            tenant_uuid=str(data["tenant_uuid"]),
+            user_uuid=str(data["user_uuid"]),
+            mobile=bool(is_mobile),
+        )
+        super().__init__(content=content.model_dump(), **data)
         self.session_uuid = str(session_uuid)
 
 
-class SessionDeletedEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_session_deleted'
-    routing_key_fmt = 'auth.sessions.{session_uuid}.deleted'
+class SessionDeletedEvent(AuthUserEvent):
+    """Event for when a session is deleted."""
 
-    def __init__(
-        self,
-        session_uuid: UUIDStr,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'uuid': session_uuid,
-            'user_uuid': user_uuid,
-            'tenant_uuid': tenant_uuid,
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
+    name: ClassVar[str] = "auth_session_deleted"
+    routing_key_fmt: ClassVar[str] = "auth.sessions.{session_uuid}.deleted"
+    content: SessionContent
+    session_uuid: str  # Required by routing_key_fmt
+
+    def __init__(self, session_uuid: UUID4, **data):
+        content = SessionContent(
+            uuid=str(session_uuid),
+            user_uuid=str(data["user_uuid"]),
+            tenant_uuid=str(data["tenant_uuid"]),
+            mobile=False,  # Not on this event, avoid key error
+        )
+        super().__init__(content=content.model_dump(), **data)
         self.session_uuid = str(session_uuid)
 
 
-class SessionExpireSoonEvent(UserEvent):
-    service = 'auth'
-    name = 'auth_session_expire_soon'
-    routing_key_fmt = 'auth.users.{user_uuid}.sessions.{session_uuid}.expire_soon'
+class SessionExpireSoonContent(BaseModel):
+    """
+    Content for Session Expiration Events.
 
-    def __init__(
-        self,
-        session_uuid: UUIDStr,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'uuid': session_uuid,
-            'user_uuid': user_uuid,
-            'tenant_uuid': tenant_uuid,
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
+    Attributes:
+        uuid (str): Session UUID.
+        user_uuid (str): User UUID.
+        tenant_uuid (str): Tenant UUID.
+    """
+
+    uuid: str
+    user_uuid: str
+    tenant_uuid: str
+
+
+class SessionExpireSoonEvent(AuthUserEvent):
+    """Event for when a session is about to expire."""
+
+    name: ClassVar[str] = "auth_session_expire_soon"
+    routing_key_fmt: ClassVar[str] = (
+        "auth.users.{user_uuid}.sessions.{session_uuid}.expire_soon"
+    )
+    content: SessionExpireSoonContent
+    session_uuid: str  # Required by routing_key_fmt
+
+    def __init__(self, session_uuid: UUID4, **data):
+        content = SessionExpireSoonContent(
+            uuid=str(session_uuid),
+            user_uuid=str(data["user_uuid"]),
+            tenant_uuid=str(data["tenant_uuid"]),
+        )
+        super().__init__(content=content.model_dump(), **data)
         self.session_uuid = str(session_uuid)

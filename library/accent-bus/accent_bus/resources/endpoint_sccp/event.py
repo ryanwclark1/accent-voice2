@@ -1,44 +1,42 @@
-# Copyright 2023 Accent Communications
+# resources/endpoint_sccp/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
 from .types import EndpointSCCPDict
 
 
-class SCCPEndpointCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'sccp_endpoint_created'
-    routing_key_fmt = 'config.sccp_endpoint.created'
+class SCCPEndpointEvent(TenantEvent):
+    """Base class for SCCP Endpoint events."""
 
-    def __init__(
-        self,
-        endpoint: EndpointSCCPDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(endpoint, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class SCCPEndpointDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'sccp_endpoint_deleted'
-    routing_key_fmt = 'config.sccp_endpoint.deleted'
+class SCCPEndpointCreatedEvent(SCCPEndpointEvent):
+    """Event for when an SCCP endpoint is created."""
 
-    def __init__(
-        self,
-        endpoint: EndpointSCCPDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(endpoint, tenant_uuid)
+    name: ClassVar[str] = "sccp_endpoint_created"
+    routing_key_fmt: ClassVar[str] = "config.sccp_endpoint.created"
+
+    def __init__(self, endpoint: EndpointSCCPDict, **data):
+        super().__init__(content=endpoint, **data)
 
 
-class SCCPEndpointEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'sccp_endpoint_edited'
-    routing_key_fmt = 'config.sccp_endpoint.edited'
+class SCCPEndpointDeletedEvent(SCCPEndpointEvent):
+    """Event for when an SCCP endpoint is deleted."""
 
-    def __init__(
-        self,
-        endpoint: EndpointSCCPDict,
-        tenant_uuid: UUIDStr,
-    ):
-        super().__init__(endpoint, tenant_uuid)
+    name: ClassVar[str] = "sccp_endpoint_deleted"
+    routing_key_fmt: ClassVar[str] = "config.sccp_endpoint.deleted"
+
+    def __init__(self, endpoint: EndpointSCCPDict, **data):
+        super().__init__(content=endpoint, **data)
+
+
+class SCCPEndpointEditedEvent(SCCPEndpointEvent):
+    """Event for when an SCCP endpoint is edited."""
+
+    name: ClassVar[str] = "sccp_endpoint_edited"
+    routing_key_fmt: ClassVar[str] = "config.sccp_endpoint.edited"
+
+    def __init__(self, endpoint: EndpointSCCPDict, **data):
+        super().__init__(content=endpoint, **data)

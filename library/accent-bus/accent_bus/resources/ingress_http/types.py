@@ -1,13 +1,12 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
+# resources/ingress_http/types.py
 
 from typing import TypedDict
-
-from ..common.types import UUIDStr
+from pydantic import UUID4, BaseModel
 
 
 class IngressHTTPDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    """Represents an Ingress HTTP configuration (using TypedDict)."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
     uri: str

@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/dhcp/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class DHCPEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'dhcp_edited'
-    routing_key_fmt = 'config.dhcp.edited'
+class DHCPEvent(ServiceEvent):
+    """Base class for DHCP events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}  # ServiceEvents should have a content attribute.
+
+
+class DHCPEditedEvent(DHCPEvent):
+    """Event for when DHCP configuration is edited."""
+
+    name: ClassVar[str] = "dhcp_edited"
+    routing_key_fmt: ClassVar[str] = "config.dhcp.edited"

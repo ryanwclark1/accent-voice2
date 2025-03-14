@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/iax_general/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class IAXGeneralEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'iax_general_edited'
-    routing_key_fmt = 'config.iax_general.edited'
+class IAXGeneralEvent(ServiceEvent):
+    """Base class for IAX General events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}
+
+
+class IAXGeneralEditedEvent(IAXGeneralEvent):
+    """Event for when general IAX configuration is edited."""
+
+    name: ClassVar[str] = "iax_general_edited"
+    routing_key_fmt: ClassVar[str] = "config.iax_general.edited"

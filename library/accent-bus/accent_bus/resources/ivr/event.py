@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/ivr/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class IVRCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'ivr_created'
-    routing_key_fmt = 'config.ivr.created'
-
-    def __init__(self, ivr_id: int, tenant_uuid: UUIDStr):
-        content = {'id': ivr_id}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import TenantEvent
 
 
-class IVRDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'ivr_deleted'
-    routing_key_fmt = 'config.ivr.deleted'
+class IVREvent(TenantEvent):
+    """Base class for IVR events."""
 
-    def __init__(self, ivr_id: int, tenant_uuid: UUIDStr):
-        content = {'id': ivr_id}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class IVREditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'ivr_edited'
-    routing_key_fmt = 'config.ivr.edited'
+class IVRCreatedEvent(IVREvent):
+    """Event for when an IVR is created."""
 
-    def __init__(self, ivr_id: int, tenant_uuid: UUIDStr):
-        content = {'id': ivr_id}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "ivr_created"
+    routing_key_fmt: ClassVar[str] = "config.ivr.created"
+
+    def __init__(self, ivr_id: int, **data):
+        content = {"id": ivr_id}
+        super().__init__(content=content, **data)
+
+
+class IVRDeletedEvent(IVREvent):
+    """Event for when an IVR is deleted."""
+
+    name: ClassVar[str] = "ivr_deleted"
+    routing_key_fmt: ClassVar[str] = "config.ivr.deleted"
+
+    def __init__(self, ivr_id: int, **data):
+        content = {"id": ivr_id}
+        super().__init__(content=content, **data)
+
+
+class IVREditedEvent(IVREvent):
+    """Event for when an IVR is edited."""
+
+    name: ClassVar[str] = "ivr_edited"
+    routing_key_fmt: ClassVar[str] = "config.ivr.edited"
+
+    def __init__(self, ivr_id: int, **data):
+        content = {"id": ivr_id}
+        super().__init__(content=content, **data)

@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/iax_callnumberlimits/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class IAXCallNumberLimitsEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'iax_callnumberlimits_edited'
-    routing_key_fmt = 'config.iax_callnumberlimits.edited'
+class IAXCallNumberLimitsEvent(ServiceEvent):
+    """Base class for IAX Call Number Limits events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}
+
+
+class IAXCallNumberLimitsEditedEvent(IAXCallNumberLimitsEvent):
+    """Event for when IAX call number limits are edited."""
+
+    name: ClassVar[str] = "iax_callnumberlimits_edited"
+    routing_key_fmt: ClassVar[str] = "config.iax_callnumberlimits.edited"

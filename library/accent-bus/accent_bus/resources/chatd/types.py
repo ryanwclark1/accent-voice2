@@ -1,44 +1,51 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
+# resources/chatd/types.py
 from typing import TypedDict
 
-from ..common.types import UUIDStr
+from pydantic import UUID4
 
 
 class LinePresenceDict(TypedDict, total=False):
+    """Represents presence information for a line."""
+
     id: int
     state: str
 
 
 class MessageDict(TypedDict, total=False):
-    uuid: UUIDStr
+    """Represents a chat message."""
+
+    uuid: UUID4
     content: str
     alias: str
-    user_uuid: UUIDStr
-    tenant_uuid: UUIDStr
-    accent_uuid: UUIDStr
+    user_uuid: UUID4
+    tenant_uuid: UUID4
+    accent_uuid: UUID4
     created_at: str
-    room: RoomDict
+    room: "RoomDict"  # Forward reference for circular dependency
+
+
+class RoomUserDict(TypedDict, total=False):
+    """Represents a user within a chat room."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
+    accent_uuid: UUID4
 
 
 class RoomDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    """Represents a chat room."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
     name: str
     users: list[RoomUserDict]
 
 
-class RoomUserDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
-    accent_uuid: UUIDStr
-
-
 class UserPresenceDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    """Represents the presence status of a user."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
     state: str
     status: str
     last_activity: str

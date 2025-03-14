@@ -1,22 +1,25 @@
-# Copyright 2023 Accent Communications
+# resources/context_context/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from resources.common.event import TenantEvent
 
 
-class ContextContextsAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'contexts_associated'
-    routing_key_fmt = 'config.contexts.contexts.updated'
+class ContextContextEvent(TenantEvent):
+    """Base class for Context-Context events."""
 
-    def __init__(
-        self,
-        context_id: int,
-        context_ids: list[int],
-        tenant_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class ContextContextsAssociatedEvent(ContextContextEvent):
+    """Event for when contexts are associated."""
+
+    name: ClassVar[str] = "contexts_associated"
+    routing_key_fmt: ClassVar[str] = "config.contexts.contexts.updated"
+
+    def __init__(self, context_id: int, context_ids: list[int], **data):
         content = {
-            'context_id': context_id,
-            'context_ids': context_ids,
+            "context_id": context_id,
+            "context_ids": context_ids,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
