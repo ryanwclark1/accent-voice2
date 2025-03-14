@@ -1,6 +1,7 @@
 # src/accent_amid/main.py
 from __future__ import annotations
 
+import asyncio
 import logging
 import signal
 from contextlib import asynccontextmanager
@@ -12,9 +13,12 @@ from accent_bus.publisher import BusPublisherWithQueue
 from fastapi import FastAPI
 
 from accent_amid.api import actions, api, commands, config, status
+from accent_amid.auth import init_master_tenant
 from accent_amid.config import Settings
-from accent_amid.controller import Controller
+
+# REMOVE: from accent_amid.controller import Controller
 from accent_amid.database import engine
+from accent_amid.services.ami import AMIService  # Keep this import
 from accent_amid.utils.logging import setup_logging
 
 if TYPE_CHECKING:
@@ -26,18 +30,21 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Handle startup and shutdown events for the application using lifespan.
+    """Manage the lifespan of the FastAPI application.
 
-    This function is called when the application starts up and shuts down.
-    It initializes and closes the database connection pool, and closes the bus.
+    This function is an asynchronous context manager that handles the startup
+    and shutdown events of the FastAPI application. It initializes the database
+    connection pool on startup and closes the connections on shutdown. Additionally,
+    it closes the bus client connection if it exists in the application state.
 
     Args:
-        app (FastAPI): fastAPI application.
+        app (FastAPI): The FastAPI application instance.
 
     Yields:
-        None
+        None: This function does not yield any values.
 
     """
+    # ... (lifespan remains the same)
     logger.info("Starting up...")
     await engine.connect()  # Initialize the database connection pool
     yield
@@ -53,18 +60,19 @@ def create_app(
     bus_client: BusPublisherWithQueue | None = None,
     auth_client: AuthClient | None = None,
 ) -> FastAPI:
-    """Create the FastAPI application instance.
-
-    This function initializes the FastAPI app, sets up logging, includes API routers,
-    and optionally sets up database connections and other dependencies.
+    """Create and configure the FastAPI application.
 
     Args:
-        settings (Settings | None): The settings object to use. Defaults to a new Settings instance.
-        bus_client (BusPublisherWithQueue, optional): a bus client.
-        auth_client (AuthClient, optional): an accent auth client.
+        settings (Settings | None): Optional settings object. If not provided, a default
+        Settings instance is used.
+        bus_client (BusPublisherWithQueue | None): Optional bus client for publishing
+            messages. If not provided, a default BusPublisherWithQueue
+            instance is created.
+        auth_client (AuthClient | None): Optional authentication client.
+            If not provided, a default AuthClient instance is created.
 
     Returns:
-        FastAPI: The initialized FastAPI application.
+        FastAPI: The configured FastAPI application instance.
 
     """
     _settings = settings or Settings()
@@ -73,7 +81,7 @@ def create_app(
     app = FastAPI(
         title="Accent AMI Daemon",
         description="A modern daemon for interacting with Asterisk's AMI, built with FastAPI.",
-        version="0.2.0",  # Updated version
+        version="0.2.0",
         openapi_tags=[
             {"name": "actions", "description": "Operations related to AMI actions."},
             {"name": "commands", "description": "Executing AMI commands."},
@@ -90,7 +98,7 @@ def create_app(
     app.include_router(status.router, prefix="/status", tags=["status"])
     app.include_router(api.router, prefix="", tags=["api"])
 
-    # Store settings and other dependencies in app state for access by endpoints
+    # Store settings and other dependencies in app state
     app.state.settings = _settings
     app.state.bus_client = (
         bus_client
@@ -108,26 +116,36 @@ def create_app(
     return app
 
 
-def run_app() -> None:
+async def run_app_async() -> None:  # New async run_app
     """Run the application using the configured settings.
 
     This function sets up the controller, handles signals, and runs the main loop.
     """
     settings = Settings()
+    bus_client = BusPublisherWithQueue(
+        name="accent-amid", service_uuid=str(settings.UUID), **settings.bus.model_dump()
+    )
+    auth_client = AuthClient(**settings.auth.model_dump())
 
-    controller = Controller(settings)
-    signal.signal(signal.SIGTERM, partial(_signal_handler, controller))
-    signal.signal(signal.SIGINT, partial(_signal_handler, controller))
-    controller.run()
+    ami_service = AMIService(settings, bus_client, auth_client)
+    # Set up signal handling (using partial to pass ami_service)
+    signal.signal(signal.SIGTERM, partial(_signal_handler, ami_service))
+    signal.signal(signal.SIGINT, partial(_signal_handler, ami_service))
+
+    await init_master_tenant(auth_client, settings)
+    async with ami_service:  # Use async context manager
+        if settings.PUBLISH_AMI_EVENTS:
+            await ami_service.run()
 
 
-def _signal_handler(controller: Controller, signum: int, frame: FrameType) -> None:
-    """Handle system signals to gracefully stop the application.
+def run_app() -> None:
+    """Sync entry point that runs the async `run_app_async`."""
+    asyncio.run(run_app_async())
 
-    Args:
-        controller (Controller): The application's controller.
-        signum (int): The signal number.
-        frame (FrameType): The current stack frame.
 
-    """
-    controller.stop(reason=signal.Signals(signum).name)
+async def _signal_handler(
+    ami_service: AMIService, signum: int, frame: FrameType
+) -> None:  # Now takes AMIService
+    """Handle system signals."""
+    logger.warning("Stopping accent-amid: %s", signal.Signals(signum).name)
+    await ami_service.stop()  # Use await, as stop is async

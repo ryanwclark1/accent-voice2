@@ -1,42 +1,62 @@
-# Copyright 2023 Accent Communications
-
+# src/accent_amid/auth.py
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeVar
+import logging
+from typing import TYPE_CHECKING, Callable, TypeVar
 
-from accent.auth_verifier import required_acl as required_acl_
-from accent.auth_verifier import required_tenant
-from werkzeug.local import LocalProxy as Proxy
+from fastapi import Depends, HTTPException, status
 
-from .exceptions import NotInitializedException
-from .rest_api import app
+from accent_amid.api.dependencies import get_auth_client
+from accent_amid.exceptions import NotInitializedException
 
 if TYPE_CHECKING:
+    from accent_auth_client import Client as AuthClient
     from accent_auth_client.types import TokenDict
 
-    F = TypeVar('F')
+logger = logging.getLogger(__name__)
 
-required_acl = required_acl_
-
-
-def required_master_tenant() -> Callable[[F], F]:
-    return required_tenant(master_tenant_uuid)
+F = TypeVar("F", bound=Callable)
 
 
-def init_master_tenant(token: TokenDict) -> None:
-    tenant_uuid = token['metadata']['tenant_uuid']
-    app.config['auth']['master_tenant_uuid'] = tenant_uuid
+async def get_master_tenant_uuid(auth_client: AuthClient) -> str:  # Now async
+    """Retrieves the master tenant UUID.
+
+    Args:
+        auth_client (AuthClient): The AuthClient instance.
+
+    Returns:
+        str: master tenenat UUID
+
+    Raises:
+        NotInitializedException: If the master tenant UUID is not initialized.
+        Exception:  If the app is somehow not configured.
+
+    """  # noqa: D401
+    # Simplified logic, directly using the auth_client. No need for Proxy.
+    try:
+        return await auth_client.get_master_tenant_uuid()
+    except Exception as e:  # Catch potential exceptions from get_master_tenant_uuid
+        raise NotInitializedException() from e
 
 
-def get_master_tenant_uuid() -> str:
-    if not app:
-        raise Exception('Flask application not configured')
+async def init_master_tenant(
+    auth_client: AuthClient, settings
+) -> None:  # Consistent naming
+    """
+    Initializes the master tenant UUID (if needed in the future).
+    For now, simply ensures that we can get the master tenant UUID.
 
-    tenant_uuid = app.config['auth'].get('master_tenant_uuid')
-    if not tenant_uuid:
-        raise NotInitializedException()
-    return tenant_uuid
+    Args:
+        auth_client: auth client.
+        settings: the settings.
+    """
+    await get_master_tenant_uuid(auth_client)
+    # You can add additional setup logic here if needed in the future
 
 
-master_tenant_uuid = Proxy(get_master_tenant_uuid)
+# The following is a dependency, so it's moved to api/dependencies.py.
+# def required_master_tenant() -> Callable[[F], F]:
+#     return required_tenant(master_tenant_uuid)
+
+# Removed, as it's been moved to api/dependencies.py.
+# master_tenant_uuid = Proxy(get_master_tenant_uuid)
