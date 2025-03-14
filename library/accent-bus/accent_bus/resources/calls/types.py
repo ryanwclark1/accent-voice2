@@ -2,7 +2,8 @@
 from typing import TypedDict
 
 from pydantic import UUID4
-from resources.common.types import DateTimeStr
+
+from accent_bus.resources.common.types import DateTimeStr
 
 
 class ApplicationCallDict(TypedDict, total=False):

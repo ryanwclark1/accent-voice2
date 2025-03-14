@@ -1,7 +1,7 @@
 # resources/trunk_register/event.py
 from typing import ClassVar
 
-from resources.common.event import ServiceEvent, TenantEvent
+from accent_bus.resources.common.event import TenantEvent
 
 
 class TrunkRegisterEvent(TenantEvent):

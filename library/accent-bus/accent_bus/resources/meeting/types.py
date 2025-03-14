@@ -1,8 +1,9 @@
 # resources/meeting/types.py
-from typing import TypedDict, List
+from typing import TypedDict
 
 from pydantic import UUID4
-from resources.common.types import DateTimeStr
+
+from accent_bus.resources.common.types import DateTimeStr
 
 
 class MeetingDict(TypedDict, total=False):

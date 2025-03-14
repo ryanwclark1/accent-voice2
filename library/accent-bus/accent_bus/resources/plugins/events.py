@@ -1,41 +1,51 @@
-# Copyright 2023 Accent Communications
+# resources/plugins/events.py
+from typing import ClassVar
 
-from __future__ import annotations
+from pydantic import UUID4, BaseModel
 
-from ..common.event import ServiceEvent
-from ..common.types import UUIDStr
-from .types import PluginErrorDict
+from accent_bus.resources.common.event import ServiceEvent
+
+
+class PluginProgressContent(BaseModel):
+    """Content for plugin install/uninstall progress events.
+
+    Attributes:
+        uuid (UUID4): Plugin UUID
+        status (str): Installation status.
+        errors (dict, optional): Error details.
+
+    """
+
+    uuid: UUID4
+    status: str
+    errors: dict | None = None
 
 
 class PluginInstallProgressEvent(ServiceEvent):
-    service = 'plugind'
-    name = 'plugin_install_progress'
-    routing_key_fmt = 'plugin.install.{uuid}.{status}'
+    """Event for reporting plugin installation progress."""
+
+    service: ClassVar[str] = "plugind"
+    name: ClassVar[str] = "plugin_install_progress"
+    routing_key_fmt: ClassVar[str] = "plugin.install.{uuid}.{status}"
+    content: PluginProgressContent
 
     def __init__(
-        self,
-        plugin_uuid: UUIDStr,
-        status: str,
-        errors: PluginErrorDict | None = None,
+        self, plugin_uuid: UUID4, status: str, errors: dict | None = None, **data
     ):
-        content = {'uuid': plugin_uuid, 'status': status}
-        if errors:
-            content.update(errors=errors)  # type: ignore[call-overload]
-        super().__init__(content)
+        content = PluginProgressContent(uuid=plugin_uuid, status=status, errors=errors)
+        super().__init__(content=content.model_dump(), **data)
 
 
 class PluginUninstallProgressEvent(ServiceEvent):
-    service = 'plugind'
-    name = 'plugin_uninstall_progress'
-    routing_key_fmt = 'plugin.uninstall.{uuid}.{status}'
+    """Event for reporting plugin uninstallation progress."""
+
+    service: ClassVar[str] = "plugind"
+    name: ClassVar[str] = "plugin_uninstall_progress"
+    routing_key_fmt: ClassVar[str] = "plugin.uninstall.{uuid}.{status}"
+    content: PluginProgressContent
 
     def __init__(
-        self,
-        plugin_uuid: UUIDStr,
-        status: str,
-        errors: PluginErrorDict | None = None,
+        self, plugin_uuid: UUID4, status: str, errors: dict | None = None, **data
     ):
-        content = {'uuid': plugin_uuid, 'status': status}
-        if errors:
-            content.update(errors=errors)  # type: ignore[call-overload]
-        super().__init__(content)
+        content = PluginProgressContent(uuid=plugin_uuid, status=status, errors=errors)
+        super().__init__(content=content.model_dump(), **data)

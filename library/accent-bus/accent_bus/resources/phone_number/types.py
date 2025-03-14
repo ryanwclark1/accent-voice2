@@ -1,16 +1,14 @@
-# Copyright 2023 Accent Communications
+# resources/phone_number/types.py
 
-from __future__ import annotations
-
-from typing import TypedDict
-
-from ..common.types import UUIDStr
+from pydantic import UUID4, BaseModel
 
 
-class PhoneNumberDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+class PhoneNumberDict(BaseModel):
+    """Represents a phone number."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
     number: str
-    caller_id_name: str | None
+    caller_id_name: str | None = None
     main: bool
     shareable: bool

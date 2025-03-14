@@ -1,7 +1,7 @@
 # resources/call_logs/types.py
 from typing import TypedDict
 
-from resources.common.types import DateTimeStr, UUIDStr
+from accent_bus.resources.common.types import DateTimeStr, UUIDStr
 
 
 class DestinationConferenceDict(TypedDict, total=False):
@@ -26,8 +26,6 @@ class DestinationUserDict(TypedDict, total=False):
 
 class DestinationUnknownDict(TypedDict, total=False):
     """Represents unknown destination details."""
-
-    ...  # Empty, as per original definition
 
 
 class DestinationDetailsDict(TypedDict, total=False):
@@ -81,10 +79,12 @@ class CDRDataDict(TypedDict, total=False):
     source_user_uuid: UUIDStr
     tags: list[str]
     recordings: list[RecordingDict]
+
+
 # resources/call_logs/types.py
 from typing import TypedDict
 
-from resources.common.types import DateTimeStr, UUIDStr
+from accent_bus.resources.common.types import DateTimeStr, UUIDStr
 
 
 class DestinationConferenceDict(TypedDict, total=False):
@@ -109,8 +109,6 @@ class DestinationUserDict(TypedDict, total=False):
 
 class DestinationUnknownDict(TypedDict, total=False):
     """Represents unknown destination details."""
-
-    ...  # Empty, as per original definition
 
 
 class DestinationDetailsDict(TypedDict, total=False):

@@ -1,9 +1,9 @@
 # resources/user/event.py
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from resources.common.event import TenantEvent, UserEvent
+from accent_bus.resources.common.event import TenantEvent, UserEvent
 
 
 class _BaseUserEvent(TenantEvent):

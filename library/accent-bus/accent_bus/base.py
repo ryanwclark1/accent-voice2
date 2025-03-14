@@ -49,6 +49,7 @@ class BaseProtocol:
         msg = "Subclasses must implement 'log'"
         raise NotImplementedError(msg)
 
+
 class Base(BaseProtocol):
     """Base class for publishers/consumers (to be extended by mixins)."""
 

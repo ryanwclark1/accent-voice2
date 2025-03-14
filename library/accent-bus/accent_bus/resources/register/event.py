@@ -1,63 +1,77 @@
-# Copyright 2023 Accent Communications
+# resources/register/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
-
-
-class RegisterSIPCreated(ServiceEvent):
-    service = 'confd'
-    name = 'register_sip_created'
-    routing_key_fmt = 'config.register.sip.created'
-
-    def __init__(self, register_id: int):
-        content = {'id': int(register_id)}
-        super().__init__(content)
+from accent_bus.resources.common.event import ServiceEvent
 
 
-class RegisterSIPDeleted(ServiceEvent):
-    service = 'confd'
-    name = 'register_sip_deleted'
-    routing_key_fmt = 'config.register.sip.deleted'
+class RegisterEvent(ServiceEvent):
+    """Base class for Register events."""
 
-    def __init__(self, register_id: int):
-        content = {'id': int(register_id)}
-        super().__init__(content)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class RegisterSIPEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'register_sip_edited'
-    routing_key_fmt = 'config.register.sip.edited'
+class RegisterSIPCreated(RegisterEvent):
+    """Event for when a SIP register is created."""
 
-    def __init__(self, register_id: int):
-        content = {'id': int(register_id)}
-        super().__init__(content)
+    name: ClassVar[str] = "register_sip_created"
+    routing_key_fmt: ClassVar[str] = "config.register.sip.created"
 
-
-class RegisterIAXCreatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'register_iax_created'
-    routing_key_fmt = 'config.register.iax.created'
-
-    def __init__(self, register_id: int):
-        content = {'id': int(register_id)}
-        super().__init__(content)
+    def __init__(self, register_id: int, **data):
+        content = {"id": int(register_id)}
+        super().__init__(content=content, **data)
 
 
-class RegisterIAXDeletedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'register_iax_deleted'
-    routing_key_fmt = 'config.register.iax.deleted'
+class RegisterSIPDeleted(RegisterEvent):
+    """Event for when a SIP register is deleted."""
 
-    def __init__(self, register_id: int):
-        content = {'id': int(register_id)}
-        super().__init__(content)
+    name: ClassVar[str] = "register_sip_deleted"
+    routing_key_fmt: ClassVar[str] = "config.register.sip.deleted"
+
+    def __init__(self, register_id: int, **data):
+        content = {"id": int(register_id)}
+        super().__init__(content=content, **data)
 
 
-class RegisterIAXEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'register_iax_edited'
-    routing_key_fmt = 'config.register.iax.edited'
+class RegisterSIPEditedEvent(RegisterEvent):
+    """Event for when a SIP register is edited."""
 
-    def __init__(self, register_id: int):
-        content = {'id': int(register_id)}
-        super().__init__(content)
+    name: ClassVar[str] = "register_sip_edited"
+    routing_key_fmt: ClassVar[str] = "config.register.sip.edited"
+
+    def __init__(self, register_id: int, **data):
+        content = {"id": int(register_id)}
+        super().__init__(content=content, **data)
+
+
+class RegisterIAXCreatedEvent(RegisterEvent):
+    """Event for when an IAX register is created."""
+
+    name: ClassVar[str] = "register_iax_created"
+    routing_key_fmt: ClassVar[str] = "config.register.iax.created"
+
+    def __init__(self, register_id: int, **data):
+        content = {"id": int(register_id)}
+        super().__init__(content=content, **data)
+
+
+class RegisterIAXDeletedEvent(RegisterEvent):
+    """Event for when an IAX register is deleted."""
+
+    name: ClassVar[str] = "register_iax_deleted"
+    routing_key_fmt: ClassVar[str] = "config.register.iax.deleted"
+
+    def __init__(self, register_id: int, **data):
+        content = {"id": int(register_id)}
+        super().__init__(content=content, **data)
+
+
+class RegisterIAXEditedEvent(RegisterEvent):
+    """Event for when an IAX register is edited."""
+
+    name: ClassVar[str] = "register_iax_edited"
+    routing_key_fmt: ClassVar[str] = "config.register.iax.edited"
+
+    def __init__(self, register_id: int, **data):
+        content = {"id": int(register_id)}
+        super().__init__(content=content, **data)

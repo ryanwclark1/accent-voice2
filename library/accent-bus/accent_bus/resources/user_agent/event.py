@@ -1,7 +1,7 @@
 # resources/user_agent/event.py
 from typing import ClassVar
 
-from resources.common.event import UserEvent
+from accent_bus.resources.common.event import UserEvent
 
 
 class UserAgentEvent(UserEvent):

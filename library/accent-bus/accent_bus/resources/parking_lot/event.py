@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/parking_lot/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class ParkingLotCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'parking_lot_created'
-    routing_key_fmt = 'config.parkinglots.created'
-
-    def __init__(self, parking_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(parking_id)}
-        super().__init__(content, tenant_uuid)
+from accent_bus.resources.common.event import TenantEvent
 
 
-class ParkingLotDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'parking_lot_deleted'
-    routing_key_fmt = 'config.parkinglots.deleted'
+class ParkingLotEvent(TenantEvent):
+    """Base class for Parking Lot events."""
 
-    def __init__(self, parking_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(parking_id)}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class ParkingLotEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'parking_lot_edited'
-    routing_key_fmt = 'config.parkinglots.edited'
+class ParkingLotCreatedEvent(ParkingLotEvent):
+    """Event for when a parking lot is created."""
 
-    def __init__(self, parking_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(parking_id)}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "parking_lot_created"
+    routing_key_fmt: ClassVar[str] = "config.parkinglots.created"
+
+    def __init__(self, parking_id: int, **data):
+        content = {"id": int(parking_id)}
+        super().__init__(content=content, **data)
+
+
+class ParkingLotDeletedEvent(ParkingLotEvent):
+    """Event for when a parking lot is deleted."""
+
+    name: ClassVar[str] = "parking_lot_deleted"
+    routing_key_fmt: ClassVar[str] = "config.parkinglots.deleted"
+
+    def __init__(self, parking_id: int, **data):
+        content = {"id": int(parking_id)}
+        super().__init__(content=content, **data)
+
+
+class ParkingLotEditedEvent(ParkingLotEvent):
+    """Event for when a parking lot is edited."""
+
+    name: ClassVar[str] = "parking_lot_edited"
+    routing_key_fmt: ClassVar[str] = "config.parkinglots.edited"
+
+    def __init__(self, parking_id: int, **data):
+        content = {"id": int(parking_id)}
+        super().__init__(content=content, **data)

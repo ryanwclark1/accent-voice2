@@ -2,7 +2,8 @@
 from typing import ClassVar
 
 from pydantic import BaseModel
-from resources.common.event import ServiceEvent
+
+from accent_bus.resources.common.event import ServiceEvent
 
 
 class ServiceRegisteredContent(BaseModel):

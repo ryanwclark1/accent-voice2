@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/paging/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class PagingCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'paging_created'
-    routing_key_fmt = 'config.pagings.created'
-
-    def __init__(self, paging_id: int, tenant_uuid: UUIDStr):
-        content = {'id': paging_id}
-        super().__init__(content, tenant_uuid)
+from accent_bus.resources.common.event import TenantEvent
 
 
-class PagingDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'paging_deleted'
-    routing_key_fmt = 'config.pagings.deleted'
+class PagingEvent(TenantEvent):
+    """Base class for Paging events."""
 
-    def __init__(self, paging_id: int, tenant_uuid: UUIDStr):
-        content = {'id': paging_id}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class PagingEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'paging_edited'
-    routing_key_fmt = 'config.pagings.edited'
+class PagingCreatedEvent(PagingEvent):
+    """Event for when a paging group is created."""
 
-    def __init__(self, paging_id: int, tenant_uuid: UUIDStr):
-        content = {'id': paging_id}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "paging_created"
+    routing_key_fmt: ClassVar[str] = "config.pagings.created"
+
+    def __init__(self, paging_id: int, **data):
+        content = {"id": paging_id}
+        super().__init__(content=content, **data)
+
+
+class PagingDeletedEvent(PagingEvent):
+    """Event for when a paging group is deleted."""
+
+    name: ClassVar[str] = "paging_deleted"
+    routing_key_fmt: ClassVar[str] = "config.pagings.deleted"
+
+    def __init__(self, paging_id: int, **data):
+        content = {"id": paging_id}
+        super().__init__(content=content, **data)
+
+
+class PagingEditedEvent(PagingEvent):
+    """Event for when a paging group is edited."""
+
+    name: ClassVar[str] = "paging_edited"
+    routing_key_fmt: ClassVar[str] = "config.pagings.edited"
+
+    def __init__(self, paging_id: int, **data):
+        content = {"id": paging_id}
+        super().__init__(content=content, **data)

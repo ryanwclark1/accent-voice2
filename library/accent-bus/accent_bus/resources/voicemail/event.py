@@ -1,9 +1,8 @@
 # resources/voicemail/event.py
 from typing import ClassVar
 
-from pydantic import BaseModel, UUID4, Field
+from accent_bus.resources.common.event import TenantEvent, UserEvent
 
-from resources.common.event import TenantEvent, UserEvent
 from .types import VoicemailMessageDict
 
 

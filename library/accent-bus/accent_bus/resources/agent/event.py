@@ -2,8 +2,8 @@
 from typing import ClassVar
 
 # from pydantic import BaseModel  <-- No longer needed here, as we inherit from TenantEvent
+from accent_bus.resources.common.event import TenantEvent
 
-from resources.common.event import TenantEvent
 from .types import AccessFeatureData  # Import the Pydantic model
 
 

@@ -1,35 +1,34 @@
-# Copyright 2023 Accent Communications
+# resources/push_notification/events.py
+from typing import ClassVar
 
-from ..common.event import UserEvent
-from ..common.types import UUIDStr
+from accent_bus.resources.common.event import UserEvent
+
 from .types import PushMobileDict
 
 
-class CallPushNotificationEvent(UserEvent):
-    service = 'calld'
-    name = 'call_push_notification'
-    routing_key_fmt = 'calls.call.push_notification'
-    required_acl_fmt = 'events.calls.{user_uuid}'
+class PushNotificationEvent(UserEvent):
+    """Base class for Push Notification events."""
 
-    def __init__(
-        self,
-        push: PushMobileDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        super().__init__(push, tenant_uuid, user_uuid)
+    service: ClassVar[str] = "calld"
+    required_acl_fmt: ClassVar[str] = "events.calls.{user_uuid}"
+    content: dict
 
 
-class CallCancelPushNotificationEvent(UserEvent):
-    service = 'calld'
-    name = 'call_cancel_push_notification'
-    routing_key_fmt = 'calls.call.cancel_push_notification'
-    required_acl_fmt = 'events.calls.{user_uuid}'
+class CallPushNotificationEvent(PushNotificationEvent):
+    """Event for sending a call push notification."""
 
-    def __init__(
-        self,
-        push: PushMobileDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        super().__init__(push, tenant_uuid, user_uuid)
+    name: ClassVar[str] = "call_push_notification"
+    routing_key_fmt: ClassVar[str] = "calls.call.push_notification"
+
+    def __init__(self, push: PushMobileDict, **data):
+        super().__init__(content=push.model_dump(), **data)
+
+
+class CallCancelPushNotificationEvent(PushNotificationEvent):
+    """Event for cancelling a call push notification."""
+
+    name: ClassVar[str] = "call_cancel_push_notification"
+    routing_key_fmt: ClassVar[str] = "calls.call.cancel_push_notification"
+
+    def __init__(self, push: PushMobileDict, **data):
+        super().__init__(content=push.model_dump(), **data)

@@ -17,7 +17,15 @@ class OutcallCreatedEvent(OutcallEvent):
     name: ClassVar[str] = "outcall_created"
     routing_key_fmt: ClassVar[str] = "config.outcalls.created"
 
-    def __init__(self, outcall_id: int, **data):
+    def __init__(self, outcall_id: int, **data):  # noqa: ANN204
+        """Initialize an Event instance with the given outcall ID and additional data.
+
+        Args:
+            outcall_id (int): The ID of the outcall.
+            **data: Additional keyword arguments to be passed to the
+                superclass initializer.
+
+        """
         content = {"id": outcall_id}
         super().__init__(content=content, **data)
 
@@ -40,5 +48,13 @@ class OutcallEditedEvent(OutcallEvent):
     routing_key_fmt: ClassVar[str] = "config.outcalls.edited"
 
     def __init__(self, outcall_id: int, **data):
+        """Initialize an instance of class with given outcall ID and additional data.
+
+        Args:
+            outcall_id (int): The ID of the outcall.
+            **data: Additional keyword arguments to be passed to the
+                superclass initializer.
+
+        """
         content = {"id": outcall_id}
         super().__init__(content=content, **data)

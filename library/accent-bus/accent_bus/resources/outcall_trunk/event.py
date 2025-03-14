@@ -1,22 +1,25 @@
-# Copyright 2023 Accent Communications
+# resources/outcall_trunk/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from accent_bus.resources.common.event import TenantEvent
 
 
-class OutcallTrunksAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'outcall_trunks_associated'
-    routing_key_fmt = 'config.outcalls.trunks.updated'
+class OutcallTrunkEvent(TenantEvent):
+    """Base class for Outcall Trunk events."""
 
-    def __init__(
-        self,
-        outcall_id: int,
-        trunk_ids: list[int],
-        tenant_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class OutcallTrunksAssociatedEvent(OutcallTrunkEvent):
+    """Event for when trunks are associated with an outcall."""
+
+    name: ClassVar[str] = "outcall_trunks_associated"
+    routing_key_fmt: ClassVar[str] = "config.outcalls.trunks.updated"
+
+    def __init__(self, outcall_id: int, trunk_ids: list[int], **data):
         content = {
-            'outcall_id': outcall_id,
-            'trunk_ids': trunk_ids,
+            "outcall_id": outcall_id,
+            "trunk_ids": trunk_ids,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)

@@ -1,49 +1,63 @@
-# Copyright 2023 Accent Communications
+# resources/pjsip/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from accent_bus.resources.common.event import ServiceEvent
+
 from .types import PJSIPTransportDict
 
 
-class PJSIPGlobalUpdatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'pjsip_global_updated'
-    routing_key_fmt = 'config.pjsip_global.updated'
+class PJSIPEvent(ServiceEvent):
+    """Base class for PJSIP events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}
 
 
-class PJSIPSystemUpdatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'pjsip_system_updated'
-    routing_key_fmt = 'config.pjsip_system.updated'
+class PJSIPGlobalUpdatedEvent(PJSIPEvent):
+    """Event for when global PJSIP settings are updated."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    name: ClassVar[str] = "pjsip_global_updated"
+    routing_key_fmt: ClassVar[str] = "config.pjsip_global.updated"
 
 
-class SIPTransportCreatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'sip_transport_created'
-    routing_key_fmt = 'config.sip.transports.created'
+class PJSIPSystemUpdatedEvent(PJSIPEvent):
+    """Event for when system PJSIP settings are updated."""
 
-    def __init__(self, transport: PJSIPTransportDict):
-        super().__init__(transport)
+    name: ClassVar[str] = "pjsip_system_updated"
+    routing_key_fmt: ClassVar[str] = "config.pjsip_system.updated"
 
 
-class SIPTransportDeletedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'sip_transport_deleted'
-    routing_key_fmt = 'config.sip.transports.deleted'
+class SIPTransportEvent(PJSIPEvent):
+    """Base class for SIP transport events."""
 
-    def __init__(self, transport: PJSIPTransportDict):
-        super().__init__(transport)
+    content: PJSIPTransportDict
 
 
-class SIPTransportEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'sip_transport_edited'
-    routing_key_fmt = 'config.sip.transports.edited'
+class SIPTransportCreatedEvent(SIPTransportEvent):
+    """Event for when a SIP transport is created."""
 
-    def __init__(self, transport: PJSIPTransportDict):
-        super().__init__(transport)
+    name: ClassVar[str] = "sip_transport_created"
+    routing_key_fmt: ClassVar[str] = "config.sip.transports.created"
+
+    def __init__(self, transport: PJSIPTransportDict, **data):
+        super().__init__(content=transport, **data)
+
+
+class SIPTransportDeletedEvent(SIPTransportEvent):
+    """Event for when a SIP transport is deleted."""
+
+    name: ClassVar[str] = "sip_transport_deleted"
+    routing_key_fmt: ClassVar[str] = "config.sip.transports.deleted"
+
+    def __init__(self, transport: PJSIPTransportDict, **data):
+        super().__init__(content=transport, **data)
+
+
+class SIPTransportEditedEvent(SIPTransportEvent):
+    """Event for when a SIP transport is edited."""
+
+    name: ClassVar[str] = "sip_transport_edited"
+    routing_key_fmt: ClassVar[str] = "config.sip.transports.edited"
+
+    def __init__(self, transport: PJSIPTransportDict, **data):
+        super().__init__(content=transport, **data)
