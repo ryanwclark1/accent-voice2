@@ -1,5 +1,4 @@
 # resources/endpoint_iax/types.py
-
 from pydantic import UUID4, BaseModel
 
 
@@ -14,4 +13,4 @@ class EndpointIAXDict(BaseModel):
 
     id: int
     tenant_uuid: UUID4
-    trunk: EndpointIAXTrunkDict
+    trunk: EndpointIAXTrunkDict | None = None

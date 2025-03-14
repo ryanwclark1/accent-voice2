@@ -17,7 +17,7 @@ class ConnectionParams(NamedTuple):
 
 
 class BaseProtocol:
-    """Base protocol for publishers and consumers."""
+    """Base class for publishers/consumers (to be extended by mixins)."""
 
     _name: str
     _logger: logging.Logger
@@ -37,12 +37,17 @@ class BaseProtocol:
         **kwargs: Any,
     ): ...  # remove definition
 
-    @property
-    def url(self) -> str: ...  # remove definition
+    @property  # Correct.  This *is* a property.
+    def url(self) -> str:
+        """Returns the AMQP URL (must be implemented by subclasses)."""
+        msg = "Subclasses must implement 'url'"
+        raise NotImplementedError(msg)
 
-    @property
-    def log(self) -> logging.Logger: ...  # remove definition
-
+    @property  # Correct. This *is* a property.
+    def log(self) -> logging.Logger:
+        """Returns the logger (must be implemented by subclasses)."""
+        msg = "Subclasses must implement 'log'"
+        raise NotImplementedError(msg)
 
 class Base(BaseProtocol):
     """Base class for publishers/consumers (to be extended by mixins)."""

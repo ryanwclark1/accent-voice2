@@ -1,40 +1,39 @@
-# Copyright 2023 Accent Communications
+# resources/user_voicemail/event.py
+from typing import ClassVar
 
-from ..common.event import UserEvent
-from ..common.types import UUIDStr
+from accent_bus.resources.common.event import UserEvent  # Correct import
 
 
-class UserVoicemailAssociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_voicemail_associated'
-    routing_key_fmt = 'config.users.{user_uuid}.voicemails.updated'
+class UserVoicemailEvent(UserEvent):
+    """Base class for User Voicemail events."""
 
-    def __init__(
-        self,
-        voicemail_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class UserVoicemailAssociatedEvent(UserVoicemailEvent):
+    """Event for when a voicemail is associated with a user."""
+
+    name: ClassVar[str] = "user_voicemail_associated"
+    routing_key_fmt: ClassVar[str] = "config.users.{user_uuid}.voicemails.updated"
+
+    def __init__(self, voicemail_id: int, **data):
         content = {
-            'user_uuid': str(user_uuid),
-            'voicemail_id': int(voicemail_id),
+            "user_uuid": str(data["user_uuid"]),
+            "voicemail_id": int(voicemail_id),
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)
 
 
-class UserVoicemailDissociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_voicemail_dissociated'
-    routing_key_fmt = 'config.users.{user_uuid}.voicemails.deleted'
+class UserVoicemailDissociatedEvent(UserVoicemailEvent):
+    """Event for when a voicemail is dissociated from a user."""
 
-    def __init__(
-        self,
-        voicemail_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "user_voicemail_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.users.{user_uuid}.voicemails.deleted"
+
+    def __init__(self, voicemail_id: int, **data):
         content = {
-            'user_uuid': user_uuid,
-            'voicemail_id': int(voicemail_id),
+            "user_uuid": str(data["user_uuid"]),
+            "voicemail_id": int(voicemail_id),
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)

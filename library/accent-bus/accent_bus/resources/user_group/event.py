@@ -1,22 +1,25 @@
-# Copyright 2023 Accent Communications
+# resources/user_group/event.py
+from typing import ClassVar
 
-from ..common.event import UserEvent
-from ..common.types import UUIDStr
+from resources.common.event import UserEvent
 
 
-class UserGroupsAssociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_groups_associated'
-    routing_key_fmt = 'config.users.groups.updated'
+class UserGroupEvent(UserEvent):
+    """Base class for User Group events."""
 
-    def __init__(
-        self,
-        group_ids: list[int],
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class UserGroupsAssociatedEvent(UserGroupEvent):
+    """Event for when groups are associated with a user."""
+
+    name: ClassVar[str] = "user_groups_associated"
+    routing_key_fmt: ClassVar[str] = "config.users.groups.updated"
+
+    def __init__(self, group_ids: list[int], **data):
         content = {
-            'user_uuid': str(user_uuid),
-            'group_ids': group_ids,
+            "user_uuid": str(data["user_uuid"]),
+            "group_ids": group_ids,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)

@@ -1,33 +1,39 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
-from typing import TypedDict
-
-from ..common.types import UUIDStr
+# resources/user_line/types.py
+from pydantic import UUID4, BaseModel
 
 
-class EndpointCustomDict(TypedDict, total=False):
+class EndpointCustomDict(BaseModel):
+    """Represents a custom endpoint."""
+
     id: int
 
 
-class EndpointSCCPDict(TypedDict, total=False):
+class EndpointSCCPDict(BaseModel):
+    """Represents an SCCP endpoint."""
+
     id: int
 
 
-class EndpointSIPDict(TypedDict, total=False):
-    uuid: UUIDStr
+class EndpointSIPDict(BaseModel):
+    """Represents a SIP endpoint."""
+
+    uuid: UUID4
 
 
-class LineDict(TypedDict, total=False):
+class LineDict(BaseModel):
+    """Represents a line."""
+
     id: int
     name: str
-    endpoint_sip: EndpointSIPDict
-    endpoint_sccp: EndpointSCCPDict
-    endpoint_custom: EndpointCustomDict
+    endpoint_sip: EndpointSIPDict | None = None
+    endpoint_sccp: EndpointSCCPDict | None = None
+    endpoint_custom: EndpointCustomDict | None = None
+    # Removed tenant_uuid, as it is already in the base class
 
 
-class UserDict(TypedDict, total=False):
+class UserDict(BaseModel):
+    """Represents a user."""
+
     id: int
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+    uuid: UUID4
+    tenant_uuid: UUID4  # Include tenant_uuid here

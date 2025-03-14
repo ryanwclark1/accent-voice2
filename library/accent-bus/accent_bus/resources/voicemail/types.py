@@ -1,20 +1,21 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
-from typing import TypedDict
+# resources/voicemail/types.py
+from pydantic import BaseModel
 
 
-class VoicemailFolderDict(TypedDict, total=False):
+class VoicemailFolderDict(BaseModel):
+    """Represents a voicemail folder."""
+
     id: int
     name: str
     type: str
 
 
-class VoicemailMessageDict(TypedDict, total=False):
+class VoicemailMessageDict(BaseModel):
+    """Represents a voicemail message."""
+
     id: str
     caller_id_name: str
     caller_id_num: str
     duration: int
-    tiemstamp: int
+    timestamp: int  # Changed from tiemstamp
     folder: VoicemailFolderDict

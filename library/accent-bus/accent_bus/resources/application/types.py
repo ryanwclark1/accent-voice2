@@ -1,7 +1,6 @@
 # resources/application/types.py
-from typing import Dict, Optional
 
-from pydantic import BaseModel, UUID4, Field
+from pydantic import UUID4, BaseModel, Field
 
 
 class ApplicationDict(BaseModel):

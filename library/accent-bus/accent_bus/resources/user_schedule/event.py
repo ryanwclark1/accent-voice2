@@ -1,40 +1,39 @@
-# Copyright 2023 Accent Communications
+# resources/user_schedule/event.py
+from typing import ClassVar
 
-from ..common.event import UserEvent
-from ..common.types import UUIDStr
+from accent_bus.resources.common.event import UserEvent  # Correct import
 
 
-class UserScheduleAssociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_schedule_associated'
-    routing_key_fmt = 'config.users.schedules.updated'
+class UserScheduleEvent(UserEvent):
+    """Base class for User Schedule events."""
 
-    def __init__(
-        self,
-        schedule_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class UserScheduleAssociatedEvent(UserScheduleEvent):
+    """Event for when a schedule is associated with a user."""
+
+    name: ClassVar[str] = "user_schedule_associated"
+    routing_key_fmt: ClassVar[str] = "config.users.schedules.updated"
+
+    def __init__(self, schedule_id: int, **data):
         content = {
-            'user_uuid': str(user_uuid),
-            'schedule_id': schedule_id,
+            "user_uuid": str(data["user_uuid"]),
+            "schedule_id": schedule_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)
 
 
-class UserScheduleDissociatedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_schedule_dissociated'
-    routing_key_fmt = 'config.users.schedules.deleted'
+class UserScheduleDissociatedEvent(UserScheduleEvent):
+    """Event for when a schedule is dissociated from a user."""
 
-    def __init__(
-        self,
-        schedule_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
+    name: ClassVar[str] = "user_schedule_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.users.schedules.deleted"
+
+    def __init__(self, schedule_id: int, **data):
         content = {
-            'user_uuid': str(user_uuid),
-            'schedule_id': schedule_id,
+            "user_uuid": str(data["user_uuid"]),
+            "schedule_id": schedule_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)

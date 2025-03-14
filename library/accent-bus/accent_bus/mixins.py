@@ -22,9 +22,12 @@ class AiopikaConnectionMixin:
 
     async def get_channel(self) -> RobustChannel:
         """Get or create an aiopika channel."""
+        # Check the connection first
+        if self._connection is None or self._connection.is_closed:
+            self._connection = await aiopika.connect_robust(self.url)
+
         if self._channel is None or self._channel.is_closed:
-            if self._connection is None or self._connection.is_closed:
-                self._connection = await aiopika.connect_robust(self.url)
-            self._channel = await self._connection.channel()  # type: ignore
+            if self._connection:
+                self._channel = await self._connection.channel()  # type: ignore
             logger.info("RabbitMQ channel created.")
-        return self._channel
+        return self._channel if self._channel else await self.get_connection().channel()

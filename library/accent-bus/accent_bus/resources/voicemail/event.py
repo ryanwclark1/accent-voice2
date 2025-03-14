@@ -1,122 +1,149 @@
-# Copyright 2023 Accent Communications
+# resources/voicemail/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent, UserEvent
-from ..common.types import UUIDStr
+from pydantic import BaseModel, UUID4, Field
+
+from resources.common.event import TenantEvent, UserEvent
 from .types import VoicemailMessageDict
 
 
-class VoicemailCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'voicemail_created'
-    routing_key_fmt = 'config.voicemail.created'
+class VoicemailEvent(TenantEvent):
+    """Base class for Voicemail events."""
 
-    def __init__(self, voicemail_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(voicemail_id)}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class VoicemailDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'voicemail_deleted'
-    routing_key_fmt = 'config.voicemail.deleted'
+class VoicemailCreatedEvent(VoicemailEvent):
+    """Event for when a voicemail is created."""
 
-    def __init__(self, voicemail_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(voicemail_id)}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "voicemail_created"
+    routing_key_fmt: ClassVar[str] = "config.voicemail.created"
 
-
-class VoicemailEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'voicemail_edited'
-    routing_key_fmt = 'config.voicemail.edited'
-
-    def __init__(self, voicemail_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(voicemail_id)}
-        super().__init__(content, tenant_uuid)
+    def __init__(self, voicemail_id: int, **data):
+        content = {"id": int(voicemail_id)}
+        super().__init__(content=content, **data)
 
 
-class UserVoicemailEditedEvent(UserEvent):
-    service = 'confd'
-    name = 'user_voicemail_edited'
-    routing_key_fmt = 'config.users.{user_uuid}.voicemails.edited'
+class VoicemailDeletedEvent(VoicemailEvent):
+    """Event for when a voicemail is deleted."""
+
+    name: ClassVar[str] = "voicemail_deleted"
+    routing_key_fmt: ClassVar[str] = "config.voicemail.deleted"
+
+    def __init__(self, voicemail_id: int, **data):
+        content = {"id": int(voicemail_id)}
+        super().__init__(content=content, **data)
+
+
+class VoicemailEditedEvent(VoicemailEvent):
+    """Event for when a voicemail is edited."""
+
+    name: ClassVar[str] = "voicemail_edited"
+    routing_key_fmt: ClassVar[str] = "config.voicemail.edited"
+
+    def __init__(self, voicemail_id: int, **data):
+        content = {"id": int(voicemail_id)}
+        super().__init__(content=content, **data)
+
+
+class UserVoicemailEvent(UserEvent):
+    """Base class for user-specific Voicemail events."""
+
+    service: ClassVar[str] = "confd"  # Or calld, depending on context
+    content: dict
+
+
+class UserVoicemailEditedEvent(UserVoicemailEvent):
+    """Event for when a user's voicemail settings are edited."""
+
+    name: ClassVar[str] = "user_voicemail_edited"
+    routing_key_fmt: ClassVar[str] = "config.users.{user_uuid}.voicemails.edited"
 
     def __init__(
         self,
         voicemail_id: int,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
+        **data,
     ):
         content = {
-            'user_uuid': str(user_uuid),
-            'voicemail_id': voicemail_id,
+            "user_uuid": str(data["user_uuid"]),
+            "voicemail_id": voicemail_id,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+        super().__init__(content=content, **data)
 
 
-class UserVoicemailMessageCreatedEvent(UserEvent):
-    service = 'calld'
-    name = 'user_voicemail_message_created'
-    routing_key_fmt = 'voicemails.messages.created'
-    required_acl_fmt = 'events.users.{user_uuid}.voicemails'
+class UserVoicemailMessageEvent(UserEvent):
+    """Base class for user voicemail message events."""
 
-    def __init__(
-        self,
-        message_id: str,
-        voicemail_id: int,
-        message: VoicemailMessageDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'user_uuid': str(user_uuid),
-            'voicemail_id': voicemail_id,
-            'message_id': message_id,
-            'message': message,
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
+    service: ClassVar[str] = "calld"
+    required_acl_fmt: ClassVar[str] = "events.users.{user_uuid}.voicemails"
+    content: dict
 
 
-class UserVoicemailMessageUpdatedEvent(UserEvent):
-    service = 'calld'
-    name = 'user_voicemail_message_updated'
-    routing_key_fmt = 'voicemails.messages.updated'
-    required_acl_fmt = 'events.users.{user_uuid}.voicemails'
+class UserVoicemailMessageCreatedEvent(UserVoicemailMessageEvent):
+    """Event for when a new voicemail message is created for a user."""
 
-    def __init__(
-        self,
-        message_id: str,
-        voicemail_id: int,
-        message: VoicemailMessageDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
-    ):
-        content = {
-            'user_uuid': str(user_uuid),
-            'voicemail_id': voicemail_id,
-            'message_id': message_id,
-            'message': message,
-        }
-        super().__init__(content, tenant_uuid, user_uuid)
-
-
-class UserVoicemailMessageDeletedEvent(UserEvent):
-    service = 'calld'
-    name = 'user_voicemail_message_deleted'
-    routing_key_fmt = 'voicemails.messages.deleted'
-    required_acl_fmt = 'events.users.{user_uuid}.voicemails'
+    name: ClassVar[str] = "user_voicemail_message_created"
+    routing_key_fmt: ClassVar[str] = "voicemails.messages.created"
 
     def __init__(
         self,
         message_id: str,
         voicemail_id: int,
         message: VoicemailMessageDict,
-        tenant_uuid: UUIDStr,
-        user_uuid: UUIDStr,
+        **data,
     ):
         content = {
-            'user_uuid': str(user_uuid),
-            'voicemail_id': voicemail_id,
-            'message_id': message_id,
-            'message': message,
+            "user_uuid": str(data["user_uuid"]),
+            "voicemail_id": voicemail_id,
+            "message_id": message_id,
+            "message": message,
         }
-        super().__init__(content, tenant_uuid, user_uuid)
+
+        super().__init__(content=content, **data)
+
+
+class UserVoicemailMessageUpdatedEvent(UserVoicemailMessageEvent):
+    """Event for when a voicemail message is updated for a user."""
+
+    name: ClassVar[str] = "user_voicemail_message_updated"
+    routing_key_fmt: ClassVar[str] = "voicemails.messages.updated"
+
+    def __init__(
+        self,
+        message_id: str,
+        voicemail_id: int,
+        message: VoicemailMessageDict,
+        **data,
+    ):
+        content = {
+            "user_uuid": str(data["user_uuid"]),
+            "voicemail_id": voicemail_id,
+            "message_id": message_id,
+            "message": message,
+        }
+
+        super().__init__(content=content, **data)
+
+
+class UserVoicemailMessageDeletedEvent(UserVoicemailMessageEvent):
+    """Event for when a voicemail message is deleted for a user."""
+
+    name: ClassVar[str] = "user_voicemail_message_deleted"
+    routing_key_fmt: ClassVar[str] = "voicemails.messages.deleted"
+
+    def __init__(
+        self,
+        message_id: str,
+        voicemail_id: int,
+        message: VoicemailMessageDict,
+        **data,
+    ):
+        content = {
+            "user_uuid": str(data["user_uuid"]),
+            "voicemail_id": voicemail_id,
+            "message_id": message_id,
+            "message": message,
+        }
+
+        super().__init__(content=content, **data)

@@ -1,6 +1,5 @@
 # resources/group/types.py
-
-from pydantic import UUID4, BaseModel
+from pydantic import BaseModel, UUID4
 
 
 class GroupDict(BaseModel):

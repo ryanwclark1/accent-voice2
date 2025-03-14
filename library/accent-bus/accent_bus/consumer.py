@@ -7,9 +7,10 @@ from typing import Any
 from aiopika.abc import AbstractIncomingMessage
 from pydantic import ValidationError
 
+from accent_bus.resources.common.schemas import Event
+
 from .base import Base
 from .mixins import AiopikaConnectionMixin
-from .schemas import Event
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ async def process_message(message: AbstractIncomingMessage) -> None:
     async with message.process():  # Acknowledge message upon *successful* processing
         try:
             event = Event.model_validate_json(message.body)
-            logger.info(f"Received event: {event.name}, Data: {event.data}")
+            logger.info("Received event: %s, Data: %s", event.name, event.data)
             # ... further processing (e.g., dispatch to handlers) ...
         except ValidationError as e:
             logger.error(f"Invalid message format: {e}")

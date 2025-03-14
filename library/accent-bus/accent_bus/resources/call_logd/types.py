@@ -1,10 +1,10 @@
 # resources/call_logd/types.py
-from typing import TypedDict
+from pydantic import BaseModel
 
-from resources.common.types import DateTimeStr, UUIDStr
+from accent_bus.resources.common.types import DateTimeStr, UUIDStr
 
 
-class CallLogExportDataDict(TypedDict, total=False):
+class CallLogExportDataDict(BaseModel):
     """Represents the data for a call log export."""
 
     uuid: UUIDStr

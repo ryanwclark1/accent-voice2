@@ -53,7 +53,8 @@ class ServiceEvent(EventProtocol):
 
     @property
     def headers(self) -> dict:
-        """Generates the headers for the event, adding necessary keys and values.
+        """Generate the headers for the event, adding necessary keys and values.
+
         Removes the 'content' key, as it's not needed in headers.
 
         Returns:
