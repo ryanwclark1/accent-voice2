@@ -2,16 +2,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Callable, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, TypeVar
 
-from fastapi import Depends, HTTPException, status
-
-from accent_amid.api.dependencies import get_auth_client
 from accent_amid.exceptions import NotInitializedException
 
 if TYPE_CHECKING:
     from accent_auth_client import Client as AuthClient
-    from accent_auth_client.types import TokenDict
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +39,14 @@ async def get_master_tenant_uuid(auth_client: AuthClient) -> str:  # Now async
 async def init_master_tenant(
     auth_client: AuthClient, settings
 ) -> None:  # Consistent naming
-    """
-    Initializes the master tenant UUID (if needed in the future).
+    """Initialize the master tenant UUID (if needed in the future).
+
     For now, simply ensures that we can get the master tenant UUID.
 
     Args:
         auth_client: auth client.
         settings: the settings.
+
     """
     await get_master_tenant_uuid(auth_client)
     # You can add additional setup logic here if needed in the future

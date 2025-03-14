@@ -2,17 +2,17 @@
 from __future__ import annotations
 
 import logging
-
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING
 
 from fastapi import Depends, HTTPException, Request, status
 
 from accent_amid.config import Settings
 from accent_amid.services.ajam import AJAMClient
-from accent_amid.auth import get_master_tenant_uuid
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from accent_auth_client import Client as AuthClient
     from accent_auth_client.type_definitions import TokenDict
 
@@ -85,8 +85,7 @@ async def verify_token_and_acl(
 
 
 async def verify_master_tenant(auth_client: AuthClient, token_data: dict) -> None:  # type: ignore[valid-type]
-    """
-    Verify it is operating on the master tenant.
+    """Verify it is operating on the master tenant.
 
     Args:
         auth_client (AuthClient, optional): The auth client instance.
@@ -94,6 +93,7 @@ async def verify_master_tenant(auth_client: AuthClient, token_data: dict) -> Non
 
     Raises:
         HTTPException: 403 if incorrect tenant.
+
     """
     if token_data.get("metadata", {}).get("tenant_uuid") != (
         await auth_client.get_master_tenant_uuid()
@@ -110,14 +110,14 @@ async def get_auth_client(request: Request) -> AuthClient:
 
 
 def required_master_tenant() -> Callable[[F], F]:
-    """
-    Decorator to restrict access to the master tenant.
+    """Restrict access to the master tenant.
+
     Checks are performed inside the decorated function.
     """
 
     def decorator(func: F) -> F:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs):  # noqa: ANN202
             # Get auth_client and token_data from dependencies
             auth_client = kwargs.get("auth_client")
             token_data = kwargs.get("token_data")
@@ -136,7 +136,8 @@ def required_master_tenant() -> Callable[[F], F]:
 
 
 def required_acl(acl_pattern: str) -> Callable[[F], F]:
-    """Decorate to require a specific ACL for a route.
+    """Require a specific ACL for a route.
+
     Checks are performed inside the decorated function.
 
     Args:
@@ -168,67 +169,3 @@ def required_acl(acl_pattern: str) -> Callable[[F], F]:
         return wrapper  # type: ignore[return-value]
 
     return decorator
-
-async def verify_token_and_acl(
-    request: Request,
-    token: str | None = Depends(lambda r: r.headers.get("X-Auth-Token")),
-) -> dict:
-    """Verify the authentication token and checks for required ACLs.
-
-    Args:
-        request: request object.
-        token (str | None, optional): auth token.
-
-    Raises:
-        HTTPException: If the token is missing or invalid.
-
-    Returns:
-        dict: if valid token.
-
-    """
-    auth_client: AuthClient = request.app.state.auth_client
-
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token"
-        )
-    try:
-        token_data = await auth_client.verify_token(token)
-        return token_data  # type: ignore[return-value]
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
-
-
-async def verify_master_tenant(auth_client: AuthClient, token_data: dict) -> None:  # type: ignore[valid-type]
-    """Verify it is operating on the master tenant.
-
-    Args:
-        auth_client (AuthClient, optional): The auth client instance.
-        token_data (dict, optional): data of the authentication token.
-
-    Raises:
-        HTTPException: 403 if incorrect tenant.
-
-    """
-    if token_data.get("metadata", {}).get("tenant_uuid") != (
-        await auth_client.get_master_tenant_uuid()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This operation is only allowed on the master tenant.",
-        )
-
-
-async def get_auth_client(request: Request) -> AuthClient:
-    """Dependency function to get an AuthClient instance.
-
-    Args:
-        request: request object.
-
-    Returns:
-        An AuthClient instance.
-
-    """
-    return request.app.state.auth_client
