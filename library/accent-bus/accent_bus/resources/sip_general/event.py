@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/sip_general/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class SIPGeneralEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'sip_general_edited'
-    routing_key_fmt = 'config.sip_general.edited'
+class SIPGeneralEvent(ServiceEvent):
+    """Base class for general SIP configuration events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}
+
+
+class SIPGeneralEditedEvent(SIPGeneralEvent):
+    """Event for when the general SIP configuration is edited."""
+
+    name: ClassVar[str] = "sip_general_edited"
+    routing_key_fmt: ClassVar[str] = "config.sip_general.edited"

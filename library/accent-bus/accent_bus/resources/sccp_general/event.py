@@ -1,12 +1,18 @@
-# Copyright 2023 Accent Communications
+# resources/sccp_general/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
 
 
-class SCCPGeneralEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'sccp_general_edited'
-    routing_key_fmt = 'config.sccp_general.edited'
+class SCCPGeneralEvent(ServiceEvent):
+    """Base class for general SCCP configuration events."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    service: ClassVar[str] = "confd"
+    content: dict = {}
+
+
+class SCCPGeneralEditedEvent(SCCPGeneralEvent):
+    """Event for when the general SCCP configuration is edited."""
+
+    name: ClassVar[str] = "sccp_general_edited"
+    routing_key_fmt: ClassVar[str] = "config.sccp_general.edited"

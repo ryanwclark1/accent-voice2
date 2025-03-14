@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/skill_rule/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class SkillRuleCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'skill_rule_created'
-    routing_key_fmt = 'config.queues.skillrules.created'
-
-    def __init__(self, skill_rule_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(skill_rule_id)}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import TenantEvent
 
 
-class SkillRuleDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'skill_rule_deleted'
-    routing_key_fmt = 'config.queues.skillrules.deleted'
+class SkillRuleEvent(TenantEvent):
+    """Base class for Skill Rule events."""
 
-    def __init__(self, skill_rule_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(skill_rule_id)}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class SkillRuleEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'skill_rule_edited'
-    routing_key_fmt = 'config.queues.skillrules.edited'
+class SkillRuleCreatedEvent(SkillRuleEvent):
+    """Event for when a skill rule is created."""
 
-    def __init__(self, skill_rule_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(skill_rule_id)}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "skill_rule_created"
+    routing_key_fmt: ClassVar[str] = "config.queues.skillrules.created"
+
+    def __init__(self, skill_rule_id: int, **data):
+        content = {"id": int(skill_rule_id)}
+        super().__init__(content=content, **data)
+
+
+class SkillRuleDeletedEvent(SkillRuleEvent):
+    """Event for when a skill rule is deleted."""
+
+    name: ClassVar[str] = "skill_rule_deleted"
+    routing_key_fmt: ClassVar[str] = "config.queues.skillrules.deleted"
+
+    def __init__(self, skill_rule_id: int, **data):
+        content = {"id": int(skill_rule_id)}
+        super().__init__(content=content, **data)
+
+
+class SkillRuleEditedEvent(SkillRuleEvent):
+    """Event for when a skill rule is edited."""
+
+    name: ClassVar[str] = "skill_rule_edited"
+    routing_key_fmt: ClassVar[str] = "config.queues.skillrules.edited"
+
+    def __init__(self, skill_rule_id: int, **data):
+        content = {"id": int(skill_rule_id)}
+        super().__init__(content=content, **data)

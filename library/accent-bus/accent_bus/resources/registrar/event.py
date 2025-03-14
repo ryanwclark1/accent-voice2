@@ -1,31 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/registrar/event.py
+from typing import ClassVar
 
-from ..common.event import ServiceEvent
+from resources.common.event import ServiceEvent
+
 from .types import RegistrarDict
 
 
-class RegistrarCreatedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'registrar_created'
-    routing_key_fmt = 'config.registrar.created'
+class RegistrarEvent(ServiceEvent):
+    """Base class for Registrar events."""
 
-    def __init__(self, registrar: RegistrarDict):
-        super().__init__(registrar)
+    service: ClassVar[str] = "confd"
+    content: RegistrarDict  # Use the Pydantic model
 
 
-class RegistrarDeletedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'registrar_deleted'
-    routing_key_fmt = 'config.registrar.deleted'
+class RegistrarCreatedEvent(RegistrarEvent):
+    """Event for when a registrar is created."""
 
-    def __init__(self, registrar: RegistrarDict):
-        super().__init__(registrar)
+    name: ClassVar[str] = "registrar_created"
+    routing_key_fmt: ClassVar[str] = "config.registrar.created"
+
+    def __init__(self, registrar: RegistrarDict, **data):
+        super().__init__(content=registrar, **data)
 
 
-class RegistrarEditedEvent(ServiceEvent):
-    service = 'confd'
-    name = 'registrar_edited'
-    routing_key_fmt = 'config.registrar.edited'
+class RegistrarDeletedEvent(RegistrarEvent):
+    """Event for when a registrar is deleted."""
 
-    def __init__(self, registrar: RegistrarDict):
-        super().__init__(registrar)
+    name: ClassVar[str] = "registrar_deleted"
+    routing_key_fmt: ClassVar[str] = "config.registrar.deleted"
+
+    def __init__(self, registrar: RegistrarDict, **data):
+        super().__init__(content=registrar, **data)
+
+
+class RegistrarEditedEvent(RegistrarEvent):
+    """Event for when a registrar is edited."""
+
+    name: ClassVar[str] = "registrar_edited"
+    routing_key_fmt: ClassVar[str] = "config.registrar.edited"
+
+    def __init__(self, registrar: RegistrarDict, **data):
+        super().__init__(content=registrar, **data)

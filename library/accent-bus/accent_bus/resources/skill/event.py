@@ -1,34 +1,44 @@
-# Copyright 2023 Accent Communications
+# resources/skill/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class SkillCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'skill_created'
-    routing_key_fmt = 'config.agents.skills.created'
-
-    def __init__(self, skill_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(skill_id)}
-        super().__init__(content, tenant_uuid)
+from resources.common.event import TenantEvent
 
 
-class SkillDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'skill_deleted'
-    routing_key_fmt = 'config.agents.skills.deleted'
+class SkillEvent(TenantEvent):
+    """Base class for Skill events."""
 
-    def __init__(self, skill_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(skill_id)}
-        super().__init__(content, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class SkillEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'skill_edited'
-    routing_key_fmt = 'config.agents.skills.edited'
+class SkillCreatedEvent(SkillEvent):
+    """Event for when a skill is created."""
 
-    def __init__(self, skill_id: int, tenant_uuid: UUIDStr):
-        content = {'id': int(skill_id)}
-        super().__init__(content, tenant_uuid)
+    name: ClassVar[str] = "skill_created"
+    routing_key_fmt: ClassVar[str] = "config.agents.skills.created"
+
+    def __init__(self, skill_id: int, **data):
+        content = {"id": int(skill_id)}
+        super().__init__(content=content, **data)
+
+
+class SkillDeletedEvent(SkillEvent):
+    """Event for when a skill is deleted."""
+
+    name: ClassVar[str] = "skill_deleted"
+    routing_key_fmt: ClassVar[str] = "config.agents.skills.deleted"
+
+    def __init__(self, skill_id: int, **data):
+        content = {"id": int(skill_id)}
+        super().__init__(content=content, **data)
+
+
+class SkillEditedEvent(SkillEvent):
+    """Event for when a skill is edited."""
+
+    name: ClassVar[str] = "skill_edited"
+    routing_key_fmt: ClassVar[str] = "config.agents.skills.edited"
+
+    def __init__(self, skill_id: int, **data):
+        content = {"id": int(skill_id)}
+        super().__init__(content=content, **data)
