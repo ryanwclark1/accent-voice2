@@ -2,5 +2,8 @@
     "python.analysis.exclude": [
         "'outside_utilities', 'docs', '.git'"
     ],
-    "ruff.configuration": "./ruff.toml"
+    "ruff.configuration": "./ruff.toml",
+    "python.analysis.extraPaths": [
+        "./library/accent-auth-client"
+    ]
 }

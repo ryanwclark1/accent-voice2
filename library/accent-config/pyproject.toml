@@ -5,7 +5,7 @@ description = ""
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.11"
 dependencies = [
-  "Jinja2>=2.11.3",
+  "Jinja2>=3.1.6",
   "netaddr>=0.8.0",
   "netifaces2",
   "pyyaml>=6.0",

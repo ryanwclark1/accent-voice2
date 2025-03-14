@@ -5,7 +5,7 @@ description = "Library for internal communication"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.11"
 readme = "README.md"
-dependencies = ["amqp>=5.3.1", "kombu>=5.4.2"]
+dependencies = ["amqp>=5.3.1", "kombu>=5.5.0"]
 
 [dependency-groups]
 dev = []

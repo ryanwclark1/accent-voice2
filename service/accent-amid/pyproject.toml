@@ -5,23 +5,14 @@ description = "Daemon for interacting with Asterisk's AMI"
 authors = [{ name = "Ryan Clark", email = "ryanc@accentservices.com" }]
 requires-python = ">=3.11"
 dependencies = [
-  "cheroot>=8.5.2",
-  "flask>=1.1.2",
-  "Flask-Cors>=3.0.9",
-  "Flask-RESTful>=0.3.8",
-  "itsdangerous>=1.1.0",
-  "Jinja2>=2.11.3",
-  "jsonpatch~=1.25",
-  "kombu>=5.0.2",
-  "markupsafe>=1.1.1",
-  "marshmallow>=3.10.0",
-  "pyyaml>=6.0",
-  "requests>=2.25.1",
-  "werkzeug>=1.0.1",
-  "accent-lib-rest-client",
   "accent-auth-client",
-  "accent",
   "accent-bus",
+  "accent-lib-rest-client",
+  "accent",
+  "fastapi[standard]>=0.115.11",
+  "pydantic-settings>=2.8.1",
+  "pydantic>=2.10.6",
+  "uvicorn[standard]>=0.34.0",
 ]
 
 [project.scripts]
