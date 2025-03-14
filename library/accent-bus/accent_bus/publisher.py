@@ -6,7 +6,7 @@ import aiopika
 
 from .base import Base
 from .mixins import AiopikaConnectionMixin
-from .schemas import Event
+from .resources.common.schemas import Event
 from .collectd.common import CollectdEvent  # Import CollectdEvent
 
 logger = logging.getLogger(__name__)

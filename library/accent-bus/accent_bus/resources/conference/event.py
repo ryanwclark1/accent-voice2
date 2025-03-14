@@ -1,7 +1,7 @@
 # resources/conference/event.py
 from typing import ClassVar
 
-from resources.common.event import (
+from accent_bus.resources.common.event import (
     MultiUserEvent,
     TenantEvent,
     UserEvent,
@@ -64,8 +64,7 @@ class ConferenceEditedEvent(ConferenceEvent):
 
 
 class ConferenceRecordEvent(ConferenceEvent):
-    """Base class for recording events
-    """
+    """Base class for recording events"""
 
     service: ClassVar[str] = "calld"
 
@@ -155,8 +154,7 @@ class ConferenceParticipantUnmutedEvent(ConferenceEvent):
 
 
 class ConferenceParticipantTalkEvent(ConferenceParticipantEvent):
-    """Base class for talk events
-    """
+    """Base class for talk events"""
 
     def __init__(self, participant: ParticipantDict, conference_id: int, *args, **data):
         content = dict(participant, conference_id=conference_id)
@@ -178,8 +176,7 @@ class ConferenceParticipantTalkStoppedEvent(ConferenceParticipantTalkEvent):
 
 
 class ConferenceUserParticipantEvent(UserEvent):
-    """Base class for user-specific, conference related events
-    """
+    """Base class for user-specific, conference related events"""
 
     service: ClassVar[str] = "calld"
     conference_id: int
@@ -214,8 +211,7 @@ class ConferenceUserParticipantLeftEvent(ConferenceUserParticipantEvent):
 
 
 class ConferenceUserParticipantTalkEvent(ConferenceUserParticipantEvent):
-    """Base class for user talk events.
-    """
+    """Base class for user talk events."""
 
     def __init__(self, participant: ParticipantDict, conference_id: int, *args, **data):
         content = dict(participant, conference_id=conference_id)

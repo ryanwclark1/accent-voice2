@@ -1,8 +1,9 @@
 # resources/group_member/types.py
-from typing import TypedDict
+
+from pydantic import BaseModel
 
 
-class GroupExtensionDict(TypedDict, total=False):
+class GroupExtensionDict(BaseModel):
     """Represents a group extension."""
 
     exten: str

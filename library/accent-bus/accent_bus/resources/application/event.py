@@ -1,7 +1,7 @@
 # resources/application/event.py
 from typing import ClassVar
 
-from resources.common.event import TenantEvent  # Import TenantEvent
+from accent_bus.resources.common.event import TenantEvent  # Import TenantEvent
 
 from .types import ApplicationDict
 

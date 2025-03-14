@@ -11,16 +11,15 @@ class ServiceEvent(EventProtocol):
     """Base class for service-level events (internal events).
 
     Args:
-        content (dict | None, optional): The content of the event.
-            Defaults to None.
+        content (dict): Content of the event.
 
     """
 
     service: ClassVar[str]  # Should be overridden in subclasses
-    content: dict = {}  # all events will, at least, have content.
+    content: dict = {}  # All events will, at least, have content.
 
     def __init__(self, content: dict | None = None, **data):
-        """Initialize ServiceEvent.
+        """Initializes ServiceEvent.
 
         Args:
             content (dict): Content of the event.
@@ -34,6 +33,22 @@ class ServiceEvent(EventProtocol):
     def required_access(self) -> str:
         """Returns the required access level (defaults to event name)."""
         return f"event.{self.name}"
+
+    @property
+    def routing_key(self) -> str:
+        """Calculates the routing key, escaping necessary parts.
+
+        Returns:
+            str: The routing key.
+
+        """
+        variables = dict(**self.content)
+        variables.update(vars(self), name=self.name)
+        variables = {
+            key: escape_key(value) if isinstance(value, str) else value
+            for key, value in variables.items()
+        }
+        return self.routing_key_fmt.format(**variables)
 
 
 class TenantEvent(ServiceEvent):
@@ -49,22 +64,6 @@ class TenantEvent(ServiceEvent):
     # and will be included in the headers and routing key.
 
     @property
-    def routing_key(self) -> str:
-        """Calculates the routing key, escaping necessary parts.
-
-        Returns:
-            str: The routing key.
-
-        """
-        variables = dict(**self.content)
-        variables.update(vars(self), name=self.name)
-        variables = {
-            key: escape_key(value) if isinstance(value, str) else value
-            for key, value in variables.items()
-        }
-        return self.routing_key_fmt.format(**variables)
-
-    @property
     def headers(self) -> dict:
         """Tenant events do not require user filtering, they go to all tenant.
 
@@ -74,6 +73,7 @@ class TenantEvent(ServiceEvent):
         """
         headers = super().headers
         del headers["content"]
+        headers["tenant_uuid"] = str(self.tenant_uuid)  # Fixed
         return headers
 
 
@@ -88,23 +88,6 @@ class UserEvent(TenantEvent):
     user_uuid: UUID4 | None = Field(
         default=None, description="The UUID of the user. Can be None."
     )
-
-    @property
-    def routing_key(self) -> str:
-        """Calculates the routing key, escaping necessary parts.
-
-        Returns:
-            str: The routing key.
-
-        """
-        variables = dict(**self.content)
-        variables.update(vars(self), name=self.name)
-        variables = {
-            key: escape_key(value) if isinstance(value, str) else value
-            for key, value in variables.items()
-        }
-
-        return self.routing_key_fmt.format(**variables)
 
     @property
     def headers(self) -> dict:
@@ -141,23 +124,6 @@ class MultiUserEvent(TenantEvent):
 
         """
         return [str(user_uuid) for user_uuid in self.user_uuids]
-
-    @property
-    def routing_key(self) -> str:
-        """Calculates the routing key, escaping necessary parts.
-
-        Returns:
-            str: The routing key.
-
-        """
-        variables = dict(**self.content)
-        variables.update(vars(self), name=self.name)
-        variables = {
-            key: escape_key(value) if isinstance(value, str) else value
-            for key, value in variables.items()
-        }
-
-        return self.routing_key_fmt.format(**variables)
 
     @property
     def headers(self) -> dict:

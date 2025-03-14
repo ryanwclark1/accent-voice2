@@ -1,7 +1,7 @@
 # resources/ingress_http/event.py
 from typing import ClassVar
 
-from resources.common.event import TenantEvent
+from accent_bus.resources.common.event import TenantEvent
 
 from .types import IngressHTTPDict
 

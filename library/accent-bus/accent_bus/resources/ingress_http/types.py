@@ -1,7 +1,8 @@
 # resources/ingress_http/types.py
 
 from typing import TypedDict
-from pydantic import UUID4, BaseModel
+
+from pydantic import UUID4
 
 
 class IngressHTTPDict(TypedDict, total=False):

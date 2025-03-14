@@ -9,8 +9,8 @@ class AMIEvent(ServiceEvent):
 
     Attributes:
         service (ClassVar[str]): The service that originates the event.
-        name (str):  Event name.
-        routing_key_fmt (ClassVar[str]):  The routing key format.
+        name (str):  Event name
+        routing_key_fmt (ClassVar[str]):  The routing key format
         variables (dict[str, str]): Event variables.
 
     """
@@ -27,7 +27,8 @@ class AMIEvent(ServiceEvent):
 
     @property
     def routing_key(self) -> str:
-        """Calculates and returns the routing key for the AMI event.
+        """
+        Calculates and returns the routing key for the AMI event.
 
         The routing key is dynamically generated based on the event name.
         """

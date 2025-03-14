@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from .base import Base
 from .mixins import AiopikaConnectionMixin
-from .schemas import Event
+from .resources.common.schemas import Event
 
 logger = logging.getLogger(__name__)
 

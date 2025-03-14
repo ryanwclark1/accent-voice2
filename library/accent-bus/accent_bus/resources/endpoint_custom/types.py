@@ -1,26 +1,24 @@
 # resources/endpoint_custom/types.py
-from typing import TypedDict
-
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel
 
 
-class EndpointCustomLineDict(TypedDict, total=False):
+class EndpointCustomLineDict(BaseModel):
     """Represents a custom endpoint line."""
 
     id: int
 
 
-class EndpointCustomTrunkDict(TypedDict, total=False):
+class EndpointCustomTrunkDict(BaseModel):
     """Represents a custom endpoint trunk."""
 
     id: int
 
 
-class EndpointCustomDict(TypedDict, total=False):
+class EndpointCustomDict(BaseModel):
     """Represents a custom endpoint."""
 
     id: int
     tenant_uuid: UUID4
     interface: str
-    trunk: EndpointCustomTrunkDict
-    line: EndpointCustomLineDict
+    trunk: EndpointCustomTrunkDict | None = None
+    line: EndpointCustomLineDict | None = None

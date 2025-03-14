@@ -1,13 +1,10 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
-from typing import TypedDict
-
-from ..common.types import UUIDStr
+# resources/moh/types.py
+from pydantic import UUID4, BaseModel
 
 
-class MOHDict(TypedDict, total=False):
-    uuid: UUIDStr
-    tenant_uuid: UUIDStr
+class MOHDict(BaseModel):
+    """Represents Music on Hold (MOH) information."""
+
+    uuid: UUID4
+    tenant_uuid: UUID4
     name: str

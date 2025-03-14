@@ -1,17 +1,17 @@
 # resources/access_feature/event.py
 from typing import ClassVar
 
-from pydantic import BaseModel
+# from pydantic import BaseModel  <-- No longer needed here, as we inherit from TenantEvent
+from accent_bus.resources.common.event import TenantEvent
 
-from resources.common.event import ServiceEvent, TenantEvent  # Import base classes
-from .types import AccessFeatureDict  # Now a Pydantic model
+from .types import AccessFeatureData  # Import the Pydantic model
 
 
-class AccessFeatureEvent(TenantEvent):  # Inherit from TenantEvent
+class AccessFeatureEvent(TenantEvent):
     """Base class for Access Feature events."""
 
     service: ClassVar[str] = "confd"
-    content: AccessFeatureDict  # Use the Pydantic model
+    content: AccessFeatureData  # Use Pydantic Model
 
 
 class AccessFeatureCreatedEvent(AccessFeatureEvent):
@@ -20,8 +20,11 @@ class AccessFeatureCreatedEvent(AccessFeatureEvent):
     name: ClassVar[str] = "access_feature_created"
     routing_key_fmt: ClassVar[str] = "config.access_feature.created"
 
-    def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info.model_dump(), **data)
+    def __init__(self, access_feature_info: AccessFeatureData, **data):
+        super().__init__(
+            content=access_feature_info, **data
+        )  # Pass the Pydantic model directly.
+        # Crucially, we are passing access_feature_info, not the dict.
 
 
 class AccessFeatureDeletedEvent(AccessFeatureEvent):
@@ -30,8 +33,8 @@ class AccessFeatureDeletedEvent(AccessFeatureEvent):
     name: ClassVar[str] = "access_feature_deleted"
     routing_key_fmt: ClassVar[str] = "config.access_feature.deleted"
 
-    def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info.model_dump(), **data)
+    def __init__(self, access_feature_info: AccessFeatureData, **data):
+        super().__init__(content=access_feature_info, **data)  # Pass the model
 
 
 class AccessFeatureEditedEvent(AccessFeatureEvent):
@@ -40,5 +43,5 @@ class AccessFeatureEditedEvent(AccessFeatureEvent):
     name: ClassVar[str] = "access_feature_edited"
     routing_key_fmt: ClassVar[str] = "config.access_feature.edited"
 
-    def __init__(self, access_feature_info: AccessFeatureDict, **data):
-        super().__init__(content=access_feature_info.model_dump(), **data)
+    def __init__(self, access_feature_info: AccessFeatureData, **data):
+        super().__init__(content=access_feature_info, **data)  # Pass the model

@@ -1,14 +1,13 @@
 # resources/faxes/event.py
 from typing import ClassVar
 
-from resources.common.event import TenantEvent, UserEvent
+from accent_bus.resources.common.event import TenantEvent, UserEvent
 
 from .types import FaxDict
 
 
 class FaxEvent(TenantEvent):
-    """Base Class for faxes events
-    """
+    """Base Class for faxes events"""
 
     content: dict
 
@@ -47,8 +46,7 @@ class FaxOutboundFailedEvent(FaxEvent):
 
 
 class FaxOutboundUserEvent(UserEvent):
-    """Base class for outbound fax user events
-    """
+    """Base class for outbound fax user events"""
 
     service: ClassVar[str] = "calld"
     content: dict

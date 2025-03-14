@@ -1,16 +1,15 @@
 # resources/endpoint_iax/types.py
-from typing import TypedDict
 
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel
 
 
-class EndpointIAXTrunkDict(TypedDict, total=False):
+class EndpointIAXTrunkDict(BaseModel):
     """Represents an IAX trunk."""
 
     id: int
 
 
-class EndpointIAXDict(TypedDict, total=False):
+class EndpointIAXDict(BaseModel):
     """Represents an IAX endpoint."""
 
     id: int

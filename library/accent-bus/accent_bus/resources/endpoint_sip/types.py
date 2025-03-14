@@ -1,43 +1,41 @@
 # resources/endpoint_sip/types.py
-from typing import TypedDict
-
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel
 
 
-class EndpointSIPAuthSectionOptionsDict(TypedDict, total=False):
+class EndpointSIPAuthSectionOptionsDict(BaseModel):
     """Represents authentication options for a SIP endpoint."""
 
     username: str
 
 
-class EndpointSIPLineDict(TypedDict, total=False):
+class EndpointSIPLineDict(BaseModel):
     """Represents a line associated with a SIP endpoint."""
 
     id: int
 
 
-class EndpointSIPTrunkDict(TypedDict, total=False):
+class EndpointSIPTrunkDict(BaseModel):
     """Represents a trunk associated with a SIP endpoint."""
 
     id: int
 
 
-class EndpointSIPRegistrationSectionOptionsDict(TypedDict, total=False):
+class EndpointSIPRegistrationSectionOptionsDict(BaseModel):
     """Represents registration options for a SIP endpoint."""
 
     client_uri: str
 
 
-class EndpointSIPDict(TypedDict, total=False):
+class EndpointSIPDict(BaseModel):
     """Represents a SIP endpoint."""
 
     uuid: UUID4
     tenant_uuid: UUID4
     name: str
     label: str
-    auth_section_options: EndpointSIPAuthSectionOptionsDict
-    regsitration_section_options: (
-        EndpointSIPRegistrationSectionOptionsDict  # Typo in original
+    auth_section_options: EndpointSIPAuthSectionOptionsDict | None = None
+    registration_section_options: EndpointSIPRegistrationSectionOptionsDict | None = (
+        None  # Typo in original
     )
-    trunk: EndpointSIPTrunkDict
-    line: EndpointSIPLineDict
+    trunk: EndpointSIPTrunkDict | None = None
+    line: EndpointSIPLineDict | None = None

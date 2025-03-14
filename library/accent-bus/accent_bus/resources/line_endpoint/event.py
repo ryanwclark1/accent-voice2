@@ -1,7 +1,8 @@
-# Copyright 2023 Accent Communications
+# resources/line_endpoint/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from accent_bus.resources.common.event import TenantEvent
+
 from .types import (
     LineDict,
     LineEndpointCustomDict,
@@ -10,103 +11,96 @@ from .types import (
 )
 
 
-class LineEndpointSIPAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'line_endpoint_sip_associated'
-    routing_key_fmt = (
-        'config.lines.{line[id]}.endpoints.sip.{endpoint_sip[uuid]}.updated'
+class LineEndpointEvent(TenantEvent):
+    """Base class for Line Endpoint events."""
+
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class LineEndpointSIPAssociatedEvent(LineEndpointEvent):
+    """Event for when a SIP endpoint is associated with a line."""
+
+    name: ClassVar[str] = "line_endpoint_sip_associated"
+    routing_key_fmt: ClassVar[str] = (
+        "config.lines.{line[id]}.endpoints.sip.{endpoint_sip[uuid]}.updated"
     )
 
     def __init__(
         self,
         line: LineDict,
         sip: LineEndpointSIPDict,
-        tenant_uuid: UUIDStr,
+        **data,
     ):
-        content = {'line': line, 'endpoint_sip': sip}
-        super().__init__(content, tenant_uuid)
+        content = {"line": line, "endpoint_sip": sip}
+        super().__init__(content=content, **data)
 
 
-class LineEndpointSIPDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'line_endpoint_sip_dissociated'
-    routing_key_fmt = (
-        'config.lines.{line[id]}.endpoints.sip.{endpoint_sip[uuid]}.deleted'
+class LineEndpointSIPDissociatedEvent(LineEndpointEvent):
+    """Event for when a SIP endpoint is dissociated from a line."""
+
+    name: ClassVar[str] = "line_endpoint_sip_dissociated"
+    routing_key_fmt: ClassVar[str] = (
+        "config.lines.{line[id]}.endpoints.sip.{endpoint_sip[uuid]}.deleted"
     )
 
-    def __init__(
-        self,
-        line: LineDict,
-        sip: LineEndpointSIPDict,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {'line': line, 'endpoint_sip': sip}
-        super().__init__(content, tenant_uuid)
+    def __init__(self, line: LineDict, sip: LineEndpointSIPDict, **data):
+        content = {"line": line, "endpoint_sip": sip}
+        super().__init__(content=content, **data)
 
 
-class LineEndpointSCCPAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'line_endpoint_sccp_associated'
-    routing_key_fmt = (
-        'config.lines.{line[id]}.endpoints.sccp.{endpoint_sccp[id]}.updated'
-    )
+class LineEndpointSCCPAssociatedEvent(LineEndpointEvent):
+    """Event for when an SCCP endpoint is associated with a line."""
 
-    def __init__(
-        self,
-        line: LineDict,
-        sccp: LineEndpointSCCPDict,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {'line': line, 'endpoint_sccp': sccp}
-        super().__init__(content, tenant_uuid)
-
-
-class LineEndpointSCCPDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'line_endpoint_sccp_dissociated'
-    routing_key_fmt = (
-        'config.lines.{line[id]}.endpoints.sccp.{endpoint_sccp[id]}.deleted'
+    name: ClassVar[str] = "line_endpoint_sccp_associated"
+    routing_key_fmt: ClassVar[str] = (
+        "config.lines.{line[id]}.endpoints.sccp.{endpoint_sccp[id]}.updated"
     )
 
     def __init__(
         self,
         line: LineDict,
         sccp: LineEndpointSCCPDict,
-        tenant_uuid: UUIDStr,
+        **data,
     ):
-        content = {'line': line, 'endpoint_sccp': sccp}
-        super().__init__(content, tenant_uuid)
+        content = {"line": line, "endpoint_sccp": sccp}
+        super().__init__(content=content, **data)
 
 
-class LineEndpointCustomAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'line_endpoint_custom_associated'
-    routing_key_fmt = (
-        'config.lines.{line[id]}.endpoints.custom.{endpoint_custom[id]}.updated'
+class LineEndpointSCCPDissociatedEvent(LineEndpointEvent):
+    """Event for when an SCCP endpoint is dissociated from a line."""
+
+    name: ClassVar[str] = "line_endpoint_sccp_dissociated"
+    routing_key_fmt: ClassVar[str] = (
+        "config.lines.{line[id]}.endpoints.sccp.{endpoint_sccp[id]}.deleted"
     )
 
-    def __init__(
-        self,
-        line: LineDict,
-        custom: LineEndpointCustomDict,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {'line': line, 'endpoint_custom': custom}
-        super().__init__(content, tenant_uuid)
+    def __init__(self, line: LineDict, sccp: LineEndpointSCCPDict, **data):
+        content = {"line": line, "endpoint_sccp": sccp}
+        super().__init__(content=content, **data)
 
 
-class LineEndpointCustomDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'line_endpoint_custom_dissociated'
-    routing_key_fmt = (
-        'config.lines.{line[id]}.endpoints.custom.{endpoint_custom[id]}.deleted'
+class LineEndpointCustomAssociatedEvent(LineEndpointEvent):
+    """Event for when a custom endpoint is associated with a line."""
+
+    name: ClassVar[str] = "line_endpoint_custom_associated"
+    routing_key_fmt: ClassVar[str] = (
+        "config.lines.{line[id]}.endpoints.custom.{endpoint_custom[id]}.updated"
     )
 
-    def __init__(
-        self,
-        line: LineDict,
-        custom: LineEndpointCustomDict,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {'line': line, 'endpoint_custom': custom}
-        super().__init__(content, tenant_uuid)
+    def __init__(self, line: LineDict, custom: LineEndpointCustomDict, **data):
+        content = {"line": line, "endpoint_custom": custom}
+        super().__init__(content=content, **data)
+
+
+class LineEndpointCustomDissociatedEvent(LineEndpointEvent):
+    """Event for when a custom endpoint is dissociated from a line."""
+
+    name: ClassVar[str] = "line_endpoint_custom_dissociated"
+    routing_key_fmt: ClassVar[str] = (
+        "config.lines.{line[id]}.endpoints.custom.{endpoint_custom[id]}.deleted"
+    )
+
+    def __init__(self, line: LineDict, custom: LineEndpointCustomDict, **data):
+        content = {"line": line, "endpoint_custom": custom}
+        super().__init__(content=content, **data)

@@ -1,40 +1,49 @@
-# Copyright 2023 Accent Communications
+# resources/outcall_extension/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
-
-
-class OutcallExtensionAssociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'outcall_extension_associated'
-    routing_key_fmt = 'config.outcalls.extensions.updated'
-
-    def __init__(
-        self,
-        outcall_id: int,
-        extension_id: int,
-        tenant_uuid: UUIDStr,
-    ):
-        content = {
-            'outcall_id': outcall_id,
-            'extension_id': extension_id,
-        }
-        super().__init__(content, tenant_uuid)
+from accent_bus.resources.common.event import TenantEvent
 
 
-class OutcallExtensionDissociatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'outcall_extension_dissociated'
-    routing_key_fmt = 'config.outcalls.extensions.deleted'
+class OutcallExtensionEvent(TenantEvent):
+    """Base class for Outcall Extension events."""
+
+    service: ClassVar[str] = "confd"
+    content: dict
+
+
+class OutcallExtensionAssociatedEvent(OutcallExtensionEvent):
+    """Event for when an extension is associated with an outcall."""
+
+    name: ClassVar[str] = "outcall_extension_associated"
+    routing_key_fmt: ClassVar[str] = "config.outcalls.extensions.updated"
 
     def __init__(
         self,
         outcall_id: int,
         extension_id: int,
-        tenant_uuid: UUIDStr,
+        **data,
     ):
         content = {
-            'outcall_id': outcall_id,
-            'extension_id': extension_id,
+            "outcall_id": outcall_id,
+            "extension_id": extension_id,
         }
-        super().__init__(content, tenant_uuid)
+        super().__init__(content=content, **data)
+
+
+class OutcallExtensionDissociatedEvent(OutcallExtensionEvent):
+    """Event for when an extension is dissociated from an outcall."""
+
+    name: ClassVar[str] = "outcall_extension_dissociated"
+    routing_key_fmt: ClassVar[str] = "config.outcalls.extensions.deleted"
+
+    def __init__(
+        self,
+        outcall_id: int,
+        extension_id: int,
+        **data,
+    ):
+        content = {
+            "outcall_id": outcall_id,
+            "extension_id": extension_id,
+        }
+        super().__init__(content=content, **data)

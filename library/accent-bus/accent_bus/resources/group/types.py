@@ -1,10 +1,9 @@
 # resources/group/types.py
-from typing import TypedDict
 
-from pydantic import UUID4
+from pydantic import UUID4, BaseModel
 
 
-class GroupDict(TypedDict, total=False):
+class GroupDict(BaseModel):
     """Represents a group."""
 
     id: int

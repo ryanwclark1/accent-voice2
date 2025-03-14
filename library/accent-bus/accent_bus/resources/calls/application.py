@@ -2,7 +2,8 @@
 from typing import Any, ClassVar
 
 from pydantic import UUID4
-from resources.common.event import TenantEvent, UserEvent
+
+from accent_bus.resources.common.event import TenantEvent, UserEvent
 
 from .types import (
     ApplicationCallDict,

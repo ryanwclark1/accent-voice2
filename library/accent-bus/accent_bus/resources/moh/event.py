@@ -1,32 +1,43 @@
-# Copyright 2023 Accent Communications
+# resources/moh/event.py
+from typing import ClassVar
 
-from ..common.event import TenantEvent
-from ..common.types import UUIDStr
+from accent_bus.resources.common.event import TenantEvent
+
 from .types import MOHDict
 
 
-class MOHCreatedEvent(TenantEvent):
-    service = 'confd'
-    name = 'moh_created'
-    routing_key_fmt = 'config.moh.created'
+class MOHEvent(TenantEvent):
+    """Base class for Music on Hold events."""
 
-    def __init__(self, moh: MOHDict, tenant_uuid: UUIDStr):
-        super().__init__(moh, tenant_uuid)
+    service: ClassVar[str] = "confd"
+    content: dict
 
 
-class MOHDeletedEvent(TenantEvent):
-    service = 'confd'
-    name = 'moh_deleted'
-    routing_key_fmt = 'config.moh.deleted'
+class MOHCreatedEvent(MOHEvent):
+    """Event for when a MOH is created."""
 
-    def __init__(self, moh: MOHDict, tenant_uuid: UUIDStr):
-        super().__init__(moh, tenant_uuid)
+    name: ClassVar[str] = "moh_created"
+    routing_key_fmt: ClassVar[str] = "config.moh.created"
+
+    def __init__(self, moh: MOHDict, **data):
+        super().__init__(content=moh, **data)
 
 
-class MOHEditedEvent(TenantEvent):
-    service = 'confd'
-    name = 'moh_edited'
-    routing_key_fmt = 'config.moh.edited'
+class MOHDeletedEvent(MOHEvent):
+    """Event for when a MOH is deleted."""
 
-    def __init__(self, moh: MOHDict, tenant_uuid: UUIDStr):
-        super().__init__(moh, tenant_uuid)
+    name: ClassVar[str] = "moh_deleted"
+    routing_key_fmt: ClassVar[str] = "config.moh.deleted"
+
+    def __init__(self, moh: MOHDict, **data):
+        super().__init__(content=moh, **data)
+
+
+class MOHEditedEvent(MOHEvent):
+    """Event for when a MOH is edited."""
+
+    name: ClassVar[str] = "moh_edited"
+    routing_key_fmt: ClassVar[str] = "config.moh.edited"
+
+    def __init__(self, moh: MOHDict, **data):
+        super().__init__(content=moh, **data)

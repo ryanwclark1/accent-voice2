@@ -1,9 +1,10 @@
 # resources/auth/events.py
 from typing import ClassVar
 
-from pydantic import BaseModel, UUID4, Field
+from pydantic import UUID4, BaseModel
 
-from resources.common.event import TenantEvent, UserEvent
+from accent_bus.resources.common.event import TenantEvent, UserEvent
+
 from .types import TenantDict
 
 
@@ -26,12 +27,12 @@ class TenantCreatedEvent(AuthTenantEvent):
 
 
 class TenantContent(BaseModel):
-    """
-    Content for tenant update.
+    """Content for tenant update.
 
     Attributes:
         uuid (UUID4): The tenant UUID.
         name (str): The tenant name.
+
     """
 
     uuid: UUID4
@@ -51,10 +52,11 @@ class TenantUpdatedEvent(AuthTenantEvent):
 
 
 class TenantDeletedContent(BaseModel):
-    """
-    Content for tenant deletion.
+    """Content for tenant deletion.
+
     Attributes:
         uuid (UUID4): The tenant UUID.
+
     """
 
     uuid: UUID4
@@ -80,11 +82,12 @@ class AuthUserEvent(UserEvent):
 
 
 class ExternalAuthContent(BaseModel):
-    """
-    Content for external auth events.
+    """Content for external auth events.
+
     Attributes:
         user_uuid (str): UUID of the user.
         external_auth_name (str): External auth provider name.
+
     """
 
     user_uuid: str
@@ -140,13 +143,14 @@ class UserExternalAuthDeletedEvent(AuthUserEvent):
 
 
 class RefreshTokenContent(BaseModel):
-    """
-    Content for refresh token events.
+    """Content for refresh token events.
+
     Attributes:
         client_id (str): Client id.
         mobile (bool): If mobile.
         user_uuid (str): User UUID.
         tenant_uuid (str): Tenant UUID.
+
     """
 
     client_id: str
@@ -190,13 +194,14 @@ class RefreshTokenDeletedEvent(AuthUserEvent):
 
 
 class SessionContent(BaseModel):
-    """
-    Content for Session events.
+    """Content for Session events.
+
     Attributes:
         uuid (str): The session UUID.
         tenant_uuid (str): Tenant UUID.
         user_uuid (str): User UUID.
         mobile (bool): If mobile.
+
     """
 
     uuid: str
@@ -244,13 +249,13 @@ class SessionDeletedEvent(AuthUserEvent):
 
 
 class SessionExpireSoonContent(BaseModel):
-    """
-    Content for Session Expiration Events.
+    """Content for Session Expiration Events.
 
     Attributes:
         uuid (str): Session UUID.
         user_uuid (str): User UUID.
         tenant_uuid (str): Tenant UUID.
+
     """
 
     uuid: str

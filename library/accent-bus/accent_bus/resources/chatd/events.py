@@ -2,7 +2,8 @@
 from typing import ClassVar
 
 from pydantic import UUID4
-from resources.common.event import TenantEvent, UserEvent
+
+from accent_bus.resources.common.event import TenantEvent, UserEvent
 
 from .types import MessageDict, RoomDict, UserPresenceDict
 
@@ -25,8 +26,7 @@ class PresenceUpdatedEvent(ChatdEvent):
 
 
 class ChatdUserEvent(UserEvent):
-    """Base class for chatd User events.
-    """
+    """Base class for chatd User events."""
 
     service: ClassVar[str] = "chatd"
     content: dict

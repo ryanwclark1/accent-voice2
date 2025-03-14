@@ -1,19 +1,11 @@
 # resources/access_feature/types.py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-class AccessFeatureDict(BaseModel):
-    """Represents the data structure for an Access Feature.
+class AccessFeatureData(BaseModel):
+    """Represents the data for an Access Feature."""
 
-    Attributes:
-        id (int): The unique ID of the access feature.
-        host (str): The host associated with the feature.
-        feature (str): The name of the feature.
-        enabled (bool): Whether the feature is enabled.
-
-    """
-
-    id: int
-    host: str
-    feature: str
-    enabled: bool
+    id: int = Field(..., description="The unique ID of the access feature.")
+    host: str = Field(..., description="The host associated with the feature.")
+    feature: str = Field(..., description="The name of the feature.")
+    enabled: bool = Field(..., description="Whether the feature is enabled.")

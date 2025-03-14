@@ -1,9 +1,8 @@
-# Copyright 2023 Accent Communications
-
-from __future__ import annotations
-
-from typing import TypedDict
+# resources/localization/types.py
+from pydantic import BaseModel, Field
 
 
-class LocalizationDict(TypedDict):
-    country: str
+class LocalizationDict(BaseModel):
+    """Represents localization settings."""
+
+    country: str = Field(..., description="The country code for localization.")

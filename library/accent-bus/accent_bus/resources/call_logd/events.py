@@ -1,7 +1,7 @@
 # resources/call_logd/events.py
 from typing import ClassVar
 
-from resources.common.event import TenantEvent  # Import base classes
+from accent_bus.resources.common.event import TenantEvent  # Import base classes
 
 from .types import CallLogExportDataDict
 
