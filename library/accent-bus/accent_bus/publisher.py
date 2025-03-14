@@ -1,12 +1,15 @@
-# core/publisher.py
+# accent_bus/publisher.py
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiopika
 from pydantic import BaseModel
 
 from .base import Base
 from .mixins import AiopikaConnectionMixin
+
+if TYPE_CHECKING:
+    from accent_bus.collectd.common import CollectdEvent
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,20 @@ class BusPublisher(AiopikaConnectionMixin, Base):
         service_uuid: str | None = None,
         **kwargs: Any,
     ):
+        """Initialize the BusPublisher with connection parameters and opt service UUID.
+
+        Args:
+            name (str | None): Publisher name.
+            username (str): RabbitMQ username.
+            password (str): RabbitMQ password.
+            host (str): RabbitMQ host.
+            port (int): RabbitMQ port.
+            exchange_name (str):  Exchange name.
+            exchange_type (str):  Exchange type.
+            service_uuid (str, optional): Unique identifier for this service instance.
+            **kwargs:  Other parameters.
+
+        """
         super().__init__(
             name, username, password, host, port, exchange_name, exchange_type, **kwargs
         )
@@ -60,13 +77,14 @@ class BusPublisher(AiopikaConnectionMixin, Base):
         await exchange.publish(
             message, routing_key=routing_key or event_name
         )  # Use routing_key, fallback to event_name
-        logger.info(f"Published event: {event_name}, Data: {message_body}")
+        logger.info("Published event: %s, Data: %s", event_name, message_body.decode())
 
     async def publish_collectd(self, event: "CollectdEvent") -> None:  # type: ignore
-        """Publishes a Collectd event."""
+        """Publish a Collectd event."""
         # The type is commented because it creates a circular dependency.
         if not self.service_uuid:
-            raise ValueError("service_uuid must be set for Collectd events")
+            msg = "service_uuid must be set for Collectd events"
+            raise ValueError(msg)
 
         channel = await self.get_channel()
         exchange = await channel.declare_exchange(
@@ -83,4 +101,4 @@ class BusPublisher(AiopikaConnectionMixin, Base):
         await exchange.publish(
             message, routing_key=event.routing_key_fmt
         )  # Use routing key from event
-        logger.info(f"Published Collectd event: {event.name} - {payload}")
+        logger.info("Publish Collectd event: %s - %s", event.name, payload)

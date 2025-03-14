@@ -4,10 +4,7 @@ from .common import CollectdEvent
 
 
 class _BaseChannelCollectdEvent(CollectdEvent):
-    """
-    Base class for Channel based Collectd Events.
-
-    """
+    """Base class for Channel based Collectd Events."""
 
     routing_key_fmt = "collectd.channels"
     plugin = "channels"

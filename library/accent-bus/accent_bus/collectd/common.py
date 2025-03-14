@@ -6,8 +6,7 @@ from pydantic import BaseModel, field_validator
 
 
 class CollectdEvent(BaseModel):
-    """
-    Base Collectd Event.
+    """Base Collectd Event.
 
     Subclasses must define the following attributes:
       * name
@@ -42,17 +41,18 @@ class CollectdEvent(BaseModel):
 
     @field_validator("time")
     def time_must_be_valid(cls, v: str | int) -> str | int:
-        """Validator to ensure the time attribute is valid."""
+        """Validate the time attribute."""
         if v != "N" and not isinstance(v, int):
-            raise ValueError("time must be 'N' or an integer")
+            msg = "time must be 'N' or an integer"
+            raise ValueError(msg)
         return v
 
     def is_valid(self) -> bool:
-        """
-        Checks if the CollectdEvent is valid.
+        """Check if the CollectdEvent is valid.
 
         Returns:
            bool: True if valid, False otherwise.
+
         """
         return (
             self.plugin is not None
@@ -64,12 +64,12 @@ class CollectdEvent(BaseModel):
         )
 
     def __str__(self) -> str:
-        """
-        String representation of the Collectd event.
+        """String representation of the Collectd event.
 
         Returns:
             str: String describing the Collectd Event.
-        """
+
+        """  # noqa: D401
         content = ", ".join(
             [
                 f"plugin='{self.plugin}'",
@@ -82,8 +82,7 @@ class CollectdEvent(BaseModel):
         return f"CollectdEvent({content})"
 
     def generate_payload(self, service_uuid: str) -> str:
-        """
-        Generates the collectd payload string.
+        """Generate the collectd payload string.
 
         Args:
             service_uuid: The UUID of the service.
@@ -93,6 +92,7 @@ class CollectdEvent(BaseModel):
 
         Raises:
             ValueError: If event is not valid.
+
         """
         if not self.is_valid():
             raise ValueError(self)

@@ -5,11 +5,14 @@ from .common import CollectdEvent
 
 
 def _validate_plugin_instance_fragment(plugin_instance_fragment: str) -> str:
-    """Validates and sanitizes a plugin instance fragment.
+    """Validate and sanitize a plugin instance fragment.
+
     Args:
         plugin_instance_fragment (str): the fragment to be validate.
+
     Returns:
         str: A validated plugin instance fragment.
+
     """
     result = "".join(
         c
@@ -20,12 +23,13 @@ def _validate_plugin_instance_fragment(plugin_instance_fragment: str) -> str:
 
 
 class _BaseCallCollectdEvent(CollectdEvent):
-    """
-    Base class for Call related Collectd Events.
+    """Base class for Call related Collectd Events.
+
     Args:
         application (str): The application.
         application_id (str | None): the application id, if any.
         time (str | int | None): Timestamp for the event.
+
     """
 
     routing_key_fmt = "collectd.calls"
@@ -52,12 +56,13 @@ class _BaseCallCollectdEvent(CollectdEvent):
 
 
 class CallStartCollectdEvent(_BaseCallCollectdEvent):
-    """
-    Event for when a call starts.
+    """Event for when a call starts.
+
     Args:
         application (str): The application.
         application_id (str | None): the application id, if any.
         time (str | int | None): Timestamp for the event.
+
     """
 
     name = "collectd_call_started"
@@ -65,12 +70,13 @@ class CallStartCollectdEvent(_BaseCallCollectdEvent):
 
 
 class CallConnectCollectdEvent(_BaseCallCollectdEvent):
-    """
-    Event for when a call connects.
+    """Event for when a call connects.
+
     Args:
         application (str): The application.
         application_id (str | None): the application id, if any.
         time (str | int | None): Timestamp for the event.
+
     """
 
     name = "collectd_call_connected"
@@ -78,12 +84,13 @@ class CallConnectCollectdEvent(_BaseCallCollectdEvent):
 
 
 class CallEndCollectdEvent(_BaseCallCollectdEvent):
-    """
-    Event for when a call ends.
+    """Event for when a call ends.
+
     Args:
         application (str): The application.
         application_id (str | None): the application id, if any.
         time (str | int | None): Timestamp for the event.
+
     """
 
     name = "collectd_call_ended"
@@ -91,12 +98,13 @@ class CallEndCollectdEvent(_BaseCallCollectdEvent):
 
 
 class CallAbandonedCollectdEvent(_BaseCallCollectdEvent):
-    """
-    Event for when a call is abandoned.
+    """Event for when a call is abandoned.
+
     Args:
         application (str): The application.
         application_id (str | None): the application id, if any.
         time (str | int | None): Timestamp for the event.
+
     """
 
     name = "collectd_call_abandoned"
@@ -104,13 +112,14 @@ class CallAbandonedCollectdEvent(_BaseCallCollectdEvent):
 
 
 class CallDurationCollectdEvent(_BaseCallCollectdEvent):
-    """
-    Event for tracking call duration.
+    """Event for tracking call duration.
+
     Args:
         application (str): The application.
         application_id (str | None): the application id, if any.
         duration (int): Call duration.
         time (str | int | None): Timestamp for the event.
+
     """
 
     name = "collectd_call_duration"
