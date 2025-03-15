@@ -123,13 +123,88 @@ class Settings(BaseSettings):
     enabled_plugins: EnabledPlugins = Field(default_factory=EnabledPlugins)
     initialization: InitializationSettings = Field(default_factory=InitializationSettings)
     teams_presence: TeamsPresenceSettings = Field(default_factory=TeamsPresenceSettings)
-    
+
     # new field
-    service_id: str = Field(..., alias="auth.username")
-    service_key: str = Field(..., alias="auth.password")
+    service_id: str = ""
+    service_key: str = ""
     # can be a uuid
     uuid: str = ""
 
+    host: str = Field(default="0.0.0.0", validation_alias="rest_api.listen")
+    port: int = Field(default=9304, validation_alias="rest_api.port")
+    db_echo: bool = Field(default=False, validation_alias="debug")
+
     model_config = SettingsConfigDict(
         env_prefix="",  # No prefix for environment variables
-        
+        extra="allow",  # Allow extra fields (for merging configs)
+        frozen=False,   # Allow the Settings to be changed.
+        validate_assignment=True # validate on assignment.
+    )
+
+    @field_validator('log_level')
+    def log_level_validator(cls, v):
+        if isinstance(v, str):
+          v = v.upper()
+          if v not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+              raise ValueError("Invalid log level")
+        return v
+    
+    @field_validator("db_uri", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
+        if isinstance(v, str):
+            return v
+        return v
+    
+    def load_extra_config_files(self) -> None:
+        """Loads extra configuration files from the specified directory."""
+        if not self.extra_config_files:
+            return
+
+        extra_config_path = Path(self.extra_config_files)
+        if not extra_config_path.is_dir():
+            # logger.warning(f"Extra config directory '{self.extra_config_files}' does not exist.")
+            return
+
+        # Sort the files to load them in a consistent order (e.g., lexicographically)
+        config_files = sorted(extra_config_path.glob("*.yml")) + sorted(
+            extra_config_path.glob("*.yaml")
+        )
+
+        for config_file in config_files:
+            # logger.info(f"Loading extra config file: {config_file}")
+            try:
+                extra_settings = load_yaml_config_settings_source(config_file)
+                # The settings object allows direct updates.
+                for key, value in extra_settings.items():
+                    if hasattr(self, key):
+                         # Check for nested model.
+                        if isinstance(getattr(self, key), BaseModel):
+                            # Use model_copy(update=)
+                            updated_model = getattr(self,key).model_copy(update=value)
+                            setattr(self, key, updated_model)
+                        else:
+                            setattr(self, key, value)
+                    else:
+                        setattr(self, key, value)
+
+            except (OSError, ValidationError) as e:
+                # logger.error(f"Error loading extra config file '{config_file}': {e}")
+                pass    
+
+    def load_key_file(self) -> None:
+      # Load service key and id.
+      key_file_settings = load_yaml_config_settings_source(self.auth.key_file)
+
+      if key_file_settings and 'service_id' in key_file_settings and 'service_key' in key_file_settings:
+          self.service_id = key_file_settings["service_id"]
+          self.service_key = key_file_settings["service_key"]
+
+
+@lru_cache()
+def get_settings():
+    # Use lru_cache to avoid reloading settings multiple times
+    settings = Settings()
+    settings.load_extra_config_files()
+    settings.load_key_file()
+    return settings
