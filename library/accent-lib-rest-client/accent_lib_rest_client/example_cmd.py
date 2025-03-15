@@ -12,6 +12,12 @@ class ExampleCommand(RESTCommand):
 
     resource = "test"
 
+    def __init__(self):
+        pass
+
+    def run(self):
+        print("Example command executed")
+
     def __call__(self) -> bytes:
         """Call the command as a function.
 
