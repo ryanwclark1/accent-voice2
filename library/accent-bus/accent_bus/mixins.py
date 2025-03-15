@@ -49,6 +49,8 @@ class PublishExchangeDict(TypedDict):
     exchange_type: str
 
 
+EventHandlerType = Callable[[dict], None]
+
 class Subscription(NamedTuple):
     """Event Subscription."""
 

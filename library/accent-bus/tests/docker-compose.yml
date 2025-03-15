@@ -1,0 +1,16 @@
+services:
+  tests:
+    build: .
+    volumes:
+      - .:/app
+    # Install test dependencies and run tests
+    command: sh -c "uv pip install pytest pytest-asyncio pytest-cov && pytest --cov=accent_bus --cov-report term-missing --cov-report xml tests/"
+    environment:
+      - PYTHONASYNCIODEBUG=1
+
+  mypy:
+    build: .
+    volumes:
+      - .:/app
+    # Install mypy and run it
+    command: sh -c "uv pip install mypy && mypy accent_bus"
