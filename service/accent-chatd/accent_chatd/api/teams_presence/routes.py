@@ -1,31 +1,23 @@
 # src/accent_chatd/api/teams_presence/routes.py
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
-# Assuming you have a service for Teams presence
-# from accent_chatd.services.teams import TeamsService
+from accent_chatd.api.teams_presence.client import MicrosoftGraphClient  # Import client
+
+# from accent_chatd.services.teams import TeamsService  # Import service
 from accent_chatd.api.teams_presence.models import TeamsSubscriptionSchema
 from accent_chatd.core.auth import verify_token, get_current_user_uuid
+from accent_chatd.core.config import get_settings
 
 teams_router = APIRouter()
 
 
-# Dummy service for now
-class TeamsService:
-    def is_connected(self, user_uuid):
-        return True
-
-    def fetch_teams_presence(self, team_user_id):
-        return {"availability": "Available"}
-
-    def update_presence(self, state, user_uuid):
-        pass
-
-
-def get_teams_service():
+# Dependency to get the TeamsService instance
+async def get_teams_service() -> TeamsService:
     # Replace this with your actual service instantiation
-    return TeamsService()
+    settings = get_settings()
+    graph_client = MicrosoftGraphClient(settings.teams_presence.microsoft_graph_url)
+    return TeamsService(graph_client)
 
 
 @teams_router.post(
@@ -60,7 +52,7 @@ async def update_teams_presence(
     for subscription in pushed_data.root:  # iter through value.
         user_id = subscription.resource_data.id
         # user_uuid = service.user_uuid_from_teams(user_id) # This function is not yet written, will write later.
-        if state := service.fetch_teams_presence(user_id):  # Fake a return.
-            service.update_presence(state, user_uuid)  # Fake a service call
+        if state := await service.fetch_teams_presence(user_id):  # Fake a return.
+            await service.update_presence(state, user_uuid)  # Fake a service call
 
     return ""
