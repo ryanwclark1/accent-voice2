@@ -26,7 +26,7 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
-  "alembic/",           # Exclude Alembic migrations
+  "alembic/",
 ]
 
 # Same as Black.

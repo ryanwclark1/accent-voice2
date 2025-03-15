@@ -1,20 +1,19 @@
 # src/accent_chatd/api/teams_presence/routes.py
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from accent_auth_client import Client as AuthClient
-from accent_chatd.api.teams_presence.models import TeamsSubscriptionSchema
-from accent_chatd.core.auth import verify_token, get_current_user_uuid
-from accent_chatd.core.config import get_settings
-from accent_chatd.services.teams import TeamsService
-from accent_chatd.plugins.presences.services import PresenceService
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from accent_chatd.api.teams_presence.client import MicrosoftGraphClient
+from accent_chatd.api.teams_presence.models import TeamsSubscriptionSchema
+from accent_chatd.core.auth import verify_token
+from accent_chatd.core.config import get_settings
+from accent_chatd.core.database import get_async_session
 from accent_chatd.dao.teams_subscription import TeamsSubscriptionDAO
 from accent_chatd.dao.user import UserDAO
-from accent_chatd.core.database import get_async_session
-from sqlalchemy.ext.asyncio import AsyncSession
+from accent_chatd.plugins.presences.services import PresenceService
+from accent_chatd.services.teams import TeamsService
 
 teams_router = APIRouter()
 

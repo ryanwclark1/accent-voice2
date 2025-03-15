@@ -1,13 +1,12 @@
 # src/accent_chatd/plugins/teams_presence/plugin.py
 
-import logging
+import asyncio
 
 from accent_auth_client import Client as AuthClient
 from accent_confd_client import Client as ConfdClient
 
-from accent_chatd.core.bus import get_bus_consumer, get_bus_publisher
 from accent_chatd.core.plugin import Plugin
-from accent_chatd.plugins.presences.services import PresenceService  # Import
+from accent_chatd.plugins.presences.services import PresenceService
 
 from .bus_consume import BusEventHandler
 from .http import TeamsPresenceResource
@@ -37,6 +36,8 @@ class Plugin(Plugin):
             auth_client,
             presence_service,  # Pass the presence service
         )
+        # Start the subscription renewal task.  This is the *correct* place to do this.
+        asyncio.create_task(teams_service.renew_subscriptions())
 
         events_handler = BusEventHandler(
             bus_consumer, teams_service, auth_client, confd_client

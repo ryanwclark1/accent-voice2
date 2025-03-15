@@ -28,22 +28,43 @@ class BusEventHandler:
     async def on_external_auth_added(self, payload):
         user_uuid, auth_name = payload.values()
 
-        if auth_name != "microsoft":
+        if auth_name != 'microsoft':
             return
 
-        logger.debug("connecting user `%s`", user_uuid)
+        logger.debug('connecting user `%s`', user_uuid)
         try:
             # You need a user token here, to create the subscription.
-            # This depends on how you are handling user login.
-            # For *testing only*, we'll create a temporary token.  This is NOT secure.
-            user_token = self.auth_client.token.new(expiration=120)
-            user_token = user_token["token"]
-            await self.service.create_subscription(
-                user_uuid, "0000", user_token
-            )  # TODO fix hardcoded
+            # Get the tenant uuid, use that to get the user token.
+            user_config = await self.confd_client.users(user_uuid).get(recurse=True) # Added
+            tenant_uuid = user_config['tenant_uuid'] # Added
+            temp_token = self.auth_client.token.new( # Modified to use tenant_id
+              expiration=120,
+              tenant_id=tenant_uuid
+            )
+            user_token = temp_token['token']
+            await self.service.create_subscription(user_uuid, tenant_uuid, user_token)
 
         except Exception:
-            logger.exception("an exception occured while creating subscription")
+            logger.exception('an exception occured while creating subscription')
+
+    async def on_external_auth_deleted(self, payload):
+        user_uuid, auth_name = payload.values()
+        if auth_name != 'microsoft':
+            return
+
+        logger.debug('disconnecting user `%s`', user_uuid)
+        try:
+            # Delete subscription, and user token.
+            user_config = await self.confd_client.users(user_uuid).get(recurse=True)
+            tenant_uuid = user_config['tenant_uuid']
+            temp_token = self.auth_client.token.new(
+              expiration=120,
+              tenant_id=tenant_uuid
+            )
+            user_token = temp_token['token']
+            await self.service.delete_subscription(user_uuid, user_token)
+        except Exception:
+            logger.exception('an exception occured while deleting a subscription')
 
     async def on_external_auth_deleted(self, payload):
         user_uuid, auth_name = payload.values()

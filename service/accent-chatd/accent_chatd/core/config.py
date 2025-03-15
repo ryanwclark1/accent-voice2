@@ -100,8 +100,24 @@ class EnabledPlugins(BaseModel):
 class InitializationSettings(BaseModel):
     enabled: bool = True
 
+class MicrosoftSettings(BaseModel):
+    client_id: str
+    client_secret: str
+    tenant_id: str = "common"  # Use 'common' for multi-tenant apps
+    redirect_uri: str
+    scopes: List[str] = [
+        "Presence.Read",
+        "User.ReadBasic.All",
+    ]  # Add other scopes as needed.
+    authority: str = "https://login.microsoftonline.com/"
+
+
 class TeamsPresenceSettings(BaseModel):
     microsoft_graph_url: str = "https://graph.microsoft.com/v1.0"
+    microsoft: MicrosoftSettings = Field(
+        default_factory=MicrosoftSettings
+    )  # Nested settings
+
 
 class Settings(BaseSettings):
     # Main Configuration

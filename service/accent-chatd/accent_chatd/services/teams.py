@@ -1,14 +1,13 @@
 # src/accent_chatd/services/teams.py
-import asyncio
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from accent_auth_client import Client as AuthClient
+
 from accent_chatd.api.teams_presence.client import MicrosoftGraphClient
 from accent_chatd.api.teams_presence.models import PresenceResourceSchema
 from accent_chatd.dao.teams_subscription import TeamsSubscriptionDAO
-from accent_chatd.dao.user import UserDAO
 from accent_chatd.models.teams_subscription import TeamsSubscription
 from accent_chatd.plugins.presences.services import PresenceService
 
@@ -30,27 +29,28 @@ class TeamsService:
         self._subscription_dao = subscription_dao
         self._auth_client = auth_client
         self._presence_service = presence_service
-        # self._connected_users = {}  # Temporary storage for connected users.  REMOVED
 
-    def is_connected(self, user_uuid: str) -> bool:
+    async def is_connected(self, user_uuid: str) -> bool:
         """Checks if a user is currently connected to Teams integration."""
-        # return user_uuid in self._connected_users # Remove.
         # Check the database instead.
-        return False  # TODO: Fix.
+        subscription = await self._subscription_dao.get_by_user_uuid(user_uuid)
+        return subscription is not None
 
-    # async def connect_user(self, user_uuid: str, teams_user_id: str): # REMOVED
-    #   self._connected_users[user_uuid] = teams_user_id
+    async def connect_user(self, user_uuid: str, teams_user_id: str):
+        # self._connected_users[user_uuid] = teams_user_id # Removed
+        return  # Now handled by subscription.
 
-    # async def disconnect_user(self, user_uuid: str): # REMOVED
-    #   if user_uuid in self._connected_users:
-    #     del self._connected_users[user_uuid]
+    async def disconnect_user(self, user_uuid: str):
+        # if user_uuid in self._connected_users:  # Removed
+        #    del self._connected_users[user_uuid]
+        return
 
     def user_uuid_from_teams(self, teams_user_id: str) -> str | None:
-        # for user_uuid, ms_teams_user_id in self._connected_users.items(): # REMOVED
+        # for user_uuid, ms_teams_user_id in self._connected_users.items():  # Removed
         #     if ms_teams_user_id == teams_user_id:
         #         return user_uuid
         # return None
-        return "0000"  # TODO
+        return "000"  # TODO: Implement by searching subscription.
 
     async def fetch_teams_presence(self, teams_user_id: str, token: str) -> dict | None:
         """Fetches presence information from Microsoft Teams."""
@@ -92,7 +92,7 @@ class TeamsService:
             )
             ms_teams_user_id = external_auth["microsoft_user_id"]
             access_token = external_auth["access_token"]  # Get access token
-        except Exception as e:
+        except Exception:
             logger.error(f"Could not retrieve teams information for user: {user_uuid}")
             return
 
@@ -108,7 +108,7 @@ class TeamsService:
 
         # 3. Create the subscription.
         client_state = str(uuid.uuid4())
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=DEFAULT_EXPIRATION)
+        expires_at = datetime.now(UTC) + timedelta(seconds=DEFAULT_EXPIRATION)
         notification_url = f"http://127.0.0.1:9304/1.0/users/{user_uuid}/teams/presence"  # Replace with your actual URL.
 
         subscription_data = {
@@ -138,7 +138,7 @@ class TeamsService:
             )
 
             await self._subscription_dao.create(subscription)
-            # await self.connect_user(user_uuid, ms_teams_user_id) # Connect user # No longer needed.
+            # await self.connect_user(user_uuid, ms_teams_user_id) # Connect user # No longer needed
             logger.info(f"Created subscription for user {user_uuid}: {response}")
 
         except Exception as e:
@@ -158,7 +158,7 @@ class TeamsService:
                     f"/subscriptions/{subscription.subscription_id}", user_token
                 )
                 await self._subscription_dao.delete(subscription)
-                # await self.disconnect_user(user_uuid) # Disconnect, no longer needed.
+                # await self.disconnect_user(user_uuid) # Disconnect
                 logger.info(
                     f"Deleted subscription {subscription.subscription_id} for user {user_uuid}"
                 )
@@ -172,7 +172,7 @@ class TeamsService:
     async def renew_subscriptions(self):
         """Renews expiring subscriptions."""
         logger.info("Checking for expiring Teams presence subscriptions...")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         renewal_threshold = now + timedelta(seconds=RENEWAL_THRESHOLD)
 
         async with self._subscription_dao.session() as session:  # Get a session
@@ -189,18 +189,18 @@ class TeamsService:
                 )
                 try:
                     # 1. Construct the request to Microsoft Graph.  You only need to send the new expiration time.
-                    expires_at = datetime.now(timezone.utc) + timedelta(
+                    expires_at = datetime.now(UTC) + timedelta(
                         seconds=DEFAULT_EXPIRATION
                     )
                     update_data = {"expirationDateTime": expires_at.isoformat()}
 
                     # 2. Make the API call using the graph client.  You'll need a valid token!
                     # Get a valid token.
-                    # user_token = self.auth_client.token.new(expiration=120)
+                    # user_token = self.auth_client.token.new(expiration=120) # Removed
                     external_auth = await self.auth_client.external.get_async(
                         "microsoft", subscription.user_uuid, "0000"
                     )
-                    access_token = external_auth["access_token"]  # Get access token
+                    access_token = external_auth["access_token"]
                     response = await self._graph_client.patch(
                         f"/subscriptions/{subscription.subscription_id}",
                         access_token,  # Replace with a valid token

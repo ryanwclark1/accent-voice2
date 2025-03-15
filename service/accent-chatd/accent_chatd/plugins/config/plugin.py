@@ -3,7 +3,7 @@ from accent_chatd.core.plugin import Plugin  # Import the base class
 from .http import ConfigResource
 
 
-class Plugin(Plugin):  # Inherit from Plugin
+class Plugin(Plugin):
     def load(self, dependencies):
         config = dependencies["config"]
         api = dependencies["app"]

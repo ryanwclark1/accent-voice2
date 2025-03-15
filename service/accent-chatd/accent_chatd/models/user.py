@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from .line import Line  # prevent circular import
     from .refresh_token import RefreshToken  # prevent circular import
     from .session import Session  # prevent circular import
+    from .teams_subscription import TeamsSubscription  # prevent circular import
     from .tenant import Tenant
 
 
@@ -62,6 +63,9 @@ class User(Base):
     ms_teams_user_id: Mapped[str | None] = mapped_column(
         String, nullable=True
     )  # Add this line
+    teams_subscriptions: Mapped[list["TeamsSubscription"]] = relationship(  # Add this.
+        "TeamsSubscription", back_populates="user", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (Index("chatd_user__idx__tenant_uuid", "tenant_uuid"),)
 

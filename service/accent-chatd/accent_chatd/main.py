@@ -4,25 +4,26 @@ import logging.config
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+
+from accent_chatd.api.auth import auth_router
+from accent_chatd.core.bus import get_bus_consumer
 from accent_chatd.core.config import get_settings
 from accent_chatd.core.database import Base, engine
 from accent_chatd.core.exceptions import http_exception_handler
-
-# from accent_chatd.services.teams import TeamsService  # No longer needed at top-level
 from accent_chatd.core.middleware import ExampleMiddleware
-from accent_chatd.core.bus import get_bus_consumer, get_bus_publisher
-from accent_chatd.api.common import common_router
 from accent_chatd.core.plugin import Plugin  # Import the Plugin base class
-from accent_chatd.dao import DAO
+from accent_chatd.plugins.api.plugin import Plugin as ApiPlugin
 
+# Add to app.
 # Import plugin modules.  These imports *must* be here, after the
 # FastAPI app is created, because the plugin modules depend on `app`.
 from accent_chatd.plugins.config.plugin import Plugin as ConfigPlugin
 from accent_chatd.plugins.presences.plugin import Plugin as PresencesPlugin
 from accent_chatd.plugins.rooms.plugin import Plugin as RoomsPlugin
 from accent_chatd.plugins.status.plugin import Plugin as StatusPlugin
-from accent_chatd.plugins.api.plugin import Plugin as ApiPlugin
-from accent_chatd.plugins.teams_presence.plugin import Plugin as TeamsPresencePlugin
+from accent_chatd.plugins.teams_presence.plugin import (
+    Plugin as TeamsPresencePlugin,
+)
 
 settings = get_settings()
 # Configure logging
@@ -33,20 +34,31 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="accent-chatd",
     description="REST API for managing chat presence and messages.",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url=None,
-    openapi_url="/openapi.json",
+    version="1.0.0",  # Replace with your actual version
+    docs_url="/docs",  # Make Swagger UI available at /docs
+    redoc_url=None,  # Disable ReDoc
+    openapi_url="/openapi.json",  # Serve OpenAPI spec at /openapi.json
 )
 
 # Add exception handlers
 app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_middleware(ExampleMiddleware)  # Add middleware
+
+# Add middleware
+app.add_middleware(ExampleMiddleware)
+
+# Include routers for different API resources, no longer needed.
+# app.include_router(common_router)
+# app.include_router(config_router, prefix="/config", tags=["config"])
+# app.include_router(presence_router, prefix="/users", tags=["presences"])
+# app.include_router(room_router, prefix="/users", tags=["rooms", "messages"])
+# app.include_router(status_router, prefix="/status", tags=["status"])
+# app.include_router(teams_router, prefix="/users", tags=["teams_presence"])
+app.include_router(auth_router)
 
 # --- Plugin Registration ---
 # List of plugins to load.  Order matters here; if plugins depend on each
 # other, the dependencies need to be loaded *before* the dependents.
-plugins: List[Plugin] = [
+plugins: list[Plugin] = [
     ApiPlugin(),
     ConfigPlugin(),
     StatusPlugin(),
@@ -99,7 +111,6 @@ async def shutdown_event():
         await bus_consumer.disconnect()  # Disconnect
         bus_consumer.stop()  # Stop running.
     await engine.dispose()
-    # get_aio_core().stop() # No longer needed.
     logger.info("Shutdown complete.")
 
 
