@@ -3,12 +3,10 @@
 import logging
 
 from accent_auth_client import Client as AuthClient
-from accent_confd_client import Client as ConfdClient
 
 # from accent_chatd.core.asyncio_ import CoreAsyncio # No longer needed.
 from accent_chatd.core.bus import BusConsumer
-from accent_chatd.core.config import get_settings
-from accent_chatd.services.teams import TeamsService  # Import TeamsService
+from accent_chatd.services.teams import TeamsService
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +18,11 @@ class BusEventHandler:
         bus: BusConsumer,
         teams_service: TeamsService,
         auth_client: AuthClient,
-        confd_client: ConfdClient,
     ):
         # self.aio = aio
         self.bus = bus
         self.service = teams_service
         self.auth_client = auth_client
-        self.confd_client = confd_client
 
     # No longer need _register_async_handler, as the consumer handles it.
     async def on_external_auth_added(self, payload):
@@ -40,14 +36,11 @@ class BusEventHandler:
             # You need a user token here, to create the subscription.
             # This depends on how you are handling user login.
             # For *testing only*, we'll create a temporary token.  This is NOT secure.
-            settings = get_settings()
-            user_config = await self.confd_client.users(user_uuid).get(recurse=True)
-            tenant_uuid = user_config["tenant_uuid"]
-            temp_token = self.auth_client.token.new(
-                expiration=120, tenant_id=tenant_uuid
-            )
-            user_token = temp_token["token"]
-            await self.service.create_subscription(user_uuid, tenant_uuid, user_token)
+            user_token = self.auth_client.token.new(expiration=120)
+            user_token = user_token["token"]
+            await self.service.create_subscription(
+                user_uuid, "0000", user_token
+            )  # TODO fix hardcoded
 
         except Exception:
             logger.exception("an exception occured while creating subscription")

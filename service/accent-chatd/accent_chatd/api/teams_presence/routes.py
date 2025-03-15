@@ -1,4 +1,5 @@
 # src/accent_chatd/api/teams_presence/routes.py
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -8,8 +9,10 @@ from accent_chatd.api.teams_presence.models import TeamsSubscriptionSchema
 from accent_chatd.core.auth import verify_token, get_current_user_uuid
 from accent_chatd.core.config import get_settings
 from accent_chatd.services.teams import TeamsService
+from accent_chatd.plugins.presences.services import PresenceService
 from accent_chatd.api.teams_presence.client import MicrosoftGraphClient
 from accent_chatd.dao.teams_subscription import TeamsSubscriptionDAO
+from accent_chatd.dao.user import UserDAO
 from accent_chatd.core.database import get_async_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,7 +34,12 @@ async def get_teams_service(
         username=settings.auth.username,
         password=settings.auth.password,
     )
-    return TeamsService(graph_client, subscription_dao, auth_client)  # Pass in
+    presence_service = PresenceService(
+        UserDAO(db), get_bus_publisher(), get_bus_consumer()
+    )
+    return TeamsService(
+        graph_client, subscription_dao, auth_client, presence_service
+    )  # Pass in
 
 
 @teams_router.post(
@@ -44,7 +52,7 @@ async def update_teams_presence(
     user_uuid: str,
     request: Request,
     service: TeamsService = Depends(get_teams_service),
-    token: str = Depends(verify_token),  # Removed unneccessary parameter.
+    token: str = Depends(verify_token),
 ):
     # Note:  No explicit ACL check. This endpoint is designed to be called
     #        by Microsoft Graph, *not* by internal services/users.
@@ -65,8 +73,7 @@ async def update_teams_presence(
 
     for subscription in pushed_data.root:  # iter through value.
         user_id = subscription.resource_data.id
-        # user_uuid = service.user_uuid_from_teams(user_id) # This function is not yet written, will write later.
-        if state := await service.fetch_teams_presence(user_id):  # Fake a return.
+        if state := await service.fetch_teams_presence(user_id, token):  # Pass in token
             await service.update_presence(state, user_uuid)  # Fake a service call
 
     return ""

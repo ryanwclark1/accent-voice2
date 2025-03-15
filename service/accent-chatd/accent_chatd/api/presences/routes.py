@@ -9,29 +9,24 @@ from accent_chatd.api.presences.models import (
     PresenceUpdateRequest,
 )
 
-from accent_chatd.core.auth import (
-    verify_token,
-    get_current_user_uuid,
-)  # Corrected import
+from accent_chatd.core.auth import verify_token, get_current_user_uuid
 from accent_chatd.core.dependencies import get_config
 from accent_chatd.core.config import Settings
 from accent_chatd.dao.user import UserDAO
 from accent_chatd.core.database import get_async_session
-from accent_chatd.core.bus import get_bus_publisher, BusPublisher
+from accent_chatd.core.bus import get_bus, BusClient  # Import
 from accent_chatd.services.presences import PresenceService  # Import service
 from sqlalchemy.ext.asyncio import AsyncSession
 
 presence_router = APIRouter()
 
 
-# Dependency to get the PresenceService instance. Now using the service.
-def get_presence_service(
+# Dependency to get the PresenceService instance
+async def get_presence_service(
     db: AsyncSession = Depends(get_async_session),
-    bus_publisher: BusPublisher = Depends(get_bus_publisher),
+    bus_client: BusClient = Depends(get_bus),
 ) -> PresenceService:
-    return PresenceService(
-        UserDAO(db), bus_publisher, get_bus_consumer()
-    )  # Pass consumer.
+    return PresenceService(UserDAO(db), bus_client)
 
 
 @presence_router.get(

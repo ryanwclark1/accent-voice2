@@ -3,11 +3,14 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-from accent_auth_client import Client as AuthClient  # Import
 
+from accent_auth_client import Client as AuthClient
 from accent_chatd.api.teams_presence.client import MicrosoftGraphClient
+from accent_chatd.api.teams_presence.models import PresenceResourceSchema
 from accent_chatd.dao.teams_subscription import TeamsSubscriptionDAO
+from accent_chatd.dao.user import UserDAO
 from accent_chatd.models.teams_subscription import TeamsSubscription
+from accent_chatd.plugins.presences.services import PresenceService
 
 logger = logging.getLogger(__name__)
 
@@ -21,48 +24,57 @@ class TeamsService:
         graph_client: MicrosoftGraphClient,
         subscription_dao: TeamsSubscriptionDAO,
         auth_client: AuthClient,
+        presence_service: PresenceService,
     ):
         self._graph_client = graph_client
         self._subscription_dao = subscription_dao
         self._auth_client = auth_client
-        self._connected_users = {}  # Temporary storage for connected users. {user_uuid: ms_teams_user_id}
+        self._presence_service = presence_service
+        # self._connected_users = {}  # Temporary storage for connected users.  REMOVED
 
     def is_connected(self, user_uuid: str) -> bool:
         """Checks if a user is currently connected to Teams integration."""
-        return user_uuid in self._connected_users
+        # return user_uuid in self._connected_users # Remove.
+        # Check the database instead.
+        return False  # TODO: Fix.
 
-    async def connect_user(self, user_uuid: str, teams_user_id: str):
-        self._connected_users[user_uuid] = teams_user_id
+    # async def connect_user(self, user_uuid: str, teams_user_id: str): # REMOVED
+    #   self._connected_users[user_uuid] = teams_user_id
 
-    async def disconnect_user(self, user_uuid: str):
-        if user_uuid in self._connected_users:
-            del self._connected_users[user_uuid]
+    # async def disconnect_user(self, user_uuid: str): # REMOVED
+    #   if user_uuid in self._connected_users:
+    #     del self._connected_users[user_uuid]
 
     def user_uuid_from_teams(self, teams_user_id: str) -> str | None:
-        for user_uuid, ms_teams_user_id in self._connected_users.items():
-            if ms_teams_user_id == teams_user_id:
-                return user_uuid
-        return None
+        # for user_uuid, ms_teams_user_id in self._connected_users.items(): # REMOVED
+        #     if ms_teams_user_id == teams_user_id:
+        #         return user_uuid
+        # return None
+        return "0000"  # TODO
 
-    async def fetch_teams_presence(self, teams_user_id: str) -> dict | None:
+    async def fetch_teams_presence(self, teams_user_id: str, token: str) -> dict | None:
         """Fetches presence information from Microsoft Teams."""
-        # try:
-        #   # Replace with actual API call using self._graph_client, when implemented
-        #   presence_data = await self._graph_client.get(
-        #       f"/communications/presences/{teams_user_id}", "dummy_token"
-        #   )
-        #   return presence_data
-        # except Exception as e:
-        #   logger.error(f"Failed to fetch presence for {teams_user_id}: {e}")
-        #   return None
-        logger.info("Getting teams presence data.")
-        return {"availability": "Available"}  # Dummy response for now
+        try:
+            # Replace with actual API call using self._graph_client, when implemented
+            presence_data = await self._graph_client.get(
+                f"/communications/presences/{teams_user_id}", token
+            )
+            return PresenceResourceSchema(**presence_data).model_dump()
+        except Exception as e:
+            logger.error(f"Failed to fetch presence for {teams_user_id}: {e}")
+            return None
 
     async def update_presence(self, state: str, user_uuid: str):
         """Updates the user's presence in the database."""
         # Placeholder: Replace with actual database update logic using your DAO
         logger.info(f"Updating presence for user {user_uuid} to {state}")
-        # await self._user_dao.update_presence(user_uuid, state) # Call the user DAO here
+        try:
+            tenant_uuids = []
+            user = await self._presence_service.get(tenant_uuids, user_uuid)
+            user.state = state
+            await self._presence_service.update(user)  # Call the user DAO here
+        except Exception as e:
+            logger.error(f"Error updating presence: {e}")
 
     async def create_subscription(
         self, user_uuid: str, tenant_uuid: str, user_token: str
@@ -75,7 +87,7 @@ class TeamsService:
         #    connects their MS Teams account).
         # Get the access token/teams user id from our auth_client
         try:
-            external_auth = self._auth_client.external.get(
+            external_auth = await self._auth_client.external.get_async(
                 "microsoft", user_uuid, tenant_uuid
             )
             ms_teams_user_id = external_auth["microsoft_user_id"]
@@ -126,7 +138,7 @@ class TeamsService:
             )
 
             await self._subscription_dao.create(subscription)
-            await self.connect_user(user_uuid, ms_teams_user_id)
+            # await self.connect_user(user_uuid, ms_teams_user_id) # Connect user # No longer needed.
             logger.info(f"Created subscription for user {user_uuid}: {response}")
 
         except Exception as e:
@@ -146,7 +158,7 @@ class TeamsService:
                     f"/subscriptions/{subscription.subscription_id}", user_token
                 )
                 await self._subscription_dao.delete(subscription)
-                await self.disconnect_user(user_uuid)  # Disconnect
+                # await self.disconnect_user(user_uuid) # Disconnect, no longer needed.
                 logger.info(
                     f"Deleted subscription {subscription.subscription_id} for user {user_uuid}"
                 )
@@ -184,10 +196,14 @@ class TeamsService:
 
                     # 2. Make the API call using the graph client.  You'll need a valid token!
                     # Get a valid token.
-                    user_token = self.auth_client.token.new(expiration=120)
+                    # user_token = self.auth_client.token.new(expiration=120)
+                    external_auth = await self.auth_client.external.get_async(
+                        "microsoft", subscription.user_uuid, "0000"
+                    )
+                    access_token = external_auth["access_token"]  # Get access token
                     response = await self._graph_client.patch(
                         f"/subscriptions/{subscription.subscription_id}",
-                        user_token["token"],  # Replace with a valid token
+                        access_token,  # Replace with a valid token
                         json_data=update_data,
                     )
                     # print("RESPONSE:", response) # debug

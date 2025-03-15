@@ -1,37 +1,35 @@
 # src/accent_chatd/services/presences.py
 import datetime
-from typing import List
-
-from accent_chatd.dao.user import UserDAO
-from accent_chatd.core.bus import BusPublisher, BusConsumer  # Import BusConsumer
-from accent_chatd.schemas.presence import UserPresence
-from accent_chatd.models import User, Tenant
-
 import logging
+
+from sqlalchemy import select
+
+from accent_chatd.core.bus import BusClient
+from accent_chatd.core.events import EventType
+from accent_chatd.dao.user import UserDAO
+from accent_chatd.models import Tenant, User
+from accent_chatd.schemas.presence import UserPresence
 
 logger = logging.getLogger(__name__)
 
 
 class PresenceService:
-    def __init__(
-        self, user_dao: UserDAO, bus_publisher: BusPublisher, bus_consumer: BusConsumer
-    ):
+    def __init__(self, user_dao: UserDAO, bus_client: BusClient):
         self._user_dao = user_dao
-        self._bus_publisher = bus_publisher
-        self._bus_consumer = bus_consumer
+        self._bus_client = bus_client
         self.subscribe_to_events()
 
-    async def list_(self, tenant_uuids: List[str], **filter_parameters) -> List[User]:
+    async def list_(self, tenant_uuids: list[str], **filter_parameters) -> list[User]:
         return await self._user_dao.list_(tenant_uuids, **filter_parameters)
 
-    async def count(self, tenant_uuids: List[str], **filter_parameters) -> int:
+    async def count(self, tenant_uuids: list[str], **filter_parameters) -> int:
         return await self._user_dao.count(tenant_uuids, **filter_parameters)
 
-    async def get(self, tenant_uuids: List[str], user_uuid: str) -> User:
+    async def get(self, tenant_uuids: list[str], user_uuid: str) -> User:
         return await self._user_dao.get(tenant_uuids, user_uuid)
 
     async def update(self, user: User) -> User:
-        user.last_activity = datetime.datetime.now(datetime.timezone.utc)
+        user.last_activity = datetime.datetime.now(datetime.UTC)
         await self._user_dao.update(user)
         await self._notify_updated(user)  # Call notification
         return user
@@ -40,7 +38,7 @@ class PresenceService:
         # Convert model to pydantic schema.
         payload = UserPresence.model_validate(user).model_dump()
         # Use the async bus publisher.
-        await self._bus_publisher.publish(
+        await self._bus_client.publisher.publish(
             payload,
             routing_key=f"chatd.users.{user.uuid}.presence.updated",
             headers={
@@ -56,6 +54,7 @@ class PresenceService:
         try:
             user_uuid = payload["uuid"]
             tenant_uuid = payload["tenant_uuid"]
+            # Create tenant and user.
             async with self._user_dao.session() as session:
                 async with session.begin():
                     tenant = await session.execute(
@@ -64,7 +63,7 @@ class PresenceService:
                     tenant = tenant.scalar_one_or_none()
                     if not tenant:
                         tenant = Tenant(uuid=tenant_uuid)
-                        session.add(tenant)
+                        session.add(tenant)  # Add the tenant
                     # Check if user already exists (prevent race conditions on startup)
                     existing_user = await session.execute(
                         select(User).where(User.uuid == user_uuid)
@@ -102,9 +101,9 @@ class PresenceService:
     def subscribe_to_events(self):
         """Subscribe to bus events."""
         events = [
-            ("user_created", self._on_user_created),
-            ("user_deleted", self._on_user_deleted),
+            (EventType.USER_CREATED, self._on_user_created),
+            (EventType.USER_DELETED, self._on_user_deleted),
         ]
 
         for event, handler in events:
-            self._bus_consumer.subscribe(event, handler)
+            self._bus_client.consumer.subscribe(event, handler)

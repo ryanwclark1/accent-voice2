@@ -1,51 +1,51 @@
-# Copyright 2023 Accent Communications
+# src/accent_chatd/plugins/teams_presence/plugin.py
+
+import logging
 
 from accent_auth_client import Client as AuthClient
 from accent_confd_client import Client as ConfdClient
 
-from accent_chatd.plugins.presences.notifier import PresenceNotifier
-from accent_chatd.plugins.presences.services import PresenceService
+from accent_chatd.core.bus import get_bus_consumer, get_bus_publisher
+from accent_chatd.core.plugin import Plugin
+from accent_chatd.plugins.presences.services import PresenceService  # Import
 
 from .bus_consume import BusEventHandler
 from .http import TeamsPresenceResource
 from .log import make_logger
-from .notifier import TeamsNotifier
 from .services import TeamsService
 
 logger = make_logger(__name__)
 
 
-class Plugin:
+class Plugin(Plugin):
     def load(self, dependencies):
-        aio = dependencies['aio']
-        api = dependencies['api']
-        bus_consumer = dependencies['bus_consumer']
-        bus_publisher = dependencies['bus_publisher']
-        config = dependencies['config']
-        dao = dependencies['dao']
+        api = dependencies["app"]
+        config = dependencies["config"]
+        dao = dependencies["dao"]
+        bus_consumer = dependencies["bus_consumer"]
+        bus_publisher = dependencies["bus_publisher"]
 
-        auth = AuthClient(**config['auth'])
-        confd = ConfdClient(**config['confd'])
+        presence_service = PresenceService(
+            dao.user, bus_publisher, bus_consumer
+        )  # Pass consumer
+        auth_client = AuthClient(**config["auth"])
+        confd_client = ConfdClient(**config["confd"])
 
-        token_changed_subscribe = dependencies['token_changed_subscribe']
-        token_changed_subscribe(auth.set_token)
-        token_changed_subscribe(confd.set_token)
-
-        presence_notifier = PresenceNotifier(bus_publisher)
-        presence_service = PresenceService(dao, presence_notifier)
-
-        notifier = TeamsNotifier(aio, bus_publisher)
-
-        service = TeamsService(
-            aio, auth, confd, config, dao, notifier, presence_service
+        teams_service = TeamsService(
+            MicrosoftGraphClient(config["teams_presence"]["microsoft_graph_url"]),
+            dao.teams_subscription,
+            auth_client,
+            presence_service,  # Pass the presence service
         )
-        service.initialize()
 
-        events_handler = BusEventHandler(aio, bus_consumer, service)
+        events_handler = BusEventHandler(
+            bus_consumer, teams_service, auth_client, confd_client
+        )
         events_handler.subscribe()
 
-        api.add_resource(
-            TeamsPresenceResource,
-            '/users/<user_uuid>/teams/presence',
-            resource_class_args=(service,),
+        api.add_api_route(
+            "/users/<user_uuid>/teams/presence",
+            TeamsPresenceResource(teams_service).post,
+            methods=["POST"],
+            tags=["teams_presence"],
         )

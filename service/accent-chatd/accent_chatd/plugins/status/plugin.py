@@ -1,21 +1,21 @@
-# Copyright 2023 Accent Communications
+# src/accent_chatd/plugins/status/plugin.py
 
 from accent.status import Status
+from accent_chatd.core.plugin import Plugin
 
 from .resource import StatusResource
 
 
-class Plugin:
+class Plugin(Plugin):  # Inherit
     def load(self, dependencies):
-        api = dependencies['api']
-        status_aggregator = dependencies['status_aggregator']
+        # status_aggregator = dependencies['status_aggregator']
 
-        status_aggregator.add_provider(provide_status)
+        # status_aggregator.add_provider(provide_status) # Not using now.
+        api = dependencies["app"]
+        api.add_api_route(
+            "/status", StatusResource(None).get, methods=["GET"], tags=["status"]
+        )  # Removed status_aggregator
 
-        api.add_resource(
-            StatusResource, '/status', resource_class_args=[status_aggregator]
-        )
 
-
-def provide_status(status):
-    status['rest_api']['status'] = Status.ok
+def provide_status(status):  # Not using
+    status["rest_api"]["status"] = Status.ok

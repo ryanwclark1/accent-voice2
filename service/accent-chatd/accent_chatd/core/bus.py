@@ -145,17 +145,6 @@ class BusConsumer:
 
 settings = get_settings()
 
-# Create a default exchange
-# bus_exchange = Exchange(settings.bus.exchange_name, type=settings.bus.exchange_type)
-
-# Create a queue.
-# bus_queue = Queue(
-#     f'accent-chatd-{settings.uuid}',  # Unique queue name, bind to default exchange.
-#     exchange=bus_exchange,
-#     durable=False, # Add for testing.
-#     auto_delete=True # Add for testing.
-# )
-
 
 async def get_bus_publisher() -> BusPublisher:
     # Return a publisher, it maintains the connection
@@ -168,3 +157,14 @@ async def get_bus_consumer() -> BusConsumer:
     if not hasattr(get_bus_consumer, "consumer"):
         get_bus_consumer.consumer = BusConsumer(settings.bus.get_connection_url(), settings.bus.exchange_name, f"accent-chatd-{settings.uuid}")
     return get_bus_consumer.consumer
+
+
+# Create a BusClient, to combine the publisher and consumer.
+class BusClient:
+    def __init__(self, publisher: BusPublisher, consumer: BusConsumer):
+        self.publisher = publisher
+        self.consumer = consumer
+
+
+async def get_bus() -> BusClient:
+    return BusClient(await get_bus_publisher(), await get_bus_consumer())
