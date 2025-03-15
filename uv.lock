@@ -1177,6 +1177,7 @@ dependencies = [
     { name = "accent-confd-client" },
     { name = "accent-lib-rest-client" },
     { name = "aio-pika" },
+    { name = "httpx" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
 
@@ -1212,6 +1213,7 @@ requires-dist = [
     { name = "accent-confd-client", editable = "library/accent-confd-client" },
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
     { name = "aio-pika", specifier = ">=9.5.5" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
 ]
 

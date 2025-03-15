@@ -2,7 +2,7 @@
 import logging
 from typing import Any
 
-import aiohttp
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 class MicrosoftGraphClient:
     def __init__(self, base_url: str = "https://graph.microsoft.com/v1.0"):
         self._base_url = base_url
-        self._session = None  # We'll create the session lazily
+        self._async_client = None  # Use a single async client instance
 
-    async def _get_session(self) -> aiohttp.ClientSession:
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession()
-        return self._session
+    async def _get_client(self) -> httpx.AsyncClient:
+        if self._async_client is None or self._async_client.is_closed:
+            self._async_client = httpx.AsyncClient()  # No auth by default.
+        return self._async_client
 
     async def _request(
         self,
@@ -31,23 +31,24 @@ class MicrosoftGraphClient:
             "Content-Type": "application/json",
         }
         url = f"{self._base_url}{path}"
-        session = await self._get_session()
+        client = await self._get_client()
 
         try:
-            async with session.request(
-                method, url, headers=headers, data=data, json=json_data
-            ) as response:
-                response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-                if response.status == 204:  # no content
+            async with client:  # Use with context manager.
+                response = await client.request(
+                    method, url, headers=headers, data=data, json=json_data
+                )
+                response.raise_for_status()  # Raise HTTPError for bad responses
+                if response.status_code == 204:
                     return None
-                return await response.json()
-        except aiohttp.ClientResponseError as e:
+                return response.json()
+        except httpx.HTTPStatusError as e:
             logger.error(
-                f"Microsoft Graph API request failed: {e.status} - {e.message}, {e.request_info}"
+                f"Microsoft Graph API request failed: {e.response.status_code} - {e.response.text}, {e.request}"
             )
-            raise  # Re-raise the exception to be handled by the caller, after logging
-        except aiohttp.ClientError as e:  # Catch other client errors.
-            logger.exception(f"Aiohttp Client Error: {e}")
+            raise  # Re-raise the exception to be handled by the caller
+        except httpx.RequestError as e:
+            logger.exception(f"HTTPX Request Error: {e}")
             raise
 
     async def get(self, path: str, token: str) -> Any:
@@ -84,6 +85,6 @@ class MicrosoftGraphClient:
         return await self._request("DELETE", path, token)
 
     async def close(self):
-        if self._session:
-            await self._session.close()
-            self._session = None
+        if self._async_client:
+            await self._async_client.aclose()
+            self._async_client = None

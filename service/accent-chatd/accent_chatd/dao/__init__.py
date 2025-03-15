@@ -1,14 +1,16 @@
 # src/accent_chatd/dao/__init__.py
 
+from accent_chatd.core.database import async_session_maker
+
 from .channel import ChannelDAO
 from .endpoint import EndpointDAO
 from .line import LineDAO
 from .refresh_token import RefreshTokenDAO
 from .room import RoomDAO
 from .session import SessionDAO
+from .teams_subscription import TeamsSubscriptionDAO
 from .tenant import TenantDAO
 from .user import UserDAO
-from accent_chatd.core.database import async_session_maker
 
 
 class DAO:
@@ -21,3 +23,4 @@ class DAO:
         self.session = SessionDAO(async_session_maker)
         self.tenant = TenantDAO(async_session_maker)
         self.user = UserDAO(async_session_maker)
+        self.teams_subscription = TeamsSubscriptionDAO(async_session_maker)

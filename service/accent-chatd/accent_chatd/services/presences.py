@@ -1,12 +1,13 @@
 # src/accent_chatd/services/presences.py
 import datetime
-import logging
+from typing import List
 
-from accent_chatd.core.bus import BusConsumer, BusPublisher
 from accent_chatd.dao.user import UserDAO
-from accent_chatd.exceptions import UnknownUserException  # Import
-from accent_chatd.models import Tenant, User
+from accent_chatd.core.bus import BusPublisher, BusConsumer  # Import BusConsumer
 from accent_chatd.schemas.presence import UserPresence
+from accent_chatd.models import User, Tenant
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -17,20 +18,20 @@ class PresenceService:
     ):
         self._user_dao = user_dao
         self._bus_publisher = bus_publisher
-        self._bus_consumer = bus_consumer  # Add consumer.
-        self.subscribe_to_events()  # Call on init.
+        self._bus_consumer = bus_consumer
+        self.subscribe_to_events()
 
-    async def list_(self, tenant_uuids: list[str], **filter_parameters) -> list[User]:
+    async def list_(self, tenant_uuids: List[str], **filter_parameters) -> List[User]:
         return await self._user_dao.list_(tenant_uuids, **filter_parameters)
 
-    async def count(self, tenant_uuids: list[str], **filter_parameters) -> int:
+    async def count(self, tenant_uuids: List[str], **filter_parameters) -> int:
         return await self._user_dao.count(tenant_uuids, **filter_parameters)
 
-    async def get(self, tenant_uuids: list[str], user_uuid: str) -> User:
+    async def get(self, tenant_uuids: List[str], user_uuid: str) -> User:
         return await self._user_dao.get(tenant_uuids, user_uuid)
 
     async def update(self, user: User) -> User:
-        user.last_activity = datetime.datetime.now(datetime.UTC)
+        user.last_activity = datetime.datetime.now(datetime.timezone.utc)
         await self._user_dao.update(user)
         await self._notify_updated(user)  # Call notification
         return user
@@ -55,19 +56,27 @@ class PresenceService:
         try:
             user_uuid = payload["uuid"]
             tenant_uuid = payload["tenant_uuid"]
-            # Create tenant and user.
-            async with self._user_dao.session() as session:  # open a session
-                async with session.begin():  # start a transaction.
+            async with self._user_dao.session() as session:
+                async with session.begin():
                     tenant = await session.execute(
                         select(Tenant).where(Tenant.uuid == tenant_uuid)
                     )
                     tenant = tenant.scalar_one_or_none()
                     if not tenant:
                         tenant = Tenant(uuid=tenant_uuid)
-                        session.add(tenant)  # Add the tenant
-                    user = User(uuid=user_uuid, tenant=tenant, state="unavailable")
-                    session.add(user)
-                    # session is committed on exit of the `async with session.begin()` block
+                        session.add(tenant)
+                    # Check if user already exists (prevent race conditions on startup)
+                    existing_user = await session.execute(
+                        select(User).where(User.uuid == user_uuid)
+                    )
+                    existing_user = existing_user.scalar_one_or_none()
+
+                    if not existing_user:
+                        user = User(uuid=user_uuid, tenant=tenant, state="unavailable")
+                        session.add(user)
+                        logger.info(f"Created user {user_uuid} in tenant {tenant_uuid}")
+                    else:
+                        logger.info(f"User {user_uuid} already exists.")
         except Exception:
             logger.exception(
                 f"Failed to create user {user_uuid} in tenant {tenant_uuid}"

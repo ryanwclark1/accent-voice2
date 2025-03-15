@@ -1,34 +1,37 @@
 # src/accent_chatd/api/presences/routes.py
 
-
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_chatd.api.presences.models import (
     PresenceList,
-    PresenceUpdateRequest,
     UserPresence,
+    PresenceUpdateRequest,
 )
+
 from accent_chatd.core.auth import (
-    get_current_user_uuid,
     verify_token,
+    get_current_user_uuid,
 )  # Corrected import
-from accent_chatd.core.bus import BusPublisher, get_bus_publisher
-from accent_chatd.core.config import Settings
-from accent_chatd.core.database import get_async_session
 from accent_chatd.core.dependencies import get_config
+from accent_chatd.core.config import Settings
 from accent_chatd.dao.user import UserDAO
+from accent_chatd.core.database import get_async_session
+from accent_chatd.core.bus import get_bus_publisher, BusPublisher
 from accent_chatd.services.presences import PresenceService  # Import service
+from sqlalchemy.ext.asyncio import AsyncSession
 
 presence_router = APIRouter()
 
 
-# Dependency to get the PresenceService instance
+# Dependency to get the PresenceService instance. Now using the service.
 def get_presence_service(
     db: AsyncSession = Depends(get_async_session),
     bus_publisher: BusPublisher = Depends(get_bus_publisher),
 ) -> PresenceService:
-    return PresenceService(UserDAO(db), bus_publisher)
+    return PresenceService(
+        UserDAO(db), bus_publisher, get_bus_consumer()
+    )  # Pass consumer.
 
 
 @presence_router.get(
@@ -38,7 +41,7 @@ def get_presence_service(
     description="Retrieves a list of user presences.",
 )
 async def list_presences(
-    user_uuids: list[str] = Query(
+    user_uuids: List[str] = Query(
         None, alias="user_uuid"
     ),  # change alias to original value.
     token: str = Depends(verify_token),

@@ -1,21 +1,19 @@
-# src/accent_chatd/main.py
 import asyncio
 import logging.config
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
-
 from accent_chatd.api.common import common_router
 from accent_chatd.api.config.routes import config_router
 from accent_chatd.api.presences.routes import presence_router
 from accent_chatd.api.rooms.routes import room_router
 from accent_chatd.api.status.routes import status_router
 from accent_chatd.api.teams_presence.routes import teams_router
-from accent_chatd.core.bus import get_bus_consumer
+from accent_chatd.core.bus import get_bus_consumer, get_bus_publisher
 from accent_chatd.core.config import get_settings
 from accent_chatd.core.database import Base, engine
 from accent_chatd.core.exceptions import http_exception_handler
-from accent_chatd.core.middleware import ExampleMiddleware
+from accent_chatd.services.teams import TeamsService  # Import service
 
 settings = get_settings()
 # Configure logging
@@ -35,9 +33,6 @@ app = FastAPI(
 # Add exception handlers
 app.add_exception_handler(HTTPException, http_exception_handler)
 
-# Add middleware
-app.add_middleware(ExampleMiddleware)
-
 # Include routers for different API resources
 app.include_router(common_router)
 app.include_router(config_router, prefix="/config", tags=["config"])
@@ -45,6 +40,17 @@ app.include_router(presence_router, prefix="/users", tags=["presences"])
 app.include_router(room_router, prefix="/users", tags=["rooms", "messages"])
 app.include_router(status_router, prefix="/status", tags=["status"])
 app.include_router(teams_router, prefix="/users", tags=["teams_presence"])
+
+
+async def check_subscriptions(service: TeamsService):
+    """
+    Check for subscription, and create/renew.
+    """
+    # Add logic to look through the database for subscriptions.
+    logger.info("Checking Subscriptions")
+    while True:  # loop
+        await service.renew_subscriptions()  # Call service method.
+        await asyncio.sleep(60)  # Check every minute.
 
 
 @app.on_event("startup")
@@ -56,10 +62,13 @@ async def startup_event():
     # Initialize any background tasks, connect to the bus, etc.
     logger.info("Startup complete.")
 
-    # Connect to bus.
+    # Start the bus consumer in a separate thread
     bus_consumer = await get_bus_consumer()
     await bus_consumer.connect()
-    asyncio.create_task(bus_consumer.run())  # Create task to run.
+    asyncio.create_task(bus_consumer.run())  # use asyncio.
+
+    # Start background tasks, using normal function.
+    asyncio.create_task(check_subscriptions(await get_teams_service()))
 
 
 @app.on_event("shutdown")

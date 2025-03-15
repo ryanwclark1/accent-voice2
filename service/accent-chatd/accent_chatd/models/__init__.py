@@ -7,6 +7,7 @@ from .room import Room
 from .room_message import RoomMessage
 from .room_user import RoomUser
 from .session import Session
+from .teams_subscription import TeamsSubscription
 from .tenant import Tenant
 from .user import User
 
@@ -19,6 +20,7 @@ __all__ = [
     "RoomMessage",
     "RoomUser",
     "Session",
+    "TeamsSubscription",
     "Tenant",
     "User",
 ]

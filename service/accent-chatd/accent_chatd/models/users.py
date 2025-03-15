@@ -8,13 +8,11 @@ from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Column,
     DateTime,
     ForeignKey,
-    Integer,
+    Index,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -51,17 +49,21 @@ class User(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    tenant: Mapped["Tenant"] = relationship("Tenant")  # Relationship to Tenant
-    sessions: Mapped[list["Session"]] = relationship(
+    tenant: Mapped[Tenant] = relationship("Tenant")  # Relationship to Tenant
+    sessions: Mapped[list[Session]] = relationship(
         "Session", back_populates="user", cascade="all, delete-orphan"
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+    refresh_tokens: Mapped[list[RefreshToken]] = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
     )
-    lines: Mapped[list["Line"]] = relationship(
+    lines: Mapped[list[Line]] = relationship(
         "Line", back_populates="user", cascade="all, delete-orphan"
     )
+    ms_teams_user_id: Mapped[str | None] = mapped_column(
+        String, nullable=True
+    )  # Add this line
+
     __table_args__ = (Index("chatd_user__idx__tenant_uuid", "tenant_uuid"),)
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, uuid={self.uuid!r}, tenant_uuid={self.tenant_uuid!r}, state={self.state!r}, status={self.status!r}, do_not_disturb={self.do_not_disturb!r}, last_activity={self.last_activity!r})"
+        return f"User(id={self.id!r}, uuid={self.uuid!r}, tenant_uuid={self.tenant_uuid!r}, state={self.state!r}, status={self.status!r}, do_not_disturb={self.do_not_disturb!r}, last_activity={self.last_activity!r}, ms_teams_user_id={self.ms_teams_user_id!r})"  # Add to repr
