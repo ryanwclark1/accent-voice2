@@ -2,9 +2,10 @@
 import datetime
 import logging
 
-from accent_chatd.core.bus import BusConsumer, BusPublisher  # Import BusConsumer
+from accent_chatd.core.bus import BusConsumer, BusPublisher
 from accent_chatd.dao.user import UserDAO
-from accent_chatd.models import User
+from accent_chatd.exceptions import UnknownUserException  # Import
+from accent_chatd.models import Tenant, User
 from accent_chatd.schemas.presence import UserPresence
 
 logger = logging.getLogger(__name__)
@@ -48,14 +49,46 @@ class PresenceService:
             },
         )
 
-    # Placeholder event handlers
+    # Event Handlers
     async def _on_user_created(self, payload: dict):
         logger.info(f"Received user_created event: {payload}")
-        # Add logic to create user in the database
+        try:
+            user_uuid = payload["uuid"]
+            tenant_uuid = payload["tenant_uuid"]
+            # Create tenant and user.
+            async with self._user_dao.session() as session:  # open a session
+                async with session.begin():  # start a transaction.
+                    tenant = await session.execute(
+                        select(Tenant).where(Tenant.uuid == tenant_uuid)
+                    )
+                    tenant = tenant.scalar_one_or_none()
+                    if not tenant:
+                        tenant = Tenant(uuid=tenant_uuid)
+                        session.add(tenant)  # Add the tenant
+                    user = User(uuid=user_uuid, tenant=tenant, state="unavailable")
+                    session.add(user)
+                    # session is committed on exit of the `async with session.begin()` block
+        except Exception:
+            logger.exception(
+                f"Failed to create user {user_uuid} in tenant {tenant_uuid}"
+            )
 
     async def _on_user_deleted(self, payload: dict):
         logger.info(f"Received user_deleted event: {payload}")
-        # Add logic to delete user from the database
+        try:
+            user_uuid = payload["uuid"]
+            tenant_uuid = payload["tenant_uuid"]
+            # Get and delete
+            async with self._user_dao.session() as session:
+                async with session.begin():
+                    user = await self._user_dao.get([tenant_uuid], user_uuid)
+                    await self._user_dao.delete(user)
+        except UnknownUserException:
+            logger.warning(f"user with uuid {user_uuid} does not exist.")
+        except Exception:
+            logger.exception(
+                f"Failed to delete user {user_uuid} in tenant {tenant_uuid}"
+            )
 
     def subscribe_to_events(self):
         """Subscribe to bus events."""

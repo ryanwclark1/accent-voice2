@@ -1,54 +1,136 @@
 # src/accent_chatd/core/auth.py
+import logging
+
+from accent_auth_client import Client
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from accent_chatd.core.config import get_settings
 
-# Temporary auth functions.
-async def verify_token(token: str = Depends(HTTPBearer()), acl: str = ""):
-    """Dummy token verification function.
+logger = logging.getLogger(__name__)
+
+# Get settings
+settings = get_settings()
+
+# Create an instance of the AuthClient
+auth_client = Client(
+    host=settings.auth.host,
+    port=settings.auth.port,
+    scheme="https" if settings.auth.https else "http",
+    prefix=settings.auth.prefix,
+    username=settings.auth.username,
+    password=settings.auth.password,
+)
+
+
+# Use a dependency to get the auth client
+async def get_auth_client() -> Client:
+    return auth_client
+
+
+# Use HTTPBearer for token authentication
+http_bearer = HTTPBearer(auto_error=False)  # auto_error=False prevents automatic 403
+
+
+async def verify_token(
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+    required_acl: str = "",
+) -> str:
+    """Verifies the provided token and checks for required ACL.
+
+    Args:
+        credentials: The HTTPBearer credentials.
+        required_acl: The required ACL string.
+
+    Returns:
+        The token string if valid.
+
+    Raises:
+        HTTPException: If the token is missing, invalid, or lacks permissions.
+
     """
-    if token.credentials != "valid_token":  # Replace "valid_token"
+    if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
+            detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    # In a real application, you'd check the ACL here.
-    # This is just a placeholder.
-    return True
+    token = credentials.credentials
+    try:
+        # Use the synchronous version within run_in_threadpool
+        if required_acl:
+            auth_client.token.check(token, required_acl=required_acl)
+        else:
+            auth_client.token.check(token)
+        return token  # return token if check is successful.
+    except Exception as e:
+        logger.warning(f"Token verification failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid token or insufficient permissions",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 async def get_current_user_uuid(
-    token: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
 ) -> str:
-    """Dummy function to extract user UUID from token.
-    Replace this with your actual JWT parsing logic.
-    """
-    # In a real application, you would decode the JWT token here
-    # and extract the user UUID. For now, return a dummy value.
+    """Extracts the user UUID from the provided token.
 
-    if token.credentials != "valid_token":  # Replace "valid_token"
+    Args:
+        credentials: The HTTPBearer credentials.
+
+    Returns:
+        The user UUID.
+
+    Raises:
+        HTTPException: If the token is missing or invalid.
+
+    """
+    if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = credentials.credentials
+    try:
+        # Use synchronous version in threadpool.
+        token_data = auth_client.token.get(token)
+        return str(token_data["metadata"]["uuid"])  # Convert UUID to string
+    except Exception as e:  # Catch your specific exception for invalid tokens
+        logger.warning(f"Token validation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return "00000000-0000-0000-0000-000000000301"  # Return a dummy user_uuid
 
 
 async def require_master_tenant(
-    token: str = Depends(HTTPBearer()), settings=Depends(get_settings)
-):
-    """Dummy check to see if is master tenant
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+    settings: Settings = Depends(get_settings),
+) -> None:
+    """Ensures that the provided token belongs to the master tenant.
     """
-    if token.credentials != "valid_token":
+    if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = credentials.credentials
+    try:
+        token_data = auth_client.token.get(token)
+        if str(token_data["metadata"]["tenant_uuid"]) != settings.auth.get(
+            "master_tenant_uuid", ""
+        ):
+            raise HTTPException(
+                status_code=403, detail="Not authorized, not master tenant"
+            )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    # Check if the user is the master tenant.
-    # if token != settings.auth.master_tenant_uuid:
-    #     raise HTTPException(status_code=403, detail="Not authorized, not master tenant")
-
-    return True

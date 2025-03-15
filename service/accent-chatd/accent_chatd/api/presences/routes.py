@@ -9,13 +9,11 @@ from accent_chatd.api.presences.models import (
     PresenceUpdateRequest,
     UserPresence,
 )
-from accent_chatd.core.auth import get_current_user_uuid, verify_token
-from accent_chatd.core.bus import (
-    BusConsumer,
-    BusPublisher,
-    get_bus_consumer,
-    get_bus_publisher,
-)  # Import.
+from accent_chatd.core.auth import (
+    get_current_user_uuid,
+    verify_token,
+)  # Corrected import
+from accent_chatd.core.bus import BusPublisher, get_bus_publisher
 from accent_chatd.core.config import Settings
 from accent_chatd.core.database import get_async_session
 from accent_chatd.core.dependencies import get_config
@@ -29,9 +27,8 @@ presence_router = APIRouter()
 def get_presence_service(
     db: AsyncSession = Depends(get_async_session),
     bus_publisher: BusPublisher = Depends(get_bus_publisher),
-    bus_consumer: BusConsumer = Depends(get_bus_consumer),
 ) -> PresenceService:
-    return PresenceService(UserDAO(db), bus_publisher, bus_consumer)
+    return PresenceService(UserDAO(db), bus_publisher)
 
 
 @presence_router.get(
@@ -44,7 +41,8 @@ async def list_presences(
     user_uuids: list[str] = Query(
         None, alias="user_uuid"
     ),  # change alias to original value.
-    token: str = Depends(get_current_user_uuid),
+    token: str = Depends(verify_token),
+    user_uuid: str = Depends(get_current_user_uuid),
     settings: Settings = Depends(get_config),
     service: PresenceService = Depends(get_presence_service),
     recurse: bool = Query(False, description="Include presences of sub-tenants"),
@@ -52,7 +50,7 @@ async def list_presences(
     await verify_token(token, "chatd.users.presences.read")
 
     # Use the auth module to get the correct tenant uuids, taking into account `recurse`
-    tenant_uuids = [settings.auth["master_tenant_uuid"]]
+    tenant_uuids = [settings.auth.get("master_tenant_uuid", "")]
 
     if user_uuids:
         try:
@@ -78,15 +76,15 @@ async def list_presences(
 )
 async def get_user_presence(
     user_uuid: str,
-    token: str = Depends(get_current_user_uuid),
+    token: str = Depends(verify_token),
+    current_user_uuid: str = Depends(get_current_user_uuid),
     settings: Settings = Depends(get_config),
     service: PresenceService = Depends(get_presence_service),
 ):
     await verify_token(token, f"chatd.users.{user_uuid}.presences.read")
 
     # Get the tenant UUID based on auth.
-    tenant_uuids = [settings.auth["master_tenant_uuid"]]
-
+    tenant_uuids = [settings.auth.get("master_tenant_uuid", "")]
     try:
         user = await service.get(tenant_uuids, user_uuid)
         return UserPresence.model_validate(user)  # Convert User to UserPresence
@@ -103,13 +101,14 @@ async def get_user_presence(
 async def update_user_presence(
     user_uuid: str,
     presence_update: PresenceUpdateRequest,
-    token: str = Depends(get_current_user_uuid),
+    token: str = Depends(verify_token),
+    current_user_uuid: str = Depends(get_current_user_uuid),
     settings: Settings = Depends(get_config),
     service: PresenceService = Depends(get_presence_service),
 ):
     await verify_token(token, f"chatd.users.{user_uuid}.presences.update")
     # Get the tenant UUID based on auth.
-    tenant_uuids = [settings.auth["master_tenant_uuid"]]
+    tenant_uuids = [settings.auth.get("master_tenant_uuid", "")]
 
     try:
         user = await service.get(tenant_uuids, user_uuid)
