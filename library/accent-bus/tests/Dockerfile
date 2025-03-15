@@ -7,9 +7,9 @@ WORKDIR /app
 RUN pip install uv
 
 COPY pyproject.toml ./
-COPY accent_bus ./accent_bus/
+COPY ../accent_bus ./accent_bus/
 #Copy all folders, and files in tests to tests directory
-COPY tests ./tests/
+COPY ../tests ./tests/
 
 # Install dependencies using uv.  This correctly handles dependencies
 # specified in pyproject.toml.  The "--no-cache-dir" is good practice

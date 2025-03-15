@@ -1,16 +1,22 @@
+# docker-compose.yml
 services:
-  tests:
-    build: .
+  accent-bus-tests:
+    build:
+      context: ../accent_bus  # Path to the accent-bus Dockerfile
+      dockerfile: ./tests/Dockerfile
     volumes:
-      - .:/app
-    # Install test dependencies and run tests
+      - ../accent_bus:/app  # Mount only the accent-bus project
     command: sh -c "uv pip install pytest pytest-asyncio pytest-cov && pytest --cov=accent_bus --cov-report term-missing --cov-report xml tests/"
     environment:
       - PYTHONASYNCIODEBUG=1
+      - PYTHONPATH=/app
 
-  mypy:
-    build: .
+  accent-bus-mypy:
+    build:
+      context: ./library/accent-bus
+      dockerfile: Dockerfile
     volumes:
-      - .:/app
-    # Install mypy and run it
+      - ./library/accent-bus:/app
     command: sh -c "uv pip install mypy && mypy accent_bus"
+    environment:
+      - PYTHONPATH=/app
