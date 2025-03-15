@@ -1,5 +1,5 @@
-# Exclude a variety of commonly ignored directories.
-exclude = [
+# Extend the default exclusions rather than overwriting them
+extend-exclude = [
   ".bzr",
   ".direnv",
   ".eggs",
@@ -26,71 +26,95 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
-  "alembic/",
+  "alembic/",           # Exclude Alembic migrations
 ]
 
-# Same as Black.
+# Black-compatible settings
 line-length = 88
 indent-width = 4
 
-# Target Python 3.12
+# Target Python version
 target-version = "py312"
 
 [lint]
-# Enable all linting rules, then selectively disable unwanted ones.
-select = ["ALL"]
+select = [
+  "E",    # Pycodestyle
+  "F",    # Pyflakes
+  "B",    # Bugbear
+  "I",    # isort
+  "D",    # pydocstyle
+  "UP",   # pyupgrade
+  "SIM",  # Simplifications
+  "PERF", # Performance
+  "PL",   # Pylint
+  "FLY",  # Flynt (string formatting)
+  "PYI",  # Stub files
+  "TID",  # Import tidiness
+  "C4",   # Comprehensions
+]
+extend-select = [
+  "S",   # Security
+  "ANN", # Type annotations
+  "PT",  # pytest
+  "RET", # Return statements
+  "ARG", # Arguments
+  "DTZ", # Date/time
+]
 ignore = [
-  "D100",   # Checks for undocumented public module definitions.
-  "D211",   # No blank line before class docstring (Conflicts with D203)
-  "D213",   # Multi-line docstring summary should be on the first line (Conflicts with D212)
-  "COM812", # Trialing comma in multi-line collection
+  "D100",   # Missing docstring in module
+  "D211",   # No blank line before class docstring
+  "D213",   # Multi-line docstring summary should be on the first line
+  "COM812", # Trailing comma in multi-line collection
   "D203",   # One blank line before class docstring
 ]
+ignore-init-module-imports = true
 
-# Allow auto-fixing for all enabled rules.
 fixable = ["ALL"]
-unfixable = []
+unfixable = [
+  "F401",    # Unused imports (manual review recommended)
+  "C901",    # Function complexity (needs refactoring)
+  "PLR2004", # Magic numbers
+]
 
-# Allow underscore-prefixed variables (e.g., `_temp`).
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-
 [format]
-# Follow Black-style formatting.
 docstring-code-line-length = 88
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+preview = true
 
 [lint.per-file-ignores]
-# Ignore import sorting and Bandit security rules for test files.
 "**/tests/**/*.py" = [
-  "INP001",  # Import sorting
-  "S101",    # Use of assert
-  "S105",    # Possible hardcoded password
-  "S106",    # Possible hardcoded password in function call
-  "PLR2004", # Magic value in comparison
-  "SLF001",  # Private member access (common in tests)
-  "ANN001",  # Missing type annotation for function argument
-  "ANN002",  # Missing type annotation for *args
-  "ANN003",  # Missing type annotation for **kwargs
-  "ANN201",  # Missing return type for function
-  "ANN202",  # Missing return type for private function
-  "RET503",  # Missing explicit return
-  "ARG001",  # Unused function argument
-  "ARG002",  # Unused method argument
-  "F401",    # Unused imports
-  "B008",    # Function call in default argument
-  "B017",    # Assert raises too generic exception
-  "PT011",   # pytest.raises() too broad
-  "PT012",   # pytest.raises() with multiple statements
-  "PT017",   # pytest assert in except block
-  "PT022",   # No teardown in fixture
-  "DTZ005",  # datetime.now() called without tz
-  "C901",    # Function is too complex
-  "PERF401", # Manual list comprehension
-  "FAST002", # FastAPI dependency without Annotated
-  "TC001",   # Type checking imports
-  "TC002",    # Type checking imports
-]  # Ensure no trailing comma here
+  "INP001",
+  "S101",
+  "S105",
+  "S106",
+  "PLR2004",
+  "SLF001",
+  "ANN001",
+  "ANN002",
+  "ANN003",
+  "ANN201",
+  "ANN202",
+  "RET503",
+  "ARG001",
+  "ARG002",
+  "F401",
+  "B008",
+  "B017",
+  "PT011",
+  "PT012",
+  "PT017",
+  "PT022",
+  "DTZ005",
+  "C901",
+  "PERF401",
+  "FAST002",
+  "TC001",
+  "TC002",
+  "D100",
+  "D101",
+]
