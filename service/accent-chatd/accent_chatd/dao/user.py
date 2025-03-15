@@ -5,7 +5,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import selectinload
 
 from accent_chatd.exceptions import UnknownUserException
-from accent_chatd.models import User
+from accent_chatd.models import Line, RefreshToken, Session, User
 
 from .base import BaseDAO
 

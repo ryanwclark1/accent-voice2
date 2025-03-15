@@ -1,22 +1,37 @@
 # src/accent_chatd/api/presences/routes.py
 
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from accent_chatd.api.presences.models import (
     PresenceList,
-    UserPresence,
     PresenceUpdateRequest,
+    UserPresence,
 )
-
-from accent_chatd.core.auth import verify_token, get_current_user_uuid
-from accent_chatd.core.dependencies import get_config
+from accent_chatd.core.auth import get_current_user_uuid, verify_token
+from accent_chatd.core.bus import (
+    BusConsumer,
+    BusPublisher,
+    get_bus_consumer,
+    get_bus_publisher,
+)  # Import.
 from accent_chatd.core.config import Settings
-from accent_chatd.dao.user import UserDAO
 from accent_chatd.core.database import get_async_session
-from sqlalchemy.ext.asyncio import AsyncSession
+from accent_chatd.core.dependencies import get_config
+from accent_chatd.dao.user import UserDAO
+from accent_chatd.services.presences import PresenceService  # Import service
 
 presence_router = APIRouter()
+
+
+# Dependency to get the PresenceService instance
+def get_presence_service(
+    db: AsyncSession = Depends(get_async_session),
+    bus_publisher: BusPublisher = Depends(get_bus_publisher),
+    bus_consumer: BusConsumer = Depends(get_bus_consumer),
+) -> PresenceService:
+    return PresenceService(UserDAO(db), bus_publisher, bus_consumer)
 
 
 @presence_router.get(
@@ -26,12 +41,12 @@ presence_router = APIRouter()
     description="Retrieves a list of user presences.",
 )
 async def list_presences(
-    user_uuids: List[str] = Query(
+    user_uuids: list[str] = Query(
         None, alias="user_uuid"
     ),  # change alias to original value.
     token: str = Depends(get_current_user_uuid),
     settings: Settings = Depends(get_config),
-    session: AsyncSession = Depends(get_async_session),
+    service: PresenceService = Depends(get_presence_service),
     recurse: bool = Query(False, description="Include presences of sub-tenants"),
 ):
     await verify_token(token, "chatd.users.presences.read")
@@ -39,14 +54,13 @@ async def list_presences(
     # Use the auth module to get the correct tenant uuids, taking into account `recurse`
     tenant_uuids = [settings.auth["master_tenant_uuid"]]
 
-    user_dao = UserDAO(session)
     if user_uuids:
         try:
-            users = await user_dao.list_(tenant_uuids=tenant_uuids, uuids=user_uuids)
+            users = await service.list_(tenant_uuids=tenant_uuids, uuids=user_uuids)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     else:
-        users = await user_dao.list_(tenant_uuids=tenant_uuids)
+        users = await service.list_(tenant_uuids=tenant_uuids)
 
     # Convert the user models into presence models.
     presences = []
@@ -66,16 +80,15 @@ async def get_user_presence(
     user_uuid: str,
     token: str = Depends(get_current_user_uuid),
     settings: Settings = Depends(get_config),
-    session: AsyncSession = Depends(get_async_session),
+    service: PresenceService = Depends(get_presence_service),
 ):
     await verify_token(token, f"chatd.users.{user_uuid}.presences.read")
 
     # Get the tenant UUID based on auth.
     tenant_uuids = [settings.auth["master_tenant_uuid"]]
-    user_dao = UserDAO(session)
 
     try:
-        user = await user_dao.get(tenant_uuids, user_uuid)
+        user = await service.get(tenant_uuids, user_uuid)
         return UserPresence.model_validate(user)  # Convert User to UserPresence
     except Exception as e:  # Catch your custom exception here
         raise HTTPException(status_code=404, detail=str(e))
@@ -92,15 +105,14 @@ async def update_user_presence(
     presence_update: PresenceUpdateRequest,
     token: str = Depends(get_current_user_uuid),
     settings: Settings = Depends(get_config),
-    session: AsyncSession = Depends(get_async_session),
+    service: PresenceService = Depends(get_presence_service),
 ):
     await verify_token(token, f"chatd.users.{user_uuid}.presences.update")
     # Get the tenant UUID based on auth.
     tenant_uuids = [settings.auth["master_tenant_uuid"]]
 
-    user_dao = UserDAO(session)
     try:
-        user = await user_dao.get(tenant_uuids, user_uuid)
+        user = await service.get(tenant_uuids, user_uuid)
     except Exception:
         raise HTTPException(status_code=404, detail=f"User {user_uuid} not found")
 
@@ -109,4 +121,4 @@ async def update_user_presence(
     user.state = presence_update.state
     if presence_update.status is not None:
         user.status = presence_update.status
-    await user_dao.update(user)
+    await service.update(user)  # Call service layer.

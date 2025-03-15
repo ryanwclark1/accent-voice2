@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.12.7, <4.0"
 resolution-markers = [
     "platform_python_implementation != 'PyPy'",
@@ -1177,32 +1176,31 @@ dependencies = [
     { name = "accent-bus" },
     { name = "accent-confd-client" },
     { name = "accent-lib-rest-client" },
-    { name = "alembic" },
-    { name = "cheroot" },
-    { name = "flask" },
-    { name = "flask-cors" },
-    { name = "flask-restful" },
-    { name = "iso8601" },
-    { name = "itsdangerous" },
-    { name = "jinja2" },
-    { name = "jsonpatch" },
-    { name = "kombu" },
-    { name = "markupsafe" },
-    { name = "marshmallow" },
-    { name = "psycopg" },
-    { name = "python-consul" },
-    { name = "python-dateutil" },
-    { name = "pyyaml" },
-    { name = "requests" },
+    { name = "aio-pika" },
     { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "sqlalchemy-utils" },
-    { name = "stevedore" },
-    { name = "werkzeug" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "bandit" },
+    { name = "deptry" },
+    { name = "mypy" },
+    { name = "refurb" },
+    { name = "ruff" },
+    { name = "tox" },
+]
+test = [
+    { name = "coverage" },
+    { name = "fastapi" },
+    { name = "httpx" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-httpx" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "respx" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -1213,31 +1211,32 @@ requires-dist = [
     { name = "accent-bus", editable = "library/accent-bus" },
     { name = "accent-confd-client", editable = "library/accent-confd-client" },
     { name = "accent-lib-rest-client", editable = "library/accent-lib-rest-client" },
-    { name = "alembic", specifier = ">=1.13.0" },
-    { name = "cheroot", specifier = ">=8.5.2" },
-    { name = "flask", specifier = ">=1.1.2" },
-    { name = "flask-cors", specifier = ">=3.0.10" },
-    { name = "flask-restful", specifier = ">=0.3.8" },
-    { name = "iso8601", specifier = ">=1.0.2" },
-    { name = "itsdangerous", specifier = ">=1.1.0" },
-    { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "jsonpatch", specifier = "~=1.25" },
-    { name = "kombu", specifier = ">=5.0.2" },
-    { name = "markupsafe", specifier = ">=1.1.1" },
-    { name = "marshmallow", specifier = ">=3.10.0" },
-    { name = "psycopg" },
-    { name = "python-consul", specifier = ">=1.1.0" },
-    { name = "python-dateutil", specifier = ">=2.8.1" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "requests", specifier = ">=2.25.1" },
+    { name = "aio-pika", specifier = ">=9.5.5" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
-    { name = "sqlalchemy-utils", specifier = ">=0.37.2" },
-    { name = "stevedore", specifier = ">=5.4.1" },
-    { name = "werkzeug", specifier = ">=1.0.1" },
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.3.5" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.3" },
+    { name = "deptry", specifier = ">=0.23.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "refurb", specifier = ">=2.0.0" },
+    { name = "ruff", specifier = ">=0.9.10" },
+    { name = "tox", specifier = ">=4.24.2" },
+]
+test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.6.12" },
+    { name = "fastapi", specifier = ">=0.115.11" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.25.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-httpx", specifier = ">=0.35.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "pytest-recording", specifier = ">=0.13.2" },
+    { name = "respx", specifier = ">=0.22.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+]
 
 [[package]]
 name = "accent-chatd-client"

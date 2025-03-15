@@ -12,6 +12,7 @@ dependencies = [
   "accent-confd-client",
   "accent-bus",
   "accent",
+  "aio-pika>=9.5.5",
 ]
 
 [project.scripts]
