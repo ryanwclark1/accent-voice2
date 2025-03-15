@@ -1,41 +1,33 @@
 # src/accent_chatd/dao/user.py
 
 
-from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import selectinload
 
-from accent_chatd.exceptions import UnknownUserException  # Import your exception
-from accent_chatd.models import Line, RefreshToken, Session, User
+from accent_chatd.exceptions import UnknownUserException
+from accent_chatd.models import User
 
 from .base import BaseDAO
 
 
 class UserDAO(BaseDAO):
-    def __init__(self, session_maker: AsyncSession):
-        super().__init__(session_maker)
-
     async def create(self, user: User) -> User:
         async with self.session() as session:
             async with session.begin():
                 session.add(user)
-                await session.flush()
-                await session.refresh(
-                    user
-                )  # Refresh to load any server-generated defaults
+                await session.flush()  # Ensure any server-side defaults are populated
+                await session.refresh(user)
                 return user
 
     async def update(self, user: User) -> User:
         async with self.session() as session:
             async with session.begin():
-                session.add(user)  # In 2.0 style, add/update are merged
-                await session.flush()
-                await session.refresh(user)
+                session.add(user)
                 return user
 
     async def get(self, tenant_uuids: list[str], user_uuid: str) -> User:
         async with self.session() as session:
-            # Use selectinload to eager load relationships
+            # Use selectinload to eager load relationships.
             stmt = (
                 select(User)
                 .options(
@@ -46,11 +38,9 @@ class UserDAO(BaseDAO):
                 .where(User.tenant_uuid.in_(tenant_uuids), User.uuid == user_uuid)
             )
             result = await session.execute(stmt)
-            user = result.scalar_one_or_none()
+            user = result.scalars().first()  # Use .first() for one-or-none semantics
             if not user:
-                raise UnknownUserException(
-                    user_uuid
-                )  # Assuming you have this custom exception
+                raise UnknownUserException(user_uuid)
             return user
 
     async def list_(
@@ -68,12 +58,14 @@ class UserDAO(BaseDAO):
                 stmt = stmt.where(User.uuid.in_(uuids))
             if tenant_uuids is not None:
                 if not tenant_uuids:
-                    stmt = stmt.where(text("false"))  # No tenants, return empty list
+                    stmt = stmt.where(
+                        text("false")
+                    )  # No valid tenants, return empty list
                 else:
                     stmt = stmt.where(User.tenant_uuid.in_(tenant_uuids))
 
-        result = await session.execute(stmt)
-        return result.scalars().all()
+            result = await session.execute(stmt)
+            return result.scalars().all()
 
     async def count(
         self, tenant_uuids: list[str] | None = None, **filter_parameters
@@ -82,7 +74,7 @@ class UserDAO(BaseDAO):
             stmt = select(func.count(User.id))
             if tenant_uuids is not None:
                 if not tenant_uuids:
-                    stmt = stmt.where(text("false"))  # No tenants, return empty list
+                    stmt = stmt.where(text("false"))  # No valid tenants, return 0
                 else:
                     stmt = stmt.where(User.tenant_uuid.in_(tenant_uuids))
 
@@ -94,11 +86,12 @@ class UserDAO(BaseDAO):
             async with session.begin():
                 await session.delete(user)
 
-    async def add_session(self, user: User, session: Session) -> None:
+    # User relationships
+    async def add_session(self, user: User, session_obj: Session) -> None:
         async with self.session() as session:
             async with session.begin():
-                if session not in user.sessions:
-                    user.sessions.append(session)  # Use relationships directly
+                if session_obj not in user.sessions:
+                    user.sessions.append(session_obj)
 
     async def remove_session(self, user: User, session_obj: Session) -> None:
         async with self.session() as session:

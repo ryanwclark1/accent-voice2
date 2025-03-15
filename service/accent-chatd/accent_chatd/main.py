@@ -2,7 +2,7 @@
 import logging.config
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from accent_chatd.core.config import get_settings
 from accent_chatd.core.database import engine, init_db
@@ -12,6 +12,7 @@ from accent_chatd.api.presences.routes import presence_router
 from accent_chatd.api.rooms.routes import room_router
 from accent_chatd.api.status.routes import status_router
 from accent_chatd.api.teams_presence.routes import teams_router
+from accent_chatd.core.exceptions import http_exception_handler  # Import
 
 settings = get_settings()
 # Configure logging
@@ -22,11 +23,14 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="accent-chatd",
     description="REST API for managing chat presence and messages.",
-    version="1.0.0",  # Replace with your actual version
-    docs_url="/docs",  # Make Swagger UI available at /docs
-    redoc_url=None,  # Disable ReDoc
-    openapi_url="/openapi.json",  # Serve OpenAPI spec at /openapi.json
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url=None,
+    openapi_url="/openapi.json",
 )
+
+# Add exception handlers
+app.add_exception_handler(HTTPException, http_exception_handler)
 
 # Include routers for different API resources
 app.include_router(common_router)

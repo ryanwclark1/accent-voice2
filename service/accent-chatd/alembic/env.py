@@ -1,4 +1,5 @@
 import os
+import asyncio
 from logging.config import fileConfig
 
 from sqlalchemy import create_engine
@@ -33,7 +34,6 @@ def get_url():
     # The import should not be top level to allow the usage of the ALEMBIC_DB_URI
     # environment variable when the DB is not hosted on the same host as accent-chatd.
     # When building the docker image for the database for example.
-    from accent_chatd.config import load_config
 
     chatd_config = load_config('')
     return chatd_config.get('db_uri')
@@ -58,31 +58,35 @@ def run_migrations_offline():
         context.run_migrations()
 
 
-def run_migrations_online():
+# alembic/env.py
+def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
     """
-    url = URI or config.get_main_option("sqlalchemy.url") or get_url()
-    engine = create_engine(url)
+    from accent_chatd.core.config import get_settings
 
-    connection = engine.connect()
-    context.configure(
-        connection=connection,
-        target_metadata=get_target_metadata(),
-        version_table=VERSION_TABLE,
+    settings = get_settings()  # Get the settings
+
+    connectable = create_async_engine(
+        settings.db_uri.replace("postgresql://", "postgresql+asyncpg://", 1),
+        future=True,
     )
 
-    try:
-        with context.begin_transaction():
-            context.run_migrations()
-    finally:
-        connection.close()
+    async def do_run_migrations(connection):
+        context.configure(
+            connection=connection,
+            target_metadata=get_target_metadata(),
+            version_table=VERSION_TABLE,  # Use your version table name
+        )
+        async with context.begin_transaction():
+            await context.run_migrations()
 
+    async def run_async_migrations():
+        async with connectable.connect() as connection:
+            await connection.run_sync(do_run_migrations)
+        await connectable.dispose()
 
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
+    asyncio.run(run_async_migrations())
